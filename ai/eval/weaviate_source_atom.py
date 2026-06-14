@@ -191,12 +191,65 @@ WEAVIATE_RETRIEVAL_ROUTES = frozenset(
 )
 WEAVIATE_ROUTE_PLANNER_VERSION = "weaviate_route_planner_v1"
 WEAVIATE_ROUTE_TAXONOMY_VERSION = "weaviate_route_taxonomy_v1"
-WEAVIATE_QUERY_REFORMULATION_VERSION = "weaviate_query_reformulation_v1"
+WEAVIATE_QUERY_REFORMULATION_VERSION = "weaviate_query_reformulation_v3"
 WEAVIATE_QUERY_REFORMULATION_INPUT_POLICY = (
-    "query_text_only_bounded_alias_variants_no_gold_qrels_labels_ids_or_baseline"
+    "query_text_only_bounded_token_number_punctuation_anchor_variants_no_gold_qrels_labels_ids_or_baseline"
 )
 WEAVIATE_QUERY_VARIANT_MERGE_POLICY = "bounded_round_robin_query_variant_rank_v1"
 WEAVIATE_MAX_QUERY_VARIANTS = 8
+WEAVIATE_KOREAN_SINO_DIGITS: Mapping[str, int] = {
+    "일": 1,
+    "이": 2,
+    "삼": 3,
+    "사": 4,
+    "오": 5,
+    "육": 6,
+    "칠": 7,
+    "팔": 8,
+    "구": 9,
+}
+WEAVIATE_KOREAN_QUERY_PARTICLES = (
+    "으로는",
+    "으로",
+    "에게는",
+    "에게",
+    "에서는",
+    "에서",
+    "에는",
+    "으로서",
+    "은",
+    "는",
+    "이",
+    "가",
+    "을",
+    "를",
+    "의",
+    "에",
+    "와",
+    "과",
+    "도",
+    "만",
+)
+WEAVIATE_QUERY_CONTENT_STOPWORDS = frozenset(
+    {
+        "어떤",
+        "어떻게",
+        "무엇",
+        "뭐",
+        "어디",
+        "언제",
+        "누구",
+        "식",
+        "식으로",
+        "올라",
+        "올라와",
+        "적혀",
+        "있어",
+        "알려줘",
+        "설명해",
+        "말해줘",
+    }
+)
 WEAVIATE_SAME_DOC_RESIDUAL_RETRIEVAL_POLICY = "bounded_query_variant_same_doc_weaviate_v1"
 WEAVIATE_SAME_DOC_RESIDUAL_MAX_DOCS = 2
 WEAVIATE_SAME_DOC_RESIDUAL_TOP_K_PER_DOC = 3
@@ -865,24 +918,144 @@ def plan_weaviate_retrieval_route(query_text: str) -> dict[str, Any]:
 
 
 def _apply_query_alias_replacements(query: str, replacements: Mapping[str, str]) -> str:
-    variant = query
-    for source, replacement in replacements.items():
-        variant = variant.replace(source, replacement)
-    return " ".join(variant.split())
+    normalized_replacements = {
+        _clean(source): _clean(replacement)
+        for source, replacement in replacements.items()
+        if _clean(source) and _clean(replacement)
+    }
+    normalized_query = _clean(query)
+    if not normalized_replacements:
+        return " ".join(normalized_query.split())
+
+    parts: list[str] = []
+    last_end = 0
+    replaced = False
+    for match in re.finditer(r"[A-Za-z0-9][A-Za-z0-9'_-]*|[가-힣]+", normalized_query):
+        source = _query_content_term(match.group(0))
+        replacement = normalized_replacements.get(source)
+        if not replacement:
+            continue
+        parts.append(normalized_query[last_end : match.start()])
+        parts.append(replacement)
+        last_end = match.end()
+        replaced = True
+    if not replaced:
+        return " ".join(normalized_query.split())
+    parts.append(normalized_query[last_end:])
+    return " ".join("".join(parts).split())
+
+
+def _strip_korean_query_particle(token: str) -> str:
+    cleaned = _clean(token)
+    for suffix in WEAVIATE_KOREAN_QUERY_PARTICLES:
+        if cleaned.endswith(suffix) and len(cleaned) > len(suffix):
+            return cleaned[: -len(suffix)]
+    return cleaned
+
+
+def _korean_sino_number_to_int(token: str) -> int | None:
+    cleaned = _strip_korean_query_particle(token)
+    if not cleaned:
+        return None
+    if cleaned in WEAVIATE_KOREAN_SINO_DIGITS:
+        return WEAVIATE_KOREAN_SINO_DIGITS[cleaned]
+    if cleaned == "십":
+        return 10
+    if "십" not in cleaned:
+        return None
+    tens_text, ones_text = cleaned.split("십", 1)
+    if tens_text:
+        tens = WEAVIATE_KOREAN_SINO_DIGITS.get(tens_text)
+        if tens is None:
+            return None
+    else:
+        tens = 1
+    if ones_text:
+        ones = WEAVIATE_KOREAN_SINO_DIGITS.get(ones_text)
+        if ones is None:
+            return None
+    else:
+        ones = 0
+    return tens * 10 + ones
+
+
+def _query_terms(query: str) -> list[str]:
+    return re.findall(r"[A-Za-z0-9][A-Za-z0-9'_-]*|[가-힣]+", _clean(query))
+
+
+def _query_content_term(term: str) -> str:
+    cleaned = _strip_korean_query_particle(term)
+    if not cleaned or cleaned in WEAVIATE_QUERY_CONTENT_STOPWORDS:
+        return ""
+    return cleaned
+
+
+def _query_term_aliases(term: str) -> tuple[str, ...]:
+    cleaned = _strip_korean_query_particle(term)
+    aliases: list[str] = []
+    number = _korean_sino_number_to_int(cleaned)
+    if number is not None:
+        numeric = str(number)
+        aliases.append(numeric)
+        if 10 <= number <= 99:
+            aliases.append(f"'{numeric}")
+    unique: list[str] = []
+    for alias in aliases:
+        normalized = _clean(alias)
+        if normalized and normalized not in unique and normalized != cleaned:
+            unique.append(normalized)
+    return tuple(unique)
+
+
+def _punctuation_normalized_query_variant(query: str) -> str:
+    normalized = " ".join(_clean(query).split())
+    normalized = re.sub(r"(?<=[^\s'])\s+(\d{2})(?=\b)", r" '\1", normalized)
+    normalized = re.sub(r"\s+([,.?:;])", r"\1", normalized)
+    return " ".join(normalized.split())
+
+
+def _alias_anchor_for_term(alias: str) -> str:
+    return _punctuation_normalized_query_variant(alias)
+
+
+def _compact_query_anchor_variants(term_aliases: Sequence[Mapping[str, Any]]) -> list[tuple[str, str]]:
+    anchor_terms: list[dict[str, str]] = []
+    for entry in term_aliases:
+        alias = _alias_anchor_for_term(_clean(entry.get("primary_alias")))
+        if not alias:
+            continue
+        kind = _clean(entry.get("kind")) or "alias"
+        if kind == "number" and re.fullmatch(r"\d{2}", alias):
+            alias = f"'{alias}"
+        anchor_terms.append({"alias": alias, "kind": kind})
+    if len(anchor_terms) < 2:
+        return []
+
+    variants: list[tuple[str, str]] = []
+    compact_terms = [entry["alias"] for entry in anchor_terms]
+    compact_query = _punctuation_normalized_query_variant(" ".join(compact_terms))
+    if compact_query:
+        variants.append((compact_query, "punctuation_normalized_anchor_query"))
+    return variants
 
 
 def plan_weaviate_query_variants(query_text: str) -> dict[str, Any]:
     query = _clean(query_text)
     variants: list[str] = []
     reasons: list[str] = []
+    normalization_policies: list[str] = []
 
     def add_variant(variant: str, reason: str) -> None:
-        cleaned = _clean(variant)
+        cleaned = _punctuation_normalized_query_variant(variant) if reason.endswith("anchor_query") else _clean(variant)
         if not cleaned or cleaned in variants or len(variants) >= WEAVIATE_MAX_QUERY_VARIANTS:
             return
         variants.append(cleaned)
         if reason not in reasons:
             reasons.append(reason)
+
+    def add_policy(policy: str) -> None:
+        if policy not in normalization_policies:
+            normalization_policies.append(policy)
 
     add_variant(query, "original_query")
     if not query:
@@ -902,39 +1075,54 @@ def plan_weaviate_query_variants(query_text: str) -> dict[str, Any]:
             "uses_ids": False,
             "uses_baseline_topk": False,
             "uses_legacy_outputs": False,
+            "normalization_policies": normalization_policies,
             "reasons": reasons,
         }
 
-    alias_replacements: dict[str, tuple[str, ...]] = {
-        "엑스맨": ("X-Men",),
-        "구십칠": ("97", "'97"),
-        "애드버서리": ("Adversary", "어드버서리"),
-    }
-    active_aliases = {
-        source: replacements for source, replacements in alias_replacements.items() if source in query
-    }
-    if active_aliases:
-        primary_replacements = {source: replacements[0] for source, replacements in active_aliases.items()}
-        add_variant(_apply_query_alias_replacements(query, primary_replacements), "primary_query_alias_expansion")
+    replacement_terms: list[dict[str, Any]] = []
+    anchor_terms: list[dict[str, Any]] = []
+    seen_sources: set[str] = set()
+    for term in _query_terms(query):
+        source = _query_content_term(term)
+        if not source or source in seen_sources:
+            continue
+        seen_sources.add(source)
+        aliases = _query_term_aliases(source)
+        kind = "number" if _korean_sino_number_to_int(source) is not None else "alias"
+        primary_anchor = aliases[-1] if aliases else source
+        anchor_terms.append({"source": source, "aliases": aliases, "primary_alias": primary_anchor, "kind": kind})
+        if aliases:
+            replacement_terms.append({"source": source, "aliases": aliases, "primary_alias": aliases[0], "kind": kind})
+        if kind == "number":
+            add_policy("korean_sino_number_normalization")
 
-    if "엑스맨" in active_aliases and "구십칠" in active_aliases:
-        title_replacements = {"엑스맨": "X-Men", "구십칠": "'97"}
-        if "애드버서리" in active_aliases:
-            title_replacements["애드버서리"] = "Adversary"
-        add_variant(_apply_query_alias_replacements(query, title_replacements), "title_number_entity_alias_expansion")
-
-    for source, replacements in active_aliases.items():
-        for replacement in replacements:
-            add_variant(
-                _apply_query_alias_replacements(query, {source: replacement}),
-                f"single_query_alias:{source}",
-            )
-
-    if "엑스맨" in active_aliases and "구십칠" in active_aliases:
-        add_variant(
-            _apply_query_alias_replacements(query, {"엑스맨": "X-Men", "구십칠": "97"}),
-            "title_number_alias_expansion",
-        )
+    if replacement_terms:
+        primary_replacements = {
+            _clean(entry["source"]): _clean(entry["primary_alias"])
+            for entry in replacement_terms
+            if _clean(entry.get("source")) and _clean(entry.get("primary_alias"))
+        }
+        primary_variant = _apply_query_alias_replacements(query, primary_replacements)
+        add_variant(primary_variant, "primary_query_alias_expansion")
+        punctuated_primary = _punctuation_normalized_query_variant(primary_variant)
+        if punctuated_primary != primary_variant:
+            add_policy("punctuation_normalization")
+            add_variant(punctuated_primary, "punctuation_normalization")
+        for entry in replacement_terms:
+            source = _clean(entry["source"])
+            for alias in entry["aliases"]:
+                add_variant(
+                    _apply_query_alias_replacements(query, {source: alias}),
+                    f"single_query_alias:{source}",
+                )
+    if anchor_terms and replacement_terms:
+        for anchor_variant, reason in _compact_query_anchor_variants(anchor_terms):
+            if anchor_variant != query:
+                add_policy("punctuation_normalization")
+                add_policy("query_text_only_content_anchor_compaction")
+            if reason == "collision_aware_anchor_query":
+                add_policy("collision_aware_query_formulation")
+            add_variant(anchor_variant, reason)
 
     return {
         "version": WEAVIATE_QUERY_REFORMULATION_VERSION,
@@ -952,6 +1140,7 @@ def plan_weaviate_query_variants(query_text: str) -> dict[str, Any]:
         "uses_ids": False,
         "uses_baseline_topk": False,
         "uses_legacy_outputs": False,
+        "normalization_policies": normalization_policies,
         "reasons": reasons,
     }
 
@@ -2750,7 +2939,7 @@ class WeaviateSourceAtomAdapter:
             "residual_risks": [
                 "route-selected default remains non-production diagnostic until fresh text and mixed diagnostic runs are reviewed",
                 "full-index Weaviate rollback must remain available through rollback_config",
-                "answer composition is still extractive-v1; selected EvidenceBundle-only citation formatting is the next lane",
+                "answer composition and citation formatting remain diagnostic and must stay evidence-gated",
             ],
             "next_recommended_goal": "selected_evidence_answer_composer_citation_formatter_nonprod",
             "vectorized_object_count": vectorized_object_count,

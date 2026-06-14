@@ -61,6 +61,7 @@ from ai.eval.weaviate_source_atom import (
     build_default_weaviate_adapter,
     build_weaviate_source_atom_schema,
     derive_weaviate_route_taxonomy,
+    plan_weaviate_query_variants,
     plan_weaviate_retrieval_route,
     source_atom_record_from_mapping,
 )
@@ -657,7 +658,7 @@ def test_weaviate_route_selected_lane_sends_planner_filters_to_weaviate(tmp_path
     assert report["items"][0]["retrieved_contexts"][0]["source_family"] == "XLSX"
 
 
-def test_weaviate_route_selected_text_query_uses_query_only_alias_variants(tmp_path: Path) -> None:
+def test_weaviate_route_selected_text_query_uses_query_only_number_and_anchor_variants(tmp_path: Path) -> None:
     class AliasSensitiveWeaviateClient(FakeWeaviateSourceAtomClient):
         def query(self, **kwargs: object) -> list[dict]:
             self.query_log.append(
@@ -680,7 +681,7 @@ def test_weaviate_route_selected_text_query_uses_query_only_alias_variants(tmp_p
                     return obj.get(key) in value
                 return obj.get(key) == value
 
-            alias_query = "X-Men" in query_text and "97" in query_text and "Adversary" in query_text
+            alias_query = "엑스맨" in query_text and "97" in query_text and "애드버서리" in query_text
             rows: list[dict] = []
             for obj in self.objects:
                 if not all(matches(obj, key, value) for key, value in dict(filters).items()):
@@ -718,13 +719,13 @@ def test_weaviate_route_selected_text_query_uses_query_only_alias_variants(tmp_p
             {
                 **weaviate_source_atom_record(
                     97,
-                    text="X-Men '97 등장인물 목록에는 Adversary - Alison Sealy-Smith [카메오] 항목이 있다.",
+                    text="엑스맨 '97 등장인물 목록에는 애드버서리 - 앨리슨 실리스미스 [카메오] 항목이 있다.",
                 ),
                 "source_atom_id": "srcatom-xmen-97-adversary",
                 "evidence_bundle_id": "bundle-xmen-97-adversary",
                 "doc_id": "text_namu_v2_1",
                 "chunk_id": "98f5315b62c0282c",
-                "title": "X-Men '97 등장인물",
+                "title": "엑스맨 '97 등장인물",
                 "granularity": "paragraph",
                 "retrieval_route": "text_general",
             }
@@ -753,7 +754,7 @@ def test_weaviate_route_selected_text_query_uses_query_only_alias_variants(tmp_p
     alias_queries = [
         query["query_text"]
         for query in client.query_log
-        if "X-Men" in query["query_text"] and "97" in query["query_text"] and "Adversary" in query["query_text"]
+        if "엑스맨" in query["query_text"] and "97" in query["query_text"] and "애드버서리" in query["query_text"]
     ]
     assert alias_queries
     assert report["items"][0]["retrieved_contexts"][0]["source_atom_id"] == "srcatom-xmen-97-adversary"
@@ -784,8 +785,8 @@ def test_weaviate_route_selected_query_variants_probe_same_doc_without_gold_ids(
             query_text = str(kwargs["query_text"])
             filters = dict(kwargs["filters"])
             doc_filter = filters.get("doc_id")
-            alias_title_query = "X-Men" in query_text and "97" in query_text
-            alias_entity_query = alias_title_query and "Adversary" in query_text
+            alias_title_query = "엑스맨" in query_text and "97" in query_text
+            alias_entity_query = alias_title_query and "애드버서리" in query_text
             rows: list[dict] = []
             for obj in self.objects:
                 if _filter_mismatch(obj, filters):
@@ -847,20 +848,20 @@ def test_weaviate_route_selected_query_variants_probe_same_doc_without_gold_ids(
                 "evidence_bundle_id": "bundle-xmen-97-overview",
                 "doc_id": "doc-xmen-97",
                 "chunk_id": "chunk-xmen-97-overview",
-                "title": "X-Men '97",
+                "title": "엑스맨 '97",
                 "granularity": "paragraph",
                 "retrieval_route": "text_general",
             },
             {
                 **weaviate_source_atom_record(
                     972,
-                    text="X-Men '97 등장인물 목록에는 Adversary - Alison Sealy-Smith [카메오] 항목이 있다.",
+                    text="엑스맨 '97 등장인물 목록에는 애드버서리 - 앨리슨 실리스미스 [카메오] 항목이 있다.",
                 ),
                 "source_atom_id": "srcatom-xmen-97-adversary",
                 "evidence_bundle_id": "bundle-xmen-97-adversary",
                 "doc_id": "doc-xmen-97",
                 "chunk_id": "chunk-xmen-97-adversary",
-                "title": "X-Men '97 등장인물",
+                "title": "엑스맨 '97 등장인물",
                 "granularity": "paragraph",
                 "retrieval_route": "text_general",
             },
@@ -889,11 +890,185 @@ def test_weaviate_route_selected_query_variants_probe_same_doc_without_gold_ids(
     contexts = report["items"][0]["retrieved_contexts"]
     same_doc_queries = [query for query in client.query_log if query["filters"].get("doc_id") == "doc-xmen-97"]
     assert same_doc_queries
-    assert any("Adversary" in query["query_text"] for query in same_doc_queries)
+    assert any("애드버서리" in query["query_text"] for query in same_doc_queries)
     assert contexts[0]["source_atom_id"] == "srcatom-xmen-97-adversary"
     assert contexts[0]["same_doc_residual_expansion_policy"] == "bounded_query_variant_same_doc_weaviate_v1"
     assert report["weaviate_post_processing"]["same_doc_residual_query_count"] >= 1
     assert report["weaviate_post_processing"]["same_doc_residual_added_count"] == 1
+    for query_payload in client.query_log:
+        assert "expected_answer" not in query_payload
+        assert "expected_evidence" not in query_payload
+        assert "row_id" not in query_payload
+        assert "target_id" not in query_payload
+
+
+def test_weaviate_query_variants_build_collision_aware_anchor_queries_from_query_text_only() -> None:
+    plan = plan_weaviate_query_variants("엑스맨 구십칠 등장인물 목록에 애드버서리는 어떤 식으로 올라와")
+
+    joined = " ".join(plan["query_variants"])
+    assert "Adversary" not in joined
+    assert "X-Men" not in joined
+    assert "엑스맨 '97 등장인물 목록 애드버서리" in plan["query_variants"]
+    assert "애드버서리 엑스맨 '97 등장인물 목록" not in plan["query_variants"]
+    assert "collision_aware_anchor_query" not in plan["reasons"]
+    assert "korean_sino_number_normalization" in plan["normalization_policies"]
+    assert "punctuation_normalization" in plan["normalization_policies"]
+    assert "query_text_only_content_anchor_compaction" in plan["normalization_policies"]
+    assert "collision_aware_query_formulation" not in plan["normalization_policies"]
+    assert plan["uses_expected_fields"] is False
+    assert plan["uses_gold_fields"] is False
+    assert plan["uses_ids"] is False
+    assert plan["uses_qrels"] is False
+    assert plan["uses_labels"] is False
+    assert plan["uses_baseline_topk"] is False
+    assert plan["uses_legacy_outputs"] is False
+    assert "text_namu_v2_0014" not in " ".join(plan["query_variants"])
+
+
+def test_weaviate_query_variants_build_synthetic_multilingual_year_anchor_from_query_text_only() -> None:
+    plan = plan_weaviate_query_variants("프로젝트 이십육 출시 일정은 어떻게 적혀 있어")
+
+    joined = " ".join(plan["query_variants"])
+    assert "Project" not in joined
+    assert "프로젝트 '26 출시 일정" in plan["query_variants"]
+    assert "query_text_only_content_anchor_compaction" in plan["normalization_policies"]
+    assert "korean_sino_number_normalization" in plan["normalization_policies"]
+    assert "punctuation_normalization" in plan["normalization_policies"]
+    assert plan["uses_expected_fields"] is False
+    assert plan["uses_gold_fields"] is False
+    assert plan["uses_ids"] is False
+    assert plan["uses_qrels"] is False
+    assert plan["uses_labels"] is False
+    assert plan["uses_baseline_topk"] is False
+    assert plan["uses_legacy_outputs"] is False
+    assert "synthetic_project" not in " ".join(plan["query_variants"])
+
+
+def test_weaviate_query_variants_do_not_add_x_men_hyphen_when_hyphen_is_absent() -> None:
+    plan = plan_weaviate_query_variants("X Men 구십칠 등장인물")
+
+    joined = " ".join(plan["query_variants"])
+    assert "X-Men" not in joined
+    assert "X Men '97 등장인물" in plan["query_variants"]
+
+
+def test_weaviate_query_variants_do_not_compact_plain_korean_queries_without_numeric_anchor() -> None:
+    query = "유우야키의 나이와 생일은 어떻게 적혀 있어"
+
+    plan = plan_weaviate_query_variants(query)
+
+    assert plan["query_variants"] == [query]
+    assert plan["enabled"] is False
+    assert "query_text_only_content_anchor_compaction" not in plan["normalization_policies"]
+
+
+def test_weaviate_query_variants_replace_numeric_tokens_without_rewriting_substrings() -> None:
+    for query in ("연구 구 결과", "구 연구 결과"):
+        plan = plan_weaviate_query_variants(query)
+
+        joined = " ".join(plan["query_variants"])
+        assert "연9" not in joined
+        assert "9 연9" not in joined
+        assert any("9" in variant for variant in plan["query_variants"])
+        assert any("연구" in variant for variant in plan["query_variants"])
+
+
+def test_weaviate_route_selected_synthetic_multilingual_punctuation_query_uses_normal_query_variants(
+    tmp_path: Path,
+) -> None:
+    class SyntheticAliasSensitiveWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(
+                {
+                    "mode": kwargs["mode"],
+                    "query_text": kwargs["query_text"],
+                    "vector_dim": len(kwargs.get("query_vector") or []),
+                    "filters": dict(kwargs["filters"]),
+                    "limit": int(kwargs["limit"]),
+                    "alpha": float(kwargs["alpha"]),
+                }
+            )
+            query_text = str(kwargs["query_text"])
+            filters = dict(kwargs["filters"])
+            if query_text != "프로젝트 '26 출시 일정":
+                return []
+            rows: list[dict] = []
+            for obj in self.objects:
+                if any(_filter_value_mismatch(obj, key, value) for key, value in filters.items()):
+                    continue
+                row = dict(obj)
+                row["_score"] = 1.0
+                row["_backend"] = kwargs["mode"]
+                rows.append(row)
+            return rows[: int(kwargs["limit"])]
+
+    def _filter_value_mismatch(obj: dict, key: str, value: object) -> bool:
+        if not value:
+            return False
+        if isinstance(value, list):
+            return obj.get(key) not in value
+        return obj.get(key) != value
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "weaviate_route_selected_synthetic_alias_variants"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "synthetic_project",
+                "query": "프로젝트 이십육 출시 일정은 어떻게 적혀 있어",
+                "answerability": "unknown",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprod",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    client = SyntheticAliasSensitiveWeaviateClient(
+        objects=[
+            {
+                **weaviate_source_atom_record(2601, text="프로젝트 '26 출시 일정은 노트에 적혀 있다."),
+                "source_atom_id": "srcatom-project-26",
+                "evidence_bundle_id": "bundle-project-26",
+                "doc_id": "doc-project-26",
+                "chunk_id": "chunk-project-26",
+                "title": "프로젝트 '26",
+                "granularity": "paragraph",
+                "retrieval_route": "text_general",
+            }
+        ]
+    )
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="weaviate_route_selected_synthetic_alias_variants",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    assert report["items"][0]["retrieved_contexts"][0]["source_atom_id"] == "srcatom-project-26"
+    assert "프로젝트 '26 출시 일정" in [query["query_text"] for query in client.query_log]
+    reformulation = report["items"][0]["weaviate_query_reformulation"]
+    assert "synthetic_project" not in " ".join(reformulation["query_variants"])
+    assert "query_text_only_content_anchor_compaction" in reformulation["normalization_policies"]
     for query_payload in client.query_log:
         assert "expected_answer" not in query_payload
         assert "expected_evidence" not in query_payload
@@ -1084,6 +1259,1536 @@ def test_corpus_coverage_audit_classifies_route_filter_failure_report_only(tmp_p
         assert "expected_answer" not in query_payload
         assert "expected_evidence" not in query_payload
         assert "row_id" not in query_payload
+
+
+def test_run_eval_embeds_heuristic_risk_ledger_and_metric_continuity_checkpoint(tmp_path: Path) -> None:
+    dataset = tmp_path / "selected_evidence_gate_gold.jsonl"
+    context = tmp_path / "selected_evidence_gate_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "heuristic_checkpoint"
+    gold_rows: list[dict[str, object]] = []
+    context_rows: list[dict[str, object]] = []
+    for index in range(5):
+        query_id = f"safe_q_{index}"
+        text = f"Apollo{index} Seoul home is confirmed by selected evidence."
+        gold_rows.append({"id": query_id, "query": f"Apollo{index} Seoul home", "answerability": "unknown"})
+        context_rows.append(
+            {
+                "id": query_id,
+                "generated_answer": "",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": f"doc-{index}",
+                        "chunk_id": f"chunk-{index}",
+                        "source_atom_id": f"src-{index}",
+                        "evidence_bundle_id": f"bundle-{index}",
+                        "source_family": "TEXT",
+                        "granularity": "paragraph",
+                        "text": text,
+                    }
+                ],
+                "citations": [],
+            }
+        )
+    gold_rows.append(
+        {
+            "id": "text_namu_v2_0014",
+            "query": "엑스맨 구십칠 등장인물 목록에 애드버서리는 어떤 식으로 올라와",
+            "answerability": "unknown",
+        }
+    )
+    context_rows.append(
+        {
+            "id": "text_namu_v2_0014",
+            "generated_answer": "",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-xmen-97-overview",
+                    "chunk_id": "chunk-xmen-97-overview",
+                    "source_atom_id": "src-xmen-97-overview",
+                    "evidence_bundle_id": "bundle-xmen-97-overview",
+                    "source_family": "TEXT",
+                    "granularity": "paragraph",
+                    "text": "TV 애니메이션 시리즈 엑스맨 97의 첫 번째 시즌 개요다.",
+                }
+            ],
+            "citations": [],
+        }
+    )
+    write_jsonl(dataset, gold_rows)
+    write_jsonl(context, context_rows)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        context_jsonl_path=context,
+        output_dir=output_dir,
+        top_k=1,
+        run_id="heuristic_checkpoint",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+    )
+
+    report = json.loads(bundle.report_path.read_text(encoding="utf-8"))
+    checkpoint = report["metric_continuity_checkpoint"]
+    assert checkpoint["schema_version"] == "actual_rag_eval.metric_continuity_checkpoint.v1"
+    assert checkpoint["official_metric"] is False
+    assert checkpoint["gate_outcome"] == {
+        "item_count": 6,
+        "allowed_answer_count": 5,
+        "blocked_or_would_block_count": 1,
+        "allowed_over_item_count": "5/6",
+    }
+    assert checkpoint["selected_evidence_gate_outcome_preserved"] is True
+    assert checkpoint["evidence_package_status_counts"]["sufficient"] == 5
+    assert checkpoint["evidence_package_status_counts"]["insufficient"] == 1
+    assert checkpoint["unsupported_answer_rate_after_gate"] == 0.0
+    assert checkpoint["citation_supported_count"] == 6
+    assert checkpoint["retrieved_context_only_diagnostic_count"] == 0
+    assert checkpoint["selected_evidence_citation_precision"] == 1.0
+    assert checkpoint["query_count_per_item"] == 1.0
+    assert checkpoint["residual_taxonomy"]["allowed"] == 5
+    assert checkpoint["residual_taxonomy"]["insufficient_evidence"] == 1
+    assert checkpoint["guardrail_mutation_flags"] == {
+        "gold_or_qrels_mutation": False,
+        "expected_fields_used_for_candidate_generation": False,
+        "query_id_used_for_candidate_generation": False,
+        "row_id_used_for_candidate_generation": False,
+        "target_id_used_for_candidate_generation": False,
+        "qrels_used_for_candidate_generation": False,
+        "answerability_labels_used_for_candidate_generation": False,
+        "gate_uses_expected_fields": False,
+        "gate_uses_gold_fields": False,
+        "evidence_gate_retrieval_loop_triggered": False,
+    }
+
+    ledger = report["heuristic_risk_ledger"]
+    assert ledger["schema_version"] == "actual_rag_eval.heuristic_risk_ledger.v1"
+    assert ledger["official_metric"] is False
+    assert ledger["forbidden_eval_row_shortcut_active"] is False
+    assert set(ledger["allowed_classifications"]) == {
+        "global_normalization",
+        "source_derived_index_feature",
+        "query_text_only_reformulation",
+        "diagnostic_probe_only",
+    }
+    entries_by_id = {entry["rule_id"]: entry for entry in ledger["entries"]}
+    assert entries_by_id["selected_evidence_composer"]["classification"] == "query_text_only_reformulation"
+    assert entries_by_id["evidence_gate_enforcement"]["classification"] == "diagnostic_probe_only"
+    assert entries_by_id["forbidden_query_id_row_id_target_id_aliasing"]["classification"] == "forbidden_eval_row_shortcut"
+    assert entries_by_id["forbidden_query_id_row_id_target_id_aliasing"]["status"] == "rejected"
+    active_entries = [entry for entry in ledger["entries"] if entry["status"] == "active"]
+    assert active_entries
+    for entry in active_entries:
+        assert entry["uses_query_id_or_row_id_or_target_id"] is False
+        assert entry["uses_expected_answer_or_evidence"] is False
+        assert entry["uses_qrels_or_labels"] is False
+        assert entry["per_row_alias_table"] is False
+        assert entry["composer_or_gate_loosening_for_single_residual"] is False
+
+
+def test_agentic_planner_dry_run_emits_diagnostics_without_executing_loops(tmp_path: Path) -> None:
+    dataset = tmp_path / "agentic_planner_gold.jsonl"
+    context = tmp_path / "agentic_planner_context.jsonl"
+    gold_rows: list[dict[str, object]] = []
+    context_rows: list[dict[str, object]] = []
+    for index in range(5):
+        query_id = f"safe_q_{index}"
+        text = f"Apollo{index} Seoul home is confirmed by selected evidence."
+        gold_rows.append({"id": query_id, "query": f"Apollo{index} Seoul home", "answerability": "unknown"})
+        context_rows.append(
+            {
+                "id": query_id,
+                "generated_answer": "",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": f"doc-{index}",
+                        "chunk_id": f"chunk-{index}",
+                        "source_atom_id": f"src-{index}",
+                        "evidence_bundle_id": f"bundle-{index}",
+                        "source_family": "TEXT",
+                        "granularity": "paragraph",
+                        "text": text,
+                    }
+                ],
+                "citations": [],
+            }
+        )
+    gold_rows.append(
+        {
+            "id": "text_namu_v2_0014",
+            "query": "엑스맨 구십칠 등장인물 목록에 애드버서리는 어떤 식으로 올라와",
+            "answerability": "unknown",
+        }
+    )
+    context_rows.append(
+        {
+            "id": "text_namu_v2_0014",
+            "generated_answer": "",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-xmen-97-overview",
+                    "chunk_id": "chunk-xmen-97-overview",
+                    "source_atom_id": "src-xmen-97-overview",
+                    "evidence_bundle_id": "bundle-xmen-97-overview",
+                    "source_family": "TEXT",
+                    "granularity": "paragraph",
+                    "text": "TV 애니메이션 시리즈 엑스맨 97의 첫 번째 시즌 개요다.",
+                }
+            ],
+            "citations": [],
+        }
+    )
+    write_jsonl(dataset, gold_rows)
+    write_jsonl(context, context_rows)
+
+    baseline_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        context_jsonl_path=context,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_planner_off",
+        top_k=1,
+        run_id="agentic_planner_off",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+    )
+    dry_run_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        context_jsonl_path=context,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_planner_dry_run",
+        top_k=1,
+        run_id="agentic_planner_dry_run",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        agentic_planner_mode="dry-run",
+    )
+
+    baseline_report = json.loads(baseline_bundle.report_path.read_text(encoding="utf-8"))
+    report = json.loads(dry_run_bundle.report_path.read_text(encoding="utf-8"))
+    planner = report["agentic_planner_dry_run"]
+    assert planner["schema_version"] == "actual_rag_eval.agentic_planner_dry_run.v1"
+    assert planner["planner_enabled"] is True
+    assert planner["planner_mode"] == "dry-run"
+    assert planner["planner_version"] == "actual_rag_eval.agentic_planner_dry_run.v1"
+    assert planner["ran_after_selected_evidence_composer"] is True
+    assert planner["ran_after_evidence_gate"] is True
+    assert planner["planner_decision_count"] == 1
+    assert planner["planner_action_counts"] == {"query_text_only_reformulation": 1}
+    assert planner["planner_failure_class_counts"] == {"missing_query_anchor": 1}
+    assert planner["planner_no_safe_action_count"] == 0
+    assert planner["planner_forbidden_shortcut_detected_count"] == 0
+    assert planner["planner_expected_extra_query_count"] == 1
+    assert planner["planner_expected_tool_call_count"] == 0
+    assert planner["planner_heuristic_risk_class"] == "diagnostic_probe_only"
+    assert planner["official_metric"] is False
+    assert planner["raw_prompt_payload_written"] is False
+    assert planner["raw_response_payload_written"] is False
+    assert planner["retrieved_context_only_citation_policy"] == "diagnostic_only_never_promoted"
+    assert planner["planner_execution"] == {
+        "retrieval_executed": False,
+        "tool_call_executed": False,
+        "llm_retry_executed": False,
+        "extra_query_count_executed": 0,
+        "tool_call_count_executed": 0,
+        "llm_retry_count_executed": 0,
+    }
+    assert planner["guardrail_flags"] == {
+        "gold_or_qrels_mutation": False,
+        "expected_fields_used_for_planner_selection": False,
+        "query_id_used_for_planner_selection": False,
+        "row_id_used_for_planner_selection": False,
+        "target_id_used_for_planner_selection": False,
+        "qrels_used_for_planner_selection": False,
+        "labels_used_for_planner_selection": False,
+        "baseline_topk_or_legacy_outputs_used": False,
+        "row_specific_alias_or_shortcut_used": False,
+        "retrieval_executed": False,
+        "tool_call_executed": False,
+        "llm_retry_executed": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "evidence_gate_loosened": False,
+        "retrieved_context_only_citation_promoted": False,
+        "official_metric": False,
+        "production_routing_opened": False,
+        "protected_namespace_mutation": False,
+    }
+    assert planner["gate_before"]["allowed_answer_count"] == 5
+    assert planner["gate_before"]["unsupported_answer_blocked_count"] == 1
+    assert planner["gate_after_unchanged_because_dry_run"] == planner["gate_before"]
+    assert "agentic_planner_dry_run" not in baseline_report
+    assert planner["gate_after_unchanged_because_dry_run"]["allowed_answer_count"] == baseline_report["evidence_gate"]["allowed_answer_count"]
+    assert (
+        planner["gate_after_unchanged_because_dry_run"]["unsupported_answer_blocked_count"]
+        == baseline_report["evidence_gate"]["unsupported_answer_blocked_count"]
+    )
+    assert report["evidence_gate"]["allowed_answer_count"] == baseline_report["evidence_gate"]["allowed_answer_count"]
+    assert report["evidence_gate"]["unsupported_answer_blocked_count"] == baseline_report["evidence_gate"]["unsupported_answer_blocked_count"]
+    for baseline_row, dry_run_row in zip(baseline_report["items"], report["items"], strict=True):
+        assert dry_run_row["generated_answer"] == baseline_row["generated_answer"]
+        assert dry_run_row["citations"] == baseline_row["citations"]
+        assert dry_run_row["retrieved_contexts"] == baseline_row["retrieved_contexts"]
+        assert dry_run_row["evidence_gate"] == baseline_row["evidence_gate"]
+    assert report["metric_continuity_checkpoint"]["selected_evidence_gate_outcome_preserved"] is True
+    assert report["metric_continuity_checkpoint"]["retrieved_context_only_diagnostic_count"] == 0
+    entries_by_id = {entry["rule_id"]: entry for entry in report["heuristic_risk_ledger"]["entries"]}
+    assert entries_by_id["agentic_planner_dry_run"]["classification"] == "diagnostic_probe_only"
+    assert entries_by_id["agentic_planner_dry_run"]["uses_query_id_or_row_id_or_target_id"] is False
+
+    decision = planner["decisions"][0]
+    assert decision["failure_class"] == "missing_query_anchor"
+    assert decision["proposed_action"] == "query_text_only_reformulation"
+    assert decision["executed"] is False
+    assert decision["expected_extra_query_count"] == 1
+    assert decision["expected_tool_call_count"] == 0
+    forbidden_decision_keys = {
+        "case_id",
+        "query_id",
+        "row_id",
+        "target_id",
+        "answerability",
+        "answerability_label",
+        "expected_answer",
+        "expected_evidence",
+        "supporting_evidence",
+        "qrels",
+        "label",
+        "labels",
+        "baseline_topk",
+        "legacy_outputs",
+        "source_title",
+        "workbook",
+        "gold_locator",
+        "target_locator",
+        "normalized_value",
+        "formula",
+        "raw_prompt_payload",
+        "raw_response_payload",
+    }
+    assert forbidden_decision_keys.isdisjoint(decision)
+    serialized_report = dry_run_bundle.report_path.read_text(encoding="utf-8")
+    for forbidden_snippet in (
+        '"prompt":',
+        '"raw_prompt"',
+        '"raw_response"',
+        '"prompt_payload"',
+        '"response_payload"',
+        "Return exactly one JSON",
+        "Payload:",
+    ):
+        assert forbidden_snippet not in serialized_report
+    assert output_file_names(tmp_path / "reports" / "rag_eval" / "agentic_planner_dry_run") == ["report.json"]
+
+
+def test_agentic_planner_dry_run_does_not_execute_extra_weaviate_retrieval(tmp_path: Path) -> None:
+    dataset = tmp_path / "agentic_planner_weaviate_gold.jsonl"
+    write_jsonl(
+        dataset,
+        [
+            {"id": "safe_q", "query": "Project Orion April 2026", "answerability": "unknown"},
+            {
+                "id": "text_namu_v2_0014",
+                "query": "엑스맨 구십칠 등장인물 목록에 애드버서리는 어떤 식으로 올라와",
+                "answerability": "unknown",
+            },
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    objects = [
+        {
+            **weaviate_source_atom_record(1, text="Project Orion launch is scheduled for April 2026."),
+            "granularity": "paragraph",
+            "retrieval_route": "text_general",
+        },
+        {
+            **weaviate_source_atom_record(
+                2,
+                text="TV 애니메이션 시리즈 엑스맨 97의 첫 번째 시즌 개요다.",
+            ),
+            "source_atom_id": "srcatom-xmen-97-overview",
+            "evidence_bundle_id": "bundle-xmen-97-overview",
+            "doc_id": "doc-xmen-97-overview",
+            "chunk_id": "chunk-xmen-97-overview",
+            "title": "엑스맨 97",
+            "section": "개요",
+            "granularity": "paragraph",
+            "retrieval_route": "text_general",
+        },
+    ]
+
+    def make_adapter(client: FakeWeaviateSourceAtomClient) -> WeaviateSourceAtomAdapter:
+        return WeaviateSourceAtomAdapter(
+            config=config,
+            client=client,
+            embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+            requested_backend="weaviate-hybrid",
+            retrieval_route_mode="route_selected",
+            route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+        )
+
+    baseline_client = FakeWeaviateSourceAtomClient(objects=objects)
+    baseline_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_planner_weaviate_off",
+        top_k=1,
+        run_id="agentic_planner_weaviate_off",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=make_adapter(baseline_client),
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+    )
+    dry_run_client = FakeWeaviateSourceAtomClient(objects=objects)
+    dry_run_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_planner_weaviate_dry_run",
+        top_k=1,
+        run_id="agentic_planner_weaviate_dry_run",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=make_adapter(dry_run_client),
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        agentic_planner_mode="dry-run",
+    )
+
+    baseline_report = json.loads(baseline_bundle.report_path.read_text(encoding="utf-8"))
+    report = json.loads(dry_run_bundle.report_path.read_text(encoding="utf-8"))
+    planner = report["agentic_planner_dry_run"]
+    assert "agentic_planner_dry_run" not in baseline_report
+    assert dry_run_client.query_log == baseline_client.query_log
+    assert dry_run_client.upsert_log == []
+    assert dry_run_client.metadata_only_upsert_log == []
+    assert dry_run_client.local_scan_used is False
+    assert len(dry_run_client.query_log) >= 2
+    assert report["weaviate_filter_policy"]["route_mode"] == "route_selected"
+    for query_payload in dry_run_client.query_log:
+        assert query_payload["filters"]["namespace"] == "actual_rag_eval_nonprod"
+        assert query_payload["filters"]["visibility"] == "nonprod"
+        assert "source_family" in query_payload["filters"]
+        for forbidden in (
+            "query_id",
+            "row_id",
+            "target_id",
+            "expected_answer",
+            "expected_evidence",
+            "qrels",
+            "label",
+            "labels",
+            "baseline_topk",
+            "legacy_outputs",
+        ):
+            assert forbidden not in query_payload
+    assert planner["planner_execution"] == {
+        "retrieval_executed": False,
+        "tool_call_executed": False,
+        "llm_retry_executed": False,
+        "extra_query_count_executed": 0,
+        "tool_call_count_executed": 0,
+        "llm_retry_count_executed": 0,
+    }
+    assert planner["guardrail_flags"]["retrieval_executed"] is False
+    assert planner["guardrail_flags"]["tool_call_executed"] is False
+    assert planner["guardrail_flags"]["llm_retry_executed"] is False
+    assert planner["gate_after_unchanged_because_dry_run"] == planner["gate_before"]
+    assert report["evidence_gate"]["allowed_answer_count"] == baseline_report["evidence_gate"]["allowed_answer_count"]
+    assert (
+        report["evidence_gate"]["unsupported_answer_blocked_count"]
+        == baseline_report["evidence_gate"]["unsupported_answer_blocked_count"]
+    )
+    assert report["official_metric"] is False
+    assert report["raw_prompt_payload_written"] is False
+    assert report["raw_response_payload_written"] is False
+    assert planner["retrieved_context_only_citation_policy"] == "diagnostic_only_never_promoted"
+
+
+def test_agentic_planner_dry_run_ignores_scorer_failure_labels_for_selection() -> None:
+    summary = {
+        "run_id": "agentic_planner_label_guard",
+        "generator_config": {"selected_evidence_composer_invoked": True},
+        "evidence_gate": {"evidence_gate_mode": "enforce"},
+        "items": [
+            {
+                "id": "unsafe_label_row",
+                "query": "ordinary failed query",
+                "answer_gate_decision": "block_answer",
+                "failure_labels": ["collision", "answer_judge_fail", "evidence_not_retrieved"],
+                "evidence_gate": {
+                    "evidence_package_status": "sufficient",
+                    "unsupported_answer_blocked": False,
+                    "validation_reasons": [],
+                    "abstention_reasons": [],
+                    "unsupported_answer_reasons": [],
+                },
+                "retrieved_contexts": [],
+                "citations": [],
+            }
+        ],
+    }
+
+    planner = actual_rag_eval.build_agentic_planner_dry_run_report(summary, mode="dry-run")
+
+    assert planner["planner_failure_class_counts"] == {"no_safe_action": 1}
+    assert planner["planner_action_counts"] == {"deterministic_abstain": 1}
+    decision = planner["decisions"][0]
+    assert decision["failure_class"] == "no_safe_action"
+    assert decision["proposed_action"] == "deterministic_abstain"
+
+
+def test_agentic_planner_execute_once_runs_one_bounded_query_text_probe_and_regates(tmp_path: Path) -> None:
+    class RouteProbeAdapter:
+        requested_backend = "hybrid"
+
+        def __init__(self) -> None:
+            self.query_log: list[dict[str, object]] = []
+
+        @property
+        def config(self) -> dict[str, object]:
+            return {
+                "adapter": "route_probe_adapter",
+                "candidate_generation_input_policy": "query_text_only_no_reference_fields",
+            }
+
+        @property
+        def retrieval_backend_report(self) -> dict[str, object]:
+            return {
+                "requested": self.requested_backend,
+                "selected": "hybrid",
+                "bm25_enabled": True,
+                "vector_enabled": False,
+                "hybrid_enabled": True,
+                "embedding_model": "none",
+                "embedding_device": "none",
+                "gpu_used_for_embedding": False,
+                "vector_index_kind": "none",
+                "vector_index_type": "none",
+                "vector_dim": 0,
+                "indexed_unit_count": 2,
+                "query_count": len(self.query_log),
+                "fallback_reason": "",
+            }
+
+        def run_item(self, item: object, *, top_k: int) -> dict[str, object]:
+            query = str(getattr(item, "query", ""))
+            self.query_log.append(
+                {
+                    "query_text": query,
+                    "top_k": top_k,
+                    "item_id": str(getattr(item, "id", "")),
+                    "expected_answer": str(getattr(item, "expected_answer", "")),
+                }
+            )
+            wrong = {
+                "rank": 1,
+                "doc_id": "doc-orion",
+                "chunk_id": "chunk-wrong",
+                "source_atom_id": "src-orion-wrong",
+                "evidence_bundle_id": "bundle-orion-wrong",
+                "source_family": "TEXT",
+                "granularity": "paragraph",
+                "text": "Project Orion launch was delayed.",
+            }
+            right = {
+                "rank": 2,
+                "doc_id": "doc-orion",
+                "chunk_id": "chunk-right",
+                "source_atom_id": "src-orion-right",
+                "evidence_bundle_id": "bundle-orion-right",
+                "source_family": "TEXT",
+                "granularity": "paragraph",
+                "text": "Project Orion 2026 launch is scheduled.",
+            }
+            contexts = [wrong] if top_k <= 1 else [wrong, right]
+            return {
+                "id": str(getattr(item, "id", "")),
+                "query": query,
+                "answerability": str(getattr(item, "answerability", "unknown")) or "unknown",
+                "generated_answer": contexts[0]["text"],
+                "retrieved_contexts": [dict(context) for context in contexts],
+                "citations": [dict(context) for context in contexts],
+                "diagnostics": {
+                    "retrieval_empty": False,
+                    "generation_empty": False,
+                    "citation_empty": False,
+                    "gold_incomplete": True,
+                },
+            }
+
+    dataset = tmp_path / "agentic_execute_once_gold.jsonl"
+    write_jsonl(dataset, [{"id": "orion_q", "query": "Project Orion 2026", "answerability": "unknown"}])
+    baseline_adapter = RouteProbeAdapter()
+    baseline_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_execute_once_off",
+        top_k=1,
+        run_id="agentic_execute_once_off",
+        output_mode="single",
+        retrieval_adapter=baseline_adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+    )
+    execute_adapter = RouteProbeAdapter()
+    execute_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_execute_once",
+        top_k=1,
+        run_id="agentic_execute_once",
+        output_mode="single",
+        retrieval_adapter=execute_adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        agentic_planner_mode="execute-once",
+    )
+
+    baseline_report = json.loads(baseline_bundle.report_path.read_text(encoding="utf-8"))
+    report = json.loads(execute_bundle.report_path.read_text(encoding="utf-8"))
+    planner = report["agentic_planner_execute_once"]
+    assert "agentic_planner_execute_once" not in baseline_report
+    assert baseline_adapter.query_log == [
+        {
+            "query_text": "Project Orion 2026",
+            "top_k": 1,
+            "item_id": "orion_q",
+            "expected_answer": "",
+        }
+    ]
+    assert execute_adapter.query_log == [
+        {
+            "query_text": "Project Orion 2026",
+            "top_k": 1,
+            "item_id": "orion_q",
+            "expected_answer": "",
+        },
+        {
+            "query_text": "Project Orion 2026",
+            "top_k": 2,
+            "item_id": "",
+            "expected_answer": "",
+        },
+    ]
+    assert baseline_report["evidence_gate"]["allowed_answer_count"] == 0
+    assert baseline_report["evidence_gate"]["unsupported_answer_blocked_count"] == 1
+    assert report["evidence_gate"]["allowed_answer_count"] == 1
+    assert report["evidence_gate"]["unsupported_answer_blocked_count"] == 0
+    assert planner["planner_enabled"] is True
+    assert planner["planner_mode"] == "execute-once"
+    assert planner["planner_decision_count"] == 1
+    assert planner["planner_executed_decision_count"] == 1
+    assert planner["planner_action_counts"] == {"query_text_only_reformulation": 1}
+    assert planner["planner_failure_class_counts"] == {"missing_query_anchor": 1}
+    assert planner["planner_execution"] == {
+        "retrieval_executed": True,
+        "tool_call_executed": False,
+        "llm_retry_executed": False,
+        "extra_query_count_executed": 1,
+        "tool_call_count_executed": 0,
+        "llm_retry_count_executed": 0,
+    }
+    assert planner["gate_before"]["allowed_answer_count"] == 0
+    assert planner["gate_after"]["allowed_answer_count"] == 1
+    assert planner["gate_delta"]["allowed_answer_count_delta"] == 1
+    assert planner["official_metric"] is False
+    assert planner["raw_prompt_payload_written"] is False
+    assert planner["raw_response_payload_written"] is False
+    assert planner["guardrail_mutation_flags"]["gate_loosened"] is False
+    assert planner["guardrail_mutation_flags"]["retrieved_context_only_citation_promoted"] is False
+    loop_review = report["agentic_loop_review"]
+    assert loop_review["schema_version"] == "actual_rag_eval.agentic_loop_review.v1"
+    assert loop_review["review_only"] is True
+    assert loop_review["official_metric"] is False
+    assert loop_review["broader_agent_loop_ready"] is False
+    assert loop_review["broader_agent_loop_opened"] is False
+    assert loop_review["production_routing_opened"] is False
+    assert loop_review["raw_prompt_payload_written"] is False
+    assert loop_review["raw_response_payload_written"] is False
+    assert loop_review["retrieved_context_only_citation_promoted"] is False
+    assert loop_review["gate_loosened"] is False
+    assert loop_review["bounded_action_evidence"]["planner_mode"] == "execute-once"
+    assert loop_review["bounded_action_evidence"]["quality_improvement_measured"] is True
+    assert loop_review["bounded_action_evidence"]["gate_delta"]["allowed_answer_count_delta"] == 1
+    assert loop_review["recommendation"] == (
+        "keep_broader_agent_loop_closed_continue_bounded_execute_once_evidence_gate_checkpoints"
+    )
+    assert "fresh_live_text_gold_report_with_weaviate_reachable" in loop_review["required_before_broader_loop"]
+    decision = planner["decisions"][0]
+    assert decision["executed"] is True
+    assert decision["proposed_action"] == "query_text_only_reformulation"
+    assert decision["execution_status"] == "executed"
+    assert "query_id" not in decision
+    assert "expected_answer" not in decision
+    assert output_file_names(tmp_path / "reports" / "rag_eval" / "agentic_execute_once") == ["report.json"]
+
+
+def test_agentic_planner_execute_once_defers_pdf_locator_tool_without_execution_gate(tmp_path: Path) -> None:
+    class PdfToolAdapter:
+        requested_backend = "hybrid"
+
+        def __init__(self) -> None:
+            self.query_log: list[dict[str, object]] = []
+
+        @property
+        def config(self) -> dict[str, object]:
+            return {
+                "adapter": "pdf_tool_adapter",
+                "candidate_generation_input_policy": "query_text_only_no_reference_fields",
+            }
+
+        @property
+        def retrieval_backend_report(self) -> dict[str, object]:
+            return {
+                "requested": self.requested_backend,
+                "selected": "hybrid",
+                "bm25_enabled": True,
+                "vector_enabled": False,
+                "hybrid_enabled": True,
+                "embedding_model": "none",
+                "embedding_device": "none",
+                "gpu_used_for_embedding": False,
+                "vector_index_kind": "none",
+                "vector_index_type": "none",
+                "vector_dim": 0,
+                "indexed_unit_count": 1,
+                "query_count": len(self.query_log),
+                "fallback_reason": "",
+            }
+
+        def run_item(self, item: object, *, top_k: int) -> dict[str, object]:
+            query = str(getattr(item, "query", ""))
+            self.query_log.append(
+                {
+                    "query_text": query,
+                    "top_k": top_k,
+                    "item_id": str(getattr(item, "id", "")),
+                    "expected_answer": str(getattr(item, "expected_answer", "")),
+                }
+            )
+            context = {
+                "rank": 1,
+                "doc_id": "doc-nebula-pdf",
+                "chunk_id": "page-7-summary",
+                "source_atom_id": "src-nebula-pdf-summary",
+                "evidence_bundle_id": "bundle-nebula-pdf-summary",
+                "source_family": "PDF",
+                "granularity": "page_summary",
+                "page_number": 7,
+                "text": "Nebula launch details are on the scanned page.",
+                "pdf_locator_text": "Nebula 2026 launch approval is final.",
+            }
+            return {
+                "id": str(getattr(item, "id", "")),
+                "query": query,
+                "answerability": str(getattr(item, "answerability", "unknown")) or "unknown",
+                "generated_answer": context["text"],
+                "retrieved_contexts": [dict(context)],
+                "citations": [dict(context)],
+                "diagnostics": {
+                    "retrieval_empty": False,
+                    "generation_empty": False,
+                    "citation_empty": False,
+                    "gold_incomplete": True,
+                },
+            }
+
+    dataset = tmp_path / "agentic_pdf_tool_gold.jsonl"
+    write_jsonl(dataset, [{"id": "pdf_q", "query": "Nebula 2026", "answerability": "unknown"}])
+    baseline_adapter = PdfToolAdapter()
+    baseline_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_pdf_tool_off",
+        top_k=1,
+        run_id="agentic_pdf_tool_off",
+        output_mode="single",
+        retrieval_adapter=baseline_adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+    )
+    execute_adapter = PdfToolAdapter()
+    execute_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_pdf_tool_execute_once",
+        top_k=1,
+        run_id="agentic_pdf_tool_execute_once",
+        output_mode="single",
+        retrieval_adapter=execute_adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        agentic_planner_mode="execute-once",
+    )
+
+    baseline_report = json.loads(baseline_bundle.report_path.read_text(encoding="utf-8"))
+    report = json.loads(execute_bundle.report_path.read_text(encoding="utf-8"))
+    planner = report["agentic_planner_execute_once"]
+    assert baseline_adapter.query_log == [
+        {
+            "query_text": "Nebula 2026",
+            "top_k": 1,
+            "item_id": "pdf_q",
+            "expected_answer": "",
+        }
+    ]
+    assert execute_adapter.query_log == baseline_adapter.query_log
+    assert baseline_report["evidence_gate"]["allowed_answer_count"] == 0
+    assert baseline_report["evidence_gate"]["unsupported_answer_blocked_count"] == 1
+    assert report["evidence_gate"]["allowed_answer_count"] == 0
+    assert report["evidence_gate"]["unsupported_answer_blocked_count"] == 1
+    assert planner["planner_action_counts"] == {"pdf_locator_tool": 1}
+    assert planner["planner_failure_class_counts"] == {"tool_required_pdf": 1}
+    assert planner["planner_execution"] == {
+        "retrieval_executed": False,
+        "tool_call_executed": False,
+        "llm_retry_executed": False,
+        "extra_query_count_executed": 0,
+        "tool_call_count_executed": 0,
+        "llm_retry_count_executed": 0,
+    }
+    assert planner["gate_delta"]["allowed_answer_count_delta"] == 0
+    assert planner["guardrail_mutation_flags"]["gate_loosened"] is False
+    assert planner["guardrail_mutation_flags"]["retrieved_context_only_citation_promoted"] is False
+    decision = planner["decisions"][0]
+    assert decision["executed"] is False
+    assert decision["proposed_action"] == "pdf_locator_tool"
+    assert decision["execution_status"] == "deferred_requires_explicit_execution_gate"
+    assert decision["expected_extra_query_count"] == 0
+    assert decision["expected_tool_call_count"] == 1
+    assert decision["tool_call_count_executed"] == 0
+    assert decision["execution_gate_required"] is True
+    assert "agentic_planner_tool_use" not in report["items"][0]
+    assert "Nebula 2026" not in report["items"][0]["retrieved_contexts"][0]["text"]
+    assert "query_id" not in decision
+    assert "expected_answer" not in decision
+    assert output_file_names(tmp_path / "reports" / "rag_eval" / "agentic_pdf_tool_execute_once") == ["report.json"]
+
+
+def test_agentic_planner_execute_once_defers_llm_retry_without_execution_gate(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class NoRetrievalAdapter:
+        def __init__(self) -> None:
+            self.query_log: list[dict[str, object]] = []
+
+        def run_item(self, *_args: object, **_kwargs: object) -> dict[str, object]:
+            self.query_log.append({"unexpected": True})
+            raise AssertionError("LLM retry must not execute retrieval")
+
+    selected_context = {
+        "doc_id": "doc-hq",
+        "chunk_id": "chunk-hq",
+        "source_atom_id": "src-hq",
+        "evidence_bundle_id": "bundle-hq",
+        "source_family": "TEXT",
+        "granularity": "paragraph",
+        "text": "Apollo HQ is in Seoul.",
+        "text_sha256": "hash-hq",
+    }
+    gated_row = {
+        "id": "q-local-retry",
+        "query": "Where is Apollo HQ?",
+        "answerability": "unknown",
+        "generated_answer": actual_rag_eval.BOUNDED_EVIDENCE_ABSTENTION_ANSWER,
+        actual_rag_eval.INTERNAL_PRE_GATE_ANSWER_KEY: "Apollo HQ is in Busan.",
+        "retrieved_contexts": [dict(selected_context)],
+        "citations": [dict(selected_context)],
+        "answer_gate_decision": "block_unsupported_answer",
+        "answer_modified_by_gate": True,
+        "unsupported_answer_blocked": True,
+        "evidence_gate": {
+            "evidence_package_status": "sufficient",
+            "answer_gate_decision": "block_unsupported_answer",
+            "unsupported_answer_blocked": True,
+            "abstention_reason": "citation_unsupported",
+            "validation_reasons": ["citation_unsupported"],
+            "unsupported_answer_reasons": ["citation_unsupported"],
+            "selected_evidence": [dict(selected_context)],
+            "missing_query_anchors": [],
+            "citation_retrieved_context_only_diagnostic_count": 0,
+        },
+    }
+    captured_prompts: list[str] = []
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**kwargs: object) -> tuple[dict, dict]:
+        prompt = str(kwargs["prompt"])
+        captured_prompts.append(prompt)
+        return (
+            {
+                "answer": "Apollo HQ is in Seoul.",
+                "citation_evidence_ids": ["bundle-hq"],
+            },
+            {
+                "raw_response_sha256": "sha256:planner-retry-response",
+                "strict_json": True,
+            },
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    updated_rows, planner = actual_rag_eval.apply_agentic_planner_execute_once_to_outputs(
+        [gated_row],
+        adapter=NoRetrievalAdapter(),
+        top_k=1,
+        evidence_gate_mode="enforce",
+        citation_format="evidence-id",
+        skip_local_llm_endpoint_check=True,
+    )
+
+    updated = updated_rows[0]
+    decision = planner["decisions"][0]
+    actual_rag_eval.validate_agentic_planner_execute_once("planner_llm_retry", planner)
+    assert captured_prompts == []
+    assert planner["planner_action_counts"] == {"selected_evidence_llm_rewrite": 1}
+    assert planner["planner_failure_class_counts"] == {"unsupported_generation": 1}
+    assert planner["planner_expected_llm_retry_count"] == 1
+    assert planner["planner_execution"] == {
+        "retrieval_executed": False,
+        "tool_call_executed": False,
+        "llm_retry_executed": False,
+        "extra_query_count_executed": 0,
+        "tool_call_count_executed": 0,
+        "llm_retry_count_executed": 0,
+    }
+    assert planner["gate_delta"]["allowed_answer_count_delta"] == 0
+    assert planner["guardrail_mutation_flags"]["gate_loosened"] is False
+    assert planner["guardrail_mutation_flags"]["retrieved_context_only_citation_promoted"] is False
+    assert decision["executed"] is False
+    assert decision["proposed_action"] == "selected_evidence_llm_rewrite"
+    assert decision["execution_status"] == "deferred_requires_explicit_execution_gate"
+    assert decision["expected_llm_retry_count"] == 1
+    assert decision["llm_retry_count_executed"] == 0
+    assert decision["execution_gate_required"] is True
+    assert "query_id" not in decision
+    assert "expected_answer" not in decision
+    assert updated["generated_answer"] == actual_rag_eval.BOUNDED_EVIDENCE_ABSTENTION_ANSWER
+    assert updated["answer_gate_decision"] == "block_unsupported_answer"
+    assert updated["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
+    assert "agentic_planner_llm_retry" not in updated
+
+
+def test_agentic_planner_execute_once_defers_run_local_selected_evidence_memory_without_execution_gate() -> None:
+    class NoRetrievalAdapter:
+        def __init__(self) -> None:
+            self.query_log: list[dict[str, object]] = []
+
+        def run_item(self, *_args: object, **_kwargs: object) -> dict[str, object]:
+            self.query_log.append({"unexpected": True})
+            raise AssertionError("run-local memory must not execute retrieval")
+
+    adapter = NoRetrievalAdapter()
+    memory_context = {
+        "doc_id": "doc-hq",
+        "chunk_id": "chunk-hq",
+        "source_atom_id": "src-hq",
+        "evidence_bundle_id": "bundle-hq",
+        "source_family": "TEXT",
+        "granularity": "paragraph",
+        "text": "Apollo HQ is in Seoul.",
+        "text_sha256": "hash-hq",
+    }
+    allowed_memory_source = {
+        "id": "memory-source-row-id-must-not-be-used",
+        "query": "Apollo HQ location",
+        "answerability": "unknown",
+        "generated_answer": "**Short answer:** Apollo HQ is in Seoul.",
+        "retrieved_contexts": [dict(memory_context)],
+        "citations": [dict(memory_context)],
+        "answer_gate_decision": "allow_answer",
+        "answer_modified_by_gate": False,
+        "unsupported_answer_blocked": False,
+        "evidence_gate": {
+            "evidence_package_status": "sufficient",
+            "answer_gate_decision": "allow_answer",
+            "unsupported_answer_blocked": False,
+            "selected_evidence": [dict(memory_context)],
+            "validation_reasons": [],
+            "citation_supported_count": 1,
+            "citation_retrieved_context_only_diagnostic_count": 0,
+        },
+    }
+    failed_target = {
+        "id": "memory-target-row-id-must-not-be-used",
+        "query": "Where is Apollo HQ?",
+        "answerability": "unknown",
+        "generated_answer": actual_rag_eval.BOUNDED_EVIDENCE_ABSTENTION_ANSWER,
+        "retrieved_contexts": [],
+        "citations": [],
+        "answer_gate_decision": "block_unsupported_answer",
+        "answer_modified_by_gate": True,
+        "unsupported_answer_blocked": True,
+        "evidence_gate": {
+            "evidence_package_status": "insufficient",
+            "answer_gate_decision": "block_unsupported_answer",
+            "unsupported_answer_blocked": True,
+            "abstention_reason": "insufficient_evidence",
+            "validation_reasons": ["no_selected_evidence"],
+            "selected_evidence": [],
+            "citation_retrieved_context_only_diagnostic_count": 0,
+        },
+    }
+
+    updated_rows, planner = actual_rag_eval.apply_agentic_planner_execute_once_to_outputs(
+        [allowed_memory_source, failed_target],
+        adapter=adapter,
+        top_k=1,
+        evidence_gate_mode="enforce",
+        citation_format="evidence-id",
+    )
+
+    decision = planner["decisions"][0]
+    updated = updated_rows[1]
+    actual_rag_eval.validate_agentic_planner_execute_once("planner_run_local_memory", planner)
+    assert adapter.query_log == []
+    assert planner["planner_action_counts"] == {"run_local_memory_reuse": 1}
+    assert planner["planner_failure_class_counts"] == {"insufficient_evidence": 1}
+    assert planner["planner_expected_memory_lookup_count"] == 1
+    assert planner["planner_memory_lookup_count_executed"] == 0
+    assert planner["planner_execution"] == {
+        "retrieval_executed": False,
+        "tool_call_executed": False,
+        "llm_retry_executed": False,
+        "extra_query_count_executed": 0,
+        "tool_call_count_executed": 0,
+        "llm_retry_count_executed": 0,
+    }
+    assert planner["gate_before"]["allowed_answer_count"] == 1
+    assert planner["gate_after"]["allowed_answer_count"] == 1
+    assert planner["gate_delta"]["allowed_answer_count_delta"] == 0
+    assert planner["gate_delta"]["unsupported_answer_blocked_count_delta"] == 0
+    assert decision["executed"] is False
+    assert decision["proposed_action"] == "run_local_memory_reuse"
+    assert decision["execution_status"] == "deferred_requires_explicit_execution_gate"
+    assert decision["memory_lookup_count_executed"] == 0
+    assert decision["execution_gate_required"] is True
+    assert "query_id" not in decision
+    assert "row_id" not in decision
+    assert "target_id" not in decision
+    assert "expected_answer" not in decision
+    assert updated["generated_answer"] == actual_rag_eval.BOUNDED_EVIDENCE_ABSTENTION_ANSWER
+    assert updated["answer_gate_decision"] == "block_unsupported_answer"
+    assert updated["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
+    assert "agentic_planner_run_local_memory" not in updated
+
+
+def test_agentic_planner_dry_run_does_not_reuse_memory_when_missing_anchor_is_uncovered() -> None:
+    memory_context = {
+        "doc_id": "doc-hq",
+        "chunk_id": "chunk-hq",
+        "source_atom_id": "src-hq",
+        "evidence_bundle_id": "bundle-hq",
+        "source_family": "TEXT",
+        "granularity": "paragraph",
+        "text": "Apollo HQ is in Seoul.",
+        "text_sha256": "hash-hq",
+    }
+    allowed_memory_source = {
+        "id": "memory-source-row-id-must-not-be-used",
+        "query": "Apollo HQ location",
+        "answerability": "unknown",
+        "generated_answer": "**Short answer:** Apollo HQ is in Seoul.",
+        "retrieved_contexts": [dict(memory_context)],
+        "citations": [dict(memory_context)],
+        "answer_gate_decision": "allow_answer",
+        "evidence_gate": {
+            "evidence_package_status": "sufficient",
+            "answer_gate_decision": "allow_answer",
+            "selected_evidence": [dict(memory_context)],
+            "validation_reasons": [],
+            "citation_supported_count": 1,
+            "citation_retrieved_context_only_diagnostic_count": 0,
+        },
+    }
+    failed_target = {
+        "id": "memory-target-row-id-must-not-be-used",
+        "query": "Where is Apollo HQ Atlas?",
+        "answerability": "unknown",
+        "generated_answer": actual_rag_eval.BOUNDED_EVIDENCE_ABSTENTION_ANSWER,
+        "retrieved_contexts": [],
+        "citations": [],
+        "answer_gate_decision": "block_unsupported_answer",
+        "evidence_gate": {
+            "evidence_package_status": "insufficient",
+            "answer_gate_decision": "block_unsupported_answer",
+            "abstention_reason": "missing_query_anchor",
+            "validation_reasons": ["missing_query_anchor"],
+            "missing_query_anchors": ["Atlas"],
+            "selected_evidence": [],
+            "citation_retrieved_context_only_diagnostic_count": 0,
+        },
+    }
+    summary = {
+        "run_id": "agentic_planner_memory_anchor_guard",
+        "items": [allowed_memory_source, failed_target],
+        "generator_config": {"selected_evidence_composer_invoked": True},
+        "evidence_gate": {"evidence_gate_mode": "enforce"},
+    }
+
+    planner = actual_rag_eval.build_agentic_planner_dry_run_report(summary, mode="dry-run")
+
+    decision = planner["decisions"][0]
+    assert decision["proposed_action"] == "query_text_only_reformulation"
+    assert decision["expected_memory_lookup_count"] == 0
+    assert planner["planner_action_counts"] == {"query_text_only_reformulation": 1}
+    assert planner["planner_expected_memory_lookup_count"] == 0
+
+
+def test_agentic_planner_mode_parser_default_and_choices() -> None:
+    parser = build_parser()
+    assert parser.parse_args(["--dataset", "gold.jsonl"]).agentic_planner_mode == "off"
+    assert (
+        parser.parse_args(["--dataset", "gold.jsonl", "--agentic-planner-mode", "dry-run"]).agentic_planner_mode
+        == "dry-run"
+    )
+    assert (
+        parser.parse_args(["--dataset", "gold.jsonl", "--agentic-planner-mode", "execute-once"]).agentic_planner_mode
+        == "execute-once"
+    )
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--dataset", "gold.jsonl", "--agentic-planner-mode", "execute-twice"])
+
+
+def _minimal_agentic_planner_guardrail_summary() -> dict[str, object]:
+    planner = {
+        "schema_version": "actual_rag_eval.agentic_planner_dry_run.v1",
+        "planner_enabled": True,
+        "planner_mode": "dry-run",
+        "planner_version": "actual_rag_eval.agentic_planner_dry_run.v1",
+        "ran_after_selected_evidence_composer": True,
+        "ran_after_evidence_gate": True,
+        "planner_decision_count": 1,
+        "planner_action_counts": {"deterministic_abstain": 1},
+        "planner_failure_class_counts": {"no_safe_action": 1},
+        "planner_no_safe_action_count": 1,
+        "planner_forbidden_shortcut_detected_count": 0,
+        "planner_expected_extra_query_count": 0,
+        "planner_expected_tool_call_count": 0,
+        "planner_expected_llm_retry_count": 0,
+        "planner_heuristic_risk_class": "diagnostic_probe_only",
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "retrieved_context_only_citation_policy": "diagnostic_only_never_promoted",
+        "planner_execution": {
+            "retrieval_executed": False,
+            "tool_call_executed": False,
+            "llm_retry_executed": False,
+            "extra_query_count_executed": 0,
+            "tool_call_count_executed": 0,
+            "llm_retry_count_executed": 0,
+        },
+        "guardrail_flags": {
+            "gold_or_qrels_mutation": False,
+            "expected_fields_used_for_planner_selection": False,
+            "query_id_used_for_planner_selection": False,
+            "row_id_used_for_planner_selection": False,
+            "target_id_used_for_planner_selection": False,
+            "qrels_used_for_planner_selection": False,
+            "labels_used_for_planner_selection": False,
+            "baseline_topk_or_legacy_outputs_used": False,
+            "row_specific_alias_or_shortcut_used": False,
+            "retrieval_executed": False,
+            "tool_call_executed": False,
+            "llm_retry_executed": False,
+            "raw_prompt_payload_written": False,
+            "raw_response_payload_written": False,
+            "evidence_gate_loosened": False,
+            "retrieved_context_only_citation_promoted": False,
+            "official_metric": False,
+            "production_routing_opened": False,
+            "protected_namespace_mutation": False,
+        },
+        "gate_before": {"allowed_answer_count": 5, "unsupported_answer_blocked_count": 1},
+        "gate_after_unchanged_because_dry_run": {"allowed_answer_count": 5, "unsupported_answer_blocked_count": 1},
+        "decisions": [
+            {
+                "item_index": 0,
+                "query_sha256": "sha256:test",
+                "query_preview": "test",
+                "failure_class": "no_safe_action",
+                "proposed_action": "deterministic_abstain",
+                "expected_extra_query_count": 0,
+                "expected_tool_call_count": 0,
+                "expected_llm_retry_count": 0,
+                "executed": False,
+            }
+        ],
+    }
+    return {
+        "run_id": "guarded_planner",
+        "official_metric_input_rows": 0,
+        "official_metric_input_rows_created": 0,
+        "official_metric_input_rows_consumed": 0,
+        "protected_namespaces_touched": [],
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "guardrails": {
+            "gold_mutation": False,
+            "qrels_mutation": False,
+            "label_mutation": False,
+            "answerability_label_mutation": False,
+            "expected_answer_mutation": False,
+            "expected_evidence_mutation": False,
+            "denominator_mutation": False,
+            "retriever_ranking_improvement": False,
+            "official_metric": False,
+            "promotion_evidence": False,
+            "product_success_evidence_allowed": False,
+            "live_readiness_claim": False,
+        },
+        "agentic_planner_dry_run": planner,
+    }
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "match"),
+    [
+        ("retrieval_executed", True, "retrieval_executed"),
+        ("tool_call_executed", True, "tool_call_executed"),
+        ("llm_retry_executed", True, "llm_retry_executed"),
+        ("extra_query_count_executed", 1, "extra_query_count_executed"),
+        ("tool_call_count_executed", 1, "tool_call_count_executed"),
+        ("llm_retry_count_executed", 1, "llm_retry_count_executed"),
+    ],
+)
+def test_validate_actual_rag_guardrails_rejects_agentic_planner_execution_mutation(
+    field: str,
+    value: object,
+    match: str,
+) -> None:
+    summary = _minimal_agentic_planner_guardrail_summary()
+    planner = summary["agentic_planner_dry_run"]
+    assert isinstance(planner, dict)
+    planner["planner_execution"][field] = value
+
+    with pytest.raises(DatasetSchemaError, match=match):
+        validate_actual_rag_guardrails(summary)
+
+
+def test_validate_actual_rag_guardrails_rejects_agentic_planner_gate_mutation() -> None:
+    summary = _minimal_agentic_planner_guardrail_summary()
+    planner = summary["agentic_planner_dry_run"]
+    assert isinstance(planner, dict)
+    planner["gate_after_unchanged_because_dry_run"] = {"allowed_answer_count": 6}
+
+    with pytest.raises(DatasetSchemaError, match="gate_after"):
+        validate_actual_rag_guardrails(summary)
+
+
+def test_validate_actual_rag_guardrails_rejects_agentic_planner_executed_decision() -> None:
+    summary = _minimal_agentic_planner_guardrail_summary()
+    planner = summary["agentic_planner_dry_run"]
+    assert isinstance(planner, dict)
+    planner["decisions"][0]["executed"] = True
+
+    with pytest.raises(DatasetSchemaError, match="executed"):
+        validate_actual_rag_guardrails(summary)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "match"),
+    [
+        ("broader_agent_loop_ready", True, "broader_agent_loop_ready"),
+        ("broader_agent_loop_opened", True, "broader_agent_loop_opened"),
+        ("production_routing_opened", True, "production_routing_opened"),
+        ("raw_prompt_payload_written", True, "raw_prompt_payload_written"),
+        ("raw_response_payload_written", True, "raw_response_payload_written"),
+        ("retrieved_context_only_citation_promoted", True, "retrieved_context_only_citation_promoted"),
+        ("gate_loosened", True, "gate_loosened"),
+        (
+            "gold_or_qrels_or_labels_or_expected_or_denominator_mutation",
+            True,
+            "gold_or_qrels_or_labels_or_expected_or_denominator_mutation",
+        ),
+    ],
+)
+def test_validate_actual_rag_guardrails_rejects_agentic_loop_review_opening(
+    field: str,
+    value: object,
+    match: str,
+) -> None:
+    summary = _minimal_agentic_planner_guardrail_summary()
+    summary["agentic_loop_review"] = actual_rag_eval.build_agentic_loop_review(summary)
+    assert summary["agentic_loop_review"]["broader_agent_loop_ready"] is False
+    validate_actual_rag_guardrails(summary)
+    assert isinstance(summary["agentic_loop_review"], dict)
+    summary["agentic_loop_review"][field] = value
+
+    with pytest.raises(DatasetSchemaError, match=match):
+        validate_actual_rag_guardrails(summary)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "match"),
+    [
+        ("query_id_used_for_planner_selection", True, "query_id_used_for_planner_selection"),
+        ("row_id_used_for_planner_selection", True, "row_id_used_for_planner_selection"),
+        ("target_id_used_for_planner_selection", True, "target_id_used_for_planner_selection"),
+        ("expected_fields_used_for_planner_selection", True, "expected_fields_used_for_planner_selection"),
+        ("qrels_used_for_planner_selection", True, "qrels_used_for_planner_selection"),
+        ("labels_used_for_planner_selection", True, "labels_used_for_planner_selection"),
+        ("baseline_topk_or_legacy_outputs_used", True, "baseline_topk_or_legacy_outputs_used"),
+        ("row_specific_alias_or_shortcut_used", True, "row_specific_alias_or_shortcut_used"),
+        ("retrieval_executed", True, "retrieval_executed"),
+        ("tool_call_executed", True, "tool_call_executed"),
+        ("llm_retry_executed", True, "llm_retry_executed"),
+        ("raw_prompt_payload_written", True, "raw_prompt_payload_written"),
+        ("raw_response_payload_written", True, "raw_response_payload_written"),
+        ("evidence_gate_loosened", True, "evidence_gate_loosened"),
+        ("retrieved_context_only_citation_promoted", True, "retrieved_context_only_citation_promoted"),
+        ("official_metric", True, "official_metric"),
+    ],
+)
+def test_validate_actual_rag_guardrails_rejects_forbidden_agentic_planner_flags(
+    field: str,
+    value: object,
+    match: str,
+) -> None:
+    guardrail_flags = {
+        "gold_or_qrels_mutation": False,
+        "expected_fields_used_for_planner_selection": False,
+        "query_id_used_for_planner_selection": False,
+        "row_id_used_for_planner_selection": False,
+        "target_id_used_for_planner_selection": False,
+        "qrels_used_for_planner_selection": False,
+        "labels_used_for_planner_selection": False,
+        "baseline_topk_or_legacy_outputs_used": False,
+        "row_specific_alias_or_shortcut_used": False,
+        "retrieval_executed": False,
+        "tool_call_executed": False,
+        "llm_retry_executed": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "evidence_gate_loosened": False,
+        "retrieved_context_only_citation_promoted": False,
+        "official_metric": False,
+        "production_routing_opened": False,
+        "protected_namespace_mutation": False,
+    }
+    guardrail_flags[field] = value
+    planner = {
+        "schema_version": "actual_rag_eval.agentic_planner_dry_run.v1",
+        "planner_enabled": True,
+        "planner_mode": "dry-run",
+        "planner_version": "actual_rag_eval.agentic_planner_dry_run.v1",
+        "ran_after_selected_evidence_composer": True,
+        "ran_after_evidence_gate": True,
+        "planner_decision_count": 1,
+        "planner_action_counts": {"deterministic_abstain": 1},
+        "planner_failure_class_counts": {"no_safe_action": 1},
+        "planner_no_safe_action_count": 1,
+        "planner_forbidden_shortcut_detected_count": 0,
+        "planner_expected_extra_query_count": 0,
+        "planner_expected_tool_call_count": 0,
+        "planner_heuristic_risk_class": "diagnostic_probe_only",
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "retrieved_context_only_citation_policy": "diagnostic_only_never_promoted",
+        "planner_execution": {
+            "retrieval_executed": False,
+            "tool_call_executed": False,
+            "llm_retry_executed": False,
+            "extra_query_count_executed": 0,
+            "tool_call_count_executed": 0,
+            "llm_retry_count_executed": 0,
+        },
+        "guardrail_flags": guardrail_flags,
+        "gate_before": {},
+        "gate_after_unchanged_because_dry_run": {},
+        "decisions": [
+            {
+                "item_index": 0,
+                "query_sha256": "sha256:test",
+                "query_preview": "test",
+                "failure_class": "no_safe_action",
+                "proposed_action": "deterministic_abstain",
+                "expected_extra_query_count": 0,
+                "expected_tool_call_count": 0,
+                "executed": False,
+            }
+        ],
+    }
+    summary = {
+        "run_id": "guarded_planner",
+        "official_metric_input_rows": 0,
+        "official_metric_input_rows_created": 0,
+        "official_metric_input_rows_consumed": 0,
+        "protected_namespaces_touched": [],
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "guardrails": {
+            "gold_mutation": False,
+            "qrels_mutation": False,
+            "label_mutation": False,
+            "answerability_label_mutation": False,
+            "expected_answer_mutation": False,
+            "expected_evidence_mutation": False,
+            "denominator_mutation": False,
+            "retriever_ranking_improvement": False,
+            "official_metric": False,
+            "promotion_evidence": False,
+            "product_success_evidence_allowed": False,
+            "live_readiness_claim": False,
+        },
+        "agentic_planner_dry_run": planner,
+    }
+
+    with pytest.raises(DatasetSchemaError, match=match):
+        validate_actual_rag_guardrails(summary)
+
+
+@pytest.mark.parametrize(
+    "forbidden_key",
+    [
+        "case_id",
+        "query_id",
+        "row_id",
+        "target_id",
+        "answerability",
+        "answerability_label",
+        "expected_answer",
+        "expected_evidence",
+        "supporting_evidence",
+        "qrels",
+        "label",
+        "labels",
+        "baseline_topk",
+        "legacy_outputs",
+        "source_title",
+        "workbook",
+        "gold_locator",
+        "target_locator",
+        "normalized_value",
+        "formula",
+        "raw_prompt_payload",
+        "raw_response_payload",
+    ],
+)
+def test_validate_actual_rag_guardrails_rejects_forbidden_agentic_planner_decision_fields(
+    forbidden_key: str,
+) -> None:
+    planner = {
+        "schema_version": "actual_rag_eval.agentic_planner_dry_run.v1",
+        "planner_enabled": True,
+        "planner_mode": "dry-run",
+        "planner_version": "actual_rag_eval.agentic_planner_dry_run.v1",
+        "ran_after_selected_evidence_composer": True,
+        "ran_after_evidence_gate": True,
+        "planner_decision_count": 1,
+        "planner_action_counts": {"deterministic_abstain": 1},
+        "planner_failure_class_counts": {"no_safe_action": 1},
+        "planner_no_safe_action_count": 1,
+        "planner_forbidden_shortcut_detected_count": 0,
+        "planner_expected_extra_query_count": 0,
+        "planner_expected_tool_call_count": 0,
+        "planner_heuristic_risk_class": "diagnostic_probe_only",
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "retrieved_context_only_citation_policy": "diagnostic_only_never_promoted",
+        "planner_execution": {
+            "retrieval_executed": False,
+            "tool_call_executed": False,
+            "llm_retry_executed": False,
+            "extra_query_count_executed": 0,
+            "tool_call_count_executed": 0,
+            "llm_retry_count_executed": 0,
+        },
+        "guardrail_flags": {
+            "gold_or_qrels_mutation": False,
+            "expected_fields_used_for_planner_selection": False,
+            "query_id_used_for_planner_selection": False,
+            "row_id_used_for_planner_selection": False,
+            "target_id_used_for_planner_selection": False,
+            "qrels_used_for_planner_selection": False,
+            "labels_used_for_planner_selection": False,
+            "baseline_topk_or_legacy_outputs_used": False,
+            "row_specific_alias_or_shortcut_used": False,
+            "retrieval_executed": False,
+            "tool_call_executed": False,
+            "llm_retry_executed": False,
+            "raw_prompt_payload_written": False,
+            "raw_response_payload_written": False,
+            "evidence_gate_loosened": False,
+            "retrieved_context_only_citation_promoted": False,
+            "official_metric": False,
+            "production_routing_opened": False,
+            "protected_namespace_mutation": False,
+        },
+        "gate_before": {},
+        "gate_after_unchanged_because_dry_run": {},
+        "decisions": [
+            {
+                "item_index": 0,
+                "query_sha256": "sha256:test",
+                "query_preview": "test",
+                "failure_class": "no_safe_action",
+                "proposed_action": "deterministic_abstain",
+                "expected_extra_query_count": 0,
+                "expected_tool_call_count": 0,
+                "executed": False,
+                forbidden_key: "unsafe",
+            }
+        ],
+    }
+    summary = {
+        "run_id": "guarded_planner",
+        "official_metric_input_rows": 0,
+        "official_metric_input_rows_created": 0,
+        "official_metric_input_rows_consumed": 0,
+        "protected_namespaces_touched": [],
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "guardrails": {
+            "gold_mutation": False,
+            "qrels_mutation": False,
+            "label_mutation": False,
+            "answerability_label_mutation": False,
+            "expected_answer_mutation": False,
+            "expected_evidence_mutation": False,
+            "denominator_mutation": False,
+            "retriever_ranking_improvement": False,
+            "official_metric": False,
+            "promotion_evidence": False,
+            "product_success_evidence_allowed": False,
+            "live_readiness_claim": False,
+        },
+        "agentic_planner_dry_run": planner,
+    }
+
+    with pytest.raises(DatasetSchemaError, match=forbidden_key):
+        validate_actual_rag_guardrails(summary)
 
 
 def test_weaviate_route_selected_collapses_same_doc_duplicates_and_fetches_bounded_neighbors_by_id(tmp_path: Path) -> None:
@@ -5900,6 +7605,19 @@ def test_run_eval_selected_evidence_composer_is_explicit_and_report_only(tmp_pat
     assert report["generator_config"]["selected_evidence_citation_formatter_invoked"] is True
     assert report["generator_config"]["selected_evidence_citation_format"] == "evidence-id"
     assert "markdown-portfolio" in report["generator_config"]["selected_evidence_citation_formatter_variants_available"]
+    selected_evidence_summary_text = json.dumps(
+        {
+            "limitations": report["limitations"],
+            "next_repair_targets": report["next_repair_targets"],
+            "residual_risks": report["residual_risks"],
+        },
+        ensure_ascii=False,
+    )
+    assert "selected-evidence composer supplies answers" in selected_evidence_summary_text
+    assert "selected-evidence composer is active" in selected_evidence_summary_text
+    assert "extractive-v1 remains the generator" not in selected_evidence_summary_text
+    assert "replace extractive-v1" not in selected_evidence_summary_text
+    assert "answer composition is still extractive-v1" not in selected_evidence_summary_text
     assert report["generator_config"]["expected_answer_used_for_generation"] is False
     assert report["generator_config"]["expected_evidence_used_for_generation"] is False
     assert report["raw_prompt_payload_written"] is False
@@ -5923,6 +7641,157 @@ def test_run_eval_selected_evidence_composer_is_explicit_and_report_only(tmp_pat
     assert "raw_prompt_payload_written" not in row["answer_composer"]
     assert "raw_response_payload_written" not in row["answer_composer"]
     assert row["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
+
+
+def test_load_eval_dataset_normalizes_gold29_source_fields_in_memory(tmp_path: Path) -> None:
+    dataset = tmp_path / "official_metric_input.jsonl"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "query_id": "text_namu_v2_0005",
+                "question_ko": "자동판매기 미궁 방랑 애니 3기 방영 시기는 문서에 어떻게 적혀 있어",
+                "expected_answer_ko": "감독은 야마모토 타카시, 방영 시기는 2026년 4월.",
+                "supporting_evidence_note": "감독은 야마모토 타카시, 방영 시기는 2026년 4월.",
+                "citation_locator": {"cited_chunk_ids": ["a648c3a062d55aa3"]},
+                "answerability_label": 3,
+                "relevance_label": 3,
+                "gold_status": "APPROVED",
+                "track": "text_namu_v2_1",
+            }
+        ],
+    )
+
+    items = load_eval_dataset(dataset)
+
+    assert len(items) == 1
+    item = items[0]
+    assert item.id == "text_namu_v2_0005"
+    assert item.query == "자동판매기 미궁 방랑 애니 3기 방영 시기는 문서에 어떻게 적혀 있어"
+    assert item.answerability == "answerable"
+    assert item.has_answerability_label is True
+    assert "missing_answerability_label" not in item.validation_warnings
+    assert item.expected_answer == "감독은 야마모토 타카시, 방영 시기는 2026년 4월."
+    assert item.expected_evidence[0].chunk_id == "a648c3a062d55aa3"
+    assert item.expected_evidence[0].text == "감독은 야마모토 타카시, 방영 시기는 2026년 4월."
+    assert item.source_row["question_ko"] == item.query
+
+
+def test_run_eval_response_quality_summary_marks_silver_strict_metrics_not_applicable(tmp_path: Path) -> None:
+    dataset = tmp_path / "xlsx_silver_retrieval_evidence_selected_v0.jsonl"
+    context = tmp_path / "silver_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "silver_response_quality_summary"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "query_id": "xlsx_silver_v0_000001",
+                "query": "자료 안에서 테크노페미니즘 항목의 엑셀 범위를 찾아줘.",
+                "expected_answer_text": "Sheet1 > A5952:J6001",
+                "citation_text": "Sheet1 > A5952:J6001",
+                "quality_tier": "SILVER",
+                "split": "silver_selected",
+                "include_in_answer_generation_denominator": "false",
+                "include_in_official_gold_denominator": "false",
+                "track": "XLSX",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx_silver_v0_000001",
+                "generated_answer": "Sheet1 > A5952:J6001",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx",
+                        "chunk_id": "chunk-range",
+                        "source_atom_id": "src-range",
+                        "evidence_bundle_id": "bundle-range",
+                        "source_family": "XLSX",
+                        "granularity": "table_row",
+                        "text": "Sheet1 > A5952:J6001",
+                    }
+                ],
+                "citations": [
+                    {
+                        "doc_id": "doc-xlsx",
+                        "chunk_id": "chunk-range",
+                        "source_atom_id": "src-range",
+                        "evidence_bundle_id": "bundle-range",
+                        "text": "Sheet1 > A5952:J6001",
+                    }
+                ],
+            }
+        ],
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="silver_response_quality_summary",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    summary = report["response_quality_input_summary"]
+    assert summary["schema_version"] == "actual_rag_eval.response_quality_input_summary.v1"
+    assert summary["source_profile"] == "diagnostic_silver"
+    assert summary["item_count"] == 1
+    assert summary["answerability_distribution"] == {"answerable": 0, "unanswerable": 0, "unknown": 1}
+    assert summary["strict_answer_citation_e2e_policy"]["strict_metrics_not_applicable"] is True
+    assert summary["strict_answer_citation_e2e_policy"]["reason"] == "diagnostic_silver_answerability_unknown"
+    assert summary["strict_answer_citation_e2e_policy"]["silver_strict_answer_citation_e2e"] == "N/A"
+    assert summary["guardrails"]["official_metric"] is False
+    assert summary["guardrails"]["gold_or_qrels_mutation"] is False
+    assert summary["normalization"]["query_field_mappings"] == ["query"]
+    assert summary["normalization"]["expected_answer_field_mappings"] == ["expected_answer_text"]
+    assert summary["normalization"]["expected_evidence_field_mappings"] == ["citation_text"]
+    assert report["strict_metrics"]["exact_or_alias_answer_correctness"]["denominator"] == 0
+    assert report["strict_metrics"]["citation_precision"]["denominator"] == 0
+    assert report["strict_metrics"]["e2e_rag_success_strict"]["denominator"] == 0
+    assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_select_composer_evidence_uses_source_derived_xlsx_metadata_without_shortcuts() -> None:
+    selected = select_composer_evidence(
+        "2019년 2월 5호선 승차총승객수는 얼마야?",
+        [
+            {
+                "doc_id": "doc-xlsx",
+                "chunk_id": "chunk-row",
+                "source_atom_id": "src-row",
+                "evidence_bundle_id": "bundle-row",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": "15,446,522명",
+                "sheet": "2019년 2월",
+                "row_label": "5호선",
+                "column_label": "승차총승객수",
+                "source_workbook": "서울교통공사_월별_승하차.xlsx",
+                "normalized_value": "15446522",
+                "formula": "=SUM(A1:A3)",
+            }
+        ],
+    )
+
+    assert len(selected) == 1
+    evidence = selected[0]
+    assert evidence["source_atom_id"] == "src-row"
+    metadata_text = evidence["composer_source_derived_metadata_text"]
+    assert "2019년 2월" in metadata_text
+    assert "5호선" in metadata_text
+    assert "승차총승객수" in metadata_text
+    assert "서울교통공사_월별_승하차.xlsx" not in metadata_text
+    assert "15446522" not in metadata_text
+    assert "=SUM" not in metadata_text
+    assert evidence["composer_source_derived_metadata_fields"] == ["sheet", "row_label", "column_label"]
+    assert evidence["composer_query_anchor_hits"] == ["2019년", "2월", "5호선", "승차총승객수"]
 
 
 def test_run_eval_selected_evidence_local_llm_composer_unavailable_falls_back_without_raw_payloads(
@@ -6081,12 +7950,15 @@ def test_run_eval_selected_evidence_local_llm_composer_available_stores_hashes_a
     assert config["local_llm_composer_generated_count"] == 1
     assert config["local_llm_prompt_payload_written"] is False
     assert config["local_llm_raw_response_payload_written"] is False
-    assert row["generated_answer"].startswith("**Query:** Where is Apollo HQ?")
-    assert "**Short answer:** Apollo HQ is in Seoul." in row["generated_answer"]
+    assert row["generated_answer"] == "Apollo HQ is in Seoul."
+    assert "**Short answer:**" not in row["generated_answer"]
+    assert "**Supporting passages:**" not in row["generated_answer"]
     assert row["citations"][0]["evidence_bundle_id"] == "bundle-hq"
     assert row["answer_composer"]["formatted_citations"] == [
         "[1] evidence_bundle_id=bundle-hq; source_atom_id=src-hq"
     ]
+    assert row["answer_composer"]["answer_rendering_policy"] == "local_llm_natural_query_context_sentence"
+    assert row["answer_composer"]["answer_audit_scaffold_in_generated_answer"] is False
     assert local_meta["status"] == "generated"
     assert local_meta["prompt_sha256"].startswith("sha256:")
     assert local_meta["raw_response_sha256"] == "sha256:raw-local-response"
@@ -6096,6 +7968,9 @@ def test_run_eval_selected_evidence_local_llm_composer_available_stores_hashes_a
     assert "raw_prompt_payload_written" not in local_meta
     assert "raw_response_payload_written" not in local_meta
     assert captured["prompt"]
+    assert "natural, query-context sentence" in captured["prompt"]
+    assert "Do not return only a terse fragment" in captured["prompt"]
+    assert "Do not include audit headers" in captured["prompt"]
     assert report["raw_prompt_payload_written"] is False
     assert report["raw_response_payload_written"] is False
     assert row["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
@@ -6202,7 +8077,10 @@ def test_run_eval_selected_evidence_local_llm_composer_retries_once_after_gate_i
     assert retry["retry_raw_response_sha256"] == "sha256:retry"
     assert "prompt" not in retry
     assert "raw_response" not in retry
-    assert "**Short answer:** Apollo HQ is in Seoul." in row["generated_answer"]
+    assert row["generated_answer"] == "Apollo HQ is in Seoul."
+    assert "**Short answer:**" not in row["generated_answer"]
+    assert row["answer_composer"]["answer_rendering_policy"] == "local_llm_natural_query_context_sentence"
+    assert row["answer_composer"]["answer_audit_scaffold_in_generated_answer"] is False
     assert row["answer_gate_decision"] == "allow_answer"
     assert row["evidence_gate"]["unsupported_answer_blocked"] is False
     assert row["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
@@ -6724,6 +8602,68 @@ def test_validate_actual_rag_guardrails_accepts_evidence_gate_without_semantic_s
     }
 
     validate_actual_rag_guardrails(summary)
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "match"),
+    [
+        ("uses_query_id_or_row_id_or_target_id", True, "query_id_or_row_id_or_target_id"),
+        ("uses_expected_answer_or_evidence", True, "expected_answer_or_evidence"),
+        ("uses_qrels_or_labels", True, "qrels_or_labels"),
+        ("per_row_alias_table", True, "per_row_alias_table"),
+        ("composer_or_gate_loosening_for_single_residual", True, "single_residual"),
+        ("classification", "forbidden_eval_row_shortcut", "forbidden_eval_row_shortcut"),
+    ],
+)
+def test_validate_actual_rag_guardrails_rejects_forbidden_heuristic_risk_ledger_entries(
+    field: str,
+    value: object,
+    match: str,
+) -> None:
+    entry = {
+        "rule_id": "unsafe_shortcut",
+        "classification": "query_text_only_reformulation",
+        "status": "active",
+        "uses_query_id_or_row_id_or_target_id": False,
+        "uses_expected_answer_or_evidence": False,
+        "uses_qrels_or_labels": False,
+        "per_row_alias_table": False,
+        "composer_or_gate_loosening_for_single_residual": False,
+    }
+    entry[field] = value
+    summary = {
+        "run_id": "guarded",
+        "official_metric_input_rows": 0,
+        "official_metric_input_rows_created": 0,
+        "official_metric_input_rows_consumed": 0,
+        "protected_namespaces_touched": [],
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "guardrails": {
+            "gold_mutation": False,
+            "qrels_mutation": False,
+            "label_mutation": False,
+            "answerability_label_mutation": False,
+            "expected_answer_mutation": False,
+            "expected_evidence_mutation": False,
+            "denominator_mutation": False,
+            "retriever_ranking_improvement": False,
+            "official_metric": False,
+            "promotion_evidence": False,
+            "product_success_evidence_allowed": False,
+            "live_readiness_claim": False,
+        },
+        "heuristic_risk_ledger": {
+            "schema_version": "actual_rag_eval.heuristic_risk_ledger.v1",
+            "official_metric": False,
+            "official_metric_input_rows": 0,
+            "entries": [entry],
+            "forbidden_eval_row_shortcut_active": False,
+        },
+    }
+
+    with pytest.raises(DatasetSchemaError, match=match):
+        validate_actual_rag_guardrails(summary)
 
 
 def test_evidence_gate_summary_is_embedded_in_quality_gate_report() -> None:

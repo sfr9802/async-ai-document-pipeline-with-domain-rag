@@ -45,6 +45,110 @@ LATEST_POINTER_SCHEMA_VERSION = "actual_rag_eval.latest_pointer.v1"
 STATUS_EVENT_SCHEMA_VERSION = "actual_rag_eval.run_status_event.v1"
 PORTFOLIO_COMPARISON_SCHEMA_VERSION = "actual_rag_eval.portfolio_experiment_comparison.v1"
 CORPUS_COVERAGE_AUDIT_SCHEMA_VERSION = "actual_rag_eval.corpus_coverage_audit.v1"
+RESPONSE_QUALITY_INPUT_SUMMARY_SCHEMA_VERSION = "actual_rag_eval.response_quality_input_summary.v1"
+HEURISTIC_RISK_LEDGER_SCHEMA_VERSION = "actual_rag_eval.heuristic_risk_ledger.v1"
+METRIC_CONTINUITY_CHECKPOINT_SCHEMA_VERSION = "actual_rag_eval.metric_continuity_checkpoint.v1"
+AGENTIC_PLANNER_DRY_RUN_SCHEMA_VERSION = "actual_rag_eval.agentic_planner_dry_run.v1"
+AGENTIC_PLANNER_EXECUTE_ONCE_SCHEMA_VERSION = "actual_rag_eval.agentic_planner_execute_once.v1"
+AGENTIC_LOOP_REVIEW_SCHEMA_VERSION = "actual_rag_eval.agentic_loop_review.v1"
+AGENTIC_PLANNER_MODE_CHOICES = ("off", "dry-run", "execute-once")
+AGENTIC_PLANNER_EXECUTE_ONCE_PROBE_TOP_K_INCREMENT = 1
+AGENTIC_PLANNER_LLM_RETRY_INPUT_POLICY = (
+    "query_text_selected_evidence_gate_diagnostics_previous_bounded_answer_preview_only_no_gold_qrels_labels_ids_or_baseline"
+)
+AGENTIC_PLANNER_LLM_RETRY_PROMPT_VERSION = "agentic_planner_selected_evidence_llm_retry_v1"
+AGENTIC_PLANNER_RUN_LOCAL_MEMORY_INPUT_POLICY = (
+    "run_local_selected_evidence_memory_query_text_and_source_evidence_only_no_ids_expected_qrels_labels_or_baseline"
+)
+AGENTIC_PLANNER_FAILURE_CLASSES = (
+    "missing_query_anchor",
+    "insufficient_evidence",
+    "collision",
+    "corpus_absent",
+    "tool_required_pdf",
+    "tool_required_xlsx",
+    "unsupported_generation",
+    "no_safe_action",
+)
+AGENTIC_PLANNER_ACTIONS = (
+    "query_text_only_reformulation",
+    "source_owned_same_doc_residual",
+    "route_selected_probe",
+    "run_local_memory_reuse",
+    "pdf_locator_tool",
+    "xlsx_cell_or_table_tool",
+    "selected_evidence_llm_rewrite",
+    "deterministic_abstain",
+)
+AGENTIC_PLANNER_GUARDRAIL_FLAGS = (
+    "gold_or_qrels_mutation",
+    "expected_fields_used_for_planner_selection",
+    "query_id_used_for_planner_selection",
+    "row_id_used_for_planner_selection",
+    "target_id_used_for_planner_selection",
+    "qrels_used_for_planner_selection",
+    "labels_used_for_planner_selection",
+    "baseline_topk_or_legacy_outputs_used",
+    "row_specific_alias_or_shortcut_used",
+    "retrieval_executed",
+    "tool_call_executed",
+    "llm_retry_executed",
+    "raw_prompt_payload_written",
+    "raw_response_payload_written",
+    "evidence_gate_loosened",
+    "retrieved_context_only_citation_promoted",
+    "official_metric",
+    "production_routing_opened",
+    "protected_namespace_mutation",
+)
+AGENTIC_PLANNER_FORBIDDEN_DECISION_FIELDS = {
+    "case_id",
+    "query_id",
+    "row_id",
+    "target_id",
+    "answerability",
+    "answerability_label",
+    "expected_answer",
+    "expected_evidence",
+    "supporting_evidence",
+    "qrels",
+    "qrel",
+    "label",
+    "labels",
+    "baseline_topk",
+    "legacy_outputs",
+    "source_title",
+    "workbook",
+    "gold_locator",
+    "target_locator",
+    "normalized_value",
+    "formula",
+    "prompt",
+    "response",
+    "raw_prompt",
+    "raw_response",
+    "prompt_payload",
+    "response_payload",
+    "raw_prompt_payload",
+    "raw_response_payload",
+}
+HEURISTIC_RISK_ALLOWED_CLASSIFICATIONS = (
+    "global_normalization",
+    "source_derived_index_feature",
+    "query_text_only_reformulation",
+    "diagnostic_probe_only",
+)
+HEURISTIC_RISK_ALL_CLASSIFICATIONS = (
+    *HEURISTIC_RISK_ALLOWED_CLASSIFICATIONS,
+    "forbidden_eval_row_shortcut",
+)
+HEURISTIC_RISK_FORBIDDEN_ACTIVE_FLAGS = (
+    "uses_query_id_or_row_id_or_target_id",
+    "uses_expected_answer_or_evidence",
+    "uses_qrels_or_labels",
+    "per_row_alias_table",
+    "composer_or_gate_loosening_for_single_residual",
+)
 REPORT_ROOT = ROOT / "reports" / "rag_eval"
 STATUS_JSONL_PATH = AI_DIR / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
 SOURCE_NATIVE_DIAGNOSTIC_INDEX_DIR = AI_DIR / "eval" / "indexes" / "rag-data-all-source-citable-nonprod-v1"
@@ -1019,7 +1123,14 @@ def _load_dataset_rows(path: Path) -> list[dict[str, Any]]:
 def _canonical_answerability(row: Mapping[str, Any]) -> tuple[str, bool]:
     raw = _first_clean(row, "answerability", "answerability_label")
     if raw:
-        return raw.lower(), True
+        normalized_raw = raw.strip().lower()
+        if normalized_raw in {"3", "answerable", "answered", "yes", "true"}:
+            return "answerable", True
+        if normalized_raw in {"1", "unanswerable", "no", "false"}:
+            return "unanswerable", True
+        if normalized_raw in {"0", "2", "unknown", "unknown_answerability", "not_evaluated"}:
+            return "unknown", True
+        return normalized_raw, True
     label = _first_clean(row, "normalized_answerability_label", "user_answerability_label")
     if not label:
         return "unknown", False
@@ -1067,6 +1178,8 @@ def _expected_evidence_rows(row: Mapping[str, Any]) -> list[dict[str, Any]]:
     text = _first_clean(
         row,
         "supporting_evidence",
+        "supporting_evidence_note",
+        "citation_text",
         "expected_evidence_text_or_summary",
         "user_expected_evidence_text_or_summary",
         "evidence_summary",
@@ -1089,7 +1202,7 @@ def load_eval_dataset(path: Path | str) -> list[EvalItem]:
         if row_id in seen:
             raise DatasetSchemaError(f"{row_id}: duplicate id")
         seen.add(row_id)
-        query = _first_clean(row, "query", "query_text", "question")
+        query = _first_clean(row, "query", "query_text", "question", "question_ko")
         if not query:
             raise DatasetSchemaError(f"{row_id}: query is required")
 
@@ -1139,6 +1252,7 @@ def load_eval_dataset(path: Path | str) -> list[EvalItem]:
             expected_answer=_first_clean(
                 row,
                 "expected_answer",
+                "expected_answer_ko",
                 "expected_answer_text",
                 "normalized_expected_answer_text",
                 "user_expected_answer_text",
@@ -1173,6 +1287,106 @@ def load_eval_dataset(path: Path | str) -> list[EvalItem]:
         )
         items.append(item)
     return items
+
+
+def _source_rows_from_items(items: Sequence[EvalItem]) -> list[Mapping[str, Any]]:
+    return [item.source_row for item in items if isinstance(item.source_row, Mapping)]
+
+
+def _source_fields_used(rows: Sequence[Mapping[str, Any]], candidates: Sequence[str]) -> list[str]:
+    used: list[str] = []
+    for field in candidates:
+        if any(_clean(row.get(field)) for row in rows):
+            used.append(field)
+    return used
+
+
+def _response_quality_source_profile(dataset_path: Path | str, rows: Sequence[Mapping[str, Any]]) -> str:
+    path_text = Path(dataset_path).as_posix().casefold()
+    if any(_clean(row.get("quality_tier")).upper() == "SILVER" for row in rows):
+        return "diagnostic_silver"
+    if any("silver" in _clean(row.get("split")).casefold() for row in rows):
+        return "diagnostic_silver"
+    if "silver" in path_text:
+        return "diagnostic_silver"
+    if any(_clean(row.get("gold_status")).upper() == "APPROVED" for row in rows):
+        return "user_approved_gold_snapshot"
+    if any(_clean(row.get("approval_basis")) for row in rows):
+        return "user_approved_gold_snapshot"
+    if "official_metric_input" in path_text or "gold" in path_text:
+        return "user_approved_gold_snapshot"
+    return "standard_eval_dataset"
+
+
+def build_response_quality_input_summary(
+    *,
+    dataset_path: Path | str,
+    items: Sequence[EvalItem],
+) -> dict[str, Any]:
+    rows = _source_rows_from_items(items)
+    source_profile = _response_quality_source_profile(dataset_path, rows)
+    answerability_counts = Counter(item.answerability for item in items)
+    strict_eligible_count = sum(
+        1 for item in items if item.answerability == "answerable" and item.has_expected_answer and item.has_expected_evidence
+    )
+    diagnostic_silver = source_profile == "diagnostic_silver"
+    strict_policy = {
+        "strict_metrics_not_applicable": diagnostic_silver,
+        "reason": "diagnostic_silver_answerability_unknown" if diagnostic_silver else "",
+        "silver_strict_answer_citation_e2e": "N/A" if diagnostic_silver else "",
+        "strict_gold_eligible_item_count": 0 if diagnostic_silver else int(strict_eligible_count),
+        "answerability_inferred_for_silver": False,
+    }
+    return {
+        "schema_version": RESPONSE_QUALITY_INPUT_SUMMARY_SCHEMA_VERSION,
+        "source_profile": source_profile,
+        "dataset_path": _report_path_value(dataset_path),
+        "item_count": len(items),
+        "answerability_distribution": {
+            "answerable": int(answerability_counts.get("answerable", 0)),
+            "unanswerable": int(answerability_counts.get("unanswerable", 0)),
+            "unknown": int(answerability_counts.get("unknown", 0)),
+        },
+        "normalization": {
+            "mode": "in_memory_read_only",
+            "query_field_mappings": _source_fields_used(rows, ("query", "query_text", "question", "question_ko")),
+            "expected_answer_field_mappings": _source_fields_used(
+                rows,
+                (
+                    "expected_answer",
+                    "expected_answer_ko",
+                    "expected_answer_text",
+                    "normalized_expected_answer_text",
+                    "user_expected_answer_text",
+                    "expected_answer_text_existing",
+                ),
+            ),
+            "expected_evidence_field_mappings": _source_fields_used(
+                rows,
+                (
+                    "expected_evidence",
+                    "supporting_evidence",
+                    "supporting_evidence_note",
+                    "citation_text",
+                    "expected_evidence_text_or_summary",
+                    "user_expected_evidence_text_or_summary",
+                    "evidence_summary",
+                ),
+            ),
+            "source_rows_mutated": False,
+            "temporary_normalized_dataset_written": False,
+        },
+        "strict_answer_citation_e2e_policy": strict_policy,
+        "guardrails": {
+            "report_only": True,
+            "official_metric": False,
+            "official_metric_input_rows": 0,
+            "gold_or_qrels_mutation": False,
+            "label_or_denominator_mutation": False,
+            "expected_field_mutation": False,
+            "latest_or_current_pointer_mutation_required": False,
+        },
+    }
 
 
 def normalize_answer_text(value: str) -> str:
@@ -1236,7 +1450,7 @@ def _candidate_anchors(*values: str) -> set[str]:
         scan_values = [raw, *bracketed]
         for scan in scan_values:
             for token in re.findall(
-                r"\d{1,4}(?:년|월|일)|\d{2,}|[A-Za-z][A-Za-z0-9_-]{3,}|[가-힣]{3,}|[ぁ-んァ-ン一-龯々]{2,}",
+                r"\d{1,4}(?:년|월|일)|\d{1,4}[가-힣]{1,8}|\d{2,}|[A-Za-z][A-Za-z0-9_-]{3,}|[가-힣]{3,}|[ぁ-んァ-ン一-龯々]{2,}",
                 scan,
             ):
                 normalized = normalize_answer_text(token)
@@ -5873,6 +6087,7 @@ def validate_actual_rag_guardrails(summary: Mapping[str, Any]) -> None:
         "gate_uses_gold_fields",
         "gate_uses_legacy_fields",
         "evidence_gate_retrieval_loop_triggered",
+        "official_metric",
     )
     for key in optional_false_top_level:
         if key in summary and summary.get(key) is not False:
@@ -5970,6 +6185,63 @@ def validate_actual_rag_guardrails(summary: Mapping[str, Any]) -> None:
                 raise DatasetSchemaError(f"{run_id}: evidence_gate.guardrail_status.{key} must be False")
         if isinstance(semantic_samples, Mapping) and semantic_samples.get("raw_response_payload_written") is not False:
             raise DatasetSchemaError(f"{run_id}: semantic_quality_samples.raw_response_payload_written must be False")
+    agentic_planner = summary.get("agentic_planner_dry_run")
+    if isinstance(agentic_planner, Mapping):
+        validate_agentic_planner_dry_run(run_id, agentic_planner)
+    agentic_execute_once = summary.get("agentic_planner_execute_once")
+    if isinstance(agentic_execute_once, Mapping):
+        validate_agentic_planner_execute_once(run_id, agentic_execute_once)
+    heuristic_risk_ledger = summary.get("heuristic_risk_ledger")
+    if isinstance(heuristic_risk_ledger, Mapping):
+        validate_heuristic_risk_ledger(run_id, heuristic_risk_ledger)
+    metric_continuity = summary.get("metric_continuity_checkpoint")
+    if isinstance(metric_continuity, Mapping):
+        if metric_continuity.get("official_metric") is not False:
+            raise DatasetSchemaError(f"{run_id}: metric_continuity_checkpoint.official_metric must be False")
+        if int(metric_continuity.get("official_metric_input_rows") or 0) != 0:
+            raise DatasetSchemaError(f"{run_id}: metric_continuity_checkpoint.official_metric_input_rows must be 0")
+        flags = metric_continuity.get("guardrail_mutation_flags")
+        if not isinstance(flags, Mapping):
+            raise DatasetSchemaError(f"{run_id}: metric_continuity_checkpoint.guardrail_mutation_flags must be present")
+        for key, value in flags.items():
+            if value is not False:
+                raise DatasetSchemaError(f"{run_id}: metric_continuity_checkpoint.guardrail_mutation_flags.{key} must be False")
+    agentic_loop_review = summary.get("agentic_loop_review")
+    if isinstance(agentic_loop_review, Mapping):
+        validate_agentic_loop_review(run_id, agentic_loop_review)
+
+
+def validate_heuristic_risk_ledger(run_id: str, ledger: Mapping[str, Any]) -> None:
+    if ledger.get("official_metric") is not False:
+        raise DatasetSchemaError(f"{run_id}: heuristic_risk_ledger.official_metric must be False")
+    if int(ledger.get("official_metric_input_rows") or 0) != 0:
+        raise DatasetSchemaError(f"{run_id}: heuristic_risk_ledger.official_metric_input_rows must be 0")
+    if ledger.get("forbidden_eval_row_shortcut_active") is not False:
+        raise DatasetSchemaError(f"{run_id}: heuristic_risk_ledger.forbidden_eval_row_shortcut_active must be False")
+    entries = [entry for entry in _as_list(ledger.get("entries")) if isinstance(entry, Mapping)]
+    if not entries:
+        raise DatasetSchemaError(f"{run_id}: heuristic_risk_ledger.entries must be non-empty")
+    for entry in entries:
+        rule_id = _clean(entry.get("rule_id")) or "<unnamed>"
+        classification = _clean(entry.get("classification"))
+        status = _clean(entry.get("status")) or "active"
+        if classification not in HEURISTIC_RISK_ALL_CLASSIFICATIONS:
+            raise DatasetSchemaError(
+                f"{run_id}: heuristic_risk_ledger.{rule_id}.classification unsupported: {classification}"
+            )
+        if status != "active":
+            continue
+        if classification == "forbidden_eval_row_shortcut":
+            raise DatasetSchemaError(
+                f"{run_id}: heuristic_risk_ledger.{rule_id}.forbidden_eval_row_shortcut cannot be active"
+            )
+        if classification not in HEURISTIC_RISK_ALLOWED_CLASSIFICATIONS:
+            raise DatasetSchemaError(
+                f"{run_id}: heuristic_risk_ledger.{rule_id}.classification must be allowed for active rules"
+            )
+        for flag in HEURISTIC_RISK_FORBIDDEN_ACTIVE_FLAGS:
+            if entry.get(flag) is not False:
+                raise DatasetSchemaError(f"{run_id}: heuristic_risk_ledger.{rule_id}.{flag} must be False")
 
 
 def _compact_metric(metric: Any) -> dict[str, Any]:
@@ -6328,6 +6600,1700 @@ def _portfolio_residual_taxonomy(summary: Mapping[str, Any]) -> dict[str, int]:
         reason = _clean(gate.get("abstention_reason")) or _clean(gate.get("evidence_package_status")) or decision
         counts[reason or "unknown"] += 1
     return dict(sorted(counts.items()))
+
+
+def _agentic_planner_closed_guardrail_flags() -> dict[str, bool]:
+    return {key: False for key in AGENTIC_PLANNER_GUARDRAIL_FLAGS}
+
+
+def _agentic_planner_execution_closed() -> dict[str, Any]:
+    return {
+        "retrieval_executed": False,
+        "tool_call_executed": False,
+        "llm_retry_executed": False,
+        "extra_query_count_executed": 0,
+        "tool_call_count_executed": 0,
+        "llm_retry_count_executed": 0,
+    }
+
+
+def _agentic_planner_failure_class(row: Mapping[str, Any]) -> str:
+    gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+    gate_reason = _clean(gate.get("abstention_reason"))
+    gate_status = _clean(gate.get("evidence_package_status"))
+    gate_reasons = {
+        _clean(reason)
+        for key in ("validation_reasons", "abstention_reasons", "unsupported_answer_reasons")
+        for reason in _as_list(gate.get(key))
+        if _clean(reason)
+    }
+    source_families = {
+        _clean(context.get("source_family")).upper()
+        for context in _as_list(row.get("retrieved_contexts"))
+        if isinstance(context, Mapping) and _clean(context.get("source_family"))
+    }
+    source_families.update(
+        {
+            _clean(citation.get("source_family")).upper()
+            for citation in _as_list(row.get("citations"))
+            if isinstance(citation, Mapping) and _clean(citation.get("source_family"))
+        }
+    )
+    combined = " ".join(sorted(gate_reasons | {gate_reason, gate_status})).casefold()
+    if "collision" in combined or "conflicting_evidence" in combined:
+        return "collision"
+    if "corpus_absent" in combined or "corpus absent" in combined:
+        return "corpus_absent"
+    if "PDF" in source_families and gate_status == "insufficient":
+        return "tool_required_pdf"
+    if source_families.intersection({"XLSX", "XLS", "SPREADSHEET"}) and gate_status == "insufficient":
+        return "tool_required_xlsx"
+    if "missing_query_anchor" in combined or "missing query anchor" in combined:
+        return "missing_query_anchor"
+    if gate_status == "insufficient":
+        return "insufficient_evidence"
+    if bool(gate.get("unsupported_answer_blocked")) or "citation_unsupported" in combined:
+        return "unsupported_generation"
+    return "no_safe_action"
+
+
+def _agentic_planner_action_for_failure(failure_class: str) -> str:
+    if failure_class == "missing_query_anchor":
+        return "query_text_only_reformulation"
+    if failure_class == "insufficient_evidence":
+        return "source_owned_same_doc_residual"
+    if failure_class == "collision":
+        return "route_selected_probe"
+    if failure_class == "tool_required_pdf":
+        return "pdf_locator_tool"
+    if failure_class == "tool_required_xlsx":
+        return "xlsx_cell_or_table_tool"
+    if failure_class == "unsupported_generation":
+        return "selected_evidence_llm_rewrite"
+    return "deterministic_abstain"
+
+
+def _agentic_planner_expected_extra_query_count(action: str) -> int:
+    return 1 if action in {"query_text_only_reformulation", "source_owned_same_doc_residual", "route_selected_probe"} else 0
+
+
+def _agentic_planner_expected_tool_call_count(action: str) -> int:
+    return 1 if action in {"pdf_locator_tool", "xlsx_cell_or_table_tool"} else 0
+
+
+def _agentic_planner_expected_llm_retry_count(action: str) -> int:
+    return 1 if action == "selected_evidence_llm_rewrite" else 0
+
+
+def _agentic_planner_expected_memory_lookup_count(action: str) -> int:
+    return 1 if action == "run_local_memory_reuse" else 0
+
+
+def _agentic_planner_forbidden_shortcut_count(decisions: Sequence[Mapping[str, Any]]) -> int:
+    count = 0
+    for decision in decisions:
+        if any(key in decision for key in AGENTIC_PLANNER_FORBIDDEN_DECISION_FIELDS):
+            count += 1
+        if decision.get("uses_query_id_or_row_id_or_target_id") is True:
+            count += 1
+        if decision.get("uses_expected_answer_or_evidence") is True:
+            count += 1
+        if decision.get("uses_qrels_or_labels") is True:
+            count += 1
+    return count
+
+
+def build_agentic_planner_dry_run_report(summary: Mapping[str, Any], *, mode: str = "off") -> dict[str, Any]:
+    normalized_mode = _clean(mode).lower() or "off"
+    if normalized_mode not in AGENTIC_PLANNER_MODE_CHOICES:
+        raise DatasetSchemaError(f"unsupported agentic planner mode: {mode}")
+    gate_snapshot = _portfolio_gate_summary(summary)
+    config = summary.get("generator_config") if isinstance(summary.get("generator_config"), Mapping) else {}
+    gate = summary.get("evidence_gate") if isinstance(summary.get("evidence_gate"), Mapping) else {}
+    base: dict[str, Any] = {
+        "schema_version": AGENTIC_PLANNER_DRY_RUN_SCHEMA_VERSION,
+        "planner_enabled": normalized_mode == "dry-run",
+        "planner_mode": normalized_mode,
+        "planner_version": AGENTIC_PLANNER_DRY_RUN_SCHEMA_VERSION,
+        "ran_after_selected_evidence_composer": bool(config.get("selected_evidence_composer_invoked")),
+        "ran_after_evidence_gate": _clean(gate.get("evidence_gate_mode")) not in {"", "off"},
+        "planner_decision_count": 0,
+        "planner_action_counts": {},
+        "planner_failure_class_counts": {},
+        "planner_no_safe_action_count": 0,
+        "planner_forbidden_shortcut_detected_count": 0,
+        "planner_expected_extra_query_count": 0,
+        "planner_expected_tool_call_count": 0,
+        "planner_expected_llm_retry_count": 0,
+        "planner_expected_memory_lookup_count": 0,
+        "planner_heuristic_risk_class": "diagnostic_probe_only",
+        "candidate_generation_input_policy": (
+            "query_text_and_public_gate_diagnostics_only_no_ids_expected_qrels_labels_baseline_or_legacy_outputs"
+        ),
+        "retrieved_context_only_citation_policy": "diagnostic_only_never_promoted",
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "planner_execution": _agentic_planner_execution_closed(),
+        "guardrail_flags": _agentic_planner_closed_guardrail_flags(),
+        "gate_before": gate_snapshot,
+        "gate_after_unchanged_because_dry_run": dict(gate_snapshot),
+        "decisions": [],
+        "execute_once_readiness": {
+            "ready": False,
+            "assessment": (
+                "dry_run_only_not_ready_for_execute_once_until explicit user approval, execution budget, "
+                "and unchanged evidence-gate validation are reviewed"
+            ),
+            "quality_improvement_measured": False,
+            "reason": "dry_run_records proposed actions only and cannot demonstrate a quality delta",
+        },
+        "planner_scope": "failed_rows_after_selected_evidence_composer_and_evidence_gate",
+    }
+    if normalized_mode == "off":
+        return base
+
+    memory_bank = _agentic_planner_run_local_memory_bank(_as_list(summary.get("items")))
+    decisions: list[dict[str, Any]] = []
+    for item_index, row in enumerate(_as_list(summary.get("items"))):
+        if not isinstance(row, Mapping):
+            continue
+        if _clean(row.get("answer_gate_decision")) == "allow_answer":
+            continue
+        failure_class = _agentic_planner_failure_class(row)
+        action = _agentic_planner_action_for_failure(failure_class)
+        if failure_class in {"insufficient_evidence", "missing_query_anchor"} and _agentic_planner_run_local_memory_match(
+            row,
+            memory_bank,
+        ):
+            action = "run_local_memory_reuse"
+        extra_query_count = _agentic_planner_expected_extra_query_count(action)
+        tool_call_count = _agentic_planner_expected_tool_call_count(action)
+        llm_retry_count = _agentic_planner_expected_llm_retry_count(action)
+        memory_lookup_count = _agentic_planner_expected_memory_lookup_count(action)
+        query = _clean(row.get("query"))
+        decisions.append(
+            {
+                "item_index": item_index,
+                "query_sha256": f"sha256:{_sha256_text(query)}" if query else "",
+                "query_preview": _bounded_text_preview(query, 160),
+                "failure_class": failure_class,
+                "proposed_action": action,
+                "expected_extra_query_count": extra_query_count,
+                "expected_tool_call_count": tool_call_count,
+                "expected_llm_retry_count": llm_retry_count,
+                "expected_memory_lookup_count": memory_lookup_count,
+                "executed": False,
+                "dry_run_only": True,
+                "input_policy": (
+                    "query_text_and_public_gate_diagnostics_only_no_ids_expected_qrels_labels_baseline_or_legacy_outputs"
+                ),
+            }
+        )
+    action_counts = Counter(_clean(decision.get("proposed_action")) for decision in decisions)
+    failure_counts = Counter(_clean(decision.get("failure_class")) for decision in decisions)
+    base.update(
+        {
+            "planner_decision_count": len(decisions),
+            "planner_action_counts": dict(sorted(action_counts.items())),
+            "planner_failure_class_counts": dict(sorted(failure_counts.items())),
+            "planner_no_safe_action_count": int(failure_counts.get("no_safe_action", 0)),
+            "planner_forbidden_shortcut_detected_count": _agentic_planner_forbidden_shortcut_count(decisions),
+            "planner_expected_extra_query_count": sum(
+                int(decision.get("expected_extra_query_count") or 0) for decision in decisions
+            ),
+            "planner_expected_tool_call_count": sum(
+                int(decision.get("expected_tool_call_count") or 0) for decision in decisions
+            ),
+            "planner_expected_llm_retry_count": sum(
+                int(decision.get("expected_llm_retry_count") or 0) for decision in decisions
+            ),
+            "planner_expected_memory_lookup_count": sum(
+                int(decision.get("expected_memory_lookup_count") or 0) for decision in decisions
+            ),
+            "decisions": decisions,
+        }
+    )
+    if decisions and base["planner_forbidden_shortcut_detected_count"] == 0 and base["planner_no_safe_action_count"] == 0:
+        base["execute_once_readiness"] = {
+            "ready": False,
+            "assessment": (
+                "candidate_plan_safe_for_human_review_but_not_ready_for_execute_once_without explicit user approval "
+                "and a separate bounded execution checkpoint"
+            ),
+            "quality_improvement_measured": False,
+            "reason": "dry_run preserves the gate and only estimates query/tool/retry budgets",
+        }
+    return base
+
+
+def _agentic_planner_execute_once_guardrail_flags() -> dict[str, bool]:
+    return {
+        "gold_or_qrels_mutation": False,
+        "expected_fields_used_for_planner_selection": False,
+        "query_id_used_for_planner_selection": False,
+        "row_id_used_for_planner_selection": False,
+        "target_id_used_for_planner_selection": False,
+        "qrels_used_for_planner_selection": False,
+        "labels_used_for_planner_selection": False,
+        "baseline_topk_or_legacy_outputs_used": False,
+        "row_specific_alias_or_shortcut_used": False,
+        "unbudgeted_retrieval_executed": False,
+        "tool_call_executed": False,
+        "llm_retry_executed": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "gate_loosened": False,
+        "retrieved_context_only_citation_promoted": False,
+        "official_metric": False,
+        "production_routing_opened": False,
+        "protected_namespace_mutation": False,
+    }
+
+
+def _agentic_planner_execute_once_execution(
+    *,
+    extra_query_count: int,
+    tool_call_count: int = 0,
+    llm_retry_count: int = 0,
+) -> dict[str, Any]:
+    return {
+        "retrieval_executed": extra_query_count > 0,
+        "tool_call_executed": tool_call_count > 0,
+        "llm_retry_executed": llm_retry_count > 0,
+        "extra_query_count_executed": max(0, int(extra_query_count)),
+        "tool_call_count_executed": max(0, int(tool_call_count)),
+        "llm_retry_count_executed": max(0, int(llm_retry_count)),
+    }
+
+
+def _agentic_planner_gate_delta(before: Mapping[str, Any], after: Mapping[str, Any]) -> dict[str, int]:
+    keys = (
+        "allowed_answer_count",
+        "abstained_count",
+        "unsupported_answer_blocked_count",
+        "sufficient_evidence_package_count",
+        "insufficient_evidence_package_count",
+        "citation_supported_count",
+        "citation_retrieved_context_only_diagnostic_count",
+    )
+    return {f"{key}_delta": int(after.get(key) or 0) - int(before.get(key) or 0) for key in keys}
+
+
+def _agentic_planner_sanitized_item_for_retrieval(row: Mapping[str, Any]) -> EvalItem:
+    return EvalItem(
+        id="",
+        query=_clean(row.get("query")),
+        answerability="unknown",
+        expected_answer="",
+        expected_answer_aliases=(),
+        expected_evidence=(),
+        tags=(),
+        notes="",
+        has_answerability_label=False,
+        validation_warnings=(),
+        source_row={},
+    )
+
+
+def _agentic_planner_tool_locator_text(context: Mapping[str, Any], *, action: str) -> str:
+    if action == "pdf_locator_tool":
+        fields = (
+            "pdf_locator_text",
+            "locator_text",
+            "page_text",
+            "ocr_text",
+            "native_text",
+            "tool_text",
+        )
+    elif action == "xlsx_cell_or_table_tool":
+        fields = (
+            "xlsx_cell_or_table_text",
+            "xlsx_locator_text",
+            "cell_text",
+            "table_text",
+            "row_text",
+            "tool_text",
+        )
+    else:
+        fields = ()
+    for field in fields:
+        value = _clean(context.get(field))
+        if value:
+            return value
+    return ""
+
+
+def _agentic_planner_tool_context(row: Mapping[str, Any], *, action: str) -> dict[str, Any] | None:
+    for context in _as_list(row.get("retrieved_contexts")):
+        if not isinstance(context, Mapping):
+            continue
+        source_family = _clean(context.get("source_family")).upper()
+        if action == "pdf_locator_tool" and source_family != "PDF":
+            continue
+        if action == "xlsx_cell_or_table_tool" and source_family not in {"XLSX", "XLS", "SPREADSHEET"}:
+            continue
+        locator_text = _agentic_planner_tool_locator_text(context, action=action)
+        if not locator_text:
+            continue
+        tool_context = dict(context)
+        tool_context["text"] = locator_text
+        tool_context["rank"] = 1
+        tool_context["agentic_planner_tool_name"] = action
+        tool_context["agentic_planner_tool_output"] = True
+        tool_context["agentic_planner_tool_input_policy"] = "source_derived_locator_fields_only_no_eval_row_fields"
+        return tool_context
+    return None
+
+
+def _agentic_planner_run_local_memory_bank(rows: Sequence[Any]) -> list[dict[str, Any]]:
+    memory: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in rows:
+        if not isinstance(row, Mapping):
+            continue
+        if _clean(row.get("answer_gate_decision")) != "allow_answer":
+            continue
+        gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+        for evidence in _as_list(gate.get("selected_evidence")):
+            if not isinstance(evidence, Mapping):
+                continue
+            if not _has_sourceatom_evidence_identity(evidence):
+                continue
+            text = _gate_row_text(evidence)
+            identity = _context_identity(evidence)
+            if not text or not identity or identity in seen:
+                continue
+            memory_context = dict(evidence)
+            memory_context["agentic_planner_run_local_memory"] = True
+            memory_context["agentic_planner_memory_source_query_sha256"] = f"sha256:{_sha256_text(_clean(row.get('query')))}"
+            memory_context["agentic_planner_memory_input_policy"] = AGENTIC_PLANNER_RUN_LOCAL_MEMORY_INPUT_POLICY
+            memory.append(
+                {
+                    "context": memory_context,
+                    "source_query_sha256": memory_context["agentic_planner_memory_source_query_sha256"],
+                    "source_query_preview": _bounded_text_preview(_clean(row.get("query")), 160),
+                    "evidence_ids": _selected_evidence_ids([memory_context]),
+                }
+            )
+            seen.add(identity)
+    return memory
+
+
+def _agentic_planner_missing_query_anchors(row: Mapping[str, Any]) -> set[str]:
+    gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+    anchors: set[str] = set()
+    for key in ("missing_query_anchors", "missing_query_focus_anchors"):
+        for anchor in _as_list(gate.get(key)):
+            normalized = normalize_answer_text(_clean(anchor))
+            if normalized:
+                anchors.add(normalized)
+    return anchors
+
+
+def _agentic_planner_run_local_memory_match(
+    row: Mapping[str, Any],
+    memory_bank: Sequence[Mapping[str, Any]],
+) -> dict[str, Any] | None:
+    query = _clean(row.get("query"))
+    if not query:
+        return None
+    existing_ids = {_context_identity(context) for context in _contexts_from_row(row)}
+    query_anchors = _gate_query_focus_anchors(query)
+    best: tuple[float, int, dict[str, Any]] | None = None
+    for index, memory in enumerate(memory_bank):
+        context = memory.get("context") if isinstance(memory.get("context"), Mapping) else {}
+        if not context:
+            continue
+        identity = _context_identity(context)
+        if identity and identity in existing_ids:
+            continue
+        text = _gate_row_text(context)
+        if not text:
+            continue
+        missing_anchors = _agentic_planner_missing_query_anchors(row)
+        if missing_anchors:
+            missing_anchor_hits = _gate_anchor_hits(missing_anchors, [text])
+            if missing_anchor_hits != missing_anchors:
+                continue
+        anchor_hits = _gate_anchor_hits(query_anchors, [text])
+        query_overlap = _token_overlap_ratio(query, text)
+        if query_anchors:
+            if not anchor_hits and query_overlap < 0.2:
+                continue
+        elif query_overlap < 0.2:
+            continue
+        score = (10.0 * len(anchor_hits)) + query_overlap
+        candidate = {
+            "context": dict(context),
+            "source_query_sha256": _clean(memory.get("source_query_sha256")),
+            "source_query_preview": _bounded_text_preview(memory.get("source_query_preview"), 160),
+            "evidence_ids": [value for value in _as_list(memory.get("evidence_ids")) if isinstance(value, str)],
+            "anchor_hits": sorted(anchor_hits),
+            "query_overlap": round(query_overlap, 6),
+            "score": round(score, 6),
+        }
+        if best is None or score > best[0]:
+            best = (score, index, candidate)
+    return best[2] if best else None
+
+
+def _agentic_planner_selected_evidence_for_llm_retry(row: Mapping[str, Any]) -> list[dict[str, Any]]:
+    gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+    selected = [dict(context) for context in _as_list(gate.get("selected_evidence")) if isinstance(context, Mapping)]
+    if selected:
+        return selected
+    return select_composer_evidence(
+        _clean(row.get("query")),
+        _contexts_from_row(row),
+        max_evidence=3,
+    )
+
+
+def _agentic_planner_llm_retry_prompt(
+    *,
+    row: Mapping[str, Any],
+    selected_evidence: Sequence[Mapping[str, Any]],
+    previous_answer_preview: str,
+) -> str:
+    gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+    evidence_payload: list[dict[str, Any]] = []
+    for evidence in selected_evidence:
+        citation = _normalize_citation(evidence)
+        metadata_text, metadata_fields = source_derived_evidence_metadata(evidence)
+        evidence_payload.append(
+            {
+                "evidence_id": _clean(evidence.get("evidence_bundle_id"))
+                or _clean(evidence.get("source_atom_id"))
+                or _context_identity(evidence),
+                "source_atom_id": _clean(evidence.get("source_atom_id")),
+                "evidence_bundle_id": _clean(evidence.get("evidence_bundle_id")),
+                "doc_id": _clean(citation.get("doc_id")),
+                "chunk_id": _clean(citation.get("chunk_id")),
+                "source_family": _clean(evidence.get("source_family")) or "UNKNOWN",
+                "granularity": _clean(evidence.get("granularity")) or "unknown",
+                "text_sha256": _gate_row_hash(evidence),
+                "text_preview": _bounded_text_preview(_gate_support_text(evidence), 1000),
+                "source_derived_metadata_text": _bounded_text_preview(metadata_text, 500),
+                "source_derived_metadata_fields": metadata_fields,
+            }
+        )
+    payload = {
+        "query": _clean(row.get("query")),
+        "input_policy": AGENTIC_PLANNER_LLM_RETRY_INPUT_POLICY,
+        "selected_evidence": evidence_payload,
+        "gate_diagnostics": {
+            "failure_class": _agentic_planner_failure_class(row),
+            "evidence_package_status": _clean(gate.get("evidence_package_status")),
+            "answer_gate_decision": _clean(gate.get("answer_gate_decision") or row.get("answer_gate_decision")),
+            "abstention_reason": _clean(gate.get("abstention_reason") or row.get("abstention_reason")),
+            "validation_reasons": [
+                _clean(reason) for reason in _as_list(gate.get("validation_reasons")) if _clean(reason)
+            ],
+            "missing_query_focus_anchors": [
+                _clean(anchor) for anchor in _as_list(gate.get("missing_query_anchors")) if _clean(anchor)
+            ],
+        },
+        "previous_answer_preview": _bounded_text_preview(previous_answer_preview),
+        "citation_policy": "citation_evidence_ids must be selected evidence_id, evidence_bundle_id, or source_atom_id values only",
+        "max_retry_count": 1,
+    }
+    return (
+        "You are a non-production selected-evidence answer composer retry.\n"
+        "Return exactly one JSON object with keys: answer (string) and citation_evidence_ids (array of strings).\n"
+        "Use only the JSON payload below. Do not use outside knowledge.\n"
+        "If the selected evidence is insufficient, return an empty answer and an empty citation_evidence_ids array.\n\n"
+        f"Payload:\n{json.dumps(payload, ensure_ascii=False, sort_keys=True)}\n"
+    )
+
+
+def _agentic_planner_llm_retry_output(
+    row: Mapping[str, Any],
+    *,
+    citation_format: str,
+    local_llm_backend: str,
+    local_llm_base_url: str,
+    local_llm_model: str,
+    local_llm_timeout_seconds: int,
+    local_llm_max_tokens: int,
+    skip_local_llm_endpoint_check: bool,
+) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+    selected_evidence = _agentic_planner_selected_evidence_for_llm_retry(row)
+    previous_answer_preview = _bounded_text_preview(
+        _clean(row.get(INTERNAL_PRE_GATE_ANSWER_KEY)) or _clean(row.get("generated_answer"))
+    )
+    base_meta: dict[str, Any] = {
+        "tool_name": "selected_evidence_llm_rewrite",
+        "status": "skipped",
+        "attempt_count": 0,
+        "max_retry_count": 1,
+        "input_policy": AGENTIC_PLANNER_LLM_RETRY_INPUT_POLICY,
+        "prompt_template_id": AGENTIC_PLANNER_LLM_RETRY_PROMPT_VERSION,
+        "selected_evidence_count": len(selected_evidence),
+        "selected_evidence_ids": _selected_evidence_ids(selected_evidence),
+        "previous_answer_preview": previous_answer_preview,
+        "previous_answer_preview_sha256": f"sha256:{_sha256_text(previous_answer_preview)}"
+        if previous_answer_preview
+        else "",
+        "uses_query_id_or_row_id_or_target_id": False,
+        "uses_expected_answer_or_evidence": False,
+        "uses_qrels_or_labels": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+    }
+    if not selected_evidence:
+        return None, {**base_meta, "status": "skipped_no_selected_evidence"}
+
+    config = _local_llm_composer_config(
+        backend=local_llm_backend,
+        base_url=local_llm_base_url,
+        model=local_llm_model,
+        timeout_seconds=local_llm_timeout_seconds,
+        max_tokens=local_llm_max_tokens,
+        check_endpoint=not skip_local_llm_endpoint_check,
+    )
+    if not config.get("available"):
+        return None, {
+            **base_meta,
+            "status": "skipped_local_llm_unavailable",
+            "blockers": list(config.get("blockers") or []),
+        }
+
+    prompt = _agentic_planner_llm_retry_prompt(
+        row=row,
+        selected_evidence=selected_evidence,
+        previous_answer_preview=previous_answer_preview,
+    )
+    prompt_sha256 = f"sha256:{_sha256_text(prompt)}"
+    retry_base = {
+        **base_meta,
+        "status": "attempted",
+        "attempt_count": 1,
+        "retry_prompt_sha256": prompt_sha256,
+    }
+    try:
+        parsed, meta = LOCAL_LLM_HELPER.call_local_llm_strict_json(
+            backend=_clean(config.get("backend")),
+            base_url=_clean(config.get("base_url")),
+            model=_clean(config.get("model")),
+            prompt=prompt,
+            temperature=0.0,
+            max_tokens=int(config.get("max_tokens") or local_llm_max_tokens),
+            timeout_seconds=int(config.get("timeout_seconds") or local_llm_timeout_seconds),
+        )
+    except Exception as exc:
+        return None, {
+            **retry_base,
+            "status": "error",
+            "error": f"LOCAL_LLM_PLANNER_RETRY_ERROR: {type(exc).__name__}: {exc}",
+        }
+
+    retry_answer = _clean(parsed.get("answer") or parsed.get("short_answer"))
+    retry_citation_ids = _ids_from_local_llm_citation_field(
+        parsed.get("citation_evidence_ids") or parsed.get("citations") or parsed.get("evidence_ids")
+    )
+    retry_raw_sha = _clean((meta or {}).get("raw_response_sha256"))
+    retry_output = _selected_evidence_local_llm_output_from_answer(
+        row=row,
+        query=_clean(row.get("query")),
+        query_selected=selected_evidence,
+        answer=retry_answer,
+        citation_ids=retry_citation_ids,
+        normalized_citation_format=_normalize_selected_evidence_citation_format(citation_format),
+        config=config,
+        prompt_sha256=prompt_sha256,
+        raw_response_sha256=retry_raw_sha,
+    )
+    retry_meta = {
+        **retry_base,
+        "retry_raw_response_sha256": retry_raw_sha,
+        "retry_answer_preview": _bounded_text_preview(retry_answer),
+    }
+    if retry_output is None:
+        return None, {**retry_meta, "status": "rejected_empty_or_unselected_evidence"}
+    return retry_output, retry_meta
+
+
+def apply_agentic_planner_execute_once_to_outputs(
+    raw_outputs: Sequence[Mapping[str, Any]],
+    *,
+    adapter: Any,
+    top_k: int,
+    evidence_gate_mode: str,
+    citation_format: str,
+    local_llm_backend: str = "",
+    local_llm_base_url: str = "",
+    local_llm_model: str = "",
+    local_llm_timeout_seconds: int = 60,
+    local_llm_max_tokens: int = 360,
+    skip_local_llm_endpoint_check: bool = False,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    before_rows = [dict(row) for row in raw_outputs]
+    before_gate_summary = build_evidence_gate_summary(before_rows, mode=evidence_gate_mode)
+    gate_before = _portfolio_gate_summary({"evidence_gate": before_gate_summary})
+    updated_rows = [dict(row) for row in before_rows]
+    decisions: list[dict[str, Any]] = []
+    executed_extra_query_count = 0
+    executed_tool_call_count = 0
+    executed_llm_retry_count = 0
+    executed_memory_lookup_count = 0
+    memory_bank = _agentic_planner_run_local_memory_bank(before_rows)
+    probe_top_k = max(int(top_k) + AGENTIC_PLANNER_EXECUTE_ONCE_PROBE_TOP_K_INCREMENT, 2)
+
+    for item_index, row in enumerate(before_rows):
+        if _clean(row.get("answer_gate_decision")) == "allow_answer":
+            continue
+        failure_class = _agentic_planner_failure_class(row)
+        action = _agentic_planner_action_for_failure(failure_class)
+        memory_match = _agentic_planner_run_local_memory_match(row, memory_bank)
+        if failure_class in {"insufficient_evidence", "missing_query_anchor"} and memory_match is not None:
+            action = "run_local_memory_reuse"
+        query = _clean(row.get("query"))
+        decision: dict[str, Any] = {
+            "item_index": item_index,
+            "query_sha256": f"sha256:{_sha256_text(query)}" if query else "",
+            "query_preview": _bounded_text_preview(query, 160),
+            "failure_class": failure_class,
+            "proposed_action": action,
+            "expected_extra_query_count": _agentic_planner_expected_extra_query_count(action),
+            "expected_tool_call_count": _agentic_planner_expected_tool_call_count(action),
+            "expected_llm_retry_count": _agentic_planner_expected_llm_retry_count(action),
+            "expected_memory_lookup_count": _agentic_planner_expected_memory_lookup_count(action),
+            "executed": False,
+            "execution_status": "skipped_no_safe_executor",
+            "input_policy": (
+                "query_text_and_public_gate_diagnostics_only_no_ids_expected_qrels_labels_baseline_or_legacy_outputs"
+            ),
+        }
+        if action not in {"query_text_only_reformulation", "route_selected_probe"}:
+            decision.update(
+                {
+                    "extra_query_count_executed": 0,
+                    "tool_call_count_executed": 0,
+                    "llm_retry_count_executed": 0,
+                    "memory_lookup_count_executed": 0,
+                    "execution_status": "deferred_requires_explicit_execution_gate",
+                    "execution_gate_required": True,
+                }
+            )
+            decisions.append(decision)
+            continue
+        if action in {"query_text_only_reformulation", "route_selected_probe"}:
+            probe_output = adapter.run_item(_agentic_planner_sanitized_item_for_retrieval(row), top_k=probe_top_k)
+            probe_output = dict(probe_output)
+            probe_output["id"] = _clean(row.get("id"))
+            probe_output["query"] = query
+            probe_output["answerability"] = _clean(row.get("answerability")) or "unknown"
+            probe_output["agentic_planner_execute_once_probe"] = {
+                "planner_action": action,
+                "probe_top_k": probe_top_k,
+                "input_policy": "sanitized_query_text_only_no_ids_expected_qrels_labels_or_baseline",
+                "uses_query_id_or_row_id_or_target_id": False,
+                "uses_expected_answer_or_evidence": False,
+                "uses_qrels_or_labels": False,
+            }
+            composed_probe = apply_selected_evidence_composer_to_outputs(
+                [probe_output],
+                citation_format=citation_format,
+                composer_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+            )
+            gated_probe, _probe_gate = apply_evidence_gate_to_outputs(composed_probe, mode=evidence_gate_mode)
+            updated_rows[item_index] = gated_probe[0]
+            executed_extra_query_count += 1
+            decision.update(
+                {
+                    "executed": True,
+                    "execution_status": "executed",
+                    "extra_query_count_executed": 1,
+                    "tool_call_count_executed": 0,
+                    "llm_retry_count_executed": 0,
+                    "probe_top_k": probe_top_k,
+                }
+            )
+        elif action in {"pdf_locator_tool", "xlsx_cell_or_table_tool"}:
+            tool_context = _agentic_planner_tool_context(row, action=action)
+            if tool_context is not None:
+                tool_output = dict(row)
+                original_contexts = [
+                    dict(context)
+                    for context in _as_list(row.get("retrieved_contexts"))
+                    if isinstance(context, Mapping)
+                ]
+                tool_output["retrieved_contexts"] = [tool_context, *original_contexts]
+                tool_output["citations"] = []
+                tool_output["agentic_planner_tool_use"] = {
+                    "tool_name": action,
+                    "tool_call_count": 1,
+                    "input_policy": "source_derived_locator_fields_only_no_eval_row_fields",
+                    "uses_query_id_or_row_id_or_target_id": False,
+                    "uses_expected_answer_or_evidence": False,
+                    "uses_qrels_or_labels": False,
+                    "raw_prompt_payload_written": False,
+                    "raw_response_payload_written": False,
+                }
+                composed_tool = apply_selected_evidence_composer_to_outputs(
+                    [tool_output],
+                    citation_format=citation_format,
+                    composer_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+                )
+                gated_tool, _tool_gate = apply_evidence_gate_to_outputs(composed_tool, mode=evidence_gate_mode)
+                gated_row = gated_tool[0]
+                gated_row["agentic_planner_tool_use"] = dict(tool_output["agentic_planner_tool_use"])
+                updated_rows[item_index] = gated_row
+                executed_tool_call_count += 1
+                decision.update(
+                    {
+                        "executed": True,
+                        "execution_status": "executed",
+                        "extra_query_count_executed": 0,
+                        "tool_call_count_executed": 1,
+                        "llm_retry_count_executed": 0,
+                        "tool_name": action,
+                        "tool_input_policy": "source_derived_locator_fields_only_no_eval_row_fields",
+                    }
+                )
+            else:
+                decision["extra_query_count_executed"] = 0
+                decision["tool_call_count_executed"] = 0
+                decision["llm_retry_count_executed"] = 0
+                decision["execution_status"] = "skipped_missing_source_locator"
+        elif action == "run_local_memory_reuse":
+            if memory_match is not None:
+                memory_context = dict(memory_match["context"])
+                memory_context["rank"] = 1
+                original_contexts = [
+                    dict(context)
+                    for context in _as_list(row.get("retrieved_contexts"))
+                    if isinstance(context, Mapping)
+                ]
+                memory_output = dict(row)
+                memory_output["retrieved_contexts"] = [memory_context, *original_contexts]
+                memory_output["citations"] = []
+                memory_meta = {
+                    "status": "attempted",
+                    "input_policy": AGENTIC_PLANNER_RUN_LOCAL_MEMORY_INPUT_POLICY,
+                    "memory_lookup_count": 1,
+                    "memory_source_query_sha256": _clean(memory_match.get("source_query_sha256")),
+                    "memory_evidence_ids": list(memory_match.get("evidence_ids") or []),
+                    "memory_anchor_hits": list(memory_match.get("anchor_hits") or []),
+                    "memory_query_overlap": memory_match.get("query_overlap"),
+                    "uses_query_id_or_row_id_or_target_id": False,
+                    "uses_expected_answer_or_evidence": False,
+                    "uses_qrels_or_labels": False,
+                    "retrieved_context_only_citation_promoted": False,
+                    "raw_prompt_payload_written": False,
+                    "raw_response_payload_written": False,
+                }
+                composed_memory = apply_selected_evidence_composer_to_outputs(
+                    [memory_output],
+                    citation_format=citation_format,
+                    composer_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+                )
+                gated_memory, _memory_gate = apply_evidence_gate_to_outputs(composed_memory, mode=evidence_gate_mode)
+                gated_row = gated_memory[0]
+                memory_gate = gated_row.get("evidence_gate") if isinstance(gated_row.get("evidence_gate"), Mapping) else {}
+                if _clean(gated_row.get("answer_gate_decision")) == "allow_answer":
+                    accepted_meta = {
+                        **memory_meta,
+                        "status": "accepted",
+                        "memory_evidence_package_status": _clean(memory_gate.get("evidence_package_status")),
+                        "memory_answer_gate_decision": _clean(gated_row.get("answer_gate_decision")),
+                    }
+                    gated_row["agentic_planner_run_local_memory"] = accepted_meta
+                    updated_rows[item_index] = gated_row
+                    executed_memory_lookup_count += 1
+                    decision.update(
+                        {
+                            "executed": True,
+                            "execution_status": "executed",
+                            "extra_query_count_executed": 0,
+                            "tool_call_count_executed": 0,
+                            "llm_retry_count_executed": 0,
+                            "memory_lookup_count_executed": 1,
+                            "memory_input_policy": AGENTIC_PLANNER_RUN_LOCAL_MEMORY_INPUT_POLICY,
+                            "memory_source_query_sha256": accepted_meta["memory_source_query_sha256"],
+                            "memory_evidence_ids": accepted_meta["memory_evidence_ids"],
+                        }
+                    )
+                else:
+                    decision.update(
+                        {
+                            "extra_query_count_executed": 0,
+                            "tool_call_count_executed": 0,
+                            "llm_retry_count_executed": 0,
+                            "memory_lookup_count_executed": 0,
+                            "execution_status": "rejected_gate_insufficient",
+                            "memory_input_policy": AGENTIC_PLANNER_RUN_LOCAL_MEMORY_INPUT_POLICY,
+                        }
+                    )
+            else:
+                decision.update(
+                    {
+                        "extra_query_count_executed": 0,
+                        "tool_call_count_executed": 0,
+                        "llm_retry_count_executed": 0,
+                        "memory_lookup_count_executed": 0,
+                        "execution_status": "skipped_no_run_local_memory_match",
+                        "memory_input_policy": AGENTIC_PLANNER_RUN_LOCAL_MEMORY_INPUT_POLICY,
+                    }
+                )
+        elif action == "selected_evidence_llm_rewrite":
+            retry_output, retry_meta = _agentic_planner_llm_retry_output(
+                row,
+                citation_format=citation_format,
+                local_llm_backend=local_llm_backend,
+                local_llm_base_url=local_llm_base_url,
+                local_llm_model=local_llm_model,
+                local_llm_timeout_seconds=local_llm_timeout_seconds,
+                local_llm_max_tokens=local_llm_max_tokens,
+                skip_local_llm_endpoint_check=skip_local_llm_endpoint_check,
+            )
+            if retry_output is not None:
+                gated_retry, _retry_gate = apply_evidence_gate_to_outputs([retry_output], mode=evidence_gate_mode)
+                gated_row = gated_retry[0]
+                retry_validation = gated_row.get("evidence_gate") if isinstance(gated_row.get("evidence_gate"), Mapping) else {}
+                retry_decision = _clean(gated_row.get("answer_gate_decision"))
+                if retry_decision == "allow_answer":
+                    accepted_meta = {
+                        **retry_meta,
+                        "status": "accepted",
+                        "retry_evidence_package_status": _clean(retry_validation.get("evidence_package_status")),
+                        "retry_answer_gate_decision": retry_decision,
+                        "retry_abstention_reason": _clean(retry_validation.get("abstention_reason")),
+                    }
+                    gated_row["agentic_planner_llm_retry"] = accepted_meta
+                    updated_rows[item_index] = gated_row
+                    executed_llm_retry_count += 1
+                    decision.update(
+                        {
+                            "executed": True,
+                            "execution_status": "executed",
+                            "extra_query_count_executed": 0,
+                            "tool_call_count_executed": 0,
+                            "llm_retry_count_executed": 1,
+                            "llm_retry_input_policy": AGENTIC_PLANNER_LLM_RETRY_INPUT_POLICY,
+                        }
+                    )
+                else:
+                    rejected_meta = {
+                        **retry_meta,
+                        "status": "rejected_gate_insufficient",
+                        "retry_evidence_package_status": _clean(retry_validation.get("evidence_package_status")),
+                        "retry_answer_gate_decision": retry_decision,
+                        "retry_abstention_reason": _clean(retry_validation.get("abstention_reason")),
+                    }
+                    decision.update(
+                        {
+                            "extra_query_count_executed": 0,
+                            "tool_call_count_executed": 0,
+                            "llm_retry_count_executed": 0,
+                            "execution_status": rejected_meta["status"],
+                            "llm_retry_input_policy": AGENTIC_PLANNER_LLM_RETRY_INPUT_POLICY,
+                        }
+                    )
+            else:
+                decision.update(
+                    {
+                        "extra_query_count_executed": 0,
+                        "tool_call_count_executed": 0,
+                        "llm_retry_count_executed": 0,
+                        "execution_status": _clean(retry_meta.get("status")) or "skipped_llm_retry_unavailable",
+                        "llm_retry_input_policy": AGENTIC_PLANNER_LLM_RETRY_INPUT_POLICY,
+                    }
+                )
+        else:
+            decision["extra_query_count_executed"] = 0
+            decision["tool_call_count_executed"] = 0
+            decision["llm_retry_count_executed"] = 0
+            decision["memory_lookup_count_executed"] = 0
+        decisions.append(decision)
+
+    after_gate_summary = build_evidence_gate_summary(updated_rows, mode=evidence_gate_mode)
+    gate_after = _portfolio_gate_summary({"evidence_gate": after_gate_summary})
+    action_counts = Counter(_clean(decision.get("proposed_action")) for decision in decisions)
+    failure_counts = Counter(_clean(decision.get("failure_class")) for decision in decisions)
+    report = {
+        "schema_version": AGENTIC_PLANNER_EXECUTE_ONCE_SCHEMA_VERSION,
+        "planner_enabled": True,
+        "planner_mode": "execute-once",
+        "planner_version": AGENTIC_PLANNER_EXECUTE_ONCE_SCHEMA_VERSION,
+        "ran_after_selected_evidence_composer": True,
+        "ran_after_evidence_gate": True,
+        "planner_scope": "failed_rows_after_selected_evidence_composer_and_evidence_gate",
+        "planner_decision_count": len(decisions),
+        "planner_executed_decision_count": sum(1 for decision in decisions if decision.get("executed") is True),
+        "planner_action_counts": dict(sorted(action_counts.items())),
+        "planner_failure_class_counts": dict(sorted(failure_counts.items())),
+        "planner_no_safe_action_count": int(failure_counts.get("no_safe_action", 0)),
+        "planner_forbidden_shortcut_detected_count": _agentic_planner_forbidden_shortcut_count(decisions),
+        "planner_expected_extra_query_count": sum(int(decision.get("expected_extra_query_count") or 0) for decision in decisions),
+        "planner_expected_tool_call_count": sum(int(decision.get("expected_tool_call_count") or 0) for decision in decisions),
+        "planner_expected_llm_retry_count": sum(int(decision.get("expected_llm_retry_count") or 0) for decision in decisions),
+        "planner_expected_memory_lookup_count": sum(int(decision.get("expected_memory_lookup_count") or 0) for decision in decisions),
+        "planner_memory_lookup_count_executed": executed_memory_lookup_count,
+        "planner_heuristic_risk_class": "diagnostic_probe_only",
+        "candidate_generation_input_policy": (
+            "query_text_and_public_gate_diagnostics_only_no_ids_expected_qrels_labels_baseline_or_legacy_outputs"
+        ),
+        "retrieved_context_only_citation_policy": "diagnostic_only_never_promoted",
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "planner_execution": _agentic_planner_execute_once_execution(
+            extra_query_count=executed_extra_query_count,
+            tool_call_count=executed_tool_call_count,
+            llm_retry_count=executed_llm_retry_count,
+        ),
+        "guardrail_mutation_flags": _agentic_planner_execute_once_guardrail_flags(),
+        "gate_before": gate_before,
+        "gate_after": gate_after,
+        "gate_delta": _agentic_planner_gate_delta(gate_before, gate_after),
+        "decisions": decisions,
+        "execute_once_readiness": {
+            "ready": False,
+            "assessment": (
+                "execute_once_checkpoint_executed_bounded_query_source_locator_llm_retry_or_run_local_memory_action_only; "
+                "broader agent loops remain closed"
+            ),
+            "quality_improvement_measured": int(gate_after.get("allowed_answer_count") or 0)
+            > int(gate_before.get("allowed_answer_count") or 0),
+            "reason": "execute-once measures post-gate delta under unchanged evidence gate",
+        },
+    }
+    return updated_rows, report
+
+
+def validate_agentic_planner_dry_run(run_id: str, planner: Mapping[str, Any]) -> None:
+    if planner.get("schema_version") != AGENTIC_PLANNER_DRY_RUN_SCHEMA_VERSION:
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.schema_version unsupported")
+    if planner.get("official_metric") is not False:
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.official_metric must be False")
+    if int(planner.get("official_metric_input_rows") or 0) != 0:
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.official_metric_input_rows must be 0")
+    for key in ("raw_prompt_payload_written", "raw_response_payload_written"):
+        if planner.get(key) is not False:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.{key} must be False")
+    mode = _clean(planner.get("planner_mode")).lower() or "off"
+    if mode not in AGENTIC_PLANNER_MODE_CHOICES:
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_mode unsupported: {mode}")
+    enabled = bool(planner.get("planner_enabled"))
+    if enabled and mode != "dry-run":
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_enabled requires dry-run mode")
+    if enabled and planner.get("ran_after_selected_evidence_composer") is not True:
+        raise DatasetSchemaError(
+            f"{run_id}: agentic_planner_dry_run.ran_after_selected_evidence_composer must be True"
+        )
+    if enabled and planner.get("ran_after_evidence_gate") is not True:
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.ran_after_evidence_gate must be True")
+    if planner.get("planner_heuristic_risk_class") != "diagnostic_probe_only":
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_heuristic_risk_class must be diagnostic_probe_only")
+    guardrail_flags = planner.get("guardrail_flags")
+    if not isinstance(guardrail_flags, Mapping):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.guardrail_flags must be present")
+    for key in AGENTIC_PLANNER_GUARDRAIL_FLAGS:
+        if guardrail_flags.get(key) is not False:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.guardrail_flags.{key} must be False")
+    execution = planner.get("planner_execution")
+    if not isinstance(execution, Mapping):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_execution must be present")
+    for key in ("retrieval_executed", "tool_call_executed", "llm_retry_executed"):
+        if execution.get(key) is not False:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_execution.{key} must be False")
+    for key in ("extra_query_count_executed", "tool_call_count_executed", "llm_retry_count_executed"):
+        if int(execution.get(key) or 0) != 0:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_execution.{key} must be 0")
+    if planner.get("retrieved_context_only_citation_policy") != "diagnostic_only_never_promoted":
+        raise DatasetSchemaError(
+            f"{run_id}: agentic_planner_dry_run.retrieved_context_only_citation_policy must be diagnostic_only_never_promoted"
+        )
+    gate_before = planner.get("gate_before")
+    gate_after = planner.get("gate_after_unchanged_because_dry_run")
+    if isinstance(gate_before, Mapping) and isinstance(gate_after, Mapping) and dict(gate_before) != dict(gate_after):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run gate_after must equal gate_before in dry-run")
+    decisions = [decision for decision in _as_list(planner.get("decisions")) if isinstance(decision, Mapping)]
+    if int(planner.get("planner_decision_count") or 0) != len(decisions):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_decision_count mismatch")
+    if int(planner.get("planner_forbidden_shortcut_detected_count") or 0) != 0:
+        raise DatasetSchemaError(
+            f"{run_id}: agentic_planner_dry_run.planner_forbidden_shortcut_detected_count must be 0"
+        )
+    expected_action_counts = dict(sorted(Counter(_clean(decision.get("proposed_action")) for decision in decisions).items()))
+    if dict(planner.get("planner_action_counts") or {}) != expected_action_counts:
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_action_counts mismatch")
+    expected_failure_counts = dict(sorted(Counter(_clean(decision.get("failure_class")) for decision in decisions).items()))
+    if dict(planner.get("planner_failure_class_counts") or {}) != expected_failure_counts:
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_failure_class_counts mismatch")
+    if int(planner.get("planner_expected_extra_query_count") or 0) != sum(
+        int(decision.get("expected_extra_query_count") or 0) for decision in decisions
+    ):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_expected_extra_query_count mismatch")
+    if int(planner.get("planner_expected_tool_call_count") or 0) != sum(
+        int(decision.get("expected_tool_call_count") or 0) for decision in decisions
+    ):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_expected_tool_call_count mismatch")
+    if int(planner.get("planner_expected_llm_retry_count") or 0) != sum(
+        int(decision.get("expected_llm_retry_count") or 0) for decision in decisions
+    ):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_expected_llm_retry_count mismatch")
+    if int(planner.get("planner_expected_memory_lookup_count") or 0) != sum(
+        int(decision.get("expected_memory_lookup_count") or 0) for decision in decisions
+    ):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run.planner_expected_memory_lookup_count mismatch")
+    for decision in decisions:
+        present_forbidden = sorted(key for key in AGENTIC_PLANNER_FORBIDDEN_DECISION_FIELDS if key in decision)
+        if present_forbidden:
+            raise DatasetSchemaError(
+                f"{run_id}: agentic_planner_dry_run decision contains forbidden field {present_forbidden[0]}"
+            )
+        if "proposed_actions" in decision:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run decision must contain exactly one proposed_action")
+        failure_class = _clean(decision.get("failure_class"))
+        if failure_class not in AGENTIC_PLANNER_FAILURE_CLASSES:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run unsupported failure_class {failure_class}")
+        action = _clean(decision.get("proposed_action"))
+        if action not in AGENTIC_PLANNER_ACTIONS:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run unsupported proposed_action {action}")
+        if decision.get("executed") is not False:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run decision.executed must be False")
+        if int(decision.get("expected_extra_query_count") or 0) != _agentic_planner_expected_extra_query_count(action):
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run decision expected_extra_query_count mismatch")
+        if int(decision.get("expected_tool_call_count") or 0) != _agentic_planner_expected_tool_call_count(action):
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run decision expected_tool_call_count mismatch")
+        if int(decision.get("expected_llm_retry_count") or 0) != _agentic_planner_expected_llm_retry_count(action):
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run decision expected_llm_retry_count mismatch")
+        if int(decision.get("expected_memory_lookup_count") or 0) != _agentic_planner_expected_memory_lookup_count(action):
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_dry_run decision expected_memory_lookup_count mismatch")
+
+
+def validate_agentic_planner_execute_once(run_id: str, planner: Mapping[str, Any]) -> None:
+    if planner.get("schema_version") != AGENTIC_PLANNER_EXECUTE_ONCE_SCHEMA_VERSION:
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.schema_version unsupported")
+    if planner.get("planner_mode") != "execute-once" or planner.get("planner_enabled") is not True:
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once must be enabled execute-once mode")
+    if planner.get("official_metric") is not False:
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.official_metric must be False")
+    if int(planner.get("official_metric_input_rows") or 0) != 0:
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.official_metric_input_rows must be 0")
+    for key in ("raw_prompt_payload_written", "raw_response_payload_written"):
+        if planner.get(key) is not False:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.{key} must be False")
+    if planner.get("planner_heuristic_risk_class") != "diagnostic_probe_only":
+        raise DatasetSchemaError(
+            f"{run_id}: agentic_planner_execute_once.planner_heuristic_risk_class must be diagnostic_probe_only"
+        )
+    if planner.get("retrieved_context_only_citation_policy") != "diagnostic_only_never_promoted":
+        raise DatasetSchemaError(
+            f"{run_id}: agentic_planner_execute_once.retrieved_context_only_citation_policy must be diagnostic_only_never_promoted"
+        )
+    flags = planner.get("guardrail_mutation_flags")
+    if not isinstance(flags, Mapping):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.guardrail_mutation_flags must be present")
+    for key, value in flags.items():
+        if value is not False:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.guardrail_mutation_flags.{key} must be False")
+    execution = planner.get("planner_execution")
+    if not isinstance(execution, Mapping):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.planner_execution must be present")
+    decisions = [decision for decision in _as_list(planner.get("decisions")) if isinstance(decision, Mapping)]
+    if int(planner.get("planner_decision_count") or 0) != len(decisions):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.planner_decision_count mismatch")
+    executed = [decision for decision in decisions if decision.get("executed") is True]
+    if int(planner.get("planner_executed_decision_count") or 0) != len(executed):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.planner_executed_decision_count mismatch")
+    if int(planner.get("planner_forbidden_shortcut_detected_count") or 0) != 0:
+        raise DatasetSchemaError(
+            f"{run_id}: agentic_planner_execute_once.planner_forbidden_shortcut_detected_count must be 0"
+        )
+    if int(execution.get("extra_query_count_executed") or 0) != sum(
+        int(decision.get("extra_query_count_executed") or 0) for decision in decisions
+    ):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.extra_query_count_executed mismatch")
+    if bool(execution.get("retrieval_executed")) != (int(execution.get("extra_query_count_executed") or 0) > 0):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.retrieval_executed mismatch")
+    if int(execution.get("tool_call_count_executed") or 0) != sum(
+        int(decision.get("tool_call_count_executed") or 0) for decision in decisions
+    ):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.tool_call_count_executed mismatch")
+    if bool(execution.get("tool_call_executed")) != (int(execution.get("tool_call_count_executed") or 0) > 0):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.tool_call_executed mismatch")
+    if int(execution.get("llm_retry_count_executed") or 0) != sum(
+        int(decision.get("llm_retry_count_executed") or 0) for decision in decisions
+    ):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.llm_retry_count_executed mismatch")
+    if bool(execution.get("llm_retry_executed")) != (int(execution.get("llm_retry_count_executed") or 0) > 0):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.llm_retry_executed mismatch")
+    if int(planner.get("planner_expected_llm_retry_count") or 0) != sum(
+        int(decision.get("expected_llm_retry_count") or 0) for decision in decisions
+    ):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.planner_expected_llm_retry_count mismatch")
+    if int(planner.get("planner_expected_memory_lookup_count") or 0) != sum(
+        int(decision.get("expected_memory_lookup_count") or 0) for decision in decisions
+    ):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.planner_expected_memory_lookup_count mismatch")
+    if int(planner.get("planner_memory_lookup_count_executed") or 0) != sum(
+        int(decision.get("memory_lookup_count_executed") or 0) for decision in decisions
+    ):
+        raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once.planner_memory_lookup_count_executed mismatch")
+    for decision in decisions:
+        present_forbidden = sorted(key for key in AGENTIC_PLANNER_FORBIDDEN_DECISION_FIELDS if key in decision)
+        if present_forbidden:
+            raise DatasetSchemaError(
+                f"{run_id}: agentic_planner_execute_once decision contains forbidden field {present_forbidden[0]}"
+            )
+        if "proposed_actions" in decision:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once decision must contain exactly one proposed_action")
+        failure_class = _clean(decision.get("failure_class"))
+        if failure_class not in AGENTIC_PLANNER_FAILURE_CLASSES:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once unsupported failure_class {failure_class}")
+        action = _clean(decision.get("proposed_action"))
+        if action not in AGENTIC_PLANNER_ACTIONS:
+            raise DatasetSchemaError(f"{run_id}: agentic_planner_execute_once unsupported proposed_action {action}")
+        if decision.get("executed") is True and action not in {
+            "query_text_only_reformulation",
+            "route_selected_probe",
+        }:
+            raise DatasetSchemaError(
+                f"{run_id}: agentic_planner_execute_once unsupported executed action for this checkpoint"
+            )
+
+
+def _heuristic_risk_entry(
+    *,
+    rule_id: str,
+    classification: str,
+    status: str,
+    description: str,
+    input_policy: str,
+    scope: str,
+    diagnostic_only: bool = True,
+    uses_source_derived_fields: bool = False,
+    uses_query_text_only: bool = False,
+    uses_query_id_or_row_id_or_target_id: bool = False,
+    uses_expected_answer_or_evidence: bool = False,
+    uses_qrels_or_labels: bool = False,
+    per_row_alias_table: bool = False,
+    composer_or_gate_loosening_for_single_residual: bool = False,
+) -> dict[str, Any]:
+    return {
+        "rule_id": rule_id,
+        "classification": classification,
+        "status": status,
+        "description": description,
+        "input_policy": input_policy,
+        "scope": scope,
+        "diagnostic_only": diagnostic_only,
+        "official_metric_input": False,
+        "uses_source_derived_fields": uses_source_derived_fields,
+        "uses_query_text_only": uses_query_text_only,
+        "uses_query_id_or_row_id_or_target_id": uses_query_id_or_row_id_or_target_id,
+        "uses_expected_answer_or_evidence": uses_expected_answer_or_evidence,
+        "uses_qrels_or_labels": uses_qrels_or_labels,
+        "per_row_alias_table": per_row_alias_table,
+        "composer_or_gate_loosening_for_single_residual": composer_or_gate_loosening_for_single_residual,
+    }
+
+
+def _active_candidate_rule(summary: Mapping[str, Any]) -> dict[str, Any]:
+    index = summary.get("index_retrieval_config") if isinstance(summary.get("index_retrieval_config"), Mapping) else {}
+    retrieval_surface = summary.get("retrieval_surface") if isinstance(summary.get("retrieval_surface"), Mapping) else {}
+    policy = _clean(summary.get("candidate_generation_input_policy") or index.get("candidate_generation_input_policy"))
+    boundary = _clean(summary.get("active_retrieval_service_boundary") or index.get("active_retrieval_service_boundary"))
+    selected_surface = _clean(retrieval_surface.get("selected"))
+    if index.get("adapter") == "jsonl_context_override":
+        return _heuristic_risk_entry(
+            rule_id="precomputed_context_fixture",
+            classification="diagnostic_probe_only",
+            status="active",
+            description="Precomputed context rows are used only as deterministic test/report input.",
+            input_policy=policy or "precomputed_fixture_rows_not_retrieval_improvement",
+            scope="whole_run",
+        )
+    if boundary == "weaviate" or "weaviate" in json.dumps(index, ensure_ascii=False).casefold():
+        return _heuristic_risk_entry(
+            rule_id="source_derived_route_selected_index_policy",
+            classification="source_derived_index_feature",
+            status="active",
+            description="Route-selected retrieval uses source-owned taxonomy/index metadata, not eval-row fields.",
+            input_policy=policy or WEAVIATE_CANDIDATE_INPUT_POLICY,
+            scope="whole_corpus",
+            uses_source_derived_fields=True,
+            uses_query_text_only=True,
+        )
+    return _heuristic_risk_entry(
+        rule_id="active_query_text_candidate_generation",
+        classification="query_text_only_reformulation",
+        status="active",
+        description="Active candidate generation is constrained to query text and source-derived retrieval state.",
+        input_policy=policy or "query_text_only_no_gold_qrels_labels_ids_or_baseline_topk",
+        scope=selected_surface or "whole_run",
+        uses_query_text_only=True,
+    )
+
+
+def build_heuristic_risk_ledger(summary: Mapping[str, Any]) -> dict[str, Any]:
+    config = summary.get("generator_config") if isinstance(summary.get("generator_config"), Mapping) else {}
+    gate = summary.get("evidence_gate") if isinstance(summary.get("evidence_gate"), Mapping) else {}
+    corpus_audit = summary.get("corpus_coverage_audit") if isinstance(summary.get("corpus_coverage_audit"), Mapping) else {}
+    agentic_planner = (
+        summary.get("agentic_planner_dry_run")
+        if isinstance(summary.get("agentic_planner_dry_run"), Mapping)
+        else {}
+    )
+    agentic_execute_once = (
+        summary.get("agentic_planner_execute_once")
+        if isinstance(summary.get("agentic_planner_execute_once"), Mapping)
+        else {}
+    )
+    entries: list[dict[str, Any]] = [
+        _heuristic_risk_entry(
+            rule_id="global_query_text_normalization",
+            classification="global_normalization",
+            status="active",
+            description="Shared query/token normalization is applied globally without row-specific aliases.",
+            input_policy="query_text_only_global_normalization_no_eval_row_fields",
+            scope="whole_run",
+            uses_query_text_only=True,
+        ),
+        _active_candidate_rule(summary),
+    ]
+    if config.get("selected_evidence_composer_invoked"):
+        entries.append(
+            _heuristic_risk_entry(
+                rule_id="selected_evidence_composer",
+                classification="query_text_only_reformulation",
+                status="active",
+                description="The selected-evidence composer formulates answers only from query text plus selected SourceAtom/EvidenceBundle evidence.",
+                input_policy=_clean(config.get("selected_evidence_composer_input_policy"))
+                or SELECTED_EVIDENCE_COMPOSER_INPUT_POLICY,
+                scope="all_eval_items",
+                uses_query_text_only=True,
+                uses_source_derived_fields=True,
+            )
+        )
+    if _clean(gate.get("evidence_gate_mode")) not in {"", "off"}:
+        entries.append(
+            _heuristic_risk_entry(
+                rule_id="evidence_gate_enforcement",
+                classification="diagnostic_probe_only",
+                status="active",
+                description="Evidence gate blocks or abstains unsupported outputs without loosening composer behavior for a residual row.",
+                input_policy="selected_evidence_validation_only_no_expected_or_gold_fields",
+                scope="all_eval_items",
+                uses_source_derived_fields=True,
+            )
+        )
+    if corpus_audit.get("enabled"):
+        entries.append(
+            _heuristic_risk_entry(
+                rule_id="corpus_coverage_audit_probe",
+                classification="diagnostic_probe_only",
+                status="active",
+                description="Target-anchor probes are report-only diagnostics after the main run and are not candidate generation or metric inputs.",
+                input_policy=_clean(corpus_audit.get("candidate_generation_input_policy"))
+                or "main_eval_unchanged_report_only_diagnostic_probe",
+                scope="post_run_audit",
+                uses_query_text_only=True,
+            )
+        )
+    if agentic_planner.get("planner_enabled"):
+        entries.append(
+            _heuristic_risk_entry(
+                rule_id="agentic_planner_dry_run",
+                classification="diagnostic_probe_only",
+                status="active",
+                description="Planner dry-run classifies post-gate failures and records one proposed action per failed row without executing retrieval, tools, or LLM retry.",
+                input_policy=_clean(agentic_planner.get("candidate_generation_input_policy"))
+                or "query_text_and_public_gate_diagnostics_only_no_ids_expected_qrels_labels_baseline_or_legacy_outputs",
+                scope="failed_rows_after_gate",
+                uses_query_text_only=True,
+                uses_source_derived_fields=True,
+            )
+        )
+    if agentic_execute_once.get("planner_enabled"):
+        entries.append(
+            _heuristic_risk_entry(
+                rule_id="agentic_planner_execute_once",
+                classification="diagnostic_probe_only",
+                status="active",
+                description=(
+                    "Planner execute-once runs only one bounded failed-row action: route-selected probe, "
+                    "source-derived locator context, or selected-evidence LLM rewrite, then reuses the unchanged evidence gate."
+                ),
+                input_policy=_clean(agentic_execute_once.get("candidate_generation_input_policy"))
+                or "query_text_and_public_gate_diagnostics_only_no_ids_expected_qrels_labels_baseline_or_legacy_outputs",
+                scope="failed_rows_after_gate",
+                uses_query_text_only=True,
+                uses_source_derived_fields=True,
+            )
+        )
+    entries.append(
+        _heuristic_risk_entry(
+            rule_id="agentic_loop_review",
+            classification="diagnostic_probe_only",
+            status="active",
+            description="Broader agent-loop readiness is a report-only review and does not open production, official metrics, raw payloads, or gate loosening.",
+            input_policy="report_diagnostics_only_no_eval_row_shortcuts_no_raw_payloads",
+            scope="post_run_review",
+            uses_source_derived_fields=True,
+        )
+    )
+    entries.extend(
+        [
+            _heuristic_risk_entry(
+                rule_id="forbidden_query_id_row_id_target_id_aliasing",
+                classification="forbidden_eval_row_shortcut",
+                status="rejected",
+                description="Reject query_id, row_id, or target_id based aliasing or expansion.",
+                input_policy="rejected_for_active_retrieval_and_generation",
+                scope="all_eval_items",
+                uses_query_id_or_row_id_or_target_id=True,
+            ),
+            _heuristic_risk_entry(
+                rule_id="forbidden_expected_answer_evidence_qrels_label_expansion",
+                classification="forbidden_eval_row_shortcut",
+                status="rejected",
+                description="Reject expected answer/evidence/qrels/label based query expansion.",
+                input_policy="rejected_for_active_retrieval_and_generation",
+                scope="all_eval_items",
+                uses_expected_answer_or_evidence=True,
+                uses_qrels_or_labels=True,
+            ),
+            _heuristic_risk_entry(
+                rule_id="forbidden_per_row_alias_table",
+                classification="forbidden_eval_row_shortcut",
+                status="rejected",
+                description="Reject per-row alias tables, including aliases for text_namu_v2_0014.",
+                input_policy="rejected_for_active_retrieval_and_generation",
+                scope="all_eval_items",
+                per_row_alias_table=True,
+            ),
+            _heuristic_risk_entry(
+                rule_id="forbidden_single_residual_gate_or_composer_loosening",
+                classification="forbidden_eval_row_shortcut",
+                status="rejected",
+                description="Reject composer or gate loosening for a single residual row.",
+                input_policy="rejected_for_active_retrieval_and_generation",
+                scope="all_eval_items",
+                composer_or_gate_loosening_for_single_residual=True,
+            ),
+        ]
+    )
+    active_entries = [entry for entry in entries if _clean(entry.get("status")) == "active"]
+    active_counts = Counter(_clean(entry.get("classification")) for entry in active_entries)
+    return {
+        "schema_version": HEURISTIC_RISK_LEDGER_SCHEMA_VERSION,
+        "enabled": True,
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "allowed_classifications": list(HEURISTIC_RISK_ALLOWED_CLASSIFICATIONS),
+        "all_classifications": list(HEURISTIC_RISK_ALL_CLASSIFICATIONS),
+        "entries": entries,
+        "active_entry_count": len(active_entries),
+        "rejected_entry_count": len(entries) - len(active_entries),
+        "active_classification_counts": dict(sorted(active_counts.items())),
+        "forbidden_eval_row_shortcut_active": any(
+            _clean(entry.get("classification")) == "forbidden_eval_row_shortcut"
+            or any(entry.get(flag) is True for flag in HEURISTIC_RISK_FORBIDDEN_ACTIVE_FLAGS)
+            for entry in active_entries
+        ),
+        "gold_or_qrels_mutation": False,
+        "source_registry_mutation": False,
+        "denominator_mutation": False,
+        "current_alias_mutation": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+    }
+
+
+def _query_count_per_item(summary: Mapping[str, Any], item_count: int) -> float | None:
+    for value in (
+        summary.get("weaviate_query_count_per_item"),
+        (summary.get("backend_comparison") or {}).get("weaviate_query_count_per_item")
+        if isinstance(summary.get("backend_comparison"), Mapping)
+        else None,
+    ):
+        if isinstance(value, (int, float)):
+            return round(float(value), 6)
+    backend = summary.get("retrieval_backend") if isinstance(summary.get("retrieval_backend"), Mapping) else {}
+    query_count = backend.get("query_count")
+    if isinstance(query_count, (int, float)) and item_count:
+        return round(float(query_count) / float(item_count), 6)
+    return None
+
+
+def _metric_continuity_guardrail_flags(summary: Mapping[str, Any]) -> dict[str, bool]:
+    return {
+        "gold_or_qrels_mutation": bool(summary.get("gold_or_qrels_mutation")),
+        "expected_fields_used_for_candidate_generation": bool(summary.get("expected_fields_used_for_candidate_generation")),
+        "query_id_used_for_candidate_generation": bool(summary.get("query_id_used_for_candidate_generation")),
+        "row_id_used_for_candidate_generation": bool(summary.get("row_id_used_for_candidate_generation")),
+        "target_id_used_for_candidate_generation": bool(summary.get("target_id_used_for_candidate_generation")),
+        "qrels_used_for_candidate_generation": bool(summary.get("qrels_used_for_candidate_generation")),
+        "answerability_labels_used_for_candidate_generation": bool(summary.get("answerability_labels_used_for_candidate_generation")),
+        "gate_uses_expected_fields": bool(summary.get("gate_uses_expected_fields")),
+        "gate_uses_gold_fields": bool(summary.get("gate_uses_gold_fields")),
+        "evidence_gate_retrieval_loop_triggered": bool(summary.get("evidence_gate_retrieval_loop_triggered")),
+    }
+
+
+def build_metric_continuity_checkpoint(summary: Mapping[str, Any]) -> dict[str, Any]:
+    gate = summary.get("evidence_gate") if isinstance(summary.get("evidence_gate"), Mapping) else {}
+    item_count = int(gate.get("item_count") or summary.get("total_item_count") or len(_as_list(summary.get("items"))))
+    allowed = int(gate.get("allowed_answer_count") or 0)
+    blocked = int(gate.get("unsupported_answer_blocked_count") or 0) + int(
+        gate.get("would_block_unsupported_answer_count") or 0
+    )
+    status_counts = {
+        "sufficient": int(gate.get("sufficient_evidence_package_count") or 0),
+        "insufficient": int(gate.get("insufficient_evidence_package_count") or 0),
+        "conflicting": int(gate.get("conflicting_evidence_package_count") or 0),
+        "unresolved": int(gate.get("unresolved_evidence_package_count") or 0),
+    }
+    backend = summary.get("backend_comparison") if isinstance(summary.get("backend_comparison"), Mapping) else {}
+    latency = {
+        "elapsed_ms": summary.get("elapsed_ms"),
+        "bm25_latency_ms_p50": backend.get("bm25_latency_ms_p50"),
+        "bm25_latency_ms_p95": backend.get("bm25_latency_ms_p95"),
+        "vector_latency_ms_p50": backend.get("vector_latency_ms_p50"),
+        "vector_latency_ms_p95": backend.get("vector_latency_ms_p95"),
+        "hybrid_latency_ms_p50": backend.get("hybrid_latency_ms_p50"),
+        "hybrid_latency_ms_p95": backend.get("hybrid_latency_ms_p95"),
+        "weaviate_query_latency_ms_p50": summary.get("weaviate_query_latency_ms_p50") or backend.get("hybrid_latency_ms_p50"),
+        "weaviate_query_latency_ms_p95": summary.get("weaviate_query_latency_ms_p95") or backend.get("hybrid_latency_ms_p95"),
+    }
+    guardrail_flags = _metric_continuity_guardrail_flags(summary)
+    return {
+        "schema_version": METRIC_CONTINUITY_CHECKPOINT_SCHEMA_VERSION,
+        "enabled": True,
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "gate_outcome": {
+            "item_count": item_count,
+            "allowed_answer_count": allowed,
+            "blocked_or_would_block_count": blocked,
+            "allowed_over_item_count": f"{allowed}/{item_count}" if item_count else "0/0",
+        },
+        "selected_evidence_gate_outcome_preserved": bool(item_count == 6 and allowed == 5 and blocked == 1),
+        "evidence_package_status_counts": status_counts,
+        "unsupported_answer_rate_before_gate": gate.get("unsupported_answer_rate_before_gate"),
+        "unsupported_answer_rate_after_gate": gate.get("unsupported_answer_rate_after_gate"),
+        "citation_supported_count": int(gate.get("citation_supported_count") or 0),
+        "retrieved_context_only_diagnostic_count": int(
+            gate.get("citation_retrieved_context_only_diagnostic_count") or 0
+        ),
+        "selected_evidence_citation_precision": _portfolio_selected_evidence_citation_precision(gate),
+        "query_count_per_item": _query_count_per_item(summary, item_count),
+        "latency": latency,
+        "residual_taxonomy": _portfolio_residual_taxonomy(summary),
+        "guardrail_mutation_flags": guardrail_flags,
+        "guardrail_mutation_detected": any(guardrail_flags.values()),
+        "residual_resolution_assessment": (
+            "residual_remains_general_retrieval_limitation"
+            if blocked
+            else "no_selected_evidence_residual_blocked_by_gate"
+        ),
+        "residual_policy": "do_not_apply_row_specific_alias_or_single_residual_gate_loosening",
+    }
+
+
+def _agentic_loop_review_guardrail_flags(summary: Mapping[str, Any]) -> dict[str, bool]:
+    guardrails = summary.get("guardrails") if isinstance(summary.get("guardrails"), Mapping) else {}
+    planner = (
+        summary.get("agentic_planner_execute_once")
+        if isinstance(summary.get("agentic_planner_execute_once"), Mapping)
+        else summary.get("agentic_planner_dry_run")
+        if isinstance(summary.get("agentic_planner_dry_run"), Mapping)
+        else {}
+    )
+    planner_flags = planner.get("guardrail_mutation_flags") or planner.get("guardrail_flags")
+    if not isinstance(planner_flags, Mapping):
+        planner_flags = {}
+    return {
+        "gold_or_qrels_mutation": bool(guardrails.get("gold_mutation") or guardrails.get("qrels_mutation")),
+        "label_mutation": bool(guardrails.get("label_mutation") or guardrails.get("answerability_label_mutation")),
+        "expected_answer_or_evidence_mutation": bool(
+            guardrails.get("expected_answer_mutation") or guardrails.get("expected_evidence_mutation")
+        ),
+        "denominator_mutation": bool(guardrails.get("denominator_mutation")),
+        "query_id_row_id_target_id_used": bool(
+            planner_flags.get("query_id_used_for_planner_selection")
+            or planner_flags.get("row_id_used_for_planner_selection")
+            or planner_flags.get("target_id_used_for_planner_selection")
+        ),
+        "expected_qrels_labels_or_baseline_used": bool(
+            planner_flags.get("expected_fields_used_for_planner_selection")
+            or planner_flags.get("qrels_used_for_planner_selection")
+            or planner_flags.get("labels_used_for_planner_selection")
+            or planner_flags.get("baseline_topk_or_legacy_outputs_used")
+        ),
+        "row_specific_alias_or_shortcut_used": bool(planner_flags.get("row_specific_alias_or_shortcut_used")),
+        "raw_prompt_payload_written": bool(summary.get("raw_prompt_payload_written") or planner.get("raw_prompt_payload_written")),
+        "raw_response_payload_written": bool(
+            summary.get("raw_response_payload_written") or planner.get("raw_response_payload_written")
+        ),
+        "gate_loosened": bool(
+            planner_flags.get("gate_loosened") or planner_flags.get("evidence_gate_loosened")
+        ),
+        "retrieved_context_only_citation_promoted": bool(
+            planner_flags.get("retrieved_context_only_citation_promoted")
+        ),
+        "official_metric": bool(summary.get("official_metric") or planner.get("official_metric")),
+        "production_routing_opened": bool(planner_flags.get("production_routing_opened")),
+        "protected_namespace_mutation": bool(planner_flags.get("protected_namespace_mutation")),
+    }
+
+
+def build_agentic_loop_review(summary: Mapping[str, Any]) -> dict[str, Any]:
+    execute_once = (
+        summary.get("agentic_planner_execute_once")
+        if isinstance(summary.get("agentic_planner_execute_once"), Mapping)
+        else {}
+    )
+    dry_run = (
+        summary.get("agentic_planner_dry_run")
+        if isinstance(summary.get("agentic_planner_dry_run"), Mapping)
+        else {}
+    )
+    planner = execute_once or dry_run
+    execution = planner.get("planner_execution") if isinstance(planner.get("planner_execution"), Mapping) else {}
+    gate_delta = planner.get("gate_delta") if isinstance(planner.get("gate_delta"), Mapping) else {}
+    readiness = (
+        planner.get("execute_once_readiness")
+        if isinstance(planner.get("execute_once_readiness"), Mapping)
+        else {}
+    )
+    quality_improvement_measured = bool(readiness.get("quality_improvement_measured")) or any(
+        int(gate_delta.get(key) or 0) > 0
+        for key in ("allowed_answer_count_delta", "citation_supported_count_delta")
+    )
+    dataset_path = _clean(summary.get("dataset_path"))
+    dataset_name = Path(dataset_path).name if dataset_path else ""
+    index = summary.get("index_retrieval_config") if isinstance(summary.get("index_retrieval_config"), Mapping) else {}
+    live_text_gold_metric_measured = bool(
+        dataset_name == "gold_queries_text_namu_v2_1_question_gold_v2.csv"
+        and _clean(index.get("active_retrieval_service_boundary")) == "weaviate"
+    )
+    guardrail_flags = _agentic_loop_review_guardrail_flags(summary)
+    guardrail_mutation_detected = any(guardrail_flags.values())
+    required_before_broader_loop = [
+        "fresh_live_text_gold_report_with_weaviate_reachable",
+        "human_approved_gold_qrels_answerability_relevance_expected_evidence_denominator_policy",
+        "multi_checkpoint_non_fake_quality_improvement_under_unchanged_gate",
+        "per_action_budget_and_one_action_per_failed_row_policy_review",
+        "retrieved_context_only_citations_remain_diagnostic_only",
+    ]
+    return {
+        "schema_version": AGENTIC_LOOP_REVIEW_SCHEMA_VERSION,
+        "enabled": True,
+        "review_only": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "heuristic_risk_class": "diagnostic_probe_only",
+        "planner_enabled": bool(planner.get("planner_enabled")),
+        "planner_mode": _clean(planner.get("planner_mode")) or "off",
+        "planner_version": _clean(planner.get("planner_version")),
+        "broader_agent_loop_ready": False,
+        "broader_agent_loop_opened": False,
+        "production_routing_opened": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "retrieved_context_only_citation_promoted": False,
+        "gate_loosened": False,
+        "gold_or_qrels_or_labels_or_expected_or_denominator_mutation": False,
+        "evidence_gate_required_for_all_actions": True,
+        "one_action_per_failed_row_policy": True,
+        "official_metric_policy": (
+            "official_metric_false_until_human_approved_gold_qrels_answerability_relevance_expected_evidence_denominator_policy"
+        ),
+        "bounded_action_evidence": {
+            "planner_present": bool(planner),
+            "planner_mode": _clean(planner.get("planner_mode")) or "off",
+            "planner_decision_count": int(planner.get("planner_decision_count") or 0),
+            "planner_executed_decision_count": int(planner.get("planner_executed_decision_count") or 0),
+            "planner_action_counts": dict(planner.get("planner_action_counts") or {}),
+            "planner_failure_class_counts": dict(planner.get("planner_failure_class_counts") or {}),
+            "expected_extra_query_count": int(planner.get("planner_expected_extra_query_count") or 0),
+            "expected_tool_call_count": int(planner.get("planner_expected_tool_call_count") or 0),
+            "expected_llm_retry_count": int(planner.get("planner_expected_llm_retry_count") or 0),
+            "expected_memory_lookup_count": int(planner.get("planner_expected_memory_lookup_count") or 0),
+            "executed_extra_query_count": int(execution.get("extra_query_count_executed") or 0),
+            "executed_tool_call_count": int(execution.get("tool_call_count_executed") or 0),
+            "executed_llm_retry_count": int(execution.get("llm_retry_count_executed") or 0),
+            "executed_memory_lookup_count": int(planner.get("planner_memory_lookup_count_executed") or 0),
+            "gate_delta": dict(gate_delta),
+            "quality_improvement_measured": quality_improvement_measured,
+            "live_text_gold_metric_measured": live_text_gold_metric_measured,
+        },
+        "planner_memory_tool_llm_retry_loop_status": {
+            "planner_loop_measured": bool(planner),
+            "query_probe_executed_count": int(execution.get("extra_query_count_executed") or 0),
+            "tool_use_executed_count": int(execution.get("tool_call_count_executed") or 0),
+            "llm_retry_executed_count": int(execution.get("llm_retry_count_executed") or 0),
+            "run_local_memory_lookup_executed_count": int(planner.get("planner_memory_lookup_count_executed") or 0),
+            "quality_improvement_measured": quality_improvement_measured,
+        },
+        "guardrail_mutation_flags": guardrail_flags,
+        "guardrail_mutation_detected": guardrail_mutation_detected,
+        "readiness_assessment": (
+            "bounded_single_action_quality_delta_observed_but_broader_loop_requires_live_text_gold_multi_checkpoint_evidence"
+            if quality_improvement_measured
+            else "no_bounded_quality_delta_observed_for_broader_agent_loop_review"
+        ),
+        "recommendation": "keep_broader_agent_loop_closed_continue_bounded_execute_once_evidence_gate_checkpoints",
+        "allowed_next_scope": "bounded_single_action_checkpoints_only",
+        "required_before_broader_loop": required_before_broader_loop,
+    }
+
+
+def validate_agentic_loop_review(run_id: str, review: Mapping[str, Any]) -> None:
+    if review.get("schema_version") != AGENTIC_LOOP_REVIEW_SCHEMA_VERSION:
+        raise DatasetSchemaError(f"{run_id}: agentic_loop_review.schema_version unsupported")
+    if review.get("review_only") is not True:
+        raise DatasetSchemaError(f"{run_id}: agentic_loop_review.review_only must be True")
+    if review.get("official_metric") is not False:
+        raise DatasetSchemaError(f"{run_id}: agentic_loop_review.official_metric must be False")
+    if int(review.get("official_metric_input_rows") or 0) != 0:
+        raise DatasetSchemaError(f"{run_id}: agentic_loop_review.official_metric_input_rows must be 0")
+    for key in (
+        "broader_agent_loop_ready",
+        "broader_agent_loop_opened",
+        "production_routing_opened",
+        "raw_prompt_payload_written",
+        "raw_response_payload_written",
+        "retrieved_context_only_citation_promoted",
+        "gate_loosened",
+        "gold_or_qrels_or_labels_or_expected_or_denominator_mutation",
+    ):
+        if review.get(key) is not False:
+            raise DatasetSchemaError(f"{run_id}: agentic_loop_review.{key} must be False")
+    if review.get("evidence_gate_required_for_all_actions") is not True:
+        raise DatasetSchemaError(f"{run_id}: agentic_loop_review.evidence_gate_required_for_all_actions must be True")
+    if review.get("one_action_per_failed_row_policy") is not True:
+        raise DatasetSchemaError(f"{run_id}: agentic_loop_review.one_action_per_failed_row_policy must be True")
+    if review.get("heuristic_risk_class") != "diagnostic_probe_only":
+        raise DatasetSchemaError(f"{run_id}: agentic_loop_review.heuristic_risk_class must be diagnostic_probe_only")
+    flags = review.get("guardrail_mutation_flags")
+    if not isinstance(flags, Mapping):
+        raise DatasetSchemaError(f"{run_id}: agentic_loop_review.guardrail_mutation_flags must be present")
+    for key, value in flags.items():
+        if value is not False:
+            raise DatasetSchemaError(f"{run_id}: agentic_loop_review.guardrail_mutation_flags.{key} must be False")
+    if review.get("guardrail_mutation_detected") is not False:
+        raise DatasetSchemaError(f"{run_id}: agentic_loop_review.guardrail_mutation_detected must be False")
+    required = _as_list(review.get("required_before_broader_loop"))
+    if "fresh_live_text_gold_report_with_weaviate_reachable" not in required:
+        raise DatasetSchemaError(
+            f"{run_id}: agentic_loop_review.required_before_broader_loop must include live text-gold evidence"
+        )
+    if review.get("recommendation") != (
+        "keep_broader_agent_loop_closed_continue_bounded_execute_once_evidence_gate_checkpoints"
+    ):
+        raise DatasetSchemaError(f"{run_id}: agentic_loop_review.recommendation must keep broader loop closed")
 
 
 def _portfolio_lane_summary(label: str, path: str, summary: Mapping[str, Any]) -> dict[str, Any]:
@@ -9433,6 +11399,9 @@ SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROMPT_VERSION = "selected_evidence_local_l
 SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROMPT_TEMPLATE = """You are a non-production selected-evidence answer composer.
 Return exactly one JSON object with keys: answer (string) and citation_evidence_ids (array of strings).
 Use only the selected SourceAtom/EvidenceBundle evidence in the payload. Do not use outside knowledge.
+The answer string must be a natural, query-context sentence or two in the query language.
+Do not return only a terse fragment unless the query explicitly asks for a bare value.
+Do not include audit headers, citation blocks, markdown sections, or source dumps in the answer string.
 If the selected evidence is insufficient, return an empty answer and an empty citation_evidence_ids array.
 
 Payload:
@@ -9447,6 +11416,9 @@ SELECTED_EVIDENCE_LOCAL_LLM_RETRY_PROMPT_TEMPLATE = """You are a non-production 
 Return exactly one JSON object with keys: answer (string) and citation_evidence_ids (array of strings).
 Use only the query, selected SourceAtom/EvidenceBundle evidence, missing query-focus anchors, and previous bounded answer preview in the payload.
 Do not use outside knowledge. Do not use any hidden gold, labels, qrels, row ids, target ids, baseline top-k, or legacy outputs.
+The answer string must be a natural, query-context sentence or two in the query language.
+Do not return only a terse fragment unless the query explicitly asks for a bare value.
+Do not include audit headers, citation blocks, markdown sections, or source dumps in the answer string.
 If the selected evidence is insufficient, return an empty answer and an empty citation_evidence_ids array.
 
 Payload:
@@ -9552,6 +11524,82 @@ def _gate_row_text(row: Mapping[str, Any]) -> str:
         or row.get("embedding_text")
         or row.get("bm25_text")
     )
+
+
+SOURCE_DERIVED_EVIDENCE_METADATA_FIELDS = (
+    "sheet",
+    "cell_range",
+    "range",
+    "cell",
+    "row_index_1based",
+    "row_label",
+    "column_label",
+    "target_column",
+    "header_path",
+    "header",
+    "page_number",
+    "page",
+    "block_index",
+    "bbox",
+    "locator_fingerprint",
+)
+SOURCE_DERIVED_EVIDENCE_METADATA_CONTAINERS = ("metadata", "raw_locator", "location_json")
+SOURCE_DERIVED_EVIDENCE_FORBIDDEN_FIELDS = frozenset(
+    {
+        "title",
+        "source_title",
+        "workbook",
+        "source_workbook",
+        "source_file_name",
+        "file_name",
+        "normalized_value",
+        "formula",
+        "expected_answer",
+        "expected_evidence",
+        "qrels",
+        "label",
+        "labels",
+        "answerability",
+        "query_id",
+        "row_id",
+        "target_id",
+    }
+)
+
+
+def _source_derived_metadata_sources(row: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    sources: list[Mapping[str, Any]] = [row]
+    for container_key in SOURCE_DERIVED_EVIDENCE_METADATA_CONTAINERS:
+        value = row.get(container_key)
+        parsed = _parse_jsonish(value)
+        if isinstance(parsed, Mapping):
+            sources.append(parsed)
+    return sources
+
+
+def source_derived_evidence_metadata(row: Mapping[str, Any]) -> tuple[str, list[str]]:
+    values: list[str] = []
+    fields: list[str] = []
+    for field in SOURCE_DERIVED_EVIDENCE_METADATA_FIELDS:
+        if field in SOURCE_DERIVED_EVIDENCE_FORBIDDEN_FIELDS:
+            continue
+        for source in _source_derived_metadata_sources(row):
+            value = _clean(source.get(field))
+            if not value:
+                continue
+            rendered = f"{field}={value}"
+            if rendered not in values:
+                values.append(rendered)
+            if field not in fields:
+                fields.append(field)
+            break
+    return " | ".join(values), fields
+
+
+def _gate_support_text(row: Mapping[str, Any]) -> str:
+    text = _gate_row_text(row)
+    metadata_text, _fields = source_derived_evidence_metadata(row)
+    return " | ".join(part for part in (text, metadata_text) if part)
 
 
 def _gate_row_hash(row: Mapping[str, Any]) -> str:
@@ -9678,7 +11726,7 @@ def _gate_select_evidence(
     selected: list[dict[str, Any]] = []
     seen: set[str] = set()
     for context in contexts:
-        text = _gate_row_text(context)
+        text = _gate_support_text(context)
         text_hits = _gate_anchor_hits(answer_anchors, [text])
         numeric_ok = not numeric or bool(text_hits & numeric)
         entity_ok = not entity or bool(text_hits & entity)
@@ -9750,7 +11798,7 @@ def select_composer_evidence(
     for index, context in enumerate(contexts, start=1):
         if not _has_sourceatom_evidence_identity(context):
             continue
-        text = _gate_row_text(context)
+        text = _gate_support_text(context)
         if not text:
             continue
         identity = _context_identity(context)
@@ -9767,6 +11815,10 @@ def select_composer_evidence(
             context.get("score") or context.get("fusion_score")
         )
         row = dict(context)
+        metadata_text, metadata_fields = source_derived_evidence_metadata(context)
+        if metadata_text:
+            row["composer_source_derived_metadata_text"] = metadata_text
+            row["composer_source_derived_metadata_fields"] = metadata_fields
         row["composer_query_anchor_hits"] = sorted(anchor_hits)
         row["composer_query_overlap"] = round(query_overlap, 6)
         selected.append((score, index, row))
@@ -9780,7 +11832,7 @@ def _selected_evidence_sentence(query: str, selected_evidence: Sequence[Mapping[
     best_sentence = ""
     best_score = -1.0
     for context in selected_evidence:
-        text = _gate_row_text(context)
+        text = _gate_support_text(context)
         if not text:
             continue
         sentences = [part.strip() for part in re.split(r"(?<=[.!?。！？])\s+|\n+", text) if part.strip()]
@@ -9983,6 +12035,7 @@ def _selected_evidence_local_llm_prompt(
     evidence_payload: list[dict[str, Any]] = []
     for evidence in selected_evidence:
         citation = _normalize_citation(evidence)
+        metadata_text, metadata_fields = source_derived_evidence_metadata(evidence)
         evidence_payload.append(
             {
                 "evidence_id": _clean(evidence.get("evidence_bundle_id"))
@@ -9995,7 +12048,9 @@ def _selected_evidence_local_llm_prompt(
                 "source_family": _clean(evidence.get("source_family")) or "UNKNOWN",
                 "granularity": _clean(evidence.get("granularity")) or "unknown",
                 "text_sha256": _gate_row_hash(evidence),
-                "text_preview": _bounded_text_preview(_gate_row_text(evidence), 1000),
+                "text_preview": _bounded_text_preview(_gate_support_text(evidence), 1000),
+                "source_derived_metadata_text": _bounded_text_preview(metadata_text, 500),
+                "source_derived_metadata_fields": metadata_fields,
             }
         )
     payload = {
@@ -10177,18 +12232,14 @@ def _selected_evidence_local_llm_output_from_answer(
         citation_format=normalized_citation_format,
     )
     output = dict(row)
-    output["generated_answer"] = _selected_evidence_answer(
-        query=query,
-        selected_evidence=final_selected,
-        citation_format=normalized_citation_format,
-        formatted_citations=formatted_citations,
-        short_answer_override=answer,
-    )
+    output["generated_answer"] = _clean(answer)
     output["citations"] = [_normalize_citation(context) for context in final_selected]
     composer = {
         "provider": SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROVIDER,
         "input_policy": SELECTED_EVIDENCE_COMPOSER_INPUT_POLICY,
         "citation_format": normalized_citation_format,
+        "answer_rendering_policy": "local_llm_natural_query_context_sentence",
+        "answer_audit_scaffold_in_generated_answer": False,
         "formatted_citations": formatted_citations,
         "retrieved_context_only_citations_diagnostic_only": True,
         "query_selected_evidence_count": len(query_selected),
@@ -10605,7 +12656,7 @@ def _gate_citation_validation(
     selected_target = next((context for context in selected_evidence if _gate_rows_match(citation, context)), None)
     target = selected_target or retrieved_target
     citation_text = _gate_row_text(citation)
-    target_text = _gate_row_text(target or {}) if isinstance(target, Mapping) else ""
+    target_text = _gate_support_text(target or {}) if isinstance(target, Mapping) else ""
     target_exists = bool(target)
     in_retrieved = bool(retrieved_target)
     in_selected = bool(selected_target)
@@ -10660,7 +12711,7 @@ def validate_evidence_package_for_gate(row: Mapping[str, Any]) -> dict[str, Any]
     contexts = _contexts_from_row(row)
     citations = _citations_from_row(row)
     selected = _gate_select_evidence(query=query, answer=answer, contexts=contexts, citations=citations)
-    selected_texts = [_gate_row_text(context) for context in selected if _gate_row_text(context)]
+    selected_texts = [_gate_support_text(context) for context in selected if _gate_support_text(context)]
     anchors = _gate_answer_anchors(query, answer)
     answer_anchors = set(anchors["answer"])
     numeric_anchors = set(anchors["numeric_or_date"])
@@ -13161,6 +15212,7 @@ def run_eval_from_paths(
     corpus_coverage_audit_source_registry_path: Path | str | None = SOURCE_NATIVE_SOURCE_REGISTRY_PATH,
     corpus_coverage_audit_index_checkpoint_path: Path | str | None = None,
     corpus_coverage_audit_index_manifest_path: Path | str | None = None,
+    agentic_planner_mode: str = "off",
 ) -> RagEvalBundle:
     dataset = Path(dataset_path)
     output = Path(output_dir)
@@ -13177,9 +15229,22 @@ def run_eval_from_paths(
     normalized_evidence_gate_mode = _clean(evidence_gate_mode).lower() or "off"
     if normalized_evidence_gate_mode not in {"off", "diagnostic", "enforce"}:
         raise DatasetSchemaError(f"unsupported evidence gate mode: {evidence_gate_mode}")
+    normalized_agentic_planner_mode = _clean(agentic_planner_mode).lower() or "off"
+    if normalized_agentic_planner_mode not in AGENTIC_PLANNER_MODE_CHOICES:
+        raise DatasetSchemaError(f"unsupported agentic planner mode: {agentic_planner_mode}")
     normalized_answer_composer = _clean(answer_composer).replace("_", "-").lower() or "extractive-v1"
     if normalized_answer_composer not in ANSWER_COMPOSER_PROVIDERS:
         raise DatasetSchemaError(f"unsupported answer composer: {answer_composer}")
+    if normalized_agentic_planner_mode in {"dry-run", "execute-once"}:
+        if normalized_evidence_gate_mode == "off":
+            raise DatasetSchemaError("agentic planner requires evidence_gate_mode diagnostic or enforce")
+        if normalized_answer_composer not in {
+            SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+            SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROVIDER,
+        }:
+            raise DatasetSchemaError("agentic planner requires a selected-evidence answer composer")
+    if normalized_agentic_planner_mode == "execute-once" and normalized_answer_composer != SELECTED_EVIDENCE_COMPOSER_PROVIDER:
+        raise DatasetSchemaError("agentic planner execute-once currently requires deterministic selected-evidence composer")
     normalized_selected_evidence_citation_format = _normalize_selected_evidence_citation_format(
         selected_evidence_citation_format
     )
@@ -13193,6 +15258,7 @@ def run_eval_from_paths(
     if _output_dir_has_artifacts(output):
         raise DatasetSchemaError(f"{output}: already contains actual RAG eval artifacts")
     items = load_eval_dataset(dataset)
+    response_quality_input_summary = build_response_quality_input_summary(dataset_path=dataset, items=items)
     denominator_before_reviewed_mapping = _strict_denominator_snapshot(items)
     gpu_preflight = build_gpu_preflight()
     external_vector_db = discover_external_vector_db()
@@ -13303,6 +15369,22 @@ def run_eval_from_paths(
         raw_outputs,
         mode=normalized_evidence_gate_mode,
     )
+    agentic_planner_execute_once_report: dict[str, Any] | None = None
+    if normalized_agentic_planner_mode == "execute-once":
+        raw_outputs, agentic_planner_execute_once_report = apply_agentic_planner_execute_once_to_outputs(
+            raw_outputs,
+            adapter=adapter,
+            top_k=top_k,
+            evidence_gate_mode=normalized_evidence_gate_mode,
+            citation_format=normalized_selected_evidence_citation_format,
+            local_llm_backend=local_llm_composer_backend,
+            local_llm_base_url=local_llm_composer_base_url,
+            local_llm_model=local_llm_composer_model,
+            local_llm_timeout_seconds=local_llm_composer_timeout_seconds,
+            local_llm_max_tokens=local_llm_composer_max_tokens,
+            skip_local_llm_endpoint_check=skip_local_llm_composer_endpoint_check,
+        )
+        evidence_gate_summary = build_evidence_gate_summary(raw_outputs, mode=normalized_evidence_gate_mode)
     reviewed_mapping_path = Path(reviewed_evidence_mapping_csv) if reviewed_evidence_mapping_csv is not None else None
     items, reviewed_mapping = apply_reviewed_evidence_mapping(
         items,
@@ -13553,6 +15635,40 @@ def run_eval_from_paths(
         "expected_answer_used_for_generation": False,
         "expected_evidence_used_for_generation": False,
     }
+    if composer_applied:
+        report_limitations = [
+            "selected-evidence composer supplies answers from selected SourceAtom/EvidenceBundle evidence for this pass",
+            "backend comparison metrics are diagnostic and not official retrieval metrics",
+            "external VectorDB is optional and blocked unless explicitly non-production",
+        ]
+        report_next_repair_targets = [
+            *surface_next_repair_targets,
+            "repair retrieval/query formulation and selected-evidence anchor coverage before any broader agent loop",
+            "use human-owned review before any gold/qrels/answerability updates",
+            "add external VectorDB parity only against an explicitly non-production namespace",
+        ]
+        report_residual_risks = [
+            "route-selected default remains non-production diagnostic until fresh text and mixed diagnostic runs are reviewed",
+            "full-index Weaviate rollback must remain available through rollback_config",
+            "selected-evidence composer is active, but residual repair still requires retrieval/query formulation or selected-evidence anchor coverage",
+        ]
+    else:
+        report_limitations = [
+            "extractive-v1 remains the generator for this pass",
+            "backend comparison metrics are diagnostic and not official retrieval metrics",
+            "external VectorDB is optional and blocked unless explicitly non-production",
+        ]
+        report_next_repair_targets = [
+            *surface_next_repair_targets,
+            "replace extractive-v1 only after a richer repo generator is ready",
+            "use human-owned review before any gold/qrels/answerability updates",
+            "add external VectorDB parity only against an explicitly non-production namespace",
+        ]
+        report_residual_risks = [
+            "route-selected default remains non-production diagnostic until fresh text and mixed diagnostic runs are reviewed",
+            "full-index Weaviate rollback must remain available through rollback_config",
+            "answer composition remains extractive-v1 unless a selected-evidence composer is explicitly enabled",
+        ]
     active_path_report = (
         dict(adapter.active_path_report)
         if isinstance(getattr(adapter, "active_path_report", None), Mapping)
@@ -13596,6 +15712,7 @@ def run_eval_from_paths(
             "surface_comparison": surface_comparison,
             "diagnostic_retrieval_metrics": diagnostic_retrieval_metrics,
             "semantic_quality_samples": semantic_quality_samples,
+            "response_quality_input_summary": response_quality_input_summary,
             "corpus_coverage_audit": corpus_coverage_audit,
             "source_native_index_build": dict(source_native_index_build or {}),
             "generator_config": generator_config,
@@ -13634,6 +15751,7 @@ def run_eval_from_paths(
             "denominator_changes": denominator_changes,
             "elapsed_ms": elapsed_ms,
             "non_production": True,
+            "official_metric": False,
             "official_metric_input_rows": 0,
             "official_metric_input_rows_created": 0,
             "official_metric_input_rows_consumed": 0,
@@ -13697,17 +15815,9 @@ def run_eval_from_paths(
                 "SourceAtom/EvidenceBundle remains the evidence truth surface",
                 "missing GPU/vector dependencies are recorded as fallback reasons rather than silently ignored",
             ],
-            "limitations": [
-                "extractive-v1 remains the generator for this pass",
-                "backend comparison metrics are diagnostic and not official retrieval metrics",
-                "external VectorDB is optional and blocked unless explicitly non-production",
-            ],
-            "next_repair_targets": [
-                *surface_next_repair_targets,
-                "replace extractive-v1 only after a richer repo generator is ready",
-                "use human-owned review before any gold/qrels/answerability updates",
-                "add external VectorDB parity only against an explicitly non-production namespace",
-            ],
+            "limitations": report_limitations,
+            "next_repair_targets": report_next_repair_targets,
+            "residual_risks": report_residual_risks,
         }
     )
 
@@ -13908,6 +16018,16 @@ def run_eval_from_paths(
     public_scored_rows = [_public_report_row(row) for row in scored_rows]
     summary["items"] = public_scored_rows
     refresh_metric_tiers(summary)
+    if normalized_agentic_planner_mode == "dry-run":
+        summary["agentic_planner_dry_run"] = build_agentic_planner_dry_run_report(
+            summary,
+            mode=normalized_agentic_planner_mode,
+        )
+    if agentic_planner_execute_once_report is not None:
+        summary["agentic_planner_execute_once"] = agentic_planner_execute_once_report
+    summary["heuristic_risk_ledger"] = build_heuristic_risk_ledger(summary)
+    summary["metric_continuity_checkpoint"] = build_metric_continuity_checkpoint(summary)
+    summary["agentic_loop_review"] = build_agentic_loop_review(summary)
     portfolio_comparison_inputs = _load_portfolio_comparison_reports(portfolio_comparison_reports)
     if portfolio_comparison_inputs:
         summary["portfolio_experiment_comparison"] = build_portfolio_experiment_comparison(
@@ -14133,6 +16253,77 @@ def render_markdown_report(summary: Mapping[str, Any], rows: Sequence[Mapping[st
         else:
             rendered = str(value)
         lines.append(f"| {key} | `{rendered}` |")
+
+    planner = summary.get("agentic_planner_dry_run")
+    if isinstance(planner, Mapping) and planner.get("planner_enabled"):
+        readiness = planner.get("execute_once_readiness") if isinstance(planner.get("execute_once_readiness"), Mapping) else {}
+        lines.extend(
+            [
+                "",
+                "## Agentic Planner Dry-Run",
+                "",
+                f"- Mode: `{planner.get('planner_mode')}`",
+                f"- Decisions: `{planner.get('planner_decision_count')}`",
+                f"- Failure classes: `{json.dumps(planner.get('planner_failure_class_counts'), ensure_ascii=False, sort_keys=True)}`",
+                f"- Proposed actions: `{json.dumps(planner.get('planner_action_counts'), ensure_ascii=False, sort_keys=True)}`",
+                f"- Expected extra queries/tools/LLM retries/memory lookups: `{planner.get('planner_expected_extra_query_count')}` / `{planner.get('planner_expected_tool_call_count')}` / `{planner.get('planner_expected_llm_retry_count')}` / `{planner.get('planner_expected_memory_lookup_count')}`",
+                f"- Execute-once ready: `{readiness.get('ready')}`",
+                f"- Execute-once assessment: `{readiness.get('assessment')}`",
+                "",
+                "Dry-run planner diagnostics run after the selected-evidence composer and evidence gate. They do not execute retrieval, tools, or LLM retry, and they do not change final citations.",
+            ]
+        )
+    execute_once = summary.get("agentic_planner_execute_once")
+    if isinstance(execute_once, Mapping) and execute_once.get("planner_enabled"):
+        execution = (
+            execute_once.get("planner_execution")
+            if isinstance(execute_once.get("planner_execution"), Mapping)
+            else {}
+        )
+        lines.extend(
+            [
+                "",
+                "## Agentic Planner Execute-Once",
+                "",
+                f"- Decisions/executed: `{execute_once.get('planner_decision_count')}` / `{execute_once.get('planner_executed_decision_count')}`",
+                f"- Failure classes: `{json.dumps(execute_once.get('planner_failure_class_counts'), ensure_ascii=False, sort_keys=True)}`",
+                f"- Proposed actions: `{json.dumps(execute_once.get('planner_action_counts'), ensure_ascii=False, sort_keys=True)}`",
+                f"- Executed extra queries/tools/LLM retries: `{execution.get('extra_query_count_executed')}` / `{execution.get('tool_call_count_executed')}` / `{execution.get('llm_retry_count_executed')}`",
+                f"- Executed run-local memory lookups: `{execute_once.get('planner_memory_lookup_count_executed')}`",
+                f"- Gate delta: `{json.dumps(execute_once.get('gate_delta'), ensure_ascii=False, sort_keys=True)}`",
+                "",
+                "Execute-once keeps production routing, official metrics, gate loosening, raw payloads, and retrieved-context-only citation promotion closed. Bounded source tools, LLM retry, and run-local memory are reported only when explicitly executed by one planner action.",
+            ]
+        )
+    loop_review = summary.get("agentic_loop_review")
+    if isinstance(loop_review, Mapping) and loop_review.get("enabled"):
+        bounded = (
+            loop_review.get("bounded_action_evidence")
+            if isinstance(loop_review.get("bounded_action_evidence"), Mapping)
+            else {}
+        )
+        loop_status = (
+            loop_review.get("planner_memory_tool_llm_retry_loop_status")
+            if isinstance(loop_review.get("planner_memory_tool_llm_retry_loop_status"), Mapping)
+            else {}
+        )
+        lines.extend(
+            [
+                "",
+                "## Agentic Loop Review",
+                "",
+                f"- Review only: `{loop_review.get('review_only')}`",
+                f"- Broader agent loop ready/opened: `{loop_review.get('broader_agent_loop_ready')}` / `{loop_review.get('broader_agent_loop_opened')}`",
+                f"- Recommendation: `{loop_review.get('recommendation')}`",
+                f"- Planner mode: `{bounded.get('planner_mode')}`",
+                f"- Bounded quality improvement measured: `{bounded.get('quality_improvement_measured')}`",
+                f"- Live text-gold metric measured: `{bounded.get('live_text_gold_metric_measured')}`",
+                f"- Executed query/tool/LLM/memory counts: `{loop_status.get('query_probe_executed_count')}` / `{loop_status.get('tool_use_executed_count')}` / `{loop_status.get('llm_retry_executed_count')}` / `{loop_status.get('run_local_memory_lookup_executed_count')}`",
+                f"- Gate delta: `{json.dumps(bounded.get('gate_delta'), ensure_ascii=False, sort_keys=True)}`",
+                "",
+                "The broader agent loop remains closed. Bounded planner actions may be measured one checkpoint at a time, but broader loops require fresh live text-gold evidence, unchanged gate validation, and a human-approved official metric/denominator policy.",
+            ]
+        )
 
     resolution_rows = evidence_resolution_candidate_rows(rows)
     if diagnostics.get("expected_evidence_resolution_enabled"):
@@ -14446,6 +16637,15 @@ def build_parser() -> argparse.ArgumentParser:
         help="Bounded SourceAtom/EvidenceBundle evidence gate: off preserves answers, diagnostic reports decisions, enforce abstains unsupported answers.",
     )
     parser.add_argument(
+        "--agentic-planner-mode",
+        default="off",
+        choices=list(AGENTIC_PLANNER_MODE_CHOICES),
+        help=(
+            "Non-production planner checkpoint; dry-run records one proposed post-gate action per failed row "
+            "without executing retrieval, tools, or LLM retry."
+        ),
+    )
+    parser.add_argument(
         "--answer-composer",
         default="extractive-v1",
         choices=sorted(ANSWER_COMPOSER_PROVIDERS),
@@ -14642,6 +16842,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             source_native_index_build=source_native_index_build,
             quality_gate_baseline_path=args.quality_gate_baseline,
             evidence_gate_mode=args.evidence_gate_mode,
+            agentic_planner_mode=args.agentic_planner_mode,
             answer_composer=args.answer_composer,
             selected_evidence_citation_format=args.selected_evidence_citation_format,
             selected_evidence_composer_retry_mode=args.selected_evidence_composer_retry_mode,

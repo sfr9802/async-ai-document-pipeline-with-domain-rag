@@ -797,7 +797,7 @@ def actual_response_smoke(c: canvas.Canvas) -> None:
 
     draw_wrapped(
         c,
-        "해석 경계: answer quality metric이 아니라 response policy smoke입니다. 10개 answered + citation verified, 19개 stopped / fail_closed.",
+        "해석 경계: answer quality score가 아니라 response policy smoke입니다. 10개 answered + citation verified, 19개 stopped / fail_closed.",
         MARGIN_X,
         72,
         840,
@@ -1069,7 +1069,7 @@ def verified_scope(c: canvas.Canvas) -> None:
     )
     draw_wrapped(
         c,
-        "계약 테스트: 53개 통과 · Hit@K/MRR/nDCG는 qrels gate 전까지 미계산 · 이 페이지는 검색 품질 점수가 아니라 후보 가용성 진단입니다.",
+        "계약 테스트: 53개 통과 · 후보 가용성 진단입니다. route-selected Weaviate boundary에서는 SearchView는 후보, SourceAtom/EvidenceBundle은 citation 근거로 분리합니다.",
         MARGIN_X,
         74,
         840,
@@ -1113,20 +1113,20 @@ def retrieval_design_notes(c: canvas.Canvas) -> None:
             TEAL,
         ),
         (
-            "SourceAtom / EvidenceBundle 분리",
+            "Selected-evidence composer / evidence gate",
             [
-                "SourceAtom은 원문 위치와 값의 근거 atom",
-                "EvidenceBundle은 답변과 citation 검증 단위",
-                "검색 후보가 곧 답변 근거가 되지 않게 설계",
+                "retrieved-context-only citation: 42 -> 0",
+                "deterministic allowed/blocked: 3/3 -> 5/1",
+                "unsupported-after-gate: 0.0",
             ],
             GREEN,
         ),
         (
-            "근거 부족 시 답변 중단",
+            "Trace / Guard sidecar",
             [
-                "citation이 확인된 10건만 answered",
-                "근거가 부족한 19건은 stopped / fail_closed",
-                "실패 지점은 실행 Trace로 확인 가능",
+                "실행 trace는 guardrail 확인용 sidecar",
+                "원문 payload 대신 redacted ref 중심",
+                "응답 정책 주제는 RAG 근거 검증에 둠",
             ],
             AMBER,
         ),
@@ -1149,7 +1149,7 @@ def retrieval_design_notes(c: canvas.Canvas) -> None:
         )
     draw_wrapped(
         c,
-        "요약: 검색 실험 -> 근거 검증 -> 답변 중단 정책 -> 실행 Trace",
+        "요약: 검색 후보 -> route-selected 근거 경계 -> selected-evidence gate -> trace/guardrail sidecar",
         MARGIN_X,
         70,
         840,
