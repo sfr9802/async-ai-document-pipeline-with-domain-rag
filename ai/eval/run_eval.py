@@ -5,15 +5,15 @@ Usage (from ai/):
     # Text RAG eval against the live index + model configured for the worker
     python -m eval.run_eval rag \
         --dataset eval/datasets/rag_sample.jsonl \
-        --out-json eval/reports/rag-latest.json \
-        --out-csv  eval/reports/rag-latest.csv \
+        --out-json reports/rag_eval/rag-latest.json \
+        --out-csv  reports/rag_eval/rag-latest.csv \
         --top-k 5
 
     # OCR eval using the Tesseract provider configured for the worker
     python -m eval.run_eval ocr \
         --dataset eval/datasets/ocr_sample.jsonl \
-        --out-json eval/reports/ocr-latest.json \
-        --out-csv  eval/reports/ocr-latest.csv
+        --out-json reports/rag_eval/ocr-latest.json \
+        --out-csv  reports/rag_eval/ocr-latest.csv
 
 Both subcommands print a short human-readable summary to stdout and
 exit 0 on success. Any provider/retriever failure at startup (missing
@@ -258,10 +258,10 @@ def _build_parser() -> argparse.ArgumentParser:
                      help="Path to the RAG eval JSONL dataset.")
     rag.add_argument("--out-json", type=Path, default=None,
                      help="Path for the JSON report. Defaults to "
-                          "eval/reports/rag-<timestamp>.json.")
+                          "reports/rag_eval/rag-<timestamp>.json.")
     rag.add_argument("--out-csv", type=Path, default=None,
                      help="Path for the CSV report. Defaults to "
-                          "eval/reports/rag-<timestamp>.csv.")
+                          "reports/rag_eval/rag-<timestamp>.csv.")
     rag.add_argument("--top-k", type=int, default=None,
                      help="Override the retriever's top_k for this run. "
                           "Defaults to the worker setting.")
@@ -291,10 +291,10 @@ def _build_parser() -> argparse.ArgumentParser:
                      help="Path to the OCR eval JSONL dataset.")
     ocr.add_argument("--out-json", type=Path, default=None,
                      help="Path for the JSON report. Defaults to "
-                          "eval/reports/ocr-<timestamp>.json.")
+                          "reports/rag_eval/ocr-<timestamp>.json.")
     ocr.add_argument("--out-csv", type=Path, default=None,
                      help="Path for the CSV report. Defaults to "
-                          "eval/reports/ocr-<timestamp>.csv.")
+                          "reports/rag_eval/ocr-<timestamp>.csv.")
     ocr.add_argument("--fail-missing", action="store_true",
                      help="Treat missing fixture files as errors rather "
                           "than skips.")
@@ -337,7 +337,7 @@ def _build_parser() -> argparse.ArgumentParser:
                          "builds an in-memory retriever.")
     rt.add_argument("--out-dir", type=Path, default=None,
                     help="Directory to drop the four output artifacts into. "
-                         "Defaults to eval/reports/retrieval-<timestamp>/.")
+                         "Defaults to reports/rag_eval/retrieval-<timestamp>/.")
     rt.add_argument("--top-k", type=int, default=10,
                     help="Top-k for retrieval scoring + dump (default: 10).")
     rt.add_argument("--mrr-k", type=int, default=10,
@@ -388,7 +388,7 @@ def _build_parser() -> argparse.ArgumentParser:
                           "reproduction inputs, not Phase 7 defaults.")
     rrk.add_argument("--out-dir", type=Path, default=None,
                      help="Directory to drop the four output artifacts "
-                          "into. Defaults to eval/reports/"
+                          "into. Defaults to reports/rag_eval/"
                           "retrieval-rerank-<timestamp>/.")
     rrk.add_argument("--final-top-k", type=int, default=10,
                      help="Final top-k after reranking (default: 10).")
@@ -665,7 +665,7 @@ def _build_parser() -> argparse.ArgumentParser:
     rc.add_argument(
         "--deterministic-report", required=True, type=Path,
         help="Path to retrieval_eval_report.json from the deterministic run "
-             "(e.g. eval/reports/_archive/silver200/baseline/"
+             "(e.g. reports/rag_eval/_archive/silver200/baseline/"
              "retrieval_eval_report.json).",
     )
     rc.add_argument(
@@ -779,15 +779,15 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     al.add_argument(
         "--out-json", type=Path,
-        default=Path("eval/reports/phase1/length_analysis.json"),
+        default=Path("reports/rag_eval/phase1/length_analysis.json"),
         help="Output path for the JSON report (default: "
-             "eval/reports/phase1/length_analysis.json).",
+             "reports/rag_eval/phase1/length_analysis.json).",
     )
     al.add_argument(
         "--out-md", type=Path,
-        default=Path("eval/reports/phase1/length_analysis.md"),
+        default=Path("reports/rag_eval/phase1/length_analysis.md"),
         help="Output path for the markdown report (default: "
-             "eval/reports/phase1/length_analysis.md).",
+             "reports/rag_eval/phase1/length_analysis.md).",
     )
 
     # --- audit-corpus-noise ---
@@ -795,7 +795,7 @@ def _build_parser() -> argparse.ArgumentParser:
     # Phase 1A entrypoint. Reads a corpus through the production
     # chunker, tokenizes everything, and writes both a long-chunk audit
     # and a raw-vs-cleaned length comparison to
-    # eval/reports/phase1/1a_corpus_audit/. Does not modify the corpus.
+    # reports/rag_eval/phase1/1a_corpus_audit/. Does not modify the corpus.
     an = subs.add_parser(
         "audit-corpus-noise",
         help="Phase 1A long-chunk audit + raw-vs-cleaned length "
@@ -827,9 +827,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     an.add_argument(
         "--out-dir", type=Path,
-        default=Path("eval/reports/phase1/1a_corpus_audit"),
+        default=Path("reports/rag_eval/phase1/1a_corpus_audit"),
         help="Directory to write audit + length-comparison reports "
-             "(default: eval/reports/phase1/1a_corpus_audit).",
+             "(default: reports/rag_eval/phase1/1a_corpus_audit).",
     )
 
     # --- clean-corpus-dry-run ---
@@ -863,9 +863,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     cd.add_argument(
         "--out-dir", type=Path,
-        default=Path("eval/reports/phase1/1a_corpus_audit"),
+        default=Path("reports/rag_eval/phase1/1a_corpus_audit"),
         help="Directory to write the cleaner-effect summary "
-             "(default: eval/reports/phase1/1a_corpus_audit).",
+             "(default: reports/rag_eval/phase1/1a_corpus_audit).",
     )
 
     # --- preprocess-corpus-dry-run ---
@@ -873,7 +873,7 @@ def _build_parser() -> argparse.ArgumentParser:
     # Phase 1B entrypoint #1. Streams a corpus.jsonl through the
     # ingest-side preprocessor (page-prefix and/or inline-edit-marker
     # strip) without writing a preprocessed corpus to disk. Emits a
-    # summary + sample diffs into eval/reports/phase1/1b_preprocess/.
+    # summary + sample diffs into reports/rag_eval/phase1/1b_preprocess/.
     pp = subs.add_parser(
         "preprocess-corpus-dry-run",
         help="Phase 1B preprocessor dry-run: streams the corpus through "
@@ -899,9 +899,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     pp.add_argument(
         "--out-dir", type=Path,
-        default=Path("eval/reports/phase1/1b_preprocess"),
+        default=Path("reports/rag_eval/phase1/1b_preprocess"),
         help="Directory for the dry-run summary + sample diffs "
-             "(default: eval/reports/phase1/1b_preprocess).",
+             "(default: reports/rag_eval/phase1/1b_preprocess).",
     )
 
     # --- emit-preprocessed-corpus ---
@@ -1009,9 +1009,9 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     dc.add_argument(
         "--out-dir", type=Path,
-        default=Path("eval/reports/phase1/1c_token_chunker"),
+        default=Path("reports/rag_eval/phase1/1c_token_chunker"),
         help="Directory to write diagnosis reports "
-             "(default: eval/reports/phase1/1c_token_chunker).",
+             "(default: reports/rag_eval/phase1/1c_token_chunker).",
     )
 
     # --- emit-token-aware-chunks ---
@@ -1117,10 +1117,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ccl.add_argument(
         "--out-dir", type=Path,
-        default=Path("eval/reports/phase1/1c_token_chunker"),
+        default=Path("reports/rag_eval/phase1/1c_token_chunker"),
         help="Directory to write per-corpus length JSONs + the "
              "comparison report "
-             "(default: eval/reports/phase1/1c_token_chunker).",
+             "(default: reports/rag_eval/phase1/1c_token_chunker).",
     )
 
     # --- retrieval-candidate-boost ---
@@ -2447,7 +2447,7 @@ def _print_retrieval_summary(
 
 def _default_retrieval_dir() -> Path:
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    return Path(f"eval/reports/retrieval-{timestamp}")
+    return Path(f"reports/rag_eval/retrieval-{timestamp}")
 
 
 def _resolve_extra_hit_ks(raw, *, top_k: int):
@@ -2669,7 +2669,7 @@ def _run_retrieval_rerank_cli(args: argparse.Namespace) -> int:
 
 def _default_retrieval_rerank_dir() -> Path:
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    return Path(f"eval/reports/retrieval-rerank-{timestamp}")
+    return Path(f"reports/rag_eval/retrieval-rerank-{timestamp}")
 
 
 # ---------------------------------------------------------------------------
@@ -3520,7 +3520,7 @@ def _default_compare_caveats(
             "are truncated more aggressively in the lower-cap slice, "
             "which slightly favors the higher-cap slice on queries "
             "whose gold content lives past the cap. See "
-            "`eval/reports/phase1/length_analysis.md` for the measured "
+            "`reports/rag_eval/phase1/length_analysis.md` for the measured "
             "fraction of chunks above each cap."
         )
     return caveats
@@ -3671,8 +3671,8 @@ def _run_analyze_corpus_lengths_cli(args: argparse.Namespace) -> int:
 # we can reason about the long tail before deciding whether the cleaner
 # is worth shipping. The dry-run emits the cleaner-effect summary alone
 # and is intended for quick iteration on cleaner pattern changes. Phase 0
-# baselines under eval/reports/ are never overwritten — these commands
-# write into eval/reports/phase1/1a_corpus_audit/.
+# baselines under reports/rag_eval/ are never overwritten — these commands
+# write into reports/rag_eval/phase1/1a_corpus_audit/.
 # ---------------------------------------------------------------------------
 
 
@@ -3832,7 +3832,7 @@ def _run_clean_corpus_dry_run_cli(args: argparse.Namespace) -> int:
 #
 # preprocess-corpus-dry-run:  streams the corpus through the prefix /
 #   inline-edit transforms and writes a summary + sample diffs to
-#   eval/reports/phase1/1b_preprocess/. No corpus artifact is produced.
+#   reports/rag_eval/phase1/1b_preprocess/. No corpus artifact is produced.
 #
 # emit-preprocessed-corpus:   same pass, but writes a
 #   corpus.<variant>.jsonl + manifest.json into the configured
@@ -4586,7 +4586,7 @@ def _run_compare_chunker_lengths_cli(args: argparse.Namespace) -> int:
 
 def _default_phase2b_dir(suffix: str) -> Path:
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    return Path(f"eval/reports/phase2/2b_candidate_boost-{suffix}-{timestamp}")
+    return Path(f"reports/rag_eval/phase2/2b_candidate_boost-{suffix}-{timestamp}")
 
 
 def _build_boost_config(args: argparse.Namespace) -> BoostConfig:
@@ -5000,7 +5000,7 @@ def _run_retrieval_boost_pareto_cli(args: argparse.Namespace) -> int:
 
 def _default_report_path(mode: str, ext: str) -> Path:
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    return Path(f"eval/reports/{mode}-{timestamp}.{ext}")
+    return Path(f"reports/rag_eval/{mode}-{timestamp}.{ext}")
 
 
 def _fmt(value: Optional[float]) -> str:

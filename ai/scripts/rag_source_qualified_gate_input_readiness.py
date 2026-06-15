@@ -17,8 +17,8 @@ from typing import Any, Mapping
 from rag_build_promotion_gate_metrics import SOURCE_QUALIFIED_REQUIRED
 
 
-DEFAULT_METRICS = Path("eval/reports/rag-ingestion/rag_ingestion_a5_promotion_gate_metrics.json")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/a5_c2_source_qualified_report_contract_readiness.json")
+DEFAULT_METRICS = Path("reports/rag_eval/rag-ingestion/rag_ingestion_a5_promotion_gate_metrics.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/a5_c2_source_qualified_report_contract_readiness.json")
 
 
 def main(argv: list[str] | None = None) -> int:

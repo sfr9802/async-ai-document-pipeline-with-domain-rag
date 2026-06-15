@@ -22,15 +22,15 @@ EVENT_TYPE = "diagnostic_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_r
 SOURCE_RUN_ID = "official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod"
 SOURCE_HYDRATION_RUN_ID = "official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod"
 
-REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / RUN_ID
+REPORT_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / RUN_ID
 REPORT_JSON = REPORT_DIR / "report.json"
 V4_7_3_REPORT_JSON = (
-    ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / SOURCE_RUN_ID / "report.json"
+    ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / SOURCE_RUN_ID / "report.json"
 )
 V4_7_2_PACKET_CSV = (
-    ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / SOURCE_HYDRATION_RUN_ID / "review_packet_ko_hydrated.csv"
+    ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / SOURCE_HYDRATION_RUN_ID / "review_packet_ko_hydrated.csv"
 )
-STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+STATUS_JSONL = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"

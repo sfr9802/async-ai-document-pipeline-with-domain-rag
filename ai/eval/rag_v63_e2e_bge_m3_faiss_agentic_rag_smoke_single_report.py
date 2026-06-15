@@ -35,7 +35,7 @@ CURRENT_RESOLVES_TO = LOGICAL_RUN_KEY
 ROLLBACK_KEY = PREVIOUS_CURRENT
 KST_DOC_DATE = "2026-06-06"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 REPORT_PATH = RUN_ROOT / "report.json"
 FAISS_INDEX_PATH = RUN_ROOT / "true_rag_faiss.index"

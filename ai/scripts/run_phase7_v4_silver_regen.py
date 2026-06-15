@@ -36,7 +36,7 @@ from scripts.run_phase7_v4_silver_regen_dry_run import (
 
 log = logging.getLogger("scripts.run_phase7_v4_silver_regen")
 
-DEFAULT_REPORT_DIR = Path("eval/reports/phase7/7.10_silver_regen_full")
+DEFAULT_REPORT_DIR = Path("reports/rag_eval/phase7/7.10_silver_regen_full")
 DEFAULT_TARGET_TOTAL = 500
 GENERATOR_NAME = "generate_v4_silver_queries"
 

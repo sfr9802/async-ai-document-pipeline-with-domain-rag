@@ -16,7 +16,7 @@ SHORT_RUN_ID = "v5_0_v4_closeout_and_v5_gate_plan"
 CANONICAL_LONG_RUN_ID = "official_answer_citation_agentic_loop_run_v5_0_v4_closeout_and_v5_gate_plan_nonprod"
 STATUS = "V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 SHORT_REPORT_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
 SOURCE_LOGICAL_RUN_KEY = v4718.LOGICAL_RUN_KEY

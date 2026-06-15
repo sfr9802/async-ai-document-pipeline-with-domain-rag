@@ -670,7 +670,7 @@ def update_triage_doc() -> None:
     entry = f"""### v4_6_9 Holdout Candidate Duplicate Hygiene Gate Triage
 
 - Run: `{RUN_ID}`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/{RUN_ID}/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/{RUN_ID}/report.json`; single-report contract remains active.
 - v4_6_9 is diagnostic-only and duplicate-hygiene-gate-only. It checks that invalid-first duplicate candidate/query IDs fail closed across runtime and v4_5_1 script validation.
 - It proves duplicate boundary hardening only; it is not real holdout availability, not external holdout acquisition, not candidate manifest export, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
 - It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `real_holdout_sufficient=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.

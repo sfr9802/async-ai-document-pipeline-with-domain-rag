@@ -19,7 +19,7 @@ V4_7_7_LONG_RUN_ID = (
     "v3_legacy_artifact_archive_and_diagnostic_runner_consolidation_nonprod"
 )
 V4_7_7_STATUS = "V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY"
-V4_7_7_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_7" / "report.json"
+V4_7_7_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_7" / "report.json"
 V4_7_8_SHORT_KEY = "v4_7_8"
 V4_7_8_SHORT_RUN_ID = "v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion"
 V4_7_8_LONG_RUN_ID = (
@@ -27,7 +27,7 @@ V4_7_8_LONG_RUN_ID = (
     "test_doc_dependency_decoupling_and_legacy_runner_alias_expansion_nonprod"
 )
 V4_7_8_STATUS = "V4_7_8_TEST_DOC_DEPENDENCY_DECOUPLING_RUNNER_ALIAS_EXPANSION_NONPROD_READY"
-V4_7_8_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_8" / "report.json"
+V4_7_8_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_8" / "report.json"
 V4_7_9_SHORT_KEY = "v4_7_9"
 V4_7_9_SHORT_RUN_ID = "v4_7_9_pdf_evidence_residual_answer_quality_replay"
 V4_7_9_LONG_RUN_ID = (
@@ -35,7 +35,7 @@ V4_7_9_LONG_RUN_ID = (
     "pdf_evidence_residual_answer_quality_replay_nonprod"
 )
 V4_7_9_STATUS = "V4_7_9_PDF_EVIDENCE_RESIDUAL_ANSWER_QUALITY_REPLAY_NONPROD_READY"
-V4_7_9_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_9" / "report.json"
+V4_7_9_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_9" / "report.json"
 V4_7_10_SHORT_KEY = "v4_7_10"
 V4_7_10_SHORT_RUN_ID = "v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness"
 V4_7_10_LONG_RUN_ID = (
@@ -43,7 +43,7 @@ V4_7_10_LONG_RUN_ID = (
     "pdf_korean_evidence_normalization_and_answer_replay_readiness_nonprod"
 )
 V4_7_10_STATUS = "V4_7_10_PDF_KOREAN_EVIDENCE_NORMALIZATION_AND_ANSWER_REPLAY_READINESS_NONPROD_READY"
-V4_7_10_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_10" / "report.json"
+V4_7_10_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_10" / "report.json"
 V4_7_11_SHORT_KEY = "v4_7_11"
 V4_7_11_SHORT_RUN_ID = "v4_7_11_actual_llm_answer_replay_and_silver_diagnostic_smoke"
 V4_7_11_LONG_RUN_ID = (
@@ -51,7 +51,7 @@ V4_7_11_LONG_RUN_ID = (
     "actual_llm_answer_replay_and_silver_diagnostic_smoke_nonprod"
 )
 V4_7_11_STATUS = "V4_7_11_ACTUAL_LLM_ANSWER_REPLAY_AND_SILVER_DIAGNOSTIC_SMOKE_NONPROD_READY"
-V4_7_11_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_11" / "report.json"
+V4_7_11_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_11" / "report.json"
 V4_7_12_SHORT_KEY = "v4_7_12"
 V4_7_12_SHORT_RUN_ID = "v4_7_12_layered_retrieval_generalization_and_overfit_audit"
 V4_7_12_ACTIVE_GOAL_ALIAS = "v4_7_12_answer_policy_calibration_and_silver_manifest_reconnect"
@@ -60,7 +60,7 @@ V4_7_12_LONG_RUN_ID = (
     "layered_retrieval_generalization_and_overfit_audit_nonprod"
 )
 V4_7_12_STATUS = "V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY"
-V4_7_12_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_12" / "report.json"
+V4_7_12_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_12" / "report.json"
 V4_7_13_SHORT_KEY = "v4_7_13"
 V4_7_13_SHORT_RUN_ID = "v4_7_13_live_retrieval_answerability_and_full_pdf_replay"
 V4_7_13_LONG_RUN_ID = (
@@ -68,7 +68,7 @@ V4_7_13_LONG_RUN_ID = (
     "live_retrieval_answerability_and_full_pdf_replay_nonprod"
 )
 V4_7_13_STATUS = "V4_7_13_LIVE_RETRIEVAL_ANSWERABILITY_AND_FULL_PDF_REPLAY_NONPROD_READY"
-V4_7_13_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_13" / "report.json"
+V4_7_13_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_13" / "report.json"
 V4_7_14_SHORT_KEY = "v4_7_14"
 V4_7_14_SHORT_RUN_ID = "v4_7_14_diagnostic_precondition_hardening"
 V4_7_14_LONG_RUN_ID = (
@@ -76,7 +76,7 @@ V4_7_14_LONG_RUN_ID = (
     "diagnostic_precondition_hardening_nonprod"
 )
 V4_7_14_STATUS = "V4_7_14_DIAGNOSTIC_PRECONDITION_HARDENING_NONPROD_READY"
-V4_7_14_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_14" / "report.json"
+V4_7_14_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_14" / "report.json"
 V4_7_15_SHORT_KEY = "v4_7_15"
 V4_7_15_SHORT_RUN_ID = "v4_7_15_read_only_searchindex_replay_projection"
 V4_7_15_LONG_RUN_ID = (
@@ -84,7 +84,7 @@ V4_7_15_LONG_RUN_ID = (
     "read_only_searchindex_replay_projection_nonprod"
 )
 V4_7_15_STATUS = "V4_7_15_READ_ONLY_SEARCHINDEX_REPLAY_PROJECTION_NONPROD_READY"
-V4_7_15_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_15" / "report.json"
+V4_7_15_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_15" / "report.json"
 V4_7_16_SHORT_KEY = "v4_7_16"
 V4_7_16_SHORT_RUN_ID = "v4_7_16_target_recall_repair_prototype"
 V4_7_16_LONG_RUN_ID = (
@@ -92,7 +92,7 @@ V4_7_16_LONG_RUN_ID = (
     "target_recall_repair_prototype_nonprod"
 )
 V4_7_16_STATUS = "V4_7_16_TARGET_RECALL_REPAIR_PROTOTYPE_NONPROD_READY"
-V4_7_16_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_16" / "report.json"
+V4_7_16_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_16" / "report.json"
 V4_7_17_SHORT_KEY = "v4_7_17"
 V4_7_17_SHORT_RUN_ID = "v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit"
 V4_7_17_LONG_RUN_ID = (
@@ -102,7 +102,7 @@ V4_7_17_LONG_RUN_ID = (
 V4_7_17_STATUS = (
     "V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABLE_AXIS_REPAIR_AUDIT_NONPROD_READY"
 )
-V4_7_17_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_17" / "report.json"
+V4_7_17_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_17" / "report.json"
 V4_7_18_SHORT_KEY = "v4_7_18"
 V4_7_18_SHORT_RUN_ID = "v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility"
 V4_7_18_LONG_RUN_ID = (
@@ -112,17 +112,17 @@ V4_7_18_LONG_RUN_ID = (
 V4_7_18_STATUS = (
     "V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY"
 )
-V4_7_18_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_18" / "report.json"
+V4_7_18_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_18" / "report.json"
 V5_0_SHORT_KEY = "v5_0"
 V5_0_SHORT_RUN_ID = "v5_0_v4_closeout_and_v5_gate_plan"
 V5_0_LONG_RUN_ID = "official_answer_citation_agentic_loop_run_v5_0_v4_closeout_and_v5_gate_plan_nonprod"
 V5_0_STATUS = "V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY"
-V5_0_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_0" / "report.json"
+V5_0_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v5_0" / "report.json"
 V5_1_SHORT_KEY = "v5_1"
 V5_1_SHORT_RUN_ID = "v5_1_official_eval_gate_scaffolding"
 V5_1_LONG_RUN_ID = "official_answer_citation_agentic_loop_run_v5_1_official_eval_gate_scaffolding_nonprod"
 V5_1_STATUS = "V5_1_OFFICIAL_EVAL_GATE_SCAFFOLDING_DIAGNOSTIC_NONPROD_READY"
-V5_1_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_1" / "report.json"
+V5_1_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v5_1" / "report.json"
 V5_2_SHORT_KEY = "v5_2"
 V5_2_SHORT_RUN_ID = "v5_2_xlsx_residual_candidate_only_retrieval_engineering"
 V5_2_LONG_RUN_ID = (
@@ -130,7 +130,7 @@ V5_2_LONG_RUN_ID = (
     "xlsx_residual_candidate_only_retrieval_engineering_nonprod"
 )
 V5_2_STATUS = "V5_2_XLSX_RESIDUAL_CANDIDATE_ONLY_RETRIEVAL_ENGINEERING_DIAGNOSTIC_NONPROD_READY"
-V5_2_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_2" / "report.json"
+V5_2_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v5_2" / "report.json"
 V5_3_SHORT_KEY = "v5_3"
 V5_3_SHORT_RUN_ID = "v5_3_pdf_text_residual_retrieval_evidence_hardening"
 V5_3_LONG_RUN_ID = (
@@ -138,7 +138,7 @@ V5_3_LONG_RUN_ID = (
     "pdf_text_residual_retrieval_evidence_hardening_nonprod"
 )
 V5_3_STATUS = "V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY"
-V5_3_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_3" / "report.json"
+V5_3_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v5_3" / "report.json"
 V5_4_SHORT_KEY = "v5_4"
 V5_4_SHORT_RUN_ID = "v5_4_user_owned_official_eval_approval_packet"
 V5_4_LONG_RUN_ID = (
@@ -146,7 +146,7 @@ V5_4_LONG_RUN_ID = (
     "user_owned_official_eval_approval_packet_nonprod"
 )
 V5_4_STATUS = "V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY"
-V5_4_RUN_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_4"
+V5_4_RUN_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v5_4"
 V5_4_REPORT = V5_4_RUN_DIR / "report.json"
 V5_4_SCHEMA = V5_4_RUN_DIR / "user_owned_approval_schema.json"
 V5_4_POLICY_TEMPLATE = V5_4_RUN_DIR / "user_owned_policy_template.json"
@@ -172,7 +172,7 @@ V5_5_LONG_RUN_ID = (
     "user_approved_gold_packet_ingestion_and_official_metric_dry_run_nonprod"
 )
 V5_5_STATUS = "V5_5_USER_APPROVED_GOLD_PACKET_INGESTION_AND_OFFICIAL_METRIC_DRY_RUN_NONPROD_READY"
-V5_5_RUN_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_5"
+V5_5_RUN_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v5_5"
 V5_5_REPORT = V5_5_RUN_DIR / "report.json"
 V5_5_APPROVED_GOLD_PACKET = V5_5_RUN_DIR / "user_approved_gold_packet.jsonl"
 V5_5_DENOMINATOR = V5_5_RUN_DIR / "user_approved_denominator.jsonl"
@@ -187,7 +187,7 @@ V5_6_LONG_RUN_ID = (
     "official_metric_scored_execution_and_failure_attribution_nonprod"
 )
 V5_6_STATUS = "V5_6_OFFICIAL_METRIC_SCORED_EXECUTION_BACKEND_UNAVAILABLE_FAIL_CLOSED_NONPROD_READY"
-V5_6_RUN_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_6"
+V5_6_RUN_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v5_6"
 V5_6_REPORT = V5_6_RUN_DIR / "report.json"
 V5_6_SCORED_RESULT = V5_6_RUN_DIR / "official_metric_scored_result.json"
 V5_6_FAILURE_ATTRIBUTION = V5_6_RUN_DIR / "failure_attribution.jsonl"
@@ -199,7 +199,7 @@ V5_6_2_LONG_RUN_ID = (
 )
 V5_6_2_STATUS = "V5_6_2_OFFICIAL_METRIC_BACKEND_ENABLED_PREFLIGHT_FAIL_CLOSED_NONPROD_READY"
 V5_6_2_SCORED_STATUS = "V5_6_2_OFFICIAL_METRIC_BACKEND_ENABLED_PREFLIGHT_SCORED_RERUN_NONPROD_READY"
-V5_6_2_RUN_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_6_2"
+V5_6_2_RUN_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v5_6_2"
 V5_6_2_REPORT = V5_6_2_RUN_DIR / "report.json"
 V5_6_2_SCORED_RESULT = V5_6_2_RUN_DIR / "official_metric_scored_result.json"
 V5_6_2_FAILURE_ATTRIBUTION = V5_6_2_RUN_DIR / "failure_attribution.jsonl"
@@ -212,7 +212,7 @@ V5_6_3_LONG_RUN_ID = (
 )
 V5_6_3_STATUS = "V5_6_3_OFFICIAL_METRIC_BACKEND_PROBE_FAIL_CLOSED_NONPROD_READY"
 V5_6_3_SCORED_STATUS = "V5_6_3_OFFICIAL_METRIC_BACKEND_PROBE_SCORED_EXECUTION_NONPROD_READY"
-V5_6_3_RUN_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_6_3"
+V5_6_3_RUN_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v5_6_3"
 V5_6_3_REPORT = V5_6_3_RUN_DIR / "report.json"
 V5_6_3_SCORED_RESULT = V5_6_3_RUN_DIR / "official_metric_scored_result.json"
 V5_6_3_FAILURE_ATTRIBUTION = V5_6_3_RUN_DIR / "failure_attribution.jsonl"
@@ -222,7 +222,7 @@ V5_6_REFACTOR_COMPARISON_SHORT_RUN_ID = "v5_6_refactor_route_comparison_packet_d
 V5_6_REFACTOR_COMPARISON_LONG_RUN_ID = V5_6_REFACTOR_COMPARISON_SHORT_RUN_ID
 V5_6_REFACTOR_COMPARISON_STATUS = "V5_6_REFACTOR_ROUTE_COMPARISON_PACKET_DIAGNOSTIC_NONPROD_READY"
 V5_6_REFACTOR_COMPARISON_RUN_DIR = (
-    ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / V5_6_REFACTOR_COMPARISON_SHORT_KEY
+    ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / V5_6_REFACTOR_COMPARISON_SHORT_KEY
 )
 V5_6_REFACTOR_COMPARISON_REPORT = V5_6_REFACTOR_COMPARISON_RUN_DIR / "report.json"
 V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_KEY = "v5_6_full_packet_route_retrieval_comparison"
@@ -233,11 +233,11 @@ V5_6_FULL_PACKET_ROUTE_RETRIEVAL_STATUS = (
     "V5_6_FULL_PACKET_ROUTE_RETRIEVAL_COMPARISON_DIAGNOSTIC_NONPROD_READY"
 )
 V5_6_FULL_PACKET_ROUTE_RETRIEVAL_RUN_DIR = (
-    ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_KEY
+    ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_KEY
 )
 V5_6_FULL_PACKET_ROUTE_RETRIEVAL_REPORT = V5_6_FULL_PACKET_ROUTE_RETRIEVAL_RUN_DIR / "report.json"
 V5_6_FULL_PACKET_ROUTE_RETRIEVAL_ROWS = V5_6_FULL_PACKET_ROUTE_RETRIEVAL_RUN_DIR / "route_diagnostics.jsonl"
-REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+REPORT_ROOT = ROOT / "reports" / "rag_eval" / "rag-ingestion"
 STATUS_JSONL = REPORT_ROOT / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
@@ -309,12 +309,12 @@ def test_v5_diagnostic_common_helpers_preserve_write_doc_and_payload_semantics(t
     original = {"short_run_id": "v5_helper_probe", "nested": {"value": 1}}
     report, hashes = common.write_report_bundle(
         tmp_path,
-        Path("ai/eval/reports/rag-ingestion/runs/v5_helper_probe/report.json"),
+        Path("reports/rag_eval/rag-ingestion/runs/v5_helper_probe/report.json"),
         original,
     )
 
     original["nested"]["value"] = 2
-    report_path = tmp_path / "ai/eval/reports/rag-ingestion/runs/v5_helper_probe/report.json"
+    report_path = tmp_path / "reports/rag_eval/rag-ingestion/runs/v5_helper_probe/report.json"
     assert report == {"short_run_id": "v5_helper_probe", "nested": {"value": 1}}
     assert json.loads(report_path.read_text(encoding="utf-8")) == report
     assert hashes == {"report_json_sha256": _sha256_file(report_path)}
@@ -352,35 +352,35 @@ def test_v477_registry_resolves_current_and_previous_short_keys() -> None:
     import ai.scripts.rag_eval as runner
 
     expected = {
-        "v4_7_preofficial": "ai/eval/reports/rag-ingestion/runs/v4_7_preofficial/report.json",
-        "v4_7_2": "ai/eval/reports/rag-ingestion/runs/v4_7_2/report.json",
-        "v4_7_3": "ai/eval/reports/rag-ingestion/runs/v4_7_3/report.json",
-        "v4_7_4": "ai/eval/reports/rag-ingestion/runs/v4_7_4/report.json",
-        "v4_7_5": "ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json",
-        "v4_7_6": "ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json",
-        "v4_7_7": "ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json",
-        "v4_7_8": "ai/eval/reports/rag-ingestion/runs/v4_7_8/report.json",
-        "v4_7_9": "ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json",
-        "v4_7_10": "ai/eval/reports/rag-ingestion/runs/v4_7_10/report.json",
-        "v4_7_11": "ai/eval/reports/rag-ingestion/runs/v4_7_11/report.json",
-        "v4_7_12": "ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json",
-        V4_7_12_ACTIVE_GOAL_ALIAS: "ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json",
-        "v4_7_13": "ai/eval/reports/rag-ingestion/runs/v4_7_13/report.json",
-        "v4_7_14": "ai/eval/reports/rag-ingestion/runs/v4_7_14/report.json",
-        "v4_7_15": "ai/eval/reports/rag-ingestion/runs/v4_7_15/report.json",
-        "v4_7_16": "ai/eval/reports/rag-ingestion/runs/v4_7_16/report.json",
-        "v4_7_17": "ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json",
-        "v4_7_18": "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json",
-        "v5_0": "ai/eval/reports/rag-ingestion/runs/v5_0/report.json",
-        "v5_1": "ai/eval/reports/rag-ingestion/runs/v5_1/report.json",
-        "v5_2": "ai/eval/reports/rag-ingestion/runs/v5_2/report.json",
-        "v5_3": "ai/eval/reports/rag-ingestion/runs/v5_3/report.json",
-        "v5_4": "ai/eval/reports/rag-ingestion/runs/v5_4/report.json",
-        "v5_5": "ai/eval/reports/rag-ingestion/runs/v5_5/report.json",
-        "v5_6": "ai/eval/reports/rag-ingestion/runs/v5_6/report.json",
-        "v5_6_2": "ai/eval/reports/rag-ingestion/runs/v5_6_2/report.json",
-        "v5_6_3": "ai/eval/reports/rag-ingestion/runs/v5_6_3/report.json",
-        "current": "ai/eval/reports/rag-ingestion/runs/v5_6/report.json",
+        "v4_7_preofficial": "reports/rag_eval/rag-ingestion/runs/v4_7_preofficial/report.json",
+        "v4_7_2": "reports/rag_eval/rag-ingestion/runs/v4_7_2/report.json",
+        "v4_7_3": "reports/rag_eval/rag-ingestion/runs/v4_7_3/report.json",
+        "v4_7_4": "reports/rag_eval/rag-ingestion/runs/v4_7_4/report.json",
+        "v4_7_5": "reports/rag_eval/rag-ingestion/runs/v4_7_5/report.json",
+        "v4_7_6": "reports/rag_eval/rag-ingestion/runs/v4_7_6/report.json",
+        "v4_7_7": "reports/rag_eval/rag-ingestion/runs/v4_7_7/report.json",
+        "v4_7_8": "reports/rag_eval/rag-ingestion/runs/v4_7_8/report.json",
+        "v4_7_9": "reports/rag_eval/rag-ingestion/runs/v4_7_9/report.json",
+        "v4_7_10": "reports/rag_eval/rag-ingestion/runs/v4_7_10/report.json",
+        "v4_7_11": "reports/rag_eval/rag-ingestion/runs/v4_7_11/report.json",
+        "v4_7_12": "reports/rag_eval/rag-ingestion/runs/v4_7_12/report.json",
+        V4_7_12_ACTIVE_GOAL_ALIAS: "reports/rag_eval/rag-ingestion/runs/v4_7_12/report.json",
+        "v4_7_13": "reports/rag_eval/rag-ingestion/runs/v4_7_13/report.json",
+        "v4_7_14": "reports/rag_eval/rag-ingestion/runs/v4_7_14/report.json",
+        "v4_7_15": "reports/rag_eval/rag-ingestion/runs/v4_7_15/report.json",
+        "v4_7_16": "reports/rag_eval/rag-ingestion/runs/v4_7_16/report.json",
+        "v4_7_17": "reports/rag_eval/rag-ingestion/runs/v4_7_17/report.json",
+        "v4_7_18": "reports/rag_eval/rag-ingestion/runs/v4_7_18/report.json",
+        "v5_0": "reports/rag_eval/rag-ingestion/runs/v5_0/report.json",
+        "v5_1": "reports/rag_eval/rag-ingestion/runs/v5_1/report.json",
+        "v5_2": "reports/rag_eval/rag-ingestion/runs/v5_2/report.json",
+        "v5_3": "reports/rag_eval/rag-ingestion/runs/v5_3/report.json",
+        "v5_4": "reports/rag_eval/rag-ingestion/runs/v5_4/report.json",
+        "v5_5": "reports/rag_eval/rag-ingestion/runs/v5_5/report.json",
+        "v5_6": "reports/rag_eval/rag-ingestion/runs/v5_6/report.json",
+        "v5_6_2": "reports/rag_eval/rag-ingestion/runs/v5_6_2/report.json",
+        "v5_6_3": "reports/rag_eval/rag-ingestion/runs/v5_6_3/report.json",
+        "current": "reports/rag_eval/rag-ingestion/runs/v5_6/report.json",
     }
     for key, rel_path in expected.items():
         resolved = registry.resolve_run(key, root=ROOT)
@@ -526,7 +526,7 @@ def test_v4712_explicit_check_builds_in_memory_and_current_uses_v560_with_v550_v
     from ai.eval import rag_v560_official_metric_scored_execution_and_failure_attribution_nonprod as v560
     from ai.eval import rag_v562_official_metric_backend_enabled_preflight_scored_rerun_nonprod as v562
 
-    missing_report = Path("ai/eval/reports/rag-ingestion/runs/v4_7_12_missing_for_test/report.json")
+    missing_report = Path("reports/rag_eval/rag-ingestion/runs/v4_7_12_missing_for_test/report.json")
     monkeypatch.setattr(v4712, "SHORT_REPORT_PATH", missing_report)
 
     current = runner.check_run("current")
@@ -570,7 +570,7 @@ def test_v4712_explicit_check_builds_in_memory_and_current_uses_v560_with_v550_v
 def test_v4712_layered_retrieval_audit_preserves_architecture_and_is_not_canary_limited() -> None:
     from ai.eval import rag_v4712_layered_retrieval_generalization_and_overfit_audit as v4712
 
-    source_packet = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_11" / "answer_review_packet_ko.jsonl"
+    source_packet = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_11" / "answer_review_packet_ko.jsonl"
     source_packet_sha_before = _sha256_file(source_packet)
     report = v4712.build_report(
         root=ROOT,
@@ -866,9 +866,9 @@ def test_v4713_live_retrieval_disabled_fails_closed_and_preserves_v4712_artifact
     from ai.eval import rag_v4713_live_retrieval_answerability_and_full_pdf_replay as v4713
 
     v4712_artifacts = [
-        ROOT / "ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json",
-        ROOT / "ai/eval/reports/rag-ingestion/runs/v4_7_12/silver_layered_retrieval_audit.json",
-        ROOT / "ai/eval/reports/rag-ingestion/runs/v4_7_12/silver_answer_smoke_ko.jsonl",
+        ROOT / "reports/rag_eval/rag-ingestion/runs/v4_7_12/report.json",
+        ROOT / "reports/rag_eval/rag-ingestion/runs/v4_7_12/silver_layered_retrieval_audit.json",
+        ROOT / "reports/rag_eval/rag-ingestion/runs/v4_7_12/silver_answer_smoke_ko.jsonl",
     ]
     before = {path: _sha256_file(path) for path in v4712_artifacts}
     report = v4713.build_report(
@@ -1301,7 +1301,7 @@ def test_v4714_written_report_status_docs_and_no_raw_payload_leakage() -> None:
 
     assert V4_7_14_REPORT.exists()
     assert latest["status"] == V4_7_14_STATUS
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_14/report.json"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v4_7_14/report.json"
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V4_7_14_REPORT)
     assert latest["live_retrieval_precondition_unavailable_count"] == 1
     assert latest["live_retrieval_quality_failure_count"] == 0
@@ -1551,7 +1551,7 @@ def test_v4715_written_report_status_docs_and_guardrails() -> None:
 
     assert V4_7_15_REPORT.exists()
     assert latest["status"] == V4_7_15_STATUS
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_15/report.json"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v4_7_15/report.json"
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V4_7_15_REPORT)
     assert latest["read_only_replay_row_count"] == 1000
     assert latest["projection_input_row_count"] == 90
@@ -1757,7 +1757,7 @@ def test_v4716_written_report_status_docs_and_guardrails() -> None:
 
     assert V4_7_16_REPORT.exists()
     assert latest["status"] == V4_7_16_STATUS
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_16/report.json"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v4_7_16/report.json"
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V4_7_16_REPORT)
     assert latest["baseline_target_hit_count"] == 300
     assert latest["combined_target_hit_count"] == 514
@@ -1973,7 +1973,7 @@ def test_v4717_written_report_status_docs_and_current_alias() -> None:
     assert current["short_run_id"] == V4_7_17_SHORT_RUN_ID
     assert V4_7_17_REPORT.exists()
     assert latest["status"] == V4_7_17_STATUS
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v4_7_17/report.json"
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V4_7_17_REPORT)
     assert latest["candidate_only_generalization_validated"] is True
     assert latest["xlsx_table_axis_repair_decision"] == "keep_inconclusive_low_gain_candidate_only"
@@ -2103,7 +2103,7 @@ def test_v4717_write_path_synthesizes_source_report_when_prior_ignored_report_is
         observed["used_source_report"] = True
         return {
             "status": V4_7_17_STATUS,
-            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json"},
+            "artifact_paths": {"report_json": "reports/rag_eval/rag-ingestion/runs/v4_7_17/report.json"},
             "official_metric_input_rows": 0,
             "counters": {},
         }
@@ -2281,7 +2281,7 @@ def test_v4718_written_report_status_docs_current_alias_and_explicit_historical_
     assert explicit_v4718["short_run_id"] == V4_7_18_SHORT_RUN_ID
     assert V4_7_18_REPORT.exists()
     assert latest["status"] == V4_7_18_STATUS
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v4_7_18/report.json"
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V4_7_18_REPORT)
     assert latest["lineage_reproducibility_status"] == "LINEAGE_REPRODUCIBILITY_HARDENED_DIAGNOSTIC_ONLY"
     assert latest["xlsx_materialization_repair_decision"] == "accept_materialized_axis_value_overlay_diagnostic_only"
@@ -2575,7 +2575,7 @@ def test_v4718_write_path_synthesizes_v4717_source_report_when_prior_ignored_rep
         observed["used_source_report"] = True
         return {
             "status": V4_7_18_STATUS,
-            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json"},
+            "artifact_paths": {"report_json": "reports/rag_eval/rag-ingestion/runs/v4_7_18/report.json"},
             "official_metric_input_rows": 0,
             "counters": {},
         }
@@ -2698,7 +2698,7 @@ def test_v500_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert explicit_v4718["short_run_id"] == V4_7_18_SHORT_RUN_ID
     assert V5_0_REPORT.exists()
     assert latest["status"] == V5_0_STATUS
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v5_0/report.json"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v5_0/report.json"
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V5_0_REPORT)
     assert latest["source_run_id"] == V4_7_18_SHORT_RUN_ID
     assert latest["v4_closeout_basis"] == V4_7_18_SHORT_KEY
@@ -2747,8 +2747,8 @@ def test_v500_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert registry.resolve_run(V4_7_18_SHORT_KEY, root=ROOT).logical_key == V4_7_18_SHORT_KEY
 
     for rel_path in (
-        "ai/eval/reports/rag-ingestion/runs/v5_0/report.json",
-        "ai/eval/reports/rag-ingestion/status.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_0/report.json",
+        "reports/rag_eval/rag-ingestion/status.jsonl",
     ):
         assert subprocess.run(["git", "check-ignore", "-q", rel_path], cwd=ROOT).returncode == 0
 
@@ -2862,7 +2862,7 @@ def test_v500_write_path_synthesizes_v4718_source_report_when_prior_ignored_repo
         observed["used_source_report"] = True
         return {
             "status": V5_0_STATUS,
-            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v5_0/report.json"},
+            "artifact_paths": {"report_json": "reports/rag_eval/rag-ingestion/runs/v5_0/report.json"},
             "official_metric_input_rows": 0,
             "counters": {},
         }
@@ -2994,7 +2994,7 @@ def test_v510_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert explicit_v500["short_run_id"] == V5_0_SHORT_RUN_ID
     assert V5_1_REPORT.exists()
     assert latest["status"] == V5_1_STATUS
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v5_1/report.json"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v5_1/report.json"
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V5_1_REPORT)
     assert latest["source_run_id"] == V5_0_SHORT_RUN_ID
     assert latest["current_resolves_to"] == V5_1_SHORT_KEY
@@ -3038,8 +3038,8 @@ def test_v510_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert registry.resolve_run(V5_0_SHORT_KEY, root=ROOT).logical_key == V5_0_SHORT_KEY
 
     for rel_path in (
-        "ai/eval/reports/rag-ingestion/runs/v5_1/report.json",
-        "ai/eval/reports/rag-ingestion/status.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_1/report.json",
+        "reports/rag_eval/rag-ingestion/status.jsonl",
     ):
         assert subprocess.run(["git", "check-ignore", "-q", rel_path], cwd=ROOT).returncode == 0
 
@@ -3164,7 +3164,7 @@ def test_v510_write_path_synthesizes_v500_source_report_when_prior_ignored_repor
         observed["used_source_report"] = True
         return {
             "status": V5_1_STATUS,
-            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v5_1/report.json"},
+            "artifact_paths": {"report_json": "reports/rag_eval/rag-ingestion/runs/v5_1/report.json"},
             "official_metric_input_rows": 0,
             "counters": {},
         }
@@ -3253,7 +3253,7 @@ def test_v520_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert explicit_v510["short_run_id"] == V5_1_SHORT_RUN_ID
     assert V5_2_REPORT.exists()
     assert latest["status"] == V5_2_STATUS
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v5_2/report.json"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v5_2/report.json"
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V5_2_REPORT)
     assert latest["source_run_id"] == V5_1_SHORT_RUN_ID
     assert latest["current_resolves_to"] == V5_2_SHORT_KEY
@@ -3293,8 +3293,8 @@ def test_v520_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert registry.resolve_run(V5_1_SHORT_KEY, root=ROOT).logical_key == V5_1_SHORT_KEY
 
     for rel_path in (
-        "ai/eval/reports/rag-ingestion/runs/v5_2/report.json",
-        "ai/eval/reports/rag-ingestion/status.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_2/report.json",
+        "reports/rag_eval/rag-ingestion/status.jsonl",
     ):
         assert subprocess.run(["git", "check-ignore", "-q", rel_path], cwd=ROOT).returncode == 0
 
@@ -3390,7 +3390,7 @@ def test_v520_write_path_synthesizes_v510_source_report_when_prior_ignored_repor
         observed["used_source_report"] = True
         return {
             "status": V5_2_STATUS,
-            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v5_2/report.json"},
+            "artifact_paths": {"report_json": "reports/rag_eval/rag-ingestion/runs/v5_2/report.json"},
             "official_metric_input_rows": 0,
             "counters": {},
         }
@@ -3518,7 +3518,7 @@ def test_v530_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert latest["status_progress_only_handoff_note_recorded"] is True
     assert latest["v5_4_created"] is False
     assert latest["v5_4_blocked_by_user_owned_approval_artifacts"] is True
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v5_3/report.json"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v5_3/report.json"
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V5_3_REPORT)
     assert latest["source_run_id"] == V5_2_SHORT_RUN_ID
     assert latest["current_resolves_to"] == V5_3_SHORT_KEY
@@ -3603,8 +3603,8 @@ def test_v530_written_report_status_docs_current_alias_and_ignored_artifacts() -
     assert registry.resolve_run(V5_2_SHORT_KEY, root=ROOT).logical_key == V5_2_SHORT_KEY
 
     for rel_path in (
-        "ai/eval/reports/rag-ingestion/runs/v5_3/report.json",
-        "ai/eval/reports/rag-ingestion/status.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_3/report.json",
+        "reports/rag_eval/rag-ingestion/status.jsonl",
     ):
         assert subprocess.run(["git", "check-ignore", "-q", rel_path], cwd=ROOT).returncode == 0
 
@@ -3704,7 +3704,7 @@ def test_v530_write_path_validates_report_before_writing_and_synthesizes_v520_so
         call_order.append("build")
         return {
             "status": V5_3_STATUS,
-            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v5_3/report.json"},
+            "artifact_paths": {"report_json": "reports/rag_eval/rag-ingestion/runs/v5_3/report.json"},
             "official_metric_input_rows": 0,
             "counters": {},
         }
@@ -3763,14 +3763,14 @@ def test_v540_user_owned_approval_packet_materializes_blank_user_fields_and_clos
     assert report["official_eval_user_gate_ready"] is False
     assert report["protected_namespaces_touched"] == []
     assert report["artifact_paths"] == {
-        "report_json": "ai/eval/reports/rag-ingestion/runs/v5_4/report.json",
-        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
-        "source_report_json": "ai/eval/reports/rag-ingestion/runs/v5_3/report.json",
-        "user_owned_approval_schema_json": "ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json",
-        "user_owned_policy_template_json": "ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json",
-        "user_review_packet_jsonl": "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl",
-        "user_review_packet_csv": "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv",
-        "user_review_packet_xlsx": "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx",
+        "report_json": "reports/rag_eval/rag-ingestion/runs/v5_4/report.json",
+        "status_jsonl": "reports/rag_eval/rag-ingestion/status.jsonl",
+        "source_report_json": "reports/rag_eval/rag-ingestion/runs/v5_3/report.json",
+        "user_owned_approval_schema_json": "reports/rag_eval/rag-ingestion/runs/v5_4/user_owned_approval_schema.json",
+        "user_owned_policy_template_json": "reports/rag_eval/rag-ingestion/runs/v5_4/user_owned_policy_template.json",
+        "user_review_packet_jsonl": "reports/rag_eval/rag-ingestion/runs/v5_4/user_review_packet.jsonl",
+        "user_review_packet_csv": "reports/rag_eval/rag-ingestion/runs/v5_4/user_review_packet.csv",
+        "user_review_packet_xlsx": "reports/rag_eval/rag-ingestion/runs/v5_4/user_review_packet.xlsx",
     }
 
     schema = report["user_owned_approval_schema"]
@@ -3872,8 +3872,8 @@ def test_v540_written_report_status_docs_current_alias_and_packet_artifacts() ->
     assert latest["official_metric_dry_run_opened"] is False
     assert latest["official_eval_user_gate_ready"] is False
     assert latest["protected_namespaces_touched"] == []
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v5_4/report.json"
-    assert latest["artifact_paths"]["user_review_packet_csv"] == "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v5_4/report.json"
+    assert latest["artifact_paths"]["user_review_packet_csv"] == "reports/rag_eval/rag-ingestion/runs/v5_4/user_review_packet.csv"
     assert latest["artifact_sha256"]["user_review_packet_jsonl_sha256"] == _sha256_file(V5_4_PACKET_JSONL)
     assert latest["artifact_sha256"]["user_review_packet_csv_sha256"] == _sha256_file(V5_4_PACKET_CSV)
     assert latest["artifact_sha256"]["user_review_packet_xlsx_sha256"] == _sha256_file(V5_4_PACKET_XLSX)
@@ -3897,13 +3897,13 @@ def test_v540_written_report_status_docs_current_alias_and_packet_artifacts() ->
     assert registry.resolve_run("current", root=ROOT).logical_key == V5_6_SHORT_KEY
 
     for rel_path in (
-        "ai/eval/reports/rag-ingestion/runs/v5_4/report.json",
-        "ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_approval_schema.json",
-        "ai/eval/reports/rag-ingestion/runs/v5_4/user_owned_policy_template.json",
-        "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl",
-        "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv",
-        "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx",
-        "ai/eval/reports/rag-ingestion/status.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_4/report.json",
+        "reports/rag_eval/rag-ingestion/runs/v5_4/user_owned_approval_schema.json",
+        "reports/rag_eval/rag-ingestion/runs/v5_4/user_owned_policy_template.json",
+        "reports/rag_eval/rag-ingestion/runs/v5_4/user_review_packet.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_4/user_review_packet.csv",
+        "reports/rag_eval/rag-ingestion/runs/v5_4/user_review_packet.xlsx",
+        "reports/rag_eval/rag-ingestion/status.jsonl",
     ):
         assert subprocess.run(["git", "check-ignore", "-q", rel_path], cwd=ROOT).returncode == 0, rel_path
 
@@ -3999,7 +3999,7 @@ def test_v540_write_path_validates_report_before_writing_and_synthesizes_v530_so
         call_order.append("build")
         return {
             "status": V5_4_STATUS,
-            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v5_4/report.json"},
+            "artifact_paths": {"report_json": "reports/rag_eval/rag-ingestion/runs/v5_4/report.json"},
             "official_metric_input_rows": 0,
             "counters": {},
         }
@@ -4046,9 +4046,9 @@ def test_v550_user_approved_gold_packet_ingests_only_v540_rows_and_builds_offici
     assert report["approval_scope"] == {
         "source_run_id": V5_4_SHORT_RUN_ID,
         "source_packet_paths": [
-            "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv",
-            "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.jsonl",
-            "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.xlsx",
+            "reports/rag_eval/rag-ingestion/runs/v5_4/user_review_packet.csv",
+            "reports/rag_eval/rag-ingestion/runs/v5_4/user_review_packet.jsonl",
+            "reports/rag_eval/rag-ingestion/runs/v5_4/user_review_packet.xlsx",
         ],
         "row_count": 29,
         "scope_policy": "exact_v5_4_user_review_packet_rows_only",
@@ -4060,15 +4060,15 @@ def test_v550_user_approved_gold_packet_ingests_only_v540_rows_and_builds_offici
         ],
     }
     assert report["artifact_paths"] == {
-        "report_json": "ai/eval/reports/rag-ingestion/runs/v5_5/report.json",
-        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
-        "source_report_json": "ai/eval/reports/rag-ingestion/runs/v5_4/report.json",
-        "user_approved_gold_packet_jsonl": "ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_gold_packet.jsonl",
-        "user_approved_denominator_jsonl": "ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_denominator.jsonl",
-        "user_approved_qrels_jsonl": "ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_qrels.jsonl",
-        "user_approved_expected_answers_jsonl": "ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_expected_answers.jsonl",
-        "official_metric_input_jsonl": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
-        "official_metric_dry_run_result_json": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_dry_run_result.json",
+        "report_json": "reports/rag_eval/rag-ingestion/runs/v5_5/report.json",
+        "status_jsonl": "reports/rag_eval/rag-ingestion/status.jsonl",
+        "source_report_json": "reports/rag_eval/rag-ingestion/runs/v5_4/report.json",
+        "user_approved_gold_packet_jsonl": "reports/rag_eval/rag-ingestion/runs/v5_5/user_approved_gold_packet.jsonl",
+        "user_approved_denominator_jsonl": "reports/rag_eval/rag-ingestion/runs/v5_5/user_approved_denominator.jsonl",
+        "user_approved_qrels_jsonl": "reports/rag_eval/rag-ingestion/runs/v5_5/user_approved_qrels.jsonl",
+        "user_approved_expected_answers_jsonl": "reports/rag_eval/rag-ingestion/runs/v5_5/user_approved_expected_answers.jsonl",
+        "official_metric_input_jsonl": "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+        "official_metric_dry_run_result_json": "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_dry_run_result.json",
     }
 
     assert report["user_approved_gold_packet_created"] is True
@@ -4206,14 +4206,14 @@ def test_v550_written_report_status_docs_current_alias_and_official_artifacts() 
     assert registry.resolve_run("current", root=ROOT).logical_key == V5_6_SHORT_KEY
 
     for rel_path in (
-        "ai/eval/reports/rag-ingestion/runs/v5_5/report.json",
-        "ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_gold_packet.jsonl",
-        "ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_denominator.jsonl",
-        "ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_qrels.jsonl",
-        "ai/eval/reports/rag-ingestion/runs/v5_5/user_approved_expected_answers.jsonl",
-        "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
-        "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_dry_run_result.json",
-        "ai/eval/reports/rag-ingestion/status.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_5/report.json",
+        "reports/rag_eval/rag-ingestion/runs/v5_5/user_approved_gold_packet.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_5/user_approved_denominator.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_5/user_approved_qrels.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_5/user_approved_expected_answers.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_dry_run_result.json",
+        "reports/rag_eval/rag-ingestion/status.jsonl",
     ):
         assert subprocess.run(["git", "check-ignore", "-q", rel_path], cwd=ROOT).returncode == 0, rel_path
 
@@ -4328,7 +4328,7 @@ def test_v550_write_path_validates_report_before_writing_and_synthesizes_v540_so
         call_order.append("build")
         return {
             "status": V5_5_STATUS,
-            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v5_5/report.json"},
+            "artifact_paths": {"report_json": "reports/rag_eval/rag-ingestion/runs/v5_5/report.json"},
             "official_metric_input_rows": 29,
             "counters": {},
         }
@@ -4376,7 +4376,7 @@ def test_v560_fail_closed_consumes_only_v550_official_metric_input_and_records_d
     assert report["diagnostic_only"] is False
     assert report["approval_scope"] == {
         "source_run_id": V5_5_SHORT_RUN_ID,
-        "source_artifact_path": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+        "source_artifact_path": "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
         "row_count": 29,
         "scope_policy": "exact_v5_5_official_metric_input_rows_only",
         "excluded_scopes": [
@@ -4583,7 +4583,7 @@ def test_v560_write_path_writes_scored_result_failure_attribution_status_and_ign
     assert artifact_hashes["failure_attribution_jsonl_sha256"] == _sha256_file(
         tmp_path / paths["failure_attribution_jsonl"]
     )
-    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_rows = _read_jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     latest = status_rows[-1]
     assert latest["short_run_id"] == V5_6_SHORT_RUN_ID
     assert latest["status"] == V5_6_STATUS
@@ -4593,10 +4593,10 @@ def test_v560_write_path_writes_scored_result_failure_attribution_status_and_ign
     assert latest["failure_category_counts"] == {"backend_unavailable": 29}
 
     for rel_path in (
-        "ai/eval/reports/rag-ingestion/runs/v5_6/report.json",
-        "ai/eval/reports/rag-ingestion/runs/v5_6/official_metric_scored_result.json",
-        "ai/eval/reports/rag-ingestion/runs/v5_6/failure_attribution.jsonl",
-        "ai/eval/reports/rag-ingestion/status.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_6/report.json",
+        "reports/rag_eval/rag-ingestion/runs/v5_6/official_metric_scored_result.json",
+        "reports/rag_eval/rag-ingestion/runs/v5_6/failure_attribution.jsonl",
+        "reports/rag_eval/rag-ingestion/status.jsonl",
     ):
         assert subprocess.run(["git", "check-ignore", "-q", rel_path], cwd=ROOT).returncode == 0, rel_path
 
@@ -4626,7 +4626,7 @@ def test_v560_write_path_validates_report_before_writing_and_uses_v550_source(mo
         call_order.append("build")
         return {
             "status": V5_6_STATUS,
-            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v5_6/report.json"},
+            "artifact_paths": {"report_json": "reports/rag_eval/rag-ingestion/runs/v5_6/report.json"},
             "official_metric_input_rows": 29,
             "official_metric_scored_result": {"scored_answer_rows": 0},
             "counters": {},
@@ -4667,7 +4667,7 @@ def test_v562_env_gate_disabled_records_execution_gate_disabled_without_fake_met
     assert report["current_resolves_to"] == V5_6_SHORT_KEY
     assert report["approval_scope"] == {
         "source_run_id": V5_5_SHORT_RUN_ID,
-        "source_artifact_path": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+        "source_artifact_path": "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
         "row_count": 29,
         "scope_policy": "exact_v5_5_official_metric_input_rows_only",
         "excluded_scopes": [
@@ -4987,7 +4987,7 @@ def test_v562_write_path_writes_preflight_status_without_measurements_when_unsco
     assert _read_jsonl(tmp_path / paths["failure_attribution_jsonl"]) == written["failure_attribution_rows"]
     assert measurements_path.read_text(encoding="utf-8") == measurements_before
 
-    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_rows = _read_jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     latest = status_rows[-1]
     assert latest["short_run_id"] == V5_6_2_SHORT_RUN_ID
     assert latest["status"] == V5_6_2_STATUS
@@ -5003,11 +5003,11 @@ def test_v562_write_path_writes_preflight_status_without_measurements_when_unsco
     assert "pass_count=0/fail_count=29 is not an answer-quality metric" in progress_text
 
     for rel_path in (
-        "ai/eval/reports/rag-ingestion/runs/v5_6_2/report.json",
-        "ai/eval/reports/rag-ingestion/runs/v5_6_2/backend_preflight_result.json",
-        "ai/eval/reports/rag-ingestion/runs/v5_6_2/official_metric_scored_result.json",
-        "ai/eval/reports/rag-ingestion/runs/v5_6_2/failure_attribution.jsonl",
-        "ai/eval/reports/rag-ingestion/status.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_6_2/report.json",
+        "reports/rag_eval/rag-ingestion/runs/v5_6_2/backend_preflight_result.json",
+        "reports/rag_eval/rag-ingestion/runs/v5_6_2/official_metric_scored_result.json",
+        "reports/rag_eval/rag-ingestion/runs/v5_6_2/failure_attribution.jsonl",
+        "reports/rag_eval/rag-ingestion/status.jsonl",
     ):
         assert subprocess.run(["git", "check-ignore", "-q", rel_path], cwd=ROOT).returncode == 0, rel_path
 
@@ -5037,7 +5037,7 @@ def test_v562_write_path_validates_report_before_writing_and_uses_v550_source(mo
         call_order.append("build")
         return {
             "status": V5_6_2_STATUS,
-            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v5_6_2/report.json"},
+            "artifact_paths": {"report_json": "reports/rag_eval/rag-ingestion/runs/v5_6_2/report.json"},
             "official_metric_input_rows": 29,
             "official_metric_scored_result": {"scored_answer_rows": 0},
             "counters": {},
@@ -5080,7 +5080,7 @@ def test_v563_env_gate_disabled_records_execution_gate_disabled_without_fake_met
     assert report["v5_6_2_preflight_run_id"] == V5_6_2_SHORT_RUN_ID
     assert report["approval_scope"] == {
         "source_run_id": V5_5_SHORT_RUN_ID,
-        "source_artifact_path": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+        "source_artifact_path": "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
         "row_count": 29,
         "scope_policy": "exact_v5_5_official_metric_input_rows_only",
         "excluded_scopes": [
@@ -5100,7 +5100,7 @@ def test_v563_env_gate_disabled_records_execution_gate_disabled_without_fake_met
     }
     validation = report["source_artifact_validation"]
     assert validation["source_official_metric_input_path"] == (
-        "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl"
+        "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl"
     )
     assert validation["path_matches_v5_5_report"] is True
     assert validation["sha256_matches_v5_5_report"] is True
@@ -5516,7 +5516,7 @@ def test_v563_write_path_writes_preflight_status_without_measurements_when_unsco
     assert _read_jsonl(tmp_path / paths["failure_attribution_jsonl"]) == written["failure_attribution_rows"]
     assert measurements_path.read_text(encoding="utf-8") == measurements_before
 
-    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_rows = _read_jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     latest = status_rows[-1]
     assert latest["short_run_id"] == V5_6_3_SHORT_RUN_ID
     assert latest["status"] == V5_6_3_STATUS
@@ -5533,11 +5533,11 @@ def test_v563_write_path_writes_preflight_status_without_measurements_when_unsco
     assert "RAG_V5_6_3_ENABLE_OFFICIAL_METRIC_EXECUTION" in progress_text
 
     for rel_path in (
-        "ai/eval/reports/rag-ingestion/runs/v5_6_3/report.json",
-        "ai/eval/reports/rag-ingestion/runs/v5_6_3/backend_preflight_result.json",
-        "ai/eval/reports/rag-ingestion/runs/v5_6_3/official_metric_scored_result.json",
-        "ai/eval/reports/rag-ingestion/runs/v5_6_3/failure_attribution.jsonl",
-        "ai/eval/reports/rag-ingestion/status.jsonl",
+        "reports/rag_eval/rag-ingestion/runs/v5_6_3/report.json",
+        "reports/rag_eval/rag-ingestion/runs/v5_6_3/backend_preflight_result.json",
+        "reports/rag_eval/rag-ingestion/runs/v5_6_3/official_metric_scored_result.json",
+        "reports/rag_eval/rag-ingestion/runs/v5_6_3/failure_attribution.jsonl",
+        "reports/rag_eval/rag-ingestion/status.jsonl",
     ):
         assert subprocess.run(["git", "check-ignore", "-q", rel_path], cwd=ROOT).returncode == 0, rel_path
 
@@ -5567,7 +5567,7 @@ def test_v563_write_path_validates_report_before_writing_and_uses_v550_source(mo
         call_order.append("build")
         return {
             "status": V5_6_3_STATUS,
-            "artifact_paths": {"report_json": "ai/eval/reports/rag-ingestion/runs/v5_6_3/report.json"},
+            "artifact_paths": {"report_json": "reports/rag_eval/rag-ingestion/runs/v5_6_3/report.json"},
             "official_metric_input_rows": 29,
             "official_metric_scored_result": {"scored_answer_rows": 0},
             "counters": {},
@@ -5744,12 +5744,12 @@ def test_v56_refactor_comparison_write_status_and_runner_keep_current_v56(tmp_pa
 
     paths = written["artifact_paths"]
     assert paths == {
-        "report_json": "ai/eval/reports/rag-ingestion/runs/v5_6_refactor_comparison/report.json",
-        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
+        "report_json": "reports/rag_eval/rag-ingestion/runs/v5_6_refactor_comparison/report.json",
+        "status_jsonl": "reports/rag_eval/rag-ingestion/status.jsonl",
     }
     assert (tmp_path / paths["report_json"]).exists()
     assert artifact_hashes["report_json_sha256"] == _sha256_file(tmp_path / paths["report_json"])
-    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_rows = _read_jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     latest = status_rows[-1]
     assert latest["short_run_id"] == V5_6_REFACTOR_COMPARISON_SHORT_RUN_ID
     assert latest["current_resolves_to"] == V5_6_SHORT_KEY
@@ -5937,13 +5937,13 @@ def test_v56_full_packet_route_retrieval_writes_row_jsonl_status_and_runner_keep
 
     paths = written["artifact_paths"]
     assert paths == {
-        "report_json": "ai/eval/reports/rag-ingestion/runs/v5_6_full_packet_route_retrieval_comparison/report.json",
+        "report_json": "reports/rag_eval/rag-ingestion/runs/v5_6_full_packet_route_retrieval_comparison/report.json",
         "row_level_diagnostic_jsonl": (
-            "ai/eval/reports/rag-ingestion/runs/v5_6_full_packet_route_retrieval_comparison/"
+            "reports/rag_eval/rag-ingestion/runs/v5_6_full_packet_route_retrieval_comparison/"
             "route_diagnostics.jsonl"
         ),
-        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
-        "source_official_metric_input_jsonl": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+        "status_jsonl": "reports/rag_eval/rag-ingestion/status.jsonl",
+        "source_official_metric_input_jsonl": "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
     }
     assert artifact_hashes["report_json_sha256"] == _sha256_file(tmp_path / paths["report_json"])
     assert artifact_hashes["row_level_diagnostic_jsonl_sha256"] == _sha256_file(
@@ -5953,7 +5953,7 @@ def test_v56_full_packet_route_retrieval_writes_row_jsonl_status_and_runner_keep
     assert len(jsonl_rows) == 29
     assert all("expected_answer_ko" not in row and "supporting_evidence_note" not in row for row in jsonl_rows)
 
-    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_rows = _read_jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     latest = status_rows[-1]
     assert latest["short_run_id"] == V5_6_FULL_PACKET_ROUTE_RETRIEVAL_SHORT_RUN_ID
     assert latest["current_resolves_to"] == V5_6_SHORT_KEY
@@ -6186,9 +6186,9 @@ def test_v4711_answer_review_packet_is_ignored_compact_and_status_has_no_raw_pay
     )
     paths = report["artifact_paths"]
     answer_packet = ROOT / paths["answer_review_packet_jsonl"]
-    assert paths["report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_11/report.json"
+    assert paths["report_json"] == "reports/rag_eval/rag-ingestion/runs/v4_7_11/report.json"
     assert paths["answer_review_packet_jsonl"] == (
-        "ai/eval/reports/rag-ingestion/runs/v4_7_11/answer_review_packet_ko.jsonl"
+        "reports/rag_eval/rag-ingestion/runs/v4_7_11/answer_review_packet_ko.jsonl"
     )
     for rel_path in (paths["report_json"], paths["answer_review_packet_jsonl"]):
         result = subprocess.run(["git", "check-ignore", "-q", rel_path], cwd=ROOT)
@@ -6269,7 +6269,7 @@ def test_v477_manifest_classifies_every_v3_legacy_artifact_with_action_or_hold_r
         key = (str(row["original_relative_path"]), str(row["classification"]))
         assert key not in seen
         seen.add(key)
-        assert str(row["original_relative_path"]).startswith("ai/eval/reports/rag-ingestion/")
+        assert str(row["original_relative_path"]).startswith("reports/rag_eval/rag-ingestion/")
         assert ".." not in Path(str(row["original_relative_path"])).parts
         assert "D:\\" not in json.dumps(row, ensure_ascii=False)
         if row["classification"].startswith("EXPLICIT_HOLD"):
@@ -6398,7 +6398,7 @@ def test_v478_report_manifest_status_docs_and_alias_expansion_stay_closed() -> N
     assert not list((ROOT / "ai" / "scripts").glob("rag_v4_7_8*.py"))
 
     assert latest["short_run_id"] == V4_7_8_SHORT_RUN_ID
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_8/report.json"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v4_7_8/report.json"
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V4_7_8_REPORT)
     assert latest["official_metric"] is False
     assert latest["official_metric_input_rows"] == 0
@@ -6517,7 +6517,7 @@ def test_v479_pdf_residual_replay_repairs_only_residual_rows_and_fails_closed_wi
     assert all(row["answer_replay_audit"]["claim_support_verifier_status"] == "not_run_local_llm_unavailable" for row in repaired_rows)
 
     assert latest["short_run_id"] == V4_7_9_SHORT_RUN_ID
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v4_7_9/report.json"
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V4_7_9_REPORT)
     assert latest["official_metric"] is False
     assert latest["official_metric_input_rows"] == 0
@@ -6614,7 +6614,7 @@ def test_v4710_pdf_korean_evidence_normalization_reduces_v479_residuals_and_reco
     assert report["canonical_long_run_id"] == V4_7_10_LONG_RUN_ID
     assert report["status"] == V4_7_10_STATUS
     assert report["source_run_id"] == V4_7_9_SHORT_RUN_ID
-    assert report["source_report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json"
+    assert report["source_report_json"] == "reports/rag_eval/rag-ingestion/runs/v4_7_9/report.json"
     assert report["diagnostic_only"] is True
     assert report["non_production"] is True
     for key in (
@@ -6707,7 +6707,7 @@ def test_v4710_pdf_korean_evidence_normalization_reduces_v479_residuals_and_reco
 
     if latest is not None:
         assert latest["short_run_id"] == V4_7_10_SHORT_RUN_ID
-        assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_10/report.json"
+        assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v4_7_10/report.json"
         if V4_7_10_REPORT.exists():
             assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V4_7_10_REPORT)
         assert latest["official_metric"] is False

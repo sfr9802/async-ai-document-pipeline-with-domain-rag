@@ -33,9 +33,9 @@ import rag_vector_interference_diagnostic as vector_diag
 
 
 DEFAULT_CONFIG = AI_WORKER_ROOT / "eval" / "configs" / "retrieval_ood_interference_diagnostic.yaml"
-DEFAULT_REPORT_JSON = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "retrieval_interference_root_cause_ablation.json"
-DEFAULT_REPORT_MD = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "retrieval_interference_root_cause_ablation.md"
-DEFAULT_BY_QUERY_CSV = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "retrieval_interference_root_cause_ablation_by_query.csv"
+DEFAULT_REPORT_JSON = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "retrieval_interference_root_cause_ablation.json"
+DEFAULT_REPORT_MD = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "retrieval_interference_root_cause_ablation.md"
+DEFAULT_BY_QUERY_CSV = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "retrieval_interference_root_cause_ablation_by_query.csv"
 
 CONDITION_A = vector_diag.CONDITION_A
 CONDITION_C = vector_diag.CONDITION_C
@@ -175,10 +175,10 @@ def input_paths(config: Mapping[str, Any]) -> dict[str, Path]:
     prerequisites = config.get("prerequisites", {}) if isinstance(config.get("prerequisites"), Mapping) else {}
     outputs = config.get("outputs", {}) if isinstance(config.get("outputs"), Mapping) else {}
     return {
-        "diversity_json": resolve_path(str(prerequisites.get("phase1_corpus_diversity_profile", AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "retrieval_corpus_diversity_profile.json"))),
-        "ood_split_json": resolve_path(str(outputs.get("split_report_json", AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "retrieval_ood_split_report.json"))),
-        "vector_report_json": resolve_path(str(outputs.get("interference_report_json", AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "vector_interference_diagnostic.json"))),
-        "vector_by_query_csv": resolve_path(str(outputs.get("interference_by_query_csv", AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "vector_interference_diagnostic_by_query.csv"))),
+        "diversity_json": resolve_path(str(prerequisites.get("phase1_corpus_diversity_profile", AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "retrieval_corpus_diversity_profile.json"))),
+        "ood_split_json": resolve_path(str(outputs.get("split_report_json", AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "retrieval_ood_split_report.json"))),
+        "vector_report_json": resolve_path(str(outputs.get("interference_report_json", AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "vector_interference_diagnostic.json"))),
+        "vector_by_query_csv": resolve_path(str(outputs.get("interference_by_query_csv", AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "vector_interference_diagnostic_by_query.csv"))),
     }
 
 

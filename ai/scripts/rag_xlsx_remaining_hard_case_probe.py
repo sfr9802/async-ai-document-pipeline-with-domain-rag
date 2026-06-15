@@ -20,7 +20,7 @@ from eval.harness.rag_ingestion_retrieval_eval import evaluate_gold_rows, load_g
 
 
 DEFAULT_REVIEWED_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/rag_xlsx_remaining_hard_case_probe.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_xlsx_remaining_hard_case_probe.json")
 DEFAULT_VECTOR_INDEX_DIR = Path("eval/indexes/rag-data-xlsx-candidate-v1")
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
 XLSX_CANDIDATE_INDEX_VERSION = "rag-ingestion-v2-xlsx-candidate-v1"

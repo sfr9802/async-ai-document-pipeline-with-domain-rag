@@ -1,0 +1,505 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>최병찬 - AI 에이전트 엔지니어 이력서</title>
+  <style>
+    @font-face {
+      font-family: "Source Han Serif K";
+      src: url("https://cdn.jsdelivr.net/gh/fonts-archive/SourceHanSerifKorean/SourceHanSerifK-Regular.otf") format("opentype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Source Han Serif K";
+      src: url("https://cdn.jsdelivr.net/gh/fonts-archive/SourceHanSerifKorean/SourceHanSerifK-Bold.otf") format("opentype");
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --paper: #f7f3e8;
+      --ink: #16213a;
+      --muted: #667085;
+      --line: #d7cbb7;
+      --accent: #1e4d8f;
+      --accent-2: #9b5b2e;
+      --panel: rgba(255, 252, 244, 0.72);
+    }
+
+    @page {
+      size: A4;
+      margin: 11mm 12mm 12mm;
+      background: var(--paper);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: "Source Han Serif K", "Noto Serif KR", "Apple SD Gothic Neo", "Malgun Gothic", Georgia, serif;
+      font-size: 9.2pt;
+      line-height: 1.42;
+      letter-spacing: 0;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .page {
+      position: relative;
+    }
+
+    .page::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(90deg, rgba(30, 77, 143, 0.08) 0 1px, transparent 1px),
+        linear-gradient(180deg, rgba(155, 91, 46, 0.055) 0 1px, transparent 1px);
+      background-size: 23px 23px;
+      opacity: 0.32;
+      z-index: -1;
+    }
+
+    .page-break {
+      break-before: page;
+      page-break-before: always;
+    }
+
+    header {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 18px;
+      padding-bottom: 8px;
+      border-bottom: 1.2px solid var(--ink);
+    }
+
+    .kicker {
+      margin: 0 0 5px;
+      color: var(--accent-2);
+      font-size: 7.5pt;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 24pt;
+      line-height: 1.05;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .role {
+      margin: 5px 0 0;
+      color: var(--accent);
+      font-size: 10.2pt;
+      font-weight: 700;
+    }
+
+    .contact {
+      display: grid;
+      gap: 3px;
+      align-self: end;
+      color: var(--muted);
+      font-size: 7.7pt;
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .metric-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin: 10px 0 9px;
+    }
+
+    .metric {
+      min-height: 18mm;
+      padding: 6px 8px 5px;
+      border: 1px solid var(--line);
+      border-radius: 3px;
+      background: var(--panel);
+    }
+
+    .metric strong {
+      display: block;
+      color: var(--accent);
+      font-size: 15pt;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 7.2pt;
+      line-height: 1.15;
+    }
+
+    section {
+      margin-top: 9px;
+    }
+
+    h2 {
+      margin: 0 0 5px;
+      padding-bottom: 3px;
+      border-bottom: 1px solid var(--line);
+      color: var(--accent-2);
+      font-size: 8.4pt;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h3 {
+      margin: 0;
+      font-size: 10.4pt;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    .lead {
+      font-size: 9.5pt;
+      line-height: 1.48;
+    }
+
+    .hl {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .time-card,
+    .project,
+    .job,
+    .oss-card,
+    .skill-row,
+    .edu-card {
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      background: var(--panel);
+    }
+
+    .time-card {
+      padding: 6px 8px;
+    }
+
+    .time-card strong {
+      display: block;
+      color: var(--accent);
+      font-size: 8.3pt;
+      line-height: 1.15;
+    }
+
+    .time-card span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 7.4pt;
+      line-height: 1.3;
+    }
+
+    .project {
+      margin-top: 6px;
+      padding: 7px 8px 6px;
+    }
+
+    .project-head,
+    .job-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: baseline;
+      margin-bottom: 5px;
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: 7.4pt;
+      white-space: nowrap;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 17mm 1fr;
+      gap: 6px;
+      margin-top: 2px;
+      align-items: baseline;
+    }
+
+    .label {
+      color: var(--accent-2);
+      font-size: 7.2pt;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .text {
+      color: #26324a;
+      font-size: 8.2pt;
+      line-height: 1.35;
+    }
+
+    .compact-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 7px;
+    }
+
+    .job {
+      padding: 7px 8px 6px;
+    }
+
+    .job + .job {
+      margin-top: 6px;
+    }
+
+    .oss-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 7px;
+    }
+
+    .oss-card {
+      padding: 7px 8px 6px;
+      min-height: 30mm;
+    }
+
+    .oss-card h3 {
+      font-size: 9.1pt;
+    }
+
+    .oss-card p {
+      margin-top: 4px;
+      color: #26324a;
+      font-size: 7.8pt;
+      line-height: 1.34;
+    }
+
+    .skill-row {
+      display: grid;
+      grid-template-columns: 34mm 1fr;
+      gap: 7px;
+      padding: 5px 7px;
+      margin-top: 4px;
+      align-items: baseline;
+    }
+
+    .skill-row strong {
+      color: var(--accent);
+      font-size: 8.1pt;
+    }
+
+    .skill-row span {
+      color: #26324a;
+      font-size: 7.8pt;
+      line-height: 1.3;
+    }
+
+    .edu-card {
+      padding: 7px 8px;
+    }
+
+    .edu-card + .edu-card {
+      margin-top: 5px;
+    }
+
+    .edu-card strong {
+      display: block;
+      font-size: 8.5pt;
+    }
+
+    .edu-card span {
+      color: var(--muted);
+      font-size: 7.8pt;
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div>
+        <p class="kicker">AI Agent Engineer Resume</p>
+        <h1>최병찬 <span style="font-size: 12pt; color: var(--muted); font-weight: 400;">Choi Byungchan</span></h1>
+        <p class="role">AI Backend Engineer · Evidence-Grounded RAG · Agent Systems</p>
+      </div>
+      <address class="contact">
+        <a href="mailto:sfrfr22@gmail.com">sfrfr22@gmail.com</a>
+        <span>010-4045-5834 · Daejeon, Korea</span>
+        <a href="https://github.com/sfr9802">github.com/sfr9802</a>
+        <a href="https://devchan.tistory.com/">devchan.tistory.com</a>
+      </address>
+    </header>
+
+    <div class="metric-row" aria-label="대표 지표">
+      <div class="metric"><strong>2년+</strong><span>백엔드 실무</span></div>
+      <div class="metric"><strong>300</strong><span>SearchUnit/View 후보 진단</span></div>
+      <div class="metric"><strong>29</strong><span>승인 질의 smoke 재현</span></div>
+      <div class="metric"><strong>13->22</strong><span>citation_supported 개선</span></div>
+    </div>
+
+    <section>
+      <h2>Profile</h2>
+      <p class="lead">
+        문서 RAG 백엔드와 에이전트 실행 경계를 함께 다루는 AI 백엔드 엔지니어입니다.
+        최근 작업은 <span class="hl">Evidence-Grounded RAG</span>, <span class="hl">SourceAtom v2</span>,
+        <span class="hl">EvidenceBundle</span>, fail-closed citation guard, route-selected Weaviate 검색으로 수렴했습니다.
+        LLM 응답 품질을 "더 잘 말하게" 만드는 대신, 어떤 근거로 답했는지 검증하고 실패를 닫는 백엔드 계약으로 만듭니다.
+      </p>
+    </section>
+
+    <section>
+      <h2>Trajectory</h2>
+      <div class="timeline">
+        <div class="time-card">
+          <strong>2024 · 데이터/AI 전환</strong>
+          <span>Python, Pandas, ML, 통계 기반으로 백엔드 문제를 데이터 관점에서 재정의.</span>
+        </div>
+        <div class="time-card">
+          <strong>2025 · RAG 검색 실험</strong>
+          <span>7,700개 문서, Chroma, bge-m3, MMR, rerank-less retrieval benchmark 구성.</span>
+        </div>
+        <div class="time-card">
+          <strong>2026 · Evidence boundary</strong>
+          <span>SourceAtom/EvidenceBundle, citation guard, route-selected Weaviate로 평가 가능성 강화.</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Selected Projects</h2>
+
+      <article class="project">
+        <div class="project-head">
+          <h3>Evidence-Grounded RAG Backend</h3>
+          <span class="meta">2026 · async-ocr-rag-multimodal-pipeline</span>
+        </div>
+        <div class="row"><span class="label">Role</span><p class="text">문서 QA/RAG 백엔드, evaluator, 검색 경계, citation guard를 단일 비프로덕션 진단 흐름으로 설계.</p></div>
+        <div class="row"><span class="label">Action</span><p class="text">SourceAtom v2, EvidenceBundle, route-selected Weaviate, SearchUnit/View accumulation, fail-closed metric policy를 구현하고 legacy SearchUnit/View 경계를 정리.</p></div>
+        <div class="row"><span class="label">Impact</span><p class="text">후보 300건 레벨 진단, corpus_missing 42->0, route evidence 5/1, 검색 실패율 0.0, 승인 smoke 29건 기준 통과 10/미해결 19로 잔여 원인을 분해.</p></div>
+      </article>
+
+      <article class="project">
+        <div class="project-head">
+          <h3>Async Document Pipeline</h3>
+          <span class="meta">Spring Boot · FastAPI · GCP</span>
+        </div>
+        <div class="row"><span class="label">Role</span><p class="text">Spring Boot Core API와 FastAPI worker를 분리한 OCR/embedding 비동기 처리 백엔드 담당.</p></div>
+        <div class="row"><span class="label">Action</span><p class="text">Cloud Tasks/Cloud Run, signed URL, callbackId, claim-before-execute, JSON Schema, Flyway 기반 상태 전이를 설계.</p></div>
+        <div class="row"><span class="label">Impact</span><p class="text">작업 소유권, idempotency, 재시도 경계를 명확히 해 긴 문서 처리와 실패 복구를 운영 가능한 API 계약으로 정리.</p></div>
+      </article>
+
+      <article class="project">
+        <div class="project-head">
+          <h3>RAG_Project</h3>
+          <span class="meta">Retrieval Benchmark</span>
+        </div>
+        <div class="row"><span class="label">Role</span><p class="text">웹 문서 기반 검색형 QA 실험을 독립 레포로 구축.</p></div>
+        <div class="row"><span class="label">Action</span><p class="text">약 7,700개 문서를 청크화하고 Chroma, bge-m3, MMR 조합으로 retrieval-only 평가를 구성.</p></div>
+        <div class="row"><span class="label">Impact</span><p class="text">답변 생성보다 검색 품질을 먼저 분리 측정하는 습관을 확립했고, 현재 Evidence-Grounded RAG 작업의 전 단계 근거가 됨.</p></div>
+      </article>
+
+      <article class="project">
+        <div class="project-head">
+          <h3>optuna-round-refinement</h3>
+          <span class="meta">Agentic Optimization</span>
+        </div>
+        <div class="row"><span class="label">Role</span><p class="text">LLM을 sampler로 쓰지 않고 라운드 종료 후 분석자/제안자로 제한하는 하이퍼파라미터 refinement 루프 설계.</p></div>
+        <div class="row"><span class="label">Action</span><p class="text">Optuna trial bundle, schema-validated next config, round report를 분리해 자동화가 추측으로 실행되지 않도록 제한.</p></div>
+        <div class="row"><span class="label">Impact</span><p class="text">에이전트가 실행 권한을 갖는 지점과 판단 근거를 분리하는 패턴을 RAG 평가/가드 설계로 확장.</p></div>
+      </article>
+    </section>
+  </main>
+
+  <main class="page page-break">
+    <section>
+      <h2>Experience</h2>
+      <article class="job">
+        <div class="job-head">
+          <h3>Summitriseedu · Backend Engineer</h3>
+          <span class="meta">2024.07 - 2026.06</span>
+        </div>
+        <div class="row"><span class="label">Scope</span><p class="text">교육 도메인 백엔드에서 문서/작업 처리, API 계약, 배포 운영 흐름을 담당.</p></div>
+        <div class="row"><span class="label">Stack</span><p class="text">Spring Boot, FastAPI, MySQL, GCP Cloud Run, Cloud Tasks, Cloud Storage, JSON Schema, Flyway.</p></div>
+        <div class="row"><span class="label">Focus</span><p class="text">Core API가 DB와 작업 상태를 소유하고 worker는 claim/callback 계약으로 실행 결과를 보고하는 경계를 선호.</p></div>
+      </article>
+
+      <article class="job">
+        <div class="job-head">
+          <h3>Etnet · Developer</h3>
+          <span class="meta">2022.07 - 2023.03</span>
+        </div>
+        <div class="row"><span class="label">Scope</span><p class="text">모니터링 대시보드와 운영 API를 유지보수하며 시스템 상태를 읽기 쉬운 화면/지표로 정리.</p></div>
+        <div class="row"><span class="label">Stack</span><p class="text">Java Servlet, Flask, React, Chart.js, Linux, Kubernetes, OpenShift.</p></div>
+        <div class="row"><span class="label">Focus</span><p class="text">운영자가 반복적으로 확인하는 상태, 오류, 추세를 빠르게 파악할 수 있도록 API와 UI를 함께 다룸.</p></div>
+      </article>
+    </section>
+
+    <section>
+      <h2>Public Work</h2>
+      <div class="oss-grid">
+        <article class="oss-card">
+          <h3>async-ocr-rag-multimodal-pipeline</h3>
+          <p>Spring Boot + FastAPI 기반 문서 처리와 RAG 평가 레포. Evidence-grounded QA, SourceAtom v2, Weaviate 검색 경계를 주 작업으로 확장.</p>
+        </article>
+        <article class="oss-card">
+          <h3>RAG_Project</h3>
+          <p>Chroma, bge-m3, MMR 기반 검색 실험. 약 7,700개 문서에서 검색 품질을 답변 생성과 분리해 검증.</p>
+        </article>
+        <article class="oss-card">
+          <h3>optuna-round-refinement</h3>
+          <p>Optuna를 sampler로 유지하고 LLM은 라운드 간 분석/제안에만 쓰는 에이전트 보조 최적화 패턴.</p>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <h2>Core Skills</h2>
+      <div class="skill-row"><strong>RAG / Retrieval</strong><span>chunking, embedding, vector search, hybrid retrieval, reranking-free benchmark, corpus coverage audit.</span></div>
+      <div class="skill-row"><strong>Agent Guardrails</strong><span>fail-closed policy, citation support, evidence bundle validation, executable boundary design.</span></div>
+      <div class="skill-row"><strong>Backend</strong><span>Spring Boot, FastAPI, REST API, async job orchestration, idempotency, schema migration, MySQL.</span></div>
+      <div class="skill-row"><strong>Cloud / Ops</strong><span>GCP Cloud Run, Cloud Tasks, Cloud Storage, Docker, Linux, Kubernetes/OpenShift 경험.</span></div>
+      <div class="skill-row"><strong>Evaluation</strong><span>pytest, smoke suites, metric decomposition, report.json 중심의 재현 가능한 비프로덕션 진단.</span></div>
+    </section>
+
+    <section>
+      <h2>Education & Training</h2>
+      <div class="compact-grid">
+        <article class="edu-card">
+          <strong>우송대학교 컴퓨터정보보안전공</strong>
+          <span>2023.02 졸업 · 학점 4.27/4.5 · 석차 3/39</span>
+        </article>
+        <article class="edu-card">
+          <strong>AI 엔지니어링 전환 학습</strong>
+          <span>Grepp KDT, Python/Pandas/ML, SQLD, ADsP 기반으로 데이터와 백엔드 실무를 연결.</span>
+        </article>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

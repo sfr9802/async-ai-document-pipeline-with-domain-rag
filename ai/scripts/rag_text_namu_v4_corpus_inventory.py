@@ -21,7 +21,7 @@ AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
 
 DEFAULT_CORPUS_DIR = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined"
-DEFAULT_REPORT = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_corpus_inventory_report.json"
+DEFAULT_REPORT = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_corpus_inventory_report.json"
 
 REQUIRED_FILES = ["pages_v4.jsonl", "chunks_v4.jsonl", "rag_chunks.jsonl"]
 HARDENED_AUXILIARY_FILES = ["validation_report.json", "split_manifest.json", "split_manifest.report.json"]

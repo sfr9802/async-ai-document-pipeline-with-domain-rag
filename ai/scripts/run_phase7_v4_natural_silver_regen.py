@@ -25,7 +25,7 @@ from typing import Any, Iterable, Mapping
 
 
 DEFAULT_CORPUS_DIR = Path("eval/corpora/namu-v4-structured-combined")
-DEFAULT_REPORT_DIR = Path("eval/reports/phase7/7.11_silver_natural_regen")
+DEFAULT_REPORT_DIR = Path("reports/rag_eval/phase7/7.11_silver_natural_regen")
 DEFAULT_TARGET_TOTAL = 500
 DEFAULT_SEED = 20260502
 

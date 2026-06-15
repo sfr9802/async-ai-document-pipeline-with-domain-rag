@@ -10,14 +10,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 RUN_ID = "official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod"
 SOURCE_RUN_ID = "official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
-REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / RUN_ID
+REPORT_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / RUN_ID
 REPORT_JSON = REPORT_DIR / "report.json"
 PACKET_CSV = REPORT_DIR / "review_packet_ko_hydrated.csv"
 PACKET_JSONL = REPORT_DIR / "review_packet_ko_hydrated.jsonl"
 PACKET_XLSX = REPORT_DIR / "review_packet_ko_hydrated.xlsx"
 SUMMARY_JSON = REPORT_DIR / "review_summary_ko.json"
 GUIDELINES_MD = REPORT_DIR / "review_guidelines_ko.md"
-STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+STATUS_JSONL = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "status.jsonl"
 
 
 USER_OWNED_BLANK_COLUMNS = (

@@ -12,10 +12,10 @@ JSONL artefacts; nothing in ``app/capabilities/`` is invoked.
 Usage::
 
     python -m scripts.export_phase7_human_audit_seed \\
-        --confidence-jsonl       eval/reports/.../per_query_confidence.jsonl \\
-        --recovery-attempts-jsonl eval/reports/.../recovery_attempts.jsonl \\
-        --chunks                  eval/reports/.../rag_chunks_*.jsonl \\
-        --out-dir                 eval/reports/.../human_audit/
+        --confidence-jsonl       reports/rag_eval/.../per_query_confidence.jsonl \\
+        --recovery-attempts-jsonl reports/rag_eval/.../recovery_attempts.jsonl \\
+        --chunks                  reports/rag_eval/.../rag_chunks_*.jsonl \\
+        --out-dir                 reports/rag_eval/.../human_audit/
 """
 
 from __future__ import annotations

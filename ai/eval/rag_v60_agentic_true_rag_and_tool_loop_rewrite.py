@@ -23,7 +23,7 @@ CURRENT_RESOLVES_TO = LOGICAL_RUN_KEY
 ROLLBACK_KEY = "v5_6"
 KST_DOC_DATE = "2026-06-06"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 REPORT_PATH = RUN_ROOT / "report.json"
 TRUE_RAG_METRIC_RESULTS_PATH = RUN_ROOT / "true_rag_metric_results.json"
@@ -258,7 +258,7 @@ LEGACY_PATHS = (
     {
         "path_id": "target_qrels_gold_expected_supporting_citation_locator_candidate_construction",
         "owner": "Gold/qrels/eval scorer surfaces",
-        "call_site": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+        "call_site": "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
         "risk": "Oracle fields are valid for read-only scoring only, never for candidate construction.",
         "v6_status": "legacy_non_rag_path",
     },

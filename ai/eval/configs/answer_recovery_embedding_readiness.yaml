@@ -9,13 +9,13 @@ description: >
   evidence support-eligible.
 
 inputs:
-  safe_recall_tuning_report: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_tuning_report.json
-  safe_recall_selected_policy: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_selected_policy.json
-  safe_recall_variants_csv: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_variants.csv
-  missed_safe_recovery_analysis: ai/eval/reports/rag-ingestion/answer_recovery_missed_safe_recovery_analysis.json
-  missed_row_triage: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.json
-  answer_recovery_expanded_trace: ai/eval/reports/rag-ingestion/answer_recovery_expanded_trace.jsonl
-  answer_sufficiency_expanded_report: ai/eval/reports/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
+  safe_recall_tuning_report: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_tuning_report.json
+  safe_recall_selected_policy: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_selected_policy.json
+  safe_recall_variants_csv: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_variants.csv
+  missed_safe_recovery_analysis: reports/rag_eval/rag-ingestion/answer_recovery_missed_safe_recovery_analysis.json
+  missed_row_triage: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.json
+  answer_recovery_expanded_trace: reports/rag_eval/rag-ingestion/answer_recovery_expanded_trace.jsonl
+  answer_sufficiency_expanded_report: reports/rag_eval/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
 
 source_artifact_inspection:
   enabled: true
@@ -121,17 +121,17 @@ optuna:
   reason: embedding readiness is provenance/index-scope diagnostic, not parameter optimization
 
 report_paths:
-  readiness_md: ai/eval/reports/rag-ingestion/answer_recovery_embedding_readiness.md
-  readiness_json: ai/eval/reports/rag-ingestion/answer_recovery_embedding_readiness.json
-  readiness_csv: ai/eval/reports/rag-ingestion/answer_recovery_embedding_readiness.csv
-  backend_contract_md: ai/eval/reports/rag-ingestion/answer_recovery_embedding_backend_contract_recheck.md
-  backend_contract_json: ai/eval/reports/rag-ingestion/answer_recovery_embedding_backend_contract_recheck.json
-  backend_contract_csv: ai/eval/reports/rag-ingestion/answer_recovery_embedding_backend_contract_recheck.csv
-  existing_embedding_retrieval_probe_md: ai/eval/reports/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.md
-  existing_embedding_retrieval_probe_json: ai/eval/reports/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.json
-  existing_embedding_retrieval_probe_csv: ai/eval/reports/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.csv
-  backfill_manifest_jsonl: ai/eval/reports/rag-ingestion/answer_recovery_embedding_backfill_manifest.jsonl
-  namespace_inventory_json: ai/eval/reports/rag-ingestion/answer_recovery_embedding_namespace_inventory.json
+  readiness_md: reports/rag_eval/rag-ingestion/answer_recovery_embedding_readiness.md
+  readiness_json: reports/rag_eval/rag-ingestion/answer_recovery_embedding_readiness.json
+  readiness_csv: reports/rag_eval/rag-ingestion/answer_recovery_embedding_readiness.csv
+  backend_contract_md: reports/rag_eval/rag-ingestion/answer_recovery_embedding_backend_contract_recheck.md
+  backend_contract_json: reports/rag_eval/rag-ingestion/answer_recovery_embedding_backend_contract_recheck.json
+  backend_contract_csv: reports/rag_eval/rag-ingestion/answer_recovery_embedding_backend_contract_recheck.csv
+  existing_embedding_retrieval_probe_md: reports/rag_eval/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.md
+  existing_embedding_retrieval_probe_json: reports/rag_eval/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.json
+  existing_embedding_retrieval_probe_csv: reports/rag_eval/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.csv
+  backfill_manifest_jsonl: reports/rag_eval/rag-ingestion/answer_recovery_embedding_backfill_manifest.jsonl
+  namespace_inventory_json: reports/rag_eval/rag-ingestion/answer_recovery_embedding_namespace_inventory.json
 
 reporting:
   artifact_profile: compact

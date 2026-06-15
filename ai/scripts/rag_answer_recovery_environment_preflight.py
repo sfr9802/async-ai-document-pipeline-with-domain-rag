@@ -13,7 +13,7 @@ from typing import Any, Mapping
 SCRIPT_DIR = Path(__file__).resolve().parent
 AI_WORKER_ROOT = SCRIPT_DIR.parents[0]
 REPO_ROOT = AI_WORKER_ROOT.parent
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 DEFAULT_JSON = REPORT_DIR / "answer_recovery_environment_preflight.json"
 DEFAULT_MD = REPORT_DIR / "answer_recovery_environment_preflight.md"
 
@@ -30,11 +30,11 @@ ANSWER_RECOVERY_SCRIPTS = [
 
 REQUIRED_PATHS = [
     "docs/rag-ingestion-progress.md",
-    "ai/eval/reports/rag-ingestion/answer_recovery_tuning_report.md",
-    "ai/eval/reports/rag-ingestion/answer_recovery_tuning_report.json",
-    "ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.json",
-    "ai/eval/reports/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json",
-    "ai/eval/reports/rag-ingestion/answer_recovery_expanded_trace.jsonl",
+    "reports/rag_eval/rag-ingestion/answer_recovery_tuning_report.md",
+    "reports/rag_eval/rag-ingestion/answer_recovery_tuning_report.json",
+    "reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.json",
+    "reports/rag_eval/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json",
+    "reports/rag_eval/rag-ingestion/answer_recovery_expanded_trace.jsonl",
     "ai/eval/eval_queries/official_denominator_registry.json",
     "ai/eval/configs/answer_recovery_narrow_silver_calibration.yaml",
     "ai/eval/configs/answer_recovery_safe_recall_tuning.yaml",
@@ -45,9 +45,9 @@ REQUIRED_PATHS = [
 ]
 
 COMPACTED_STAGE_PATHS = [
-    "ai/eval/reports/rag-ingestion/answer_recovery_embedding_readiness.json",
-    "ai/eval/reports/rag-ingestion/answer_recovery_embedding_backend_contract_recheck.json",
-    "ai/eval/reports/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.json",
+    "reports/rag_eval/rag-ingestion/answer_recovery_embedding_readiness.json",
+    "reports/rag_eval/rag-ingestion/answer_recovery_embedding_backend_contract_recheck.json",
+    "reports/rag_eval/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.json",
 ]
 
 

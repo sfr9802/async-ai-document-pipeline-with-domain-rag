@@ -22,7 +22,7 @@ from typing import Any, Mapping
 
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review"
 
 DEFAULT_TEXT_REVIEW_PACK = (

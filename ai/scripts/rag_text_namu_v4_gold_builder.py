@@ -17,12 +17,12 @@ AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
 
 DEFAULT_SOURCE = Path(
-    AI_WORKER_ROOT / "eval" / "reports" / "phase7" / "seeds"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "phase7" / "seeds"
     / "gold_seed_50_manual_curated" / "gold_seed_50_candidates.jsonl"
 )
 DEFAULT_CORPUS_DIR = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined"
 DEFAULT_OUTPUT_CSV = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v4_v0.csv"
-DEFAULT_REPORT = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_gold_build_report.json"
+DEFAULT_REPORT = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_gold_build_report.json"
 
 GOLD_FIELDNAMES = [
     "query_id",

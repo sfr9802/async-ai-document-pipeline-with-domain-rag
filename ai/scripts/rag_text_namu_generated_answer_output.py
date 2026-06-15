@@ -30,7 +30,7 @@ if str(AI_WORKER_ROOT) not in sys.path:
 from app.capabilities.rag.generation import ExtractiveGenerator, RetrievedChunk  # noqa: E402
 
 
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review"
 
 DEFAULT_TEXT_REVIEW_PACK = (

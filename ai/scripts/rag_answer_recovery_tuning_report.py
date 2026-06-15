@@ -29,7 +29,7 @@ DEFAULT_SAFE_RECALL_CONFIG = AI_WORKER_ROOT / "eval" / "configs" / "answer_recov
 DEFAULT_MISSED_ROW_TRIAGE_CONFIG = (
     AI_WORKER_ROOT / "eval" / "configs" / "answer_recovery_safe_recall_missed_row_triage.yaml"
 )
-DEFAULT_REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+DEFAULT_REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 
 
 def main(argv: list[str] | None = None) -> int:

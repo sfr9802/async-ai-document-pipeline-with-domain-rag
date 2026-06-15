@@ -22,7 +22,7 @@ KST_DOC_DATE = "2026-06-05"
 BASELINE_LOGICAL_RUN_KEY = v56compare.FULL_PACKET_LOGICAL_RUN_KEY
 BASELINE_SHORT_RUN_ID = v56compare.FULL_PACKET_SHORT_RUN_ID
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 REPORT_PATH = RUN_ROOT / "report.json"
 ROUTE_CANDIDATE_DIAGNOSTICS_PATH = RUN_ROOT / "route_candidate_diagnostics.jsonl"

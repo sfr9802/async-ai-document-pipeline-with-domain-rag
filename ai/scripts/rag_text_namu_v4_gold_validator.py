@@ -18,9 +18,9 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 
 DEFAULT_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v4_v0.csv"
 DEFAULT_CORPUS_DIR = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined"
-DEFAULT_REPORT = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_gold_validate_report.json"
+DEFAULT_REPORT = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_gold_validate_report.json"
 EXPECTED_SOURCE_DATASET = (
-    "ai/eval/reports/phase7/seeds/gold_seed_50_manual_curated/gold_seed_50_candidates.jsonl"
+    "reports/rag_eval/phase7/seeds/gold_seed_50_manual_curated/gold_seed_50_candidates.jsonl"
 )
 DEFAULT_EXPECTED_ROW_COUNT = 50
 DEFAULT_EXPECTED_POSITIVE_ROW_COUNT = 47

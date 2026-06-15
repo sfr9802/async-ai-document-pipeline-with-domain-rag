@@ -39,7 +39,7 @@ from rag_xlsx_pre_silver_risk_closure import (  # noqa: E402
 )
 
 
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 EVAL_QUERY_DIR = AI_WORKER_ROOT / "eval" / "eval_queries"
 
 DEFAULT_PRE_SILVER_REPORT = REPORT_DIR / "xlsx_pre_silver_risk_closure_20260507.json"

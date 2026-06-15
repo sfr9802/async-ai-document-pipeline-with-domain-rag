@@ -22,7 +22,7 @@ if str(SCRIPT_DIR) not in sys.path:
 import rag_silver_only_tuning_pass as silver_pass
 
 
-DEFAULT_REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+DEFAULT_REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 DEFAULT_QUERY_ID = "text_namu_v2_0058"
 JSON_NAME = "text_namu_v2_0058_rank_trace.json"
 MD_NAME = "text_namu_v2_0058_rank_trace.md"

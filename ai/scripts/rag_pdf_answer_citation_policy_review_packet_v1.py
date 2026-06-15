@@ -18,7 +18,7 @@ from typing import Any, Mapping, Sequence
 
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 
 DEFAULT_DIAGNOSTIC_REPORT = REPORT_DIR / "pdf_answer_citation_diagnostic_report.json"
 DEFAULT_REVIEW_INPUT = REPORT_DIR / "pdf_answer_citation_diagnostic_review_input.jsonl"

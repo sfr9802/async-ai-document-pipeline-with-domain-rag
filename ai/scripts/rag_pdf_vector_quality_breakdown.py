@@ -25,10 +25,10 @@ AI_WORKER = SCRIPT_DIR.parent
 ROOT = AI_WORKER.parent
 
 PDF_INDEX_VERSION = "rag-ingestion-v2-pdf-candidate-v1"
-DEFAULT_EVAL_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json")
-DEFAULT_C2_REPORT = Path("eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json")
+DEFAULT_EVAL_REPORT = Path("reports/rag_eval/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json")
+DEFAULT_C2_REPORT = Path("reports/rag_eval/rag-ingestion/pdf_vector_metadata_projection_readiness.json")
 DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_pdf_v0.csv")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/rag_pdf_vector_quality_breakdown.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_pdf_vector_quality_breakdown.json")
 
 FAILURE_TYPES = {
     "MATCHED",

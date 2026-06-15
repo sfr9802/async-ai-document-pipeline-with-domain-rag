@@ -129,13 +129,13 @@ class VariantSpec:
 #   - ``rag_chunks_path_relative`` is resolved against
 #     ``--rag-chunks-root`` (defaulting to the working directory). Use
 #     a path the CLI can find verbatim from the project root, e.g.
-#     ``eval/reports/phase7/silver500/retrieval/<chunks>.jsonl``.
+#     ``reports/rag_eval/phase7/silver500/retrieval/<chunks>.jsonl``.
 _DEFAULT_RAG_CHUNKS_RTS = (
-    "eval/reports/phase7/silver500/retrieval/"
+    "reports/rag_eval/phase7/silver500/retrieval/"
     "rag_chunks_retrieval_title_section.jsonl"
 )
 _DEFAULT_RAG_CHUNKS_TS = (
-    "eval/reports/phase7/silver500/retrieval/"
+    "reports/rag_eval/phase7/silver500/retrieval/"
     "rag_chunks_title_section.jsonl"
 )
 DEFAULT_VARIANTS: Tuple[VariantSpec, ...] = (

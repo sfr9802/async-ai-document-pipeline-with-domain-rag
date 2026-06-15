@@ -11,9 +11,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from ai.eval.report_paths import LEGACY_RAG_INGESTION_REPORT_ROOT
+
 
 ROOT = Path(__file__).resolve().parents[3]
-REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = LEGACY_RAG_INGESTION_REPORT_ROOT
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
 V4_7_8_ARCHIVE_RUN_ID = "v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion"
 V4_7_6_ARCHIVE_RUN_ID = "v4_7_6_eval_artifact_archive_purge"
@@ -90,7 +92,7 @@ def resolve_report_artifact_path(path: Path) -> Path:
         return path
 
     rel = _repo_relative_or_none(path)
-    if rel is not None and rel.as_posix().startswith("ai/eval/reports/rag-ingestion/"):
+    if rel is not None and rel.as_posix().startswith("reports/rag_eval/rag-ingestion/"):
         for archive_root in external_archive_namespace_roots():
             archived = archive_root / rel
             if archived.exists():

@@ -17,10 +17,10 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/xlsx_candidate_scope_report.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/xlsx_candidate_scope_report.json")
 DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
-DEFAULT_BASELINE_DESCRIPTOR = Path("eval/reports/rag-ingestion/initial_immutable_vector_baseline_descriptor.json")
+DEFAULT_BASELINE_DESCRIPTOR = Path("reports/rag_eval/rag-ingestion/initial_immutable_vector_baseline_descriptor.json")
 DEFAULT_BASELINE_INDEX_VERSION = "initial-full72-vector-baseline-v0"
 DEFAULT_CANDIDATE_INDEX_VERSION = "rag-ingestion-v2-xlsx-candidate-v1"
 EXPECTED_SOURCE_FILE_TYPE = "SPREADSHEET"

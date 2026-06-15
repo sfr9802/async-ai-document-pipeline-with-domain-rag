@@ -16,7 +16,7 @@ from app.capabilities.xlsx import artifact_builder as xlsx_artifacts
 from app.capabilities.xlsx import service as xlsx_service
 
 SCRIPT_PATH = ROOT / "ai" / "scripts" / "rag_xlsx_answer_citation_runtime_precision_candidate_v1.py"
-REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion"
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
 
 

@@ -347,7 +347,7 @@ def classify_local_files(local_files: Mapping[str, Any], registry: Mapping[str, 
         if norm.startswith("ai/scripts/assets/"):
             ignored_assets.append({**item, "reason": "script_demo_asset_not_holdout_eligible"})
             continue
-        if norm.startswith("ai/eval/reports/rag-ingestion/"):
+        if norm.startswith("reports/rag_eval/rag-ingestion/"):
             ignored_assets.append(
                 {**item, "reason": "rag_ingestion_generated_report_artifact_not_holdout_eligible"}
             )

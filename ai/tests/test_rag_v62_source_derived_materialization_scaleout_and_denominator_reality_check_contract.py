@@ -20,7 +20,7 @@ V6_9_RUN_KEY = "v6_9_answer_quality_gate_packet_nonprod"
 V7_0_RUN_KEY = "v7_0_e2e_eval_architecture_closeout_nonprod"
 ROLLBACK_KEY = "v6_1_true_rag_corpus_expansion_and_metric_split_hardening"
 STATUS = "V6_2_SOURCE_DERIVED_MATERIALIZATION_SCALEOUT_DENOMINATOR_REALITY_CHECK_NONPROD_READY"
-V6_1_RUN_ROOT = ROOT / "ai/eval/reports/rag-ingestion/runs" / ROLLBACK_KEY
+V6_1_RUN_ROOT = ROOT / "reports/rag_eval/rag-ingestion/runs" / ROLLBACK_KEY
 
 REQUIRED_ARTIFACTS = {
     "report.json",
@@ -348,14 +348,14 @@ def test_report_bundle_writes_required_artifacts_docs_and_status(tmp_path: Path,
     v62_module.update_docs(tmp_path, written)
     v62_module.append_status(tmp_path, written, artifact_hashes=hashes)
 
-    run_root = tmp_path / "ai/eval/reports/rag-ingestion/runs" / RUN_KEY
+    run_root = tmp_path / "reports/rag_eval/rag-ingestion/runs" / RUN_KEY
     for name in REQUIRED_ARTIFACTS:
         assert (run_root / name).exists(), name
 
     assert len(_jsonl(run_root / "denominator_manifest.jsonl")) == written["denominator_reality_audit"]["attempted_rows"]
     assert len(_jsonl(run_root / "row_eligibility_ledger.jsonl")) == written["denominator_reality_audit"]["attempted_rows"]
     assert len(_jsonl(run_root / "exclusion_ledger.jsonl")) == written["denominator_reality_audit"]["excluded_rows"]
-    status_lines = _jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_lines = _jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     assert status_lines[-1]["current_resolves_to"] == RUN_KEY
     assert status_lines[-1]["rollback_key"] == ROLLBACK_KEY
     assert status_lines[-1]["backend_namespace"] == "v6_2_true_rag_nonprod_materialization_scaleout_denominator_reality"
@@ -404,7 +404,7 @@ def test_required_report_fields_and_protected_surfaces_are_closed(report: dict[s
         "changed_files"
     ]
     assert set(report["generated_artifacts"]) >= {
-        f"ai/eval/reports/rag-ingestion/runs/{RUN_KEY}/{name}" for name in REQUIRED_ARTIFACTS
+        f"reports/rag_eval/rag-ingestion/runs/{RUN_KEY}/{name}" for name in REQUIRED_ARTIFACTS
     }
     assert report["remaining_blockers"]["user_owned_decision_blockers"] == []
     assert report["remaining_blockers"]["denominator_coverage_gaps"] == [

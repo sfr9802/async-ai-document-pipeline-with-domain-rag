@@ -22,6 +22,7 @@ from ai.eval.actual_rag_eval import (  # noqa: E402
     SOURCE_NATIVE_SOURCE_REGISTRY_PATH,
     SourceNativeCorpusLoader,
 )
+from ai.eval.report_paths import ACTUAL_RAG_REPORT_ROOT  # noqa: E402
 from ai.eval.weaviate_source_atom import (  # noqa: E402
     BgeM3EmbeddingBuilder,
     WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V1,
@@ -33,10 +34,10 @@ from ai.eval.weaviate_source_atom import (  # noqa: E402
 )
 
 
-DEFAULT_MANIFEST_PATH = ROOT / "reports" / "rag_eval" / "weaviate_source_atom_index_manifest_nonprod" / "index_manifest.json"
-DEFAULT_CHECKPOINT_PATH = ROOT / "reports" / "rag_eval" / "weaviate_source_atom_index_manifest_nonprod" / "index_checkpoint.json"
-DEFAULT_V2_MANIFEST_PATH = ROOT / "reports" / "rag_eval" / "weaviate_source_atom_index_manifest_nonprod_v2" / "index_manifest.json"
-DEFAULT_V2_CHECKPOINT_PATH = ROOT / "reports" / "rag_eval" / "weaviate_source_atom_index_manifest_nonprod_v2" / "index_checkpoint.json"
+DEFAULT_MANIFEST_PATH = ACTUAL_RAG_REPORT_ROOT / "weaviate_source_atom_index_manifest_nonprod" / "index_manifest.json"
+DEFAULT_CHECKPOINT_PATH = ACTUAL_RAG_REPORT_ROOT / "weaviate_source_atom_index_manifest_nonprod" / "index_checkpoint.json"
+DEFAULT_V2_MANIFEST_PATH = ACTUAL_RAG_REPORT_ROOT / "weaviate_source_atom_index_manifest_nonprod_v2" / "index_manifest.json"
+DEFAULT_V2_CHECKPOINT_PATH = ACTUAL_RAG_REPORT_ROOT / "weaviate_source_atom_index_manifest_nonprod_v2" / "index_checkpoint.json"
 
 
 def _write_json(path: Path, payload: dict) -> None:

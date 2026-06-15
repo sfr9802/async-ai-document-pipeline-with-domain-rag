@@ -955,7 +955,7 @@ def test_structured_source_bound_adapters_reject_candidate_artifact_payloads() -
 
     candidate_payload = {
         "source_bound_official_denominator": False,
-        "candidate_result_jsonl": "ai/eval/reports/rag-ingestion/xlsx_candidate.jsonl",
+        "candidate_result_jsonl": "reports/rag_eval/rag-ingestion/xlsx_candidate.jsonl",
         "workbook": "sample.xlsx",
         "sheet": "Sheet1",
         "range": "A2:D5",

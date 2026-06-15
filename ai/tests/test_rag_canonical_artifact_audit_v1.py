@@ -48,8 +48,8 @@ def test_canonical_artifact_audit_passes_current_ready_pack_and_writes_slim_outp
     assert audit["artifact_index"]["human_audit_packet"]["status"] == "HUMAN_AUDIT_PACKET_V2_READY"
 
     canonical_paths = {row["path"] for row in manifest["keep_as_canonical_current_reports"]}
-    assert "ai/eval/reports/rag-ingestion/three_track_metric_preflight_board.json" in canonical_paths
-    assert "ai/eval/reports/rag-ingestion/stale_pdf_strict_ready_rows_0_board.json" not in canonical_paths
+    assert "reports/rag_eval/rag-ingestion/three_track_metric_preflight_board.json" in canonical_paths
+    assert "reports/rag_eval/rag-ingestion/stale_pdf_strict_ready_rows_0_board.json" not in canonical_paths
     assert manifest["validation"]["ok"] is True
     assert "rag_canonical_artifact_audit_v1.py" in script_plan["groups"]["keep_guardrail_audit"]
     assert "rag_anti_shortcut_guardrail_audit_v1.py" in script_plan["groups"]["keep_guardrail_audit"]
@@ -199,7 +199,7 @@ def test_canonical_artifact_audit_fails_if_progress_doc_contradicts_ready_state(
 
 
 def write_canonical_pack(tmp_path: Path) -> dict[str, object]:
-    reports = tmp_path / "ai" / "eval" / "reports" / "rag-ingestion"
+    reports = tmp_path / "reports" / "rag_eval" / "rag-ingestion"
     review = tmp_path / "ai" / "eval" / "review"
     docs = tmp_path / "docs"
     reports.mkdir(parents=True)

@@ -201,7 +201,7 @@ def test_v691_writes_review_packet_status_docs_and_hashes(
     v691_module.append_status(tmp_path, written, artifact_hashes=hashes)
     v691_module.require_status_report_hash(tmp_path, written)
 
-    run_root = tmp_path / "ai/eval/reports/rag-ingestion/runs" / RUN_KEY
+    run_root = tmp_path / "reports/rag_eval/rag-ingestion/runs" / RUN_KEY
     assert set(path.name for path in run_root.iterdir()) == {
         "report.json",
         "retrieval_smoke_review_packet.jsonl",
@@ -217,7 +217,7 @@ def test_v691_writes_review_packet_status_docs_and_hashes(
 
     status_rows = [
         json.loads(line)
-        for line in (tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in (tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl").read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
     assert status_rows[-1]["logical_run_key"] == RUN_KEY

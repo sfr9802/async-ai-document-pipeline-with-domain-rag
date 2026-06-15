@@ -16,11 +16,11 @@ from pathlib import Path
 from typing import Any, Callable
 
 
-DEFAULT_XLSX_REPORT = Path("eval/reports/rag-ingestion/rag_ingestion_sample_batch_report.json")
-DEFAULT_PDF_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_ingestion_sample_batch_report.json")
-DEFAULT_RETRIEVAL_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_report.json")
-DEFAULT_OCR_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_ocr_fallback_smoke_report.json")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/rag_ingestion_promotion_gate_metrics.json")
+DEFAULT_XLSX_REPORT = Path("reports/rag_eval/rag-ingestion/rag_ingestion_sample_batch_report.json")
+DEFAULT_PDF_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_ingestion_sample_batch_report.json")
+DEFAULT_RETRIEVAL_REPORT = Path("reports/rag_eval/rag-ingestion/rag_retrieval_eval_report.json")
+DEFAULT_OCR_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_ocr_fallback_smoke_report.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_ingestion_promotion_gate_metrics.json")
 
 SOURCE_QUALIFIED_REQUIRED = {
     "xlsx": (

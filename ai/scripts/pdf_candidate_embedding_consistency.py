@@ -39,12 +39,12 @@ from pdf_candidate_scope_report import (  # noqa: E402
 )
 
 
-DEFAULT_C0_SNAPSHOT = Path("eval/reports/rag-ingestion/rag_pdf_current_diagnostic_snapshot.json")
-DEFAULT_SCOPE_REPORT = Path("eval/reports/rag-ingestion/pdf_candidate_scope_report.json")
-DEFAULT_C2_REPORT = Path("eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json")
-DEFAULT_C3_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json")
-DEFAULT_REPAIR_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_search_unit_surface_repair_report.json")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json")
+DEFAULT_C0_SNAPSHOT = Path("reports/rag_eval/rag-ingestion/rag_pdf_current_diagnostic_snapshot.json")
+DEFAULT_SCOPE_REPORT = Path("reports/rag_eval/rag-ingestion/pdf_candidate_scope_report.json")
+DEFAULT_C2_REPORT = Path("reports/rag_eval/rag-ingestion/pdf_vector_metadata_projection_readiness.json")
+DEFAULT_C3_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_embedding_text_contract_audit.json")
+DEFAULT_REPAIR_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_search_unit_surface_repair_report.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/pdf_candidate_embedding_consistency_report.json")
 DEFAULT_ARTIFACT_DIR = Path("eval/indexes/rag-data-pdf-candidate-v1")
 DEFAULT_BASELINE_ARTIFACT_DIR = Path("eval/indexes/rag-data-canary")
 DEFAULT_XLSX_CANDIDATE_ARTIFACT_DIR = Path("eval/indexes/rag-data-xlsx-candidate-v1")

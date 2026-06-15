@@ -29,19 +29,19 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 DEFAULT_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v4_v0.csv"
 DEFAULT_CORPUS_DIR = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined"
 DEFAULT_CORPUS_INVENTORY_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_corpus_inventory_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_corpus_inventory_report.json"
 )
 DEFAULT_R3_VALIDATOR_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_gold_validate_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_gold_validate_report.json"
 )
 DEFAULT_R4_INVENTORY_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_retrieval_emit_inventory_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_retrieval_emit_inventory_report.json"
 )
 DEFAULT_FRESH_EMIT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_retrieval_emit.jsonl"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_retrieval_emit.jsonl"
 )
 DEFAULT_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_retrieval_diagnostic_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_retrieval_diagnostic_report.json"
 )
 
 EXPECTED_QUERY_COUNT = 50

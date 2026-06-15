@@ -31,9 +31,9 @@ AI_WORKER_ROOT = SCRIPT_DIR.parents[0]
 REPO_ROOT = AI_WORKER_ROOT.parent
 
 DEFAULT_CONFIG = AI_WORKER_ROOT / "eval" / "configs" / "retrieval_ood_interference_diagnostic.yaml"
-DEFAULT_REPORT_JSON = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "vector_interference_diagnostic.json"
-DEFAULT_REPORT_MD = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "vector_interference_diagnostic.md"
-DEFAULT_BY_QUERY_CSV = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "vector_interference_diagnostic_by_query.csv"
+DEFAULT_REPORT_JSON = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "vector_interference_diagnostic.json"
+DEFAULT_REPORT_MD = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "vector_interference_diagnostic.md"
+DEFAULT_BY_QUERY_CSV = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "vector_interference_diagnostic_by_query.csv"
 
 PDF_FILE_IDENTITY_ONLY_POLICY = "file_identity_only_no_content_page_bbox_table_row_column_value_support"
 TOKEN_RE = re.compile(r"[0-9A-Za-z가-힣]+")

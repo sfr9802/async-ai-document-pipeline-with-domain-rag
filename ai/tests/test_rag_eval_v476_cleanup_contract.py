@@ -36,17 +36,16 @@ V4_7_17_STATUS = "V4_7_17_CANDIDATE_ONLY_GENERALIZATION_VALIDATION_AND_XLSX_TABL
 V4_7_18_STATUS = "V4_7_18_XLSX_CANDIDATE_ONLY_MATERIALIZATION_REPAIR_AND_LINEAGE_REPRODUCIBILITY_NONPROD_READY"
 V5_0_STATUS = "V5_0_V4_CLOSEOUT_AND_V5_GATE_PLAN_DIAGNOSTIC_NONPROD_READY"
 V5_3_STATUS = "V5_3_PDF_TEXT_RESIDUAL_RETRIEVAL_EVIDENCE_HARDENING_DIAGNOSTIC_NONPROD_READY"
-V4_7_6_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_6" / "report.json"
-STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+V4_7_6_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_6" / "report.json"
+STATUS_JSONL = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
 REPO_CLEANUP_RUN_ID = "repo_cleanup_20260609_diagnostic_inventory"
 REPO_CLEANUP_REPORT = (
     ROOT
-    / "ai"
-    / "eval"
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "runs"
     / REPO_CLEANUP_RUN_ID
@@ -87,7 +86,7 @@ def test_v476_external_archive_target_must_be_outside_repo_and_hash_verified(tmp
     assert target.target_root == outside_root / "rag-ingestion" / V4_7_6_SHORT_RUN_ID
     assert target.redacted is True
 
-    source = tmp_path / "ai" / "eval" / "reports" / "rag-ingestion" / "obsolete.json"
+    source = tmp_path / "reports" / "rag_eval" / "rag-ingestion" / "obsolete.json"
     source.parent.mkdir(parents=True)
     source.write_text('{"status":"obsolete"}\n', encoding="utf-8")
     record = v476.archive_then_remove_file(
@@ -96,7 +95,7 @@ def test_v476_external_archive_target_must_be_outside_repo_and_hash_verified(tmp
         archive_namespace_root=target.target_root,
         removed_at="2026-05-30T00:00:00Z",
     )
-    archived = target.target_root / "ai" / "eval" / "reports" / "rag-ingestion" / "obsolete.json"
+    archived = target.target_root / "reports" / "rag_eval" / "rag-ingestion" / "obsolete.json"
     assert record["classification"] == "ARCHIVE_THEN_REMOVE"
     assert record["sha256"] == _sha256_file(archived)
     assert record["archive_sha256"] == record["sha256"]
@@ -115,7 +114,7 @@ def test_v476_inventory_classification_keeps_protected_current_and_manual_hold()
     assert v476.classify_path(ROOT / "ai" / "eval" / "silver", root=ROOT) == "KEEP_PROTECTED"
     assert (
         v476.classify_path(
-            ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_5" / "report.json",
+            ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_5" / "report.json",
             root=ROOT,
         )
         == "KEEP_CURRENT_MINIMAL"
@@ -123,7 +122,7 @@ def test_v476_inventory_classification_keeps_protected_current_and_manual_hold()
     assert v476.classify_path(ROOT / "ai" / "eval" / "__pycache__", root=ROOT) == "DELETE_ONLY"
     assert (
         v476.classify_path(
-            ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "manual-review-generated-but-tracked.csv",
+            ROOT / "reports" / "rag_eval" / "rag-ingestion" / "manual-review-generated-but-tracked.csv",
             root=ROOT,
             ignored=False,
         )
@@ -136,27 +135,27 @@ def test_v476_registry_resolves_current_lineage_short_paths_and_legacy_aliases()
     from ai.scripts import rag_eval as runner
 
     expected = {
-        "v4_7_preofficial": "ai/eval/reports/rag-ingestion/runs/v4_7_preofficial/report.json",
-        "v4_7_2": "ai/eval/reports/rag-ingestion/runs/v4_7_2/report.json",
-        "v4_7_3": "ai/eval/reports/rag-ingestion/runs/v4_7_3/report.json",
-        "v4_7_4": "ai/eval/reports/rag-ingestion/runs/v4_7_4/report.json",
-        "v4_7_5": "ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json",
-        "v4_7_6": "ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json",
-        "v4_7_9": "ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json",
-        "v4_7_10": "ai/eval/reports/rag-ingestion/runs/v4_7_10/report.json",
-        "v4_7_11": "ai/eval/reports/rag-ingestion/runs/v4_7_11/report.json",
-        "v4_7_12": "ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json",
-        "v4_7_13": "ai/eval/reports/rag-ingestion/runs/v4_7_13/report.json",
-        "v4_7_14": "ai/eval/reports/rag-ingestion/runs/v4_7_14/report.json",
-        "v4_7_15": "ai/eval/reports/rag-ingestion/runs/v4_7_15/report.json",
-        "v4_7_16": "ai/eval/reports/rag-ingestion/runs/v4_7_16/report.json",
-        "v4_7_17": "ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json",
-        "v4_7_18": "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json",
-        "v5_0": "ai/eval/reports/rag-ingestion/runs/v5_0/report.json",
-        "v5_1": "ai/eval/reports/rag-ingestion/runs/v5_1/report.json",
-        "v5_2": "ai/eval/reports/rag-ingestion/runs/v5_2/report.json",
-        "v5_3": "ai/eval/reports/rag-ingestion/runs/v5_3/report.json",
-        "current": "ai/eval/reports/rag-ingestion/runs/v5_3/report.json",
+        "v4_7_preofficial": "reports/rag_eval/rag-ingestion/runs/v4_7_preofficial/report.json",
+        "v4_7_2": "reports/rag_eval/rag-ingestion/runs/v4_7_2/report.json",
+        "v4_7_3": "reports/rag_eval/rag-ingestion/runs/v4_7_3/report.json",
+        "v4_7_4": "reports/rag_eval/rag-ingestion/runs/v4_7_4/report.json",
+        "v4_7_5": "reports/rag_eval/rag-ingestion/runs/v4_7_5/report.json",
+        "v4_7_6": "reports/rag_eval/rag-ingestion/runs/v4_7_6/report.json",
+        "v4_7_9": "reports/rag_eval/rag-ingestion/runs/v4_7_9/report.json",
+        "v4_7_10": "reports/rag_eval/rag-ingestion/runs/v4_7_10/report.json",
+        "v4_7_11": "reports/rag_eval/rag-ingestion/runs/v4_7_11/report.json",
+        "v4_7_12": "reports/rag_eval/rag-ingestion/runs/v4_7_12/report.json",
+        "v4_7_13": "reports/rag_eval/rag-ingestion/runs/v4_7_13/report.json",
+        "v4_7_14": "reports/rag_eval/rag-ingestion/runs/v4_7_14/report.json",
+        "v4_7_15": "reports/rag_eval/rag-ingestion/runs/v4_7_15/report.json",
+        "v4_7_16": "reports/rag_eval/rag-ingestion/runs/v4_7_16/report.json",
+        "v4_7_17": "reports/rag_eval/rag-ingestion/runs/v4_7_17/report.json",
+        "v4_7_18": "reports/rag_eval/rag-ingestion/runs/v4_7_18/report.json",
+        "v5_0": "reports/rag_eval/rag-ingestion/runs/v5_0/report.json",
+        "v5_1": "reports/rag_eval/rag-ingestion/runs/v5_1/report.json",
+        "v5_2": "reports/rag_eval/rag-ingestion/runs/v5_2/report.json",
+        "v5_3": "reports/rag_eval/rag-ingestion/runs/v5_3/report.json",
+        "current": "reports/rag_eval/rag-ingestion/runs/v6_9_answer_quality_gate_packet_nonprod/report.json",
     }
     ignored_artifact_in_memory_keys = {
         "v4_7_11",
@@ -232,8 +231,8 @@ def test_v476_report_status_docs_and_cleanup_manifest_are_compact_and_closed() -
     assert report["official_metric_input_rows"] == 0
     assert report["protected_namespaces_touched"] == []
     assert report["external_archive_target_redacted"] is True
-    assert report["cleanup_manifest_path"] == "ai/eval/reports/rag-ingestion/runs/v4_7_6/cleanup_manifest.jsonl"
-    assert report["archive_manifest_path"] == "ai/eval/reports/rag-ingestion/archive_manifest.jsonl"
+    assert report["cleanup_manifest_path"] == "reports/rag_eval/rag-ingestion/runs/v4_7_6/cleanup_manifest.jsonl"
+    assert report["archive_manifest_path"] == "reports/rag_eval/rag-ingestion/archive_manifest.jsonl"
     assert report["archived_count"] == report["removed_count"]
     assert report["archive_copy_failed_count"] == 0
     assert report["hash_verification_failed_count"] == 0
@@ -251,10 +250,10 @@ def test_v476_report_status_docs_and_cleanup_manifest_are_compact_and_closed() -
 
     assert latest["short_run_id"] == V4_7_6_SHORT_RUN_ID
     assert latest["status"] == V4_7_6_STATUS
-    assert latest["artifact_paths"]["report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json"
+    assert latest["artifact_paths"]["report_json"] == "reports/rag_eval/rag-ingestion/runs/v4_7_6/report.json"
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(V4_7_6_REPORT)
 
-    short_report_path = "ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json"
+    short_report_path = "reports/rag_eval/rag-ingestion/runs/v4_7_6/report.json"
     assert short_report_path in current_progress
     assert short_report_path in measurements
     assert short_report_path in triage
@@ -294,7 +293,7 @@ def test_repo_cleanup_inventory_report_and_status_hash_stay_in_sync() -> None:
     assert report["run_id"] == REPO_CLEANUP_RUN_ID
     assert latest["run_id"] == REPO_CLEANUP_RUN_ID
     assert latest["artifact_paths"]["report_json"] == (
-        "ai/eval/reports/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json"
+        "reports/rag_eval/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json"
     )
     assert latest["artifact_sha256"]["report_json_sha256"] == _sha256_file(REPO_CLEANUP_REPORT)
     assert latest["artifact_sha256"]["report_json_sha256"] != "329549c5e51895ff54afe40b631565c24087e154d8379429e35486d118123b67"
@@ -343,8 +342,8 @@ def test_v476_protected_namespaces_and_generated_status_surfaces_stay_safe() -> 
     assert "prompt_manifest" not in json.dumps(report, ensure_ascii=False)
     for path in (
         V4_7_6_REPORT,
-        ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_6" / "cleanup_manifest.jsonl",
-        ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl",
+        ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_6" / "cleanup_manifest.jsonl",
+        ROOT / "reports" / "rag_eval" / "rag-ingestion" / "status.jsonl",
     ):
         ignored = subprocess.run(["git", "check-ignore", "-q", str(path.relative_to(ROOT))], cwd=ROOT, check=False)
         assert ignored.returncode == 0, path
@@ -368,4 +367,4 @@ def test_v476_stable_runner_dispatch_and_cleanup_contract_is_historical() -> Non
     payload = json.loads(result.stdout)
     assert payload["run_key"] == "v4_7_6"
     assert payload["status"] == V4_7_6_STATUS
-    assert payload["report_json"] == "ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json"
+    assert payload["report_json"] == "reports/rag_eval/rag-ingestion/runs/v4_7_6/report.json"

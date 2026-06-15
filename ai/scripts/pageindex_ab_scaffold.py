@@ -29,7 +29,7 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 
 DEFAULT_CORPUS = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined" / "rag_chunks.jsonl"
 DEFAULT_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v4_v0.csv"
-DEFAULT_REPORT_ROOT = AI_WORKER_ROOT / "eval" / "reports" / "pageindex-ab"
+DEFAULT_REPORT_ROOT = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "pageindex-ab"
 DEFAULT_PAGEINDEX_ROOT = REPO_ROOT / ".tmp" / "PageIndex"
 
 

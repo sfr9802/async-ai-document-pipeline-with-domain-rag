@@ -20,9 +20,9 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/pdf_candidate_scope_report.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/pdf_candidate_scope_report.json")
 DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_pdf_v0.csv")
-DEFAULT_C0_SNAPSHOT = Path("eval/reports/rag-ingestion/rag_pdf_current_diagnostic_snapshot.json")
+DEFAULT_C0_SNAPSHOT = Path("reports/rag_eval/rag-ingestion/rag_pdf_current_diagnostic_snapshot.json")
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
 PDF_INDEX_VERSION = "rag-ingestion-v2-pdf-candidate-v1"
 PDF_ARTIFACT_DIR = "eval/indexes/rag-data-pdf-candidate-v1"

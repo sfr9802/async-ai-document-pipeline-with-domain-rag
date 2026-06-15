@@ -421,7 +421,7 @@ def build_report(
             "docs/rag-ingestion-triage.md",
             "README.md",
             "ai/eval/README.md",
-            "ai/eval/reports/rag-ingestion/status.jsonl",
+            "reports/rag_eval/rag-ingestion/status.jsonl",
         ],
         "residual_risks": [
             "v4_1 materializes the v3_22 XLSX display contract into a non-production persisted SourceAtom manifest; it does not claim production routing.",

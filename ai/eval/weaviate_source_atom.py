@@ -66,10 +66,19 @@ WEAVIATE_SOURCE_ATOM_V2_EXTRA_PROPERTIES = (
     "cell_range",
     "cell",
     "row_index_1based",
+    "row_label",
+    "column_label",
+    "target_column",
+    "header",
+    "header_path",
+    "table_id",
     "page_number",
     "physical_page_index",
+    "block_index",
     "bbox",
     "region_type",
+    "section_title",
+    "table_caption",
     "locator_fingerprint",
     "parent_source_unit_id",
 )
@@ -90,9 +99,18 @@ WEAVIATE_FILTERABLE_PROPERTIES = frozenset(
         "cell_range",
         "cell",
         "row_index_1based",
+        "row_label",
+        "column_label",
+        "target_column",
+        "header",
+        "header_path",
+        "table_id",
         "page_number",
         "physical_page_index",
+        "block_index",
         "region_type",
+        "section_title",
+        "table_caption",
         "locator_fingerprint",
         "parent_source_unit_id",
         "source_track",
@@ -253,6 +271,81 @@ WEAVIATE_QUERY_CONTENT_STOPWORDS = frozenset(
 WEAVIATE_SAME_DOC_RESIDUAL_RETRIEVAL_POLICY = "bounded_query_variant_same_doc_weaviate_v1"
 WEAVIATE_SAME_DOC_RESIDUAL_MAX_DOCS = 2
 WEAVIATE_SAME_DOC_RESIDUAL_TOP_K_PER_DOC = 3
+WEAVIATE_XLSX_SCOPED_EXPANSION_POLICY = "bounded_source_owned_xlsx_scope_weaviate_v1"
+WEAVIATE_XLSX_SCOPED_EXPANSION_MAX_SCOPES = 2
+WEAVIATE_XLSX_SCOPED_EXPANSION_TOP_K_PER_SCOPE = 3
+WEAVIATE_XLSX_SCOPED_QUERY_AXIS_FIELDS = (
+    "row_label",
+    "column_label",
+    "target_column",
+    "header",
+    "header_path",
+)
+WEAVIATE_PDF_SCOPED_EXPANSION_POLICY = "bounded_source_owned_pdf_scope_weaviate_v1"
+WEAVIATE_PDF_SCOPED_EXPANSION_MAX_SCOPES = 2
+WEAVIATE_PDF_SCOPED_EXPANSION_TOP_K_PER_SCOPE = 3
+WEAVIATE_PDF_SCOPED_QUERY_AXIS_FIELDS = (
+    "row_label",
+    "column_label",
+)
+WEAVIATE_SOURCE_OWNED_TEXT_TAG_FIELD_ALIASES: Mapping[str, tuple[str, ...]] = {
+    "sheet": ("sheet", "sheet_name"),
+    "cell_range": ("cell_range", "range"),
+    "cell": ("cell",),
+    "row_index_1based": ("row_index_1based", "row_number", "row"),
+    "row_label": ("row_label",),
+    "column_label": ("column_label",),
+    "target_column": ("target_column",),
+    "header": ("header",),
+    "header_path": ("header_path", "column_header_path"),
+    "table_id": ("table_id",),
+    "page_number": ("page_number", "page"),
+    "physical_page_index": ("physical_page_index",),
+    "block_index": ("block_index",),
+    "bbox": ("bbox",),
+    "region_type": ("region_type",),
+    "section_title": ("section_title",),
+    "table_caption": ("table_caption",),
+    "locator_fingerprint": ("locator_fingerprint", "stable_locator_fingerprint"),
+}
+WEAVIATE_SOURCE_OWNED_TEXT_TAG_BOUNDARY_NAMES = tuple(
+    sorted(
+        {
+            alias
+            for aliases in WEAVIATE_SOURCE_OWNED_TEXT_TAG_FIELD_ALIASES.values()
+            for alias in aliases
+        }
+        | {
+            "value",
+            "normalized_value",
+            "formula",
+            "workbook",
+            "source_workbook",
+            "workbook_id",
+            "workbook_version_id",
+            "source_path",
+            "source_file_name",
+            "file_name",
+            "title",
+            "source_title",
+        },
+        key=len,
+        reverse=True,
+    )
+)
+WEAVIATE_SOURCE_OWNED_TEXT_TAG_STRIPPED_SEARCHABLE_ALIASES = (
+    "normalized_value",
+    "formula",
+    "source_path",
+    "source_file_name",
+    "file_name",
+    "source_workbook",
+    "workbook",
+    "workbook_id",
+    "workbook_version_id",
+    "title",
+    "source_title",
+)
 WEAVIATE_VECTORIZED_GRANULARITIES = frozenset(
     {
         "paragraph",
@@ -284,6 +377,92 @@ def _clean(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def _source_owned_axis_term_parts(value: Any) -> list[str]:
+    text = _clean(value)
+    if not text:
+        return []
+    parts = [text]
+    for part in re.split(r"\s*(?:>|/|\||,|;)\s*", text):
+        cleaned = _clean(part)
+        if cleaned:
+            parts.append(cleaned)
+    seen: set[str] = set()
+    result: list[str] = []
+    for part in parts:
+        if part in seen:
+            continue
+        seen.add(part)
+        result.append(part)
+    return result
+
+
+def _source_owned_scope_axis_terms(
+    context: Mapping[str, Any],
+    fields: Sequence[str],
+    *,
+    max_terms: int = 8,
+) -> list[str]:
+    terms: list[str] = []
+    seen: set[str] = set()
+    for field in fields:
+        value = context.get(field)
+        for term in _source_owned_axis_term_parts(value):
+            if term in seen:
+                continue
+            terms.append(term)
+            seen.add(term)
+            if len(terms) >= max_terms:
+                return terms
+    return terms
+
+
+def _source_owned_text_tag_boundary_pattern() -> str:
+    boundary_names = "|".join(re.escape(name) for name in WEAVIATE_SOURCE_OWNED_TEXT_TAG_BOUNDARY_NAMES)
+    return rf"(?=\s*\|\s*|\s*;\s*|\s*,\s*(?:{boundary_names})\s*=|\s+(?:{boundary_names})\s*=|$)"
+
+
+def _source_owned_text_tag_value(text: str, aliases: Sequence[str]) -> str:
+    if not text:
+        return ""
+    boundary = _source_owned_text_tag_boundary_pattern()
+    for alias in aliases:
+        pattern = rf"(?:^|[\s|;,]){re.escape(alias)}\s*=\s*(.*?){boundary}"
+        match = re.search(pattern, text, flags=re.IGNORECASE)
+        if not match:
+            continue
+        value = _clean(match.group(1)).strip("|;,")
+        if value:
+            return value
+    return ""
+
+
+def _source_owned_text_tags(text: str) -> dict[str, str]:
+    tags: dict[str, str] = {}
+    for field, aliases in WEAVIATE_SOURCE_OWNED_TEXT_TAG_FIELD_ALIASES.items():
+        value = _source_owned_text_tag_value(text, aliases)
+        if value:
+            tags[field] = value
+    cell = _clean(tags.get("cell"))
+    if cell and not _clean(tags.get("row_index_1based")):
+        match = re.match(r"^[A-Z]{1,3}(\d+)$", cell, flags=re.I)
+        if match:
+            tags["row_index_1based"] = match.group(1)
+    return tags
+
+
+def _strip_source_owned_forbidden_searchable_text_tags(text: str) -> str:
+    cleaned = _clean(text)
+    if not cleaned:
+        return ""
+    boundary = _source_owned_text_tag_boundary_pattern()
+    for alias in WEAVIATE_SOURCE_OWNED_TEXT_TAG_STRIPPED_SEARCHABLE_ALIASES:
+        pattern = rf"(^|[\s|;,]){re.escape(alias)}\s*=\s*.*?{boundary}"
+        cleaned = re.sub(pattern, lambda match: " | " if "|" in match.group(1) else " ", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"(?:\s*\|\s*){2,}", " | ", cleaned)
+    cleaned = re.sub(r"^\s*\|\s*|\s*\|\s*$", "", cleaned)
+    return " ".join(cleaned.split())
 
 
 def _sha256_text(value: Any) -> str:
@@ -1170,10 +1349,17 @@ def _require_source_atom_record(record: Mapping[str, Any]) -> None:
 def source_atom_record_from_mapping(row: Mapping[str, Any], config: WeaviateSourceAtomConfig) -> dict[str, Any]:
     metadata = row.get("metadata") if isinstance(row.get("metadata"), Mapping) else {}
     _raise_forbidden_candidate_fields(row, metadata)
-    text = _clean(row.get("text") or row.get("bm25_text") or row.get("embedding_text"))
+    source_text = _clean(row.get("text") or row.get("bm25_text") or row.get("embedding_text"))
+    source_owned_text_tags = _source_owned_text_tags(source_text)
+    text = _strip_source_owned_forbidden_searchable_text_tags(source_text)
     source_atom_id = _clean(row.get("source_atom_id") or metadata.get("source_atom_id"))
     evidence_bundle_id = _clean(row.get("evidence_bundle_id") or metadata.get("evidence_bundle_id"))
     taxonomy = derive_weaviate_route_taxonomy(row)
+    text_sha256 = (
+        _sha256_text(text)
+        if config.schema_version == WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V2
+        else _clean(row.get("text_sha256") or metadata.get("source_text_sha256") or _sha256_text(text))
+    )
     record = {
         "source_atom_id": source_atom_id,
         "evidence_bundle_id": evidence_bundle_id,
@@ -1187,7 +1373,7 @@ def source_atom_record_from_mapping(row: Mapping[str, Any], config: WeaviateSour
         "title": _clean(row.get("title") or metadata.get("title")),
         "section": _clean(row.get("section") or metadata.get("section")),
         "text": text,
-        "text_sha256": _clean(row.get("text_sha256") or metadata.get("source_text_sha256") or _sha256_text(text)),
+        "text_sha256": text_sha256,
         "source_uri_hash": _clean(row.get("source_uri_hash") or metadata.get("source_uri_hash")),
         "source_hash": _clean(row.get("source_hash") or metadata.get("source_hash")),
         "ingestion_run_id": _clean(row.get("ingestion_run_id") or metadata.get("ingestion_run_id") or "actual_rag_eval_nonprod"),
@@ -1206,14 +1392,23 @@ def source_atom_record_from_mapping(row: Mapping[str, Any], config: WeaviateSour
             "cell_range",
             "cell",
             "row_index_1based",
+            "row_label",
+            "column_label",
+            "target_column",
+            "header",
+            "header_path",
+            "table_id",
             "page_number",
             "physical_page_index",
+            "block_index",
             "bbox",
             "region_type",
+            "section_title",
+            "table_caption",
             "locator_fingerprint",
             "parent_source_unit_id",
         ):
-            value = _clean(row.get(key) or metadata.get(key))
+            value = _clean(row.get(key) or metadata.get(key) or source_owned_text_tags.get(key))
             if value:
                 record[key] = value
     _require_source_atom_record(record)
@@ -1381,10 +1576,19 @@ def _context_from_record(record: Mapping[str, Any], *, rank: int, score: float, 
         "cell_range": _clean(record.get("cell_range")),
         "cell": _clean(record.get("cell")),
         "row_index_1based": _clean(record.get("row_index_1based")),
+        "row_label": _clean(record.get("row_label")),
+        "column_label": _clean(record.get("column_label")),
+        "target_column": _clean(record.get("target_column")),
+        "header": _clean(record.get("header")),
+        "header_path": _clean(record.get("header_path")),
+        "table_id": _clean(record.get("table_id")),
         "page_number": _clean(record.get("page_number")),
         "physical_page_index": _clean(record.get("physical_page_index")),
+        "block_index": _clean(record.get("block_index")),
         "bbox": _clean(record.get("bbox")),
         "region_type": _clean(record.get("region_type")),
+        "section_title": _clean(record.get("section_title")),
+        "table_caption": _clean(record.get("table_caption")),
         "locator_fingerprint": _clean(record.get("locator_fingerprint")),
         "parent_source_unit_id": _clean(record.get("parent_source_unit_id")),
     }
@@ -1401,7 +1605,7 @@ def _context_to_chunk(context: Mapping[str, Any]) -> RetrievedChunk:
 
 
 def _normalize_citation(context: Mapping[str, Any]) -> dict[str, Any]:
-    return {
+    normalized = {
         "doc_id": _clean(context.get("doc_id")),
         "chunk_id": _clean(context.get("chunk_id")),
         "text": _clean(context.get("text")),
@@ -1410,6 +1614,11 @@ def _normalize_citation(context: Mapping[str, Any]) -> dict[str, Any]:
         "source_text_sha256": _clean(context.get("source_text_sha256") or context.get("text_sha256")),
         "text_sha256": _clean(context.get("text_sha256") or context.get("source_text_sha256")),
     }
+    for field in WEAVIATE_SOURCE_ATOM_V2_EXTRA_PROPERTIES:
+        value = _clean(context.get(field))
+        if value:
+            normalized[field] = value
+    return normalized
 
 
 def _latency_distribution_ms(values: Sequence[float]) -> dict[str, float]:
@@ -1672,9 +1881,15 @@ class WeaviateSourceAtomClient:
         except Exception as exc:  # pragma: no cover - depends on live service
             raise WeaviateUnavailableError(f"weaviate_unavailable: readiness failed:{type(exc).__name__}: {exc}") from exc
 
-    def _validate_existing_collection(self, schema: Mapping[str, Any], collection: Any) -> None:
+    def _existing_collection_schema_mismatches(self, schema: Mapping[str, Any], collection: Any) -> list[str]:
         def enum_text(value: Any) -> str:
             return _clean(getattr(value, "value", value)).casefold()
+
+        def bool_attr(value: Any, *names: str) -> bool:
+            for name in names:
+                if hasattr(value, name):
+                    return bool(getattr(value, name))
+            return False
 
         try:
             config = collection.config.get()
@@ -1690,9 +1905,9 @@ class WeaviateSourceAtomClient:
                 if existing is None:
                     mismatches.append(f"missing_property:{name}")
                     continue
-                if bool(getattr(existing, "index_filterable", False)) != bool(prop.get("index_filterable")):
+                if bool_attr(existing, "index_filterable", "indexFilterable") != bool(prop.get("index_filterable")):
                     mismatches.append(f"filterable_mismatch:{name}")
-                if bool(getattr(existing, "index_searchable", False)) != bool(prop.get("index_searchable")):
+                if bool_attr(existing, "index_searchable", "indexSearchable") != bool(prop.get("index_searchable")):
                     mismatches.append(f"searchable_mismatch:{name}")
                 if enum_text(getattr(existing, "tokenization", "")) != _clean(prop.get("tokenization")).casefold():
                     mismatches.append(f"tokenization_mismatch:{name}")
@@ -1715,46 +1930,100 @@ class WeaviateSourceAtomClient:
                 mismatches.append("vectorizer_not_self_provided")
             if vector_configs and not distance_ok:
                 mismatches.append("distance_metric_not_cosine")
-            if mismatches:
-                raise WeaviateUnavailableError(
-                    f"weaviate_unavailable: collection_schema_mismatch:{','.join(sorted(mismatches))}"
-                )
-        except WeaviateUnavailableError:
-            raise
+            return sorted(mismatches)
         except Exception as exc:  # pragma: no cover - depends on live client versions
             raise WeaviateUnavailableError(
                 f"weaviate_unavailable: collection_schema_validation_failed:{type(exc).__name__}: {exc}"
+            ) from exc
+
+    def _validate_existing_collection(self, schema: Mapping[str, Any], collection: Any) -> None:
+        mismatches = self._existing_collection_schema_mismatches(schema, collection)
+        if mismatches:
+            raise WeaviateUnavailableError(
+                f"weaviate_unavailable: collection_schema_mismatch:{','.join(mismatches)}"
+            )
+
+    def _missing_existing_collection_property_names(self, schema: Mapping[str, Any], collection: Any) -> list[str]:
+        try:
+            config = collection.config.get()
+            existing_names = {
+                _clean(getattr(prop, "name", ""))
+                for prop in getattr(config, "properties", []) or []
+                if _clean(getattr(prop, "name", ""))
+            }
+            return [
+                name
+                for prop in schema.get("properties") or []
+                for name in [_clean(prop.get("name"))]
+                if name and name not in existing_names
+            ]
+        except Exception as exc:  # pragma: no cover - depends on live client versions
+            raise WeaviateUnavailableError(
+                f"weaviate_unavailable: collection_schema_validation_failed:{type(exc).__name__}: {exc}"
+            ) from exc
+
+    def _weaviate_property_from_schema(self, prop: Mapping[str, Any]) -> Any:
+        from weaviate.classes.config import DataType, Property, Tokenization  # type: ignore
+
+        tokenizations = {
+            "field": Tokenization.FIELD,
+            "word": Tokenization.WORD,
+            "whitespace": Tokenization.WHITESPACE,
+            "lowercase": Tokenization.LOWERCASE,
+            "trigram": Tokenization.TRIGRAM,
+            "kagome_ja": Tokenization.KAGOME_JA,
+            "kagome_kr": Tokenization.KAGOME_KR,
+        }
+        return Property(
+            name=prop["name"],
+            data_type=DataType.TEXT,
+            index_filterable=bool(prop.get("index_filterable")),
+            index_searchable=bool(prop.get("index_searchable")),
+            tokenization=tokenizations.get(_clean(prop.get("tokenization")).casefold(), Tokenization.WORD),
+        )
+
+    def _add_missing_existing_v2_properties(self, schema: Mapping[str, Any], collection: Any) -> None:
+        if _clean(schema.get("schema_version")) != WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V2:
+            return
+        mismatches = self._existing_collection_schema_mismatches(schema, collection)
+        missing_names = [
+            mismatch.removeprefix("missing_property:")
+            for mismatch in mismatches
+            if mismatch.startswith("missing_property:")
+        ]
+        if not missing_names:
+            return
+        if any(not mismatch.startswith("missing_property:") for mismatch in mismatches):
+            return
+        allowed_missing = set(WEAVIATE_SOURCE_ATOM_V2_EXTRA_PROPERTIES)
+        if any(name not in allowed_missing for name in missing_names):
+            return
+        by_name = {
+            _clean(prop.get("name")): prop
+            for prop in schema.get("properties") or []
+            if _clean(prop.get("name"))
+        }
+        try:
+            for name in missing_names:
+                collection.config.add_property(self._weaviate_property_from_schema(by_name[name]))
+        except Exception as exc:  # pragma: no cover - depends on live service/client version
+            raise WeaviateUnavailableError(
+                f"weaviate_unavailable: schema property add failed:{type(exc).__name__}: {exc}"
             ) from exc
 
     def ensure_collection(self, schema: Mapping[str, Any]) -> None:
         client = self._connect()
         if client.collections.exists(self.config.collection_name):
             self._collection = client.collections.use(self.config.collection_name)
+            self._add_missing_existing_v2_properties(schema, self._collection)
             self._validate_existing_collection(schema, self._collection)
             return
         try:
-            from weaviate.classes.config import Configure, DataType, Property, Tokenization, VectorDistances  # type: ignore
+            from weaviate.classes.config import Configure, VectorDistances  # type: ignore
 
-            tokenizations = {
-                "field": Tokenization.FIELD,
-                "word": Tokenization.WORD,
-                "whitespace": Tokenization.WHITESPACE,
-                "lowercase": Tokenization.LOWERCASE,
-                "trigram": Tokenization.TRIGRAM,
-                "kagome_ja": Tokenization.KAGOME_JA,
-                "kagome_kr": Tokenization.KAGOME_KR,
-            }
             props = []
             for prop in schema.get("properties") or []:
-                props.append(
-                    Property(
-                        name=prop["name"],
-                        data_type=DataType.TEXT,
-                        index_filterable=bool(prop.get("index_filterable")),
-                        index_searchable=bool(prop.get("index_searchable")),
-                        tokenization=tokenizations.get(_clean(prop.get("tokenization")).casefold(), Tokenization.WORD),
-                    )
-                )
+                props.append(self._weaviate_property_from_schema(prop))
             self._collection = client.collections.create(
                 self.config.collection_name,
                 properties=props,
@@ -1849,6 +2118,16 @@ class WeaviateSourceAtomClient:
             return MetadataQuery(distance=True)
         return MetadataQuery(score=True, explain_score=True)
 
+    def _query_properties_for_filters(self, filters: Mapping[str, Any]) -> list[str]:
+        source_family = filters.get("source_family")
+        if isinstance(source_family, Sequence) and not isinstance(source_family, (str, bytes, bytearray)):
+            families = {_clean(value).upper() for value in source_family if _clean(value)}
+        else:
+            families = {_clean(source_family).upper()} if _clean(source_family) else set()
+        if families == {"TEXT"}:
+            return ["text", "title"]
+        return ["text"]
+
     def query(
         self,
         *,
@@ -1863,6 +2142,7 @@ class WeaviateSourceAtomClient:
             return self._query_neighbor_by_id(filters=filters, limit=limit)
         collection = self._use_collection()
         where_filter = self._filters(filters)
+        query_properties = self._query_properties_for_filters(filters)
         try:
             if mode == "vector":
                 response = collection.query.near_vector(
@@ -1874,7 +2154,7 @@ class WeaviateSourceAtomClient:
             elif mode == "bm25":
                 response = collection.query.bm25(
                     query=query_text,
-                    query_properties=["text", "title"],
+                    query_properties=query_properties,
                     limit=limit,
                     filters=where_filter,
                     return_metadata=self._metadata_query(mode=mode),
@@ -1884,7 +2164,7 @@ class WeaviateSourceAtomClient:
                     query=query_text,
                     vector=list(float(value) for value in query_vector or []),
                     alpha=alpha,
-                    query_properties=["text", "title"],
+                    query_properties=query_properties,
                     limit=limit,
                     filters=where_filter,
                     return_metadata=self._metadata_query(mode=mode),
@@ -2674,6 +2954,16 @@ class WeaviateSourceAtomAdapter:
         self._same_doc_residual_added_count = 0
         self._same_doc_residual_expanded_item_count = 0
         self._same_doc_residual_latency_ms: list[float] = []
+        self._xlsx_scoped_expansion_query_count = 0
+        self._xlsx_scoped_expansion_added_count = 0
+        self._xlsx_scoped_expansion_expanded_item_count = 0
+        self._xlsx_scoped_expansion_latency_ms: list[float] = []
+        self._xlsx_scoped_expansion_scope_counts: dict[str, int] = {}
+        self._pdf_scoped_expansion_query_count = 0
+        self._pdf_scoped_expansion_added_count = 0
+        self._pdf_scoped_expansion_expanded_item_count = 0
+        self._pdf_scoped_expansion_latency_ms: list[float] = []
+        self._pdf_scoped_expansion_scope_counts: dict[str, int] = {}
         self._candidate_counts: dict[str, list[int]] = {"bm25": [], "vector": [], "hybrid": []}
         self._latencies: dict[str, list[float]] = {"bm25": [], "vector": [], "hybrid": []}
         self._query_variant_counts: list[int] = []
@@ -3007,6 +3297,8 @@ class WeaviateSourceAtomAdapter:
     def weaviate_post_processing_report(self) -> dict[str, Any]:
         latency = _latency_distribution_ms(self._neighbor_expansion_latency_ms)
         same_doc_latency = _latency_distribution_ms(self._same_doc_residual_latency_ms)
+        xlsx_scope_latency = _latency_distribution_ms(self._xlsx_scoped_expansion_latency_ms)
+        pdf_scope_latency = _latency_distribution_ms(self._pdf_scoped_expansion_latency_ms)
         return {
             "duplicate_collapse_enabled": True,
             "duplicate_collapse_policy": "route_selected_structural_diversity_doc_cap_v2",
@@ -3036,6 +3328,38 @@ class WeaviateSourceAtomAdapter:
             "python_local_corpus_scan_used_for_same_doc_residual": False,
             "faiss_used_for_same_doc_residual": False,
             "searchunit_searchview_used_for_same_doc_residual": False,
+            "xlsx_scoped_expansion_enabled": self._xlsx_scoped_expansion_query_count > 0,
+            "xlsx_scoped_expansion_expanded_item_count": self._xlsx_scoped_expansion_expanded_item_count,
+            "xlsx_scoped_expansion_query_count": self._xlsx_scoped_expansion_query_count,
+            "xlsx_scoped_expansion_added_count": self._xlsx_scoped_expansion_added_count,
+            "xlsx_scoped_expansion_policy": WEAVIATE_XLSX_SCOPED_EXPANSION_POLICY,
+            "xlsx_scoped_expansion_max_scopes": WEAVIATE_XLSX_SCOPED_EXPANSION_MAX_SCOPES,
+            "xlsx_scoped_expansion_top_k_per_scope": WEAVIATE_XLSX_SCOPED_EXPANSION_TOP_K_PER_SCOPE,
+            "xlsx_scoped_expansion_scope_counts": dict(sorted(self._xlsx_scoped_expansion_scope_counts.items())),
+            "xlsx_scoped_expansion_latency_ms_p50": xlsx_scope_latency["p50"],
+            "xlsx_scoped_expansion_latency_ms_p95": xlsx_scope_latency["p95"],
+            "xlsx_scoped_expansion_candidate_generation": (
+                "weaviate_source_owned_scope_filter_plus_query_text_no_gold_qrels_labels_ids_or_baseline"
+            ),
+            "python_local_corpus_scan_used_for_xlsx_scoped_expansion": False,
+            "faiss_used_for_xlsx_scoped_expansion": False,
+            "searchunit_searchview_used_for_xlsx_scoped_expansion": False,
+            "pdf_scoped_expansion_enabled": self._pdf_scoped_expansion_query_count > 0,
+            "pdf_scoped_expansion_expanded_item_count": self._pdf_scoped_expansion_expanded_item_count,
+            "pdf_scoped_expansion_query_count": self._pdf_scoped_expansion_query_count,
+            "pdf_scoped_expansion_added_count": self._pdf_scoped_expansion_added_count,
+            "pdf_scoped_expansion_policy": WEAVIATE_PDF_SCOPED_EXPANSION_POLICY,
+            "pdf_scoped_expansion_max_scopes": WEAVIATE_PDF_SCOPED_EXPANSION_MAX_SCOPES,
+            "pdf_scoped_expansion_top_k_per_scope": WEAVIATE_PDF_SCOPED_EXPANSION_TOP_K_PER_SCOPE,
+            "pdf_scoped_expansion_scope_counts": dict(sorted(self._pdf_scoped_expansion_scope_counts.items())),
+            "pdf_scoped_expansion_latency_ms_p50": pdf_scope_latency["p50"],
+            "pdf_scoped_expansion_latency_ms_p95": pdf_scope_latency["p95"],
+            "pdf_scoped_expansion_candidate_generation": (
+                "weaviate_source_owned_pdf_scope_filter_plus_query_text_no_gold_qrels_labels_ids_or_baseline"
+            ),
+            "python_local_corpus_scan_used_for_pdf_scoped_expansion": False,
+            "faiss_used_for_pdf_scoped_expansion": False,
+            "searchunit_searchview_used_for_pdf_scoped_expansion": False,
         }
 
     @property
@@ -3318,6 +3642,297 @@ class WeaviateSourceAtomAdapter:
             self._same_doc_residual_expanded_item_count += 1
         return added
 
+    def _xlsx_scoped_expansion_scopes(self, contexts: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+        scopes: list[dict[str, Any]] = []
+        seen: set[tuple[str, str, str, str, str]] = set()
+        for context in contexts:
+            if _clean(context.get("source_family")) != "XLSX":
+                continue
+            doc_id = _clean(context.get("doc_id"))
+            sheet = _clean(context.get("sheet"))
+            if not doc_id or not sheet:
+                continue
+            table_id = _clean(context.get("table_id"))
+            cell_range = _clean(context.get("cell_range"))
+            if table_id:
+                scope_type = "same_table"
+                scope_filters = {"source_family": "XLSX", "doc_id": doc_id, "sheet": sheet, "table_id": table_id}
+            elif cell_range:
+                scope_type = "same_cell_range"
+                scope_filters = {"source_family": "XLSX", "doc_id": doc_id, "sheet": sheet, "cell_range": cell_range}
+            else:
+                scope_type = "same_sheet"
+                scope_filters = {"source_family": "XLSX", "doc_id": doc_id, "sheet": sheet}
+            key = (
+                scope_type,
+                doc_id,
+                sheet,
+                _clean(scope_filters.get("table_id")),
+                _clean(scope_filters.get("cell_range")),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            scopes.append(
+                {
+                    "scope_type": scope_type,
+                    "filters": scope_filters,
+                    "source_atom_id": _clean(context.get("source_atom_id")),
+                    "chunk_id": _clean(context.get("chunk_id")),
+                    "axis_terms": _source_owned_scope_axis_terms(
+                        context,
+                        WEAVIATE_XLSX_SCOPED_QUERY_AXIS_FIELDS,
+                    ),
+                }
+            )
+            if len(scopes) >= WEAVIATE_XLSX_SCOPED_EXPANSION_MAX_SCOPES:
+                break
+        return scopes
+
+    def _xlsx_scoped_query_text(self, query: str, scope: Mapping[str, Any]) -> str:
+        filters = scope.get("filters") if isinstance(scope.get("filters"), Mapping) else {}
+        parts = [_clean(query), _clean(filters.get("sheet"))]
+        for key in ("table_id", "cell_range"):
+            value = _clean(filters.get(key))
+            if value:
+                parts.append(value)
+        axis_terms = scope.get("axis_terms") if isinstance(scope.get("axis_terms"), Sequence) else []
+        for term in axis_terms:
+            value = _clean(term)
+            if value:
+                parts.append(value)
+        seen: set[str] = set()
+        cleaned: list[str] = []
+        for part in parts:
+            if part and part not in seen:
+                cleaned.append(part)
+                seen.add(part)
+        return " ".join(cleaned)
+
+    def _context_matches_xlsx_scope(self, context: Mapping[str, Any], scope: Mapping[str, Any]) -> bool:
+        filters = scope.get("filters") if isinstance(scope.get("filters"), Mapping) else {}
+        for key in ("doc_id", "sheet", "table_id", "cell_range"):
+            value = _clean(filters.get(key))
+            if value and _clean(context.get(key)) != value:
+                return False
+        return _clean(context.get("source_family")) == "XLSX"
+
+    def _query_xlsx_scoped_expansion_contexts(
+        self,
+        mode: str,
+        query: str,
+        contexts: Sequence[Mapping[str, Any]],
+        *,
+        filters: Mapping[str, Any],
+    ) -> list[dict[str, Any]]:
+        if self.retrieval_route_mode != "route_selected":
+            return []
+        scopes = self._xlsx_scoped_expansion_scopes(contexts)
+        if not scopes:
+            return []
+        existing_ids = {_clean(context.get("source_atom_id")) for context in contexts if _clean(context.get("source_atom_id"))}
+        added: list[dict[str, Any]] = []
+        queries_before = self._weaviate_query_call_count
+        for scope in scopes:
+            scope_filters = scope.get("filters") if isinstance(scope.get("filters"), Mapping) else {}
+            residual_filters = dict(filters)
+            residual_filters.update(scope_filters)
+            scoped_query = self._xlsx_scoped_query_text(query, scope)
+            query_vector = self._query_vector(scoped_query) if mode in {"vector", "hybrid"} else []
+            started = time.perf_counter()
+            candidates, _latency = self._query_mode(
+                mode,
+                scoped_query,
+                query_vector,
+                top_k=WEAVIATE_XLSX_SCOPED_EXPANSION_TOP_K_PER_SCOPE,
+                filters=residual_filters,
+            )
+            self._xlsx_scoped_expansion_latency_ms.append(round((time.perf_counter() - started) * 1000, 6))
+            candidates, removed = self._safety_filter_contexts(candidates, filters=filters)
+            self._post_filter_removed_count += removed
+            scope_type = _clean(scope.get("scope_type"))
+            for candidate in candidates:
+                source_atom_id = _clean(candidate.get("source_atom_id"))
+                if source_atom_id and source_atom_id in existing_ids:
+                    continue
+                if not self._context_matches_xlsx_scope(candidate, scope):
+                    continue
+                row = dict(candidate)
+                row["xlsx_scoped_expansion_policy"] = WEAVIATE_XLSX_SCOPED_EXPANSION_POLICY
+                row["xlsx_scoped_expansion_scope_type"] = scope_type
+                row["xlsx_scoped_expansion_source_atom_id"] = _clean(scope.get("source_atom_id"))
+                row["xlsx_scoped_expansion_source_chunk_id"] = _clean(scope.get("chunk_id"))
+                row["xlsx_scoped_expansion_candidate_generation"] = (
+                    "weaviate_source_owned_scope_filter_plus_query_text_no_gold_qrels_labels_ids_or_baseline"
+                )
+                added.append(row)
+                if source_atom_id:
+                    existing_ids.add(source_atom_id)
+                self._xlsx_scoped_expansion_scope_counts[scope_type] = (
+                    self._xlsx_scoped_expansion_scope_counts.get(scope_type, 0) + 1
+                )
+                if len(added) >= WEAVIATE_XLSX_SCOPED_EXPANSION_TOP_K_PER_SCOPE:
+                    break
+            if len(added) >= WEAVIATE_XLSX_SCOPED_EXPANSION_TOP_K_PER_SCOPE:
+                break
+        query_delta = self._weaviate_query_call_count - queries_before
+        self._xlsx_scoped_expansion_query_count += max(0, query_delta)
+        if added:
+            self._xlsx_scoped_expansion_added_count += len(added)
+            self._xlsx_scoped_expansion_expanded_item_count += 1
+        return added
+
+    def _pdf_scoped_expansion_scopes(self, contexts: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+        scopes: list[dict[str, Any]] = []
+        seen: set[tuple[str, str, str, str, str]] = set()
+        for context in contexts:
+            if _clean(context.get("source_family")) != "PDF":
+                continue
+            doc_id = _clean(context.get("doc_id"))
+            if not doc_id:
+                continue
+            page_number = _clean(context.get("page_number") or context.get("page"))
+            section_title = _clean(context.get("section_title"))
+            table_caption = _clean(context.get("table_caption"))
+            if page_number and table_caption:
+                scope_type = "same_table"
+                scope_filters = {
+                    "source_family": "PDF",
+                    "doc_id": doc_id,
+                    "page_number": page_number,
+                    "table_caption": table_caption,
+                }
+                if section_title:
+                    scope_filters["section_title"] = section_title
+            elif page_number:
+                scope_type = "same_page"
+                scope_filters = {"source_family": "PDF", "doc_id": doc_id, "page_number": page_number}
+            elif section_title:
+                scope_type = "same_section"
+                scope_filters = {"source_family": "PDF", "doc_id": doc_id, "section_title": section_title}
+            else:
+                scope_type = "same_doc"
+                scope_filters = {"source_family": "PDF", "doc_id": doc_id}
+            key = (
+                scope_type,
+                doc_id,
+                _clean(scope_filters.get("page_number")),
+                _clean(scope_filters.get("section_title")),
+                _clean(scope_filters.get("table_caption")),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            scopes.append(
+                {
+                    "scope_type": scope_type,
+                    "filters": scope_filters,
+                    "source_atom_id": _clean(context.get("source_atom_id")),
+                    "chunk_id": _clean(context.get("chunk_id")),
+                    "axis_terms": _source_owned_scope_axis_terms(
+                        context,
+                        WEAVIATE_PDF_SCOPED_QUERY_AXIS_FIELDS,
+                    ),
+                }
+            )
+            if len(scopes) >= WEAVIATE_PDF_SCOPED_EXPANSION_MAX_SCOPES:
+                break
+        return scopes
+
+    def _pdf_scoped_query_text(self, query: str, scope: Mapping[str, Any]) -> str:
+        filters = scope.get("filters") if isinstance(scope.get("filters"), Mapping) else {}
+        parts = [
+            _clean(query),
+            _clean(filters.get("page_number")),
+            _clean(filters.get("section_title")),
+            _clean(filters.get("table_caption")),
+        ]
+        axis_terms = scope.get("axis_terms") if isinstance(scope.get("axis_terms"), Sequence) else []
+        for term in axis_terms:
+            value = _clean(term)
+            if value:
+                parts.append(value)
+        seen: set[str] = set()
+        cleaned: list[str] = []
+        for part in parts:
+            if part and part not in seen:
+                cleaned.append(part)
+                seen.add(part)
+        return " ".join(cleaned)
+
+    def _context_matches_pdf_scope(self, context: Mapping[str, Any], scope: Mapping[str, Any]) -> bool:
+        filters = scope.get("filters") if isinstance(scope.get("filters"), Mapping) else {}
+        for key in ("doc_id", "page_number", "section_title", "table_caption"):
+            value = _clean(filters.get(key))
+            if value and _clean(context.get(key)) != value:
+                return False
+        return _clean(context.get("source_family")) == "PDF"
+
+    def _query_pdf_scoped_expansion_contexts(
+        self,
+        mode: str,
+        query: str,
+        contexts: Sequence[Mapping[str, Any]],
+        *,
+        filters: Mapping[str, Any],
+    ) -> list[dict[str, Any]]:
+        if self.retrieval_route_mode != "route_selected":
+            return []
+        scopes = self._pdf_scoped_expansion_scopes(contexts)
+        if not scopes:
+            return []
+        existing_ids = {_clean(context.get("source_atom_id")) for context in contexts if _clean(context.get("source_atom_id"))}
+        added: list[dict[str, Any]] = []
+        queries_before = self._weaviate_query_call_count
+        for scope in scopes:
+            scope_filters = scope.get("filters") if isinstance(scope.get("filters"), Mapping) else {}
+            residual_filters = dict(filters)
+            residual_filters.update(scope_filters)
+            scoped_query = self._pdf_scoped_query_text(query, scope)
+            query_vector = self._query_vector(scoped_query) if mode in {"vector", "hybrid"} else []
+            started = time.perf_counter()
+            candidates, _latency = self._query_mode(
+                mode,
+                scoped_query,
+                query_vector,
+                top_k=WEAVIATE_PDF_SCOPED_EXPANSION_TOP_K_PER_SCOPE,
+                filters=residual_filters,
+            )
+            self._pdf_scoped_expansion_latency_ms.append(round((time.perf_counter() - started) * 1000, 6))
+            candidates, removed = self._safety_filter_contexts(candidates, filters=filters)
+            self._post_filter_removed_count += removed
+            scope_type = _clean(scope.get("scope_type"))
+            for candidate in candidates:
+                source_atom_id = _clean(candidate.get("source_atom_id"))
+                if source_atom_id and source_atom_id in existing_ids:
+                    continue
+                if not self._context_matches_pdf_scope(candidate, scope):
+                    continue
+                row = dict(candidate)
+                row["pdf_scoped_expansion_policy"] = WEAVIATE_PDF_SCOPED_EXPANSION_POLICY
+                row["pdf_scoped_expansion_scope_type"] = scope_type
+                row["pdf_scoped_expansion_source_atom_id"] = _clean(scope.get("source_atom_id"))
+                row["pdf_scoped_expansion_source_chunk_id"] = _clean(scope.get("chunk_id"))
+                row["pdf_scoped_expansion_candidate_generation"] = (
+                    "weaviate_source_owned_pdf_scope_filter_plus_query_text_no_gold_qrels_labels_ids_or_baseline"
+                )
+                added.append(row)
+                if source_atom_id:
+                    existing_ids.add(source_atom_id)
+                self._pdf_scoped_expansion_scope_counts[scope_type] = (
+                    self._pdf_scoped_expansion_scope_counts.get(scope_type, 0) + 1
+                )
+                if len(added) >= WEAVIATE_PDF_SCOPED_EXPANSION_TOP_K_PER_SCOPE:
+                    break
+            if len(added) >= WEAVIATE_PDF_SCOPED_EXPANSION_TOP_K_PER_SCOPE:
+                break
+        query_delta = self._weaviate_query_call_count - queries_before
+        self._pdf_scoped_expansion_query_count += max(0, query_delta)
+        if added:
+            self._pdf_scoped_expansion_added_count += len(added)
+            self._pdf_scoped_expansion_expanded_item_count += 1
+        return added
+
     def _structural_key(self, context: Mapping[str, Any]) -> str:
         source_family = _clean(context.get("source_family"))
         if source_family == "XLSX":
@@ -3326,6 +3941,11 @@ class WeaviateSourceAtomAdapter:
                 _clean(context.get("cell_range")),
                 _clean(context.get("row_index_1based")),
                 _clean(context.get("cell")),
+                _clean(context.get("row_label")),
+                _clean(context.get("column_label")),
+                _clean(context.get("target_column")),
+                _clean(context.get("header_path")),
+                _clean(context.get("table_id")),
             ]
             if any(locator):
                 return "|".join([source_family, _clean(context.get("doc_id")), *locator])
@@ -3521,8 +4141,24 @@ class WeaviateSourceAtomAdapter:
             selected_contexts,
             filters=filters,
         )
+        xlsx_scoped_expansion_contexts = self._query_xlsx_scoped_expansion_contexts(
+            selected_mode,
+            query,
+            selected_contexts,
+            filters=filters,
+        )
+        pdf_scoped_expansion_contexts = self._query_pdf_scoped_expansion_contexts(
+            selected_mode,
+            query,
+            selected_contexts,
+            filters=filters,
+        )
         if same_doc_residual_contexts:
             selected_contexts = [*same_doc_residual_contexts, *selected_contexts]
+        if xlsx_scoped_expansion_contexts:
+            selected_contexts = [*xlsx_scoped_expansion_contexts, *selected_contexts]
+        if pdf_scoped_expansion_contexts:
+            selected_contexts = [*pdf_scoped_expansion_contexts, *selected_contexts]
         selected_contexts = self._post_process_selected_contexts(
             selected_contexts,
             filters=filters,
@@ -3573,8 +4209,53 @@ class WeaviateSourceAtomAdapter:
                 "uses_qrels": False,
                 "uses_labels": False,
                 "uses_ids": False,
+                "uses_protected_eval_ids": False,
+                "uses_source_owned_scope_ids": True,
                 "uses_baseline_topk": False,
                 "uses_legacy_outputs": False,
+            },
+            "weaviate_xlsx_scoped_expansion": {
+                "enabled": bool(xlsx_scoped_expansion_contexts),
+                "policy": WEAVIATE_XLSX_SCOPED_EXPANSION_POLICY,
+                "query_count": self._xlsx_scoped_expansion_query_count,
+                "added_count": len(xlsx_scoped_expansion_contexts),
+                "scope_counts": dict(sorted(self._xlsx_scoped_expansion_scope_counts.items())),
+                "candidate_generation": (
+                    "weaviate_source_owned_scope_filter_plus_query_text_no_gold_qrels_labels_ids_or_baseline"
+                ),
+                "uses_gold_fields": False,
+                "uses_expected_fields": False,
+                "uses_qrels": False,
+                "uses_labels": False,
+                "uses_ids": False,
+                "uses_protected_eval_ids": False,
+                "uses_source_owned_scope_ids": True,
+                "uses_baseline_topk": False,
+                "uses_legacy_outputs": False,
+                "uses_formula": False,
+                "uses_normalized_value": False,
+                "uses_raw_xlsx_query_time_parsing": False,
+            },
+            "weaviate_pdf_scoped_expansion": {
+                "enabled": bool(pdf_scoped_expansion_contexts),
+                "policy": WEAVIATE_PDF_SCOPED_EXPANSION_POLICY,
+                "query_count": self._pdf_scoped_expansion_query_count,
+                "added_count": len(pdf_scoped_expansion_contexts),
+                "scope_counts": dict(sorted(self._pdf_scoped_expansion_scope_counts.items())),
+                "candidate_generation": (
+                    "weaviate_source_owned_pdf_scope_filter_plus_query_text_no_gold_qrels_labels_ids_or_baseline"
+                ),
+                "uses_gold_fields": False,
+                "uses_expected_fields": False,
+                "uses_qrels": False,
+                "uses_labels": False,
+                "uses_ids": False,
+                "uses_protected_eval_ids": False,
+                "uses_source_owned_scope_ids": True,
+                "uses_baseline_topk": False,
+                "uses_legacy_outputs": False,
+                "uses_filename_or_title_shortcut": False,
+                "uses_raw_pdf_query_time_parsing": False,
             },
             "python_post_filter_only_safety_validation": True,
             "post_filter_removed_count": post_filter_removed_count,

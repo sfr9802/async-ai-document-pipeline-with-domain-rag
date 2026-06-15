@@ -3,7 +3,7 @@
 Defaults follow the worker-owned eval layout:
 
 * ``ai/eval/artifacts/eval_runs/{run_id}/``
-* ``ai/eval/reports/eval/``
+* ``reports/rag_eval/eval/``
 
 The command is safe by default: it reads existing retrieval/context reports,
 does not mutate indexes or DB state, and uses dry-run output unless
@@ -57,13 +57,13 @@ from eval.harness.e2e_baseline_reporting import (  # noqa: E402
 
 
 DEFAULT_ARTIFACT_ROOT = AI_WORKER_ROOT / "eval" / "artifacts" / "eval_runs"
-DEFAULT_REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "eval"
+DEFAULT_REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "eval"
 
 DEFAULT_A_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_xlsx_v3_positive_reviewed.csv"
 DEFAULT_A_RETRIEVAL = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json"
 )
@@ -71,37 +71,37 @@ DEFAULT_A_PROGRESS = REPO_ROOT / "docs" / "rag-ingestion" / "xlsx-retrieval" / "
 
 DEFAULT_B_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v4_v0.csv"
 DEFAULT_B_RETRIEVAL = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_text_namu_v4_retrieval_diagnostic_report.json"
 )
 DEFAULT_B_CONTEXT = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_text_namu_v4_context_assembly.jsonl"
 )
 DEFAULT_B_CONTEXT_REPORT = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_text_namu_v4_context_assembly_report.json"
 )
 DEFAULT_B_ANSWER_REPORT = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_text_namu_v4_answer_eval_report.json"
 )
 DEFAULT_B_ANSWER_EVAL = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_text_namu_v4_answer_eval.jsonl"
 )
@@ -109,23 +109,23 @@ DEFAULT_B_PROGRESS = REPO_ROOT / "docs" / "track_b_text_retrieval_e2e" / "rag_te
 
 DEFAULT_C_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_pdf_v0.csv"
 DEFAULT_C_RETRIEVAL = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_retrieval_eval_pdf_vector_diagnostic_report.json"
 )
 DEFAULT_C_CONSISTENCY = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "pdf_candidate_embedding_consistency_report.json"
 )
 DEFAULT_C_POLICY = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_pdf_gold_policy_review.json"
 )

@@ -312,7 +312,7 @@ def test_agentops_context_rejects_blank_run_id_before_trace_emit() -> None:
             run_id=" ",
             query="report status",
             source_family="PDF",
-            namespace="ai/eval/reports/rag-ingestion/runs",
+            namespace="reports/rag_eval/rag-ingestion/runs",
             requested_tools=("generate_eval_report",),
         )
 
@@ -327,7 +327,7 @@ def test_agentops_context_rejects_unsafe_run_id_before_trace_emit() -> None:
         run_id="agentops-safe_01.v1",
         query="report status",
         source_family="PDF",
-        namespace="ai/eval/reports/rag-ingestion/runs",
+        namespace="reports/rag_eval/rag-ingestion/runs",
         requested_tools=("generate_eval_report",),
     )
     assert safe.run_id == "agentops-safe_01.v1"
@@ -336,7 +336,7 @@ def test_agentops_context_rejects_unsafe_run_id_before_trace_emit() -> None:
         query_id="agentops-safe-query_01.v1",
         query="report status",
         source_family="PDF",
-        namespace="ai/eval/reports/rag-ingestion/runs",
+        namespace="reports/rag_eval/rag-ingestion/runs",
         requested_tools=("generate_eval_report",),
     )
     assert safe_query_id.query_id == "agentops-safe-query_01.v1"
@@ -352,7 +352,7 @@ def test_agentops_context_rejects_unsafe_run_id_before_trace_emit() -> None:
                 run_id=unsafe_run_id,
                 query="report status",
                 source_family="PDF",
-                namespace="ai/eval/reports/rag-ingestion/runs",
+                namespace="reports/rag_eval/rag-ingestion/runs",
                 requested_tools=("generate_eval_report",),
             )
 
@@ -368,7 +368,7 @@ def test_agentops_context_rejects_unsafe_run_id_before_trace_emit() -> None:
                 query_id=unsafe_query_id,
                 query="report status",
                 source_family="PDF",
-                namespace="ai/eval/reports/rag-ingestion/runs",
+                namespace="reports/rag_eval/rag-ingestion/runs",
                 requested_tools=("generate_eval_report",),
             )
 
@@ -406,7 +406,7 @@ def test_agentops_report_only_tool_does_not_require_candidate_scope() -> None:
             run_id="agentops-report-only",
             query="report status",
             source_family="PDF",
-            namespace="ai/eval/reports/rag-ingestion/runs",
+            namespace="reports/rag_eval/rag-ingestion/runs",
             requested_tools=("generate_eval_report",),
         ),
         source_registry={},
@@ -1127,18 +1127,19 @@ def test_portfolio_pdf_copy_tracks_opaque_agentops_trace_contract() -> None:
     assert '"query": "query_ref:8a3fa83080fc7cb5"' in source
     assert '"evidence_ids": ["evidence_ref:01"]' in source
     assert "계약 테스트: 53개 통과" in source
-    assert "Dense / Sparse / Hybrid 검색 실험" in source
-    assert "SearchUnit/SearchView 구축" in source
-    assert "Dense Retrieval" in source
-    assert "Sparse Retrieval" in source
-    assert "Hybrid Retrieval" in source
-    assert "XLSX 예시" in source
-    assert "PDF 예시" in source
-    assert "TEXT 예시" in source
+    assert "검색 방식 비교 및 후보 가용성 진단" in source
+    assert "검색 단위/후보 뷰 구축" in source
+    assert "의미 기반 검색(Dense)" in source
+    assert "키워드 기반 검색(Sparse)" in source
+    assert "하이브리드 검색(Hybrid)" in source
+    assert "XLSX 셀 단위 근거 추적 예시" in source
+    assert "PDF 표 근거 인용 예시" in source
+    assert "TEXT 문서 근거 인용 예시" in source
     assert "추가 질의 예시(PDF/XLSX/TEXT) 및 평가 관련 문서는 GitHub README에서 확인할 수 있습니다." in source
     assert "https://github.com/sfr9802/async-ai-document-pipeline-with-domain-rag/blob/main/ai/eval/README.md" in source
-    assert "Actual Response Smoke" in source
-    assert "answer quality metric이 아니라 response policy smoke" in source
+    assert "응답/중단 정책 검증" in source
+    assert "정답률이나 answer quality score가 아니라 response policy smoke" in source
+    assert "XLSX 전체 성공률 claim 없음" in source
 
 
 def test_portfolio_and_resume_pdf_builders_render_artifact_text_contract(tmp_path: Path) -> None:
@@ -1157,37 +1158,40 @@ def test_portfolio_and_resume_pdf_builders_render_artifact_text_contract(tmp_pat
 
     assert portfolio_doc.page_count == 10
     assert resume_doc.page_count == 2
-    assert "Evidence-Grounded RAG Backend" in portfolio_text
+    assert "근거 검증형 AI 백엔드" in portfolio_text
+    assert "LLM/RAG 문서 QA를 위한 검색·근거·응답 제어 시스템" in portfolio_text
+    assert "Evidence-Grounded RAG Backend" not in portfolio_text
     assert "Evidence-Grounded Document QA Backend" not in portfolio_text
-    assert "XLSX 예시" in portfolio_page_texts[1]
-    assert "PDF 예시" in portfolio_page_texts[2]
-    assert "TEXT 예시" in portfolio_page_texts[3]
+    assert "XLSX 셀 단위 근거 추적 예시" in portfolio_page_texts[1]
+    assert "PDF 표 근거 인용 예시" in portfolio_page_texts[2]
+    assert "TEXT 문서 근거 인용 예시" in portfolio_page_texts[3]
     assert "2020년 한국 원달러 기말 환율" in portfolio_text
     assert "유우야키의 나이는 16세이고 생일은 9월 29일" in portfolio_text
     assert "추가 질의 예시(PDF/XLSX/TEXT) 및 평가 관련 문서는 GitHub README에서 확인할 수 있습니다." in portfolio_text
     assert "https://github.com/sfr9802/async-ai-document-pipeline-with-domain-rag/blob/main/ai/eval/README.md" in portfolio_text
-    assert "Dense / Sparse / Hybrid 검색 실험" in portfolio_text
-    assert "SearchUnit/SearchView 구축" in portfolio_text
-    assert "Dense Retrieval" in portfolio_text
-    assert "Sparse Retrieval" in portfolio_text
-    assert "Hybrid Retrieval" in portfolio_text
-    assert "Actual Response Smoke" in portfolio_text
-    assert "answer quality metric이 아니라 response policy smoke" in portfolio_text
-    assert "29개 승인 질의" in portfolio_text
+    assert "검색 방식 비교 및 후보 가용성 진단" in portfolio_text
+    assert "검색 단위/후보 뷰 구축" in portfolio_text
+    assert "의미 기반 검색(Dense)" in portfolio_text
+    assert "키워드 기반 검색(Sparse)" in portfolio_text
+    assert "하이브리드 검색(Hybrid)" in portfolio_text
+    assert "응답/중단 정책 검증" in portfolio_text
+    assert "정답률이나 answer quality score가 아니라 response policy smoke" in portfolio_text
+    assert "XLSX 전체 성공률 claim 없음" in portfolio_text
+    assert "29개 검증 질의" in portfolio_text
     assert "stopped / fail_closed" in portfolio_text
     assert "53개 통과" in portfolio_text
-    assert "Actual Response Smoke" in portfolio_page_texts[7]
-    assert "검색 설계 포인트" in portfolio_page_texts[8]
-    assert "회고" in portfolio_page_texts[9]
+    assert "응답/중단 정책 검증" in portfolio_page_texts[7]
+    assert "설계 선택과 경계 관리" in portfolio_page_texts[8]
+    assert "배운 점과 한계" in portfolio_page_texts[9]
     assert "프로젝트를 진행하며 배운 점" in portfolio_page_texts[9]
     assert "검색 후보와 답변 근거는 다르다" in portfolio_page_texts[9]
     assert "Retrieval 성능과 Answer Quality는 별개다" in portfolio_page_texts[9]
     assert "PDF/XLSX는 일반 텍스트 검색과 다르다" in portfolio_page_texts[9]
     assert "근거 부족 시 답변 중단 정책이 중요하다" in portfolio_page_texts[9]
-    assert "이번 프로젝트에서는 검색 후보, 근거 검증, 중단 정책을 분리해 설계하는 부분의 중요성을 크게 체감했습니다." in portfolio_page_texts[9]
+    assert "이번 프로젝트에서는 검색 후보, 근거 검증, 응답 중단 정책을 분리해 설계하는 과정의 중요성을 체감했습니다." in portfolio_page_texts[9]
     assert "AI 백엔드 엔지니어" in resume_text
-    assert "Evidence-Grounded RAG Backend with Execution Trace" in resume_text
-    assert "reports/agentops_sample_trace.json" in resume_text
+    assert "AI Backend Engineer · Evidence-Grounded RAG · Agent Systems" in resume_text
+    assert "Trace/Guard는 플랫폼 과장 대신 redacted ref 중심 sidecar" in resume_text
 
     forbidden_terms = (
         "sha256",

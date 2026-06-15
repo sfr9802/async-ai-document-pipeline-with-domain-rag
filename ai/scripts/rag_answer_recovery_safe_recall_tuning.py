@@ -30,7 +30,7 @@ import rag_answer_recovery_report_artifacts as report_artifacts  # noqa: E402
 AI_WORKER_ROOT = SCRIPT_DIR.parents[0]
 REPO_ROOT = AI_WORKER_ROOT.parent
 DEFAULT_CONFIG = AI_WORKER_ROOT / "eval" / "configs" / "answer_recovery_safe_recall_tuning.yaml"
-DEFAULT_REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+DEFAULT_REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 
 TEXT = "TEXT"
 XLSX = "XLSX"

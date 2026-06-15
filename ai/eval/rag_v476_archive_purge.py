@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
+from ai.eval.report_paths import LEGACY_RAG_INGESTION_REPORT_ROOT, REPO_ROOT
 from ai.eval import rag_eval_registry as registry
 
 
@@ -21,7 +22,7 @@ CANONICAL_LONG_RUN_ID = (
 )
 STATUS = "V4_7_6_EVAL_ARTIFACT_ARCHIVE_PURGE_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = LEGACY_RAG_INGESTION_REPORT_ROOT.relative_to(REPO_ROOT)
 SHORT_REPORT_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "report.json"
 CLEANUP_MANIFEST_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "cleanup_manifest.jsonl"
 ARCHIVE_MANIFEST_PATH = REPORT_ROOT / "archive_manifest.jsonl"
@@ -48,7 +49,7 @@ ARCHIVE_ROOT_LEVEL_PREFIX_RE = re.compile(
     r"^official_answer_citation_agentic_loop_run_v3_(?:9(?:_|$)|1[0-5](?:_|$)).*\.(?:json|jsonl|csv|xlsx|md)$"
 )
 DIRECT_REPORT_PATH_RE = re.compile(
-    r"ai/eval/reports/rag-ingestion/quality/"
+    r"reports/rag_eval/rag-ingestion/quality/"
     r"official_answer_citation_agentic_loop_run_[^`\"'\s]+/report\.json"
 )
 TEXT_SCAN_SUFFIXES = {".py", ".md", ".toml", ".yaml", ".yml", ".json"}
@@ -237,11 +238,11 @@ def classify_path(path: Path, *, root: Path, ignored: bool = True) -> str:
         if any(key in text for key in ("v4_7_preofficial", "v4_7_2", "v4_7_3", "v4_7_4", "v4_7_5")):
             return "KEEP_CURRENT_MINIMAL"
         return "REVIEW_MANUAL_HOLD"
-    if not ignored and rel.as_posix().startswith("ai/eval/reports/rag-ingestion/"):
+    if not ignored and rel.as_posix().startswith("reports/rag_eval/rag-ingestion/"):
         return "REVIEW_MANUAL_HOLD"
     if ignored and rel.parent == REPORT_ROOT and ARCHIVE_ROOT_LEVEL_PREFIX_RE.match(rel.name):
         return "ARCHIVE_THEN_REMOVE"
-    if ignored and rel.as_posix().startswith("ai/eval/reports/rag-ingestion/perf/"):
+    if ignored and rel.as_posix().startswith("reports/rag_eval/rag-ingestion/perf/"):
         return "ARCHIVE_THEN_REMOVE"
     if rel.as_posix().startswith("ai/eval/"):
         return "KEEP_PROTECTED" if path.suffix in {".py", ".md"} else "REVIEW_MANUAL_HOLD"
@@ -291,7 +292,7 @@ def scan_text_couplings(root: Path) -> dict[str, int]:
     direct_report_path_dependency_count = 0
     for path in sorted(set(scan_files)):
         rel = normalized_repo_path(path, root).as_posix()
-        if rel.startswith("ai/eval/reports/rag-ingestion/"):
+        if rel.startswith("reports/rag_eval/rag-ingestion/"):
             continue
         text = path.read_text(encoding="utf-8", errors="ignore")
         long_path_literal_count += text.count("official_answer_citation_agentic_loop_run_")

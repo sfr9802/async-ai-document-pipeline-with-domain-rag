@@ -19,7 +19,7 @@ from typing import Any
 
 
 DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_text_e2e_v0.csv")
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_text_e2e_gold_validate_report.json")
+DEFAULT_REPORT = Path("reports/rag_eval/rag-ingestion/rag_text_e2e_gold_validate_report.json")
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
 
 REQUIRED_COLUMNS = [

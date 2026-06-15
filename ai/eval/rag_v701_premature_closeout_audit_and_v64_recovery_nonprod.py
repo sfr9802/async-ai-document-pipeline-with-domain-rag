@@ -23,7 +23,7 @@ PREVIOUS_CURRENT = V7_0_RUN_KEY
 ROLLBACK_KEY = v64.ROLLBACK_KEY
 KST_DOC_DATE = "2026-06-07"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 REPORT_PATH = RUN_ROOT / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"

@@ -23,15 +23,15 @@ KST_DOC_DATE = "2026-06-06"
 SOURCE_V57_LOGICAL_RUN_KEY = "v5_7_vector_llm_candidate_routing"
 SOURCE_V571_LOGICAL_RUN_KEY = "v5_7_1_retrieval_metric_integrity_audit"
 SOURCE_V57_REPORT_PATH = Path(
-    "ai/eval/reports/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/report.json"
+    "reports/rag_eval/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/report.json"
 )
 SOURCE_V571_REPORT_PATH = Path(
-    "ai/eval/reports/rag-ingestion/runs/v5_7_1_retrieval_metric_integrity_audit/report.json"
+    "reports/rag_eval/rag-ingestion/runs/v5_7_1_retrieval_metric_integrity_audit/report.json"
 )
-SOURCE_OFFICIAL_INPUT_PATH = Path("ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl")
+SOURCE_OFFICIAL_INPUT_PATH = Path("reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl")
 EXPANSION_SOURCE_PATH = Path("ai/eval/eval_queries/xlsx_silver_retrieval_evidence_selected_v0.jsonl")
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 REPORT_PATH = RUN_ROOT / "report.json"
 LIVE_CANDIDATE_GENERATION_DIAGNOSTICS_PATH = RUN_ROOT / "live_candidate_generation_diagnostics.jsonl"

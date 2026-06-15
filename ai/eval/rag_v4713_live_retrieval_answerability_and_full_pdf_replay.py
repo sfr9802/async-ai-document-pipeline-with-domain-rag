@@ -25,7 +25,7 @@ CANONICAL_LONG_RUN_ID = (
 )
 STATUS = "V4_7_13_LIVE_RETRIEVAL_ANSWERABILITY_AND_FULL_PDF_REPLAY_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 SHORT_REPORT_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
 FULL_PDF_ANSWER_REVIEW_PACKET_JSONL = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "full_pdf_answer_review_packet_ko.jsonl"

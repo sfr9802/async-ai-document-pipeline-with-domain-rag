@@ -31,11 +31,11 @@ V4_7_5_LONG_RUN_ID = (
 V4_7_5_STATUS = "V4_7_5_PDF_EVIDENCE_REPAIR_EVAL_COMPACTION_NONPROD_READY"
 CURRENT_RUN_KEY = "v5_0"
 V4_7_4_REPORT = (
-    ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / V4_7_4_LONG_RUN_ID / "report.json"
+    ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / V4_7_4_LONG_RUN_ID / "report.json"
 )
-V4_7_5_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_5" / "report.json"
-STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
-ARCHIVE_MANIFEST = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "archive_manifest.jsonl"
+V4_7_5_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_5" / "report.json"
+STATUS_JSONL = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "status.jsonl"
+ARCHIVE_MANIFEST = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "archive_manifest.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
@@ -60,7 +60,7 @@ def test_v475_registry_resolves_short_current_and_legacy_aliases_fail_closed(tmp
     current = registry.resolve_run("current", root=ROOT)
     v475_run = registry.resolve_run("v4_7_5", root=ROOT)
 
-    assert legacy.report_path == ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v4_7_4" / "report.json"
+    assert legacy.report_path == ROOT / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v4_7_4" / "report.json"
     assert legacy.canonical_long_run_id == V4_7_4_LONG_RUN_ID
     assert legacy.legacy_long_path_supported is True
     assert v475_run.report_path == V4_7_5_REPORT
@@ -89,12 +89,12 @@ def test_v475_core_accepts_explicit_report_dict_and_does_not_import_artifact_reg
         inventory_before={"long_path_literal_count": 3, "direct_report_path_dependency_count": 2},
         inventory_after={"long_path_literal_count": 1, "direct_report_path_dependency_count": 0},
         obsolete_artifact_inventory_count=1,
-        archive_manifest_path="ai/eval/reports/rag-ingestion/archive_manifest.jsonl",
+        archive_manifest_path="reports/rag_eval/rag-ingestion/archive_manifest.jsonl",
     )
 
     module_source = inspect.getsource(v475)
     assert "rag_eval_registry" not in module_source
-    assert "ai/eval/reports/rag-ingestion/quality/official_answer_citation" not in module_source
+    assert "reports/rag_eval/rag-ingestion/quality/official_answer_citation" not in module_source
     assert "status.jsonl" not in module_source
     assert built["short_run_id"] == V4_7_5_SHORT_RUN_ID
     assert built["pdf_survivor_row_count"] == 58
@@ -141,8 +141,8 @@ def test_v475_report_records_required_boundaries_and_artifact_compaction() -> No
     assert report["xlsx_rows_in_scope"] == 0
 
     assert report["artifact_paths"] == {
-        "report_json": "ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json",
-        "archive_manifest_jsonl": "ai/eval/reports/rag-ingestion/archive_manifest.jsonl",
+        "report_json": "reports/rag_eval/rag-ingestion/runs/v4_7_5/report.json",
+        "archive_manifest_jsonl": "reports/rag_eval/rag-ingestion/archive_manifest.jsonl",
     }
     assert artifact_compaction["registry_created_or_updated"] is True
     assert artifact_compaction["short_run_path_used"] == report["artifact_paths"]["report_json"]
@@ -255,7 +255,7 @@ def test_v475_status_docs_and_readme_sync_use_short_key_and_preserve_closed_gate
     assert latest["promotion_evidence"] is False
     assert latest["live_db_index_cache_readiness"] is False
 
-    short_report_path = "ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json"
+    short_report_path = "reports/rag_eval/rag-ingestion/runs/v4_7_5/report.json"
     assert V4_7_5_SHORT_RUN_ID in current_text
     assert V4_7_5_SHORT_RUN_ID in measurements
     assert V4_7_5_SHORT_RUN_ID in triage

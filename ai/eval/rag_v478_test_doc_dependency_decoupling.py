@@ -24,7 +24,7 @@ CANONICAL_LONG_RUN_ID = (
 )
 STATUS = "V4_7_8_TEST_DOC_DEPENDENCY_DECOUPLING_RUNNER_ALIAS_EXPANSION_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 SHORT_REPORT_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "report.json"
 HOLD_REDUCTION_MANIFEST_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "v3_legacy_hold_reduction_manifest.jsonl"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
@@ -162,7 +162,7 @@ def _text_files(root: Path) -> list[Path]:
             if not path.is_file() or path.suffix.lower() not in TEXT_SCAN_SUFFIXES:
                 continue
             rel = repo_relative(path, root)
-            if rel.startswith("ai/eval/reports/rag-ingestion/"):
+            if rel.startswith("reports/rag_eval/rag-ingestion/"):
                 continue
             if "__pycache__" in path.parts:
                 continue
@@ -223,7 +223,7 @@ def inventory_text_couplings(root: Path) -> dict[str, int]:
     long_path_literal_count = 0
     direct_report_path_dependency_count = 0
     direct_report_re = re.compile(
-        r"ai/eval/reports/rag-ingestion/quality/"
+        r"reports/rag_eval/rag-ingestion/quality/"
         r"official_answer_citation_agentic_loop_run_[^`\"'\s]+/report\.json"
     )
     for path in _text_files(root):

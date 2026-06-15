@@ -37,7 +37,7 @@ DEFAULT_OFFICIAL_RETRIEVAL_OUTPUT = (
 DEFAULT_JSONL_OUTPUT = (
     AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_xlsx_human_review_normalized_v0.jsonl"
 )
-DEFAULT_REPORT = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_xlsx_human_review_gold_normalization_report.json"
+DEFAULT_REPORT = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_xlsx_human_review_gold_normalization_report.json"
 DEFAULT_ARTIFACT_ROOT = AI_WORKER_ROOT / "eval" / "artifacts" / "eval_runs"
 DEFAULT_DATASET_ROOT = AI_WORKER_ROOT / "eval" / "datasets" / "xlsx"
 DEFAULT_REGISTRY = AI_WORKER_ROOT / "eval" / "eval_queries" / "official_denominator_registry.json"

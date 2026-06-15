@@ -39,7 +39,7 @@ from rag_xlsx_hidden_excluded_leakage_probe import (  # noqa: E402
 )
 
 
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 
 DEFAULT_STRICT_REPORT = REPORT_DIR / "xlsx_strict_silver_generation_report.json"
 DEFAULT_LEAKAGE_REPORT = REPORT_DIR / "xlsx_hidden_excluded_leakage_probe_report.json"

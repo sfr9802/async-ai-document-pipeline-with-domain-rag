@@ -769,7 +769,7 @@ def update_triage_doc() -> None:
     entry = f"""### v4_6_8 Runtime Readiness Dependency Freshness Gate Triage
 
 - Run: `{RUN_ID}`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/{RUN_ID}/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/{RUN_ID}/report.json`; single-report contract remains active.
 - v4_6_8 is diagnostic-only, dependency-freshness-gate-only, and external-holdout-acquisition-requirements-packet-only.
 - It proves current dependency freshness and FastAPI DTO projection consistency only; it is not real holdout availability, not external holdout acquisition, not candidate manifest export, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
 - It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `real_holdout_sufficient=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.

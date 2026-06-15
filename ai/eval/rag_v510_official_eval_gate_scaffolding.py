@@ -14,7 +14,7 @@ SHORT_RUN_ID = "v5_1_official_eval_gate_scaffolding"
 CANONICAL_LONG_RUN_ID = "official_answer_citation_agentic_loop_run_v5_1_official_eval_gate_scaffolding_nonprod"
 STATUS = "V5_1_OFFICIAL_EVAL_GATE_SCAFFOLDING_DIAGNOSTIC_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 SHORT_REPORT_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
 SOURCE_LOGICAL_RUN_KEY = v500.LOGICAL_RUN_KEY
@@ -467,10 +467,10 @@ def _replace_current_status_block(progress_text: str) -> str:
         "`python -X utf8 -m pytest ai/tests --rag-current -q` -> 22 passed,\n"
         "0 skipped, 0 failed, 1 warning.\n\n"
         "## Current Source-Of-Truth Artifacts\n\n"
-        "- Status ledger: `ai/eval/reports/rag-ingestion/status.jsonl`.\n"
+        "- Status ledger: `reports/rag_eval/rag-ingestion/status.jsonl`.\n"
         f"- Current v5_1 report: `{SHORT_REPORT_PATH.as_posix()}`.\n"
         f"- Explicit v5_0 basis report: `{SOURCE_REPORT_JSON.as_posix()}`.\n"
-        "- Frozen v4 closeout basis report: `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`.\n"
+        "- Frozen v4 closeout basis report: `reports/rag_eval/rag-ingestion/runs/v4_7_18/report.json`.\n"
     )
     return re.sub(r"## Current Status\n\n.*?(?=\n## Short History)", replacement, progress_text, count=1, flags=re.S)
 

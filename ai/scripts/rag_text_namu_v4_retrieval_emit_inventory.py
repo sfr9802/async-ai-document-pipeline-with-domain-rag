@@ -23,14 +23,14 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 DEFAULT_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v4_v0.csv"
 DEFAULT_CORPUS_DIR = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined"
 DEFAULT_R3_VALIDATION_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_gold_validate_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_gold_validate_report.json"
 )
 DEFAULT_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_retrieval_emit_inventory_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_retrieval_emit_inventory_report.json"
 )
 DEFAULT_CANDIDATE_ROOTS = [
-    AI_WORKER_ROOT / "eval" / "reports" / "phase7",
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion",
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "phase7",
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion",
 ]
 EXCLUDED_CURRENT_PHASE_OUTPUT_NAMES = {
     "rag_text_namu_v4_retrieval_emit_inventory_report.json",

@@ -30,8 +30,8 @@ from scripts.doctor import check_postgres, check_schemas  # noqa: E402
 
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
 DEFAULT_LLAMACPP_BASE_URL = "http://localhost:8081/v1"
-DEFAULT_JSON = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "local_resource_diagnostic_smoke_report.json"
-DEFAULT_MD = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "local_resource_diagnostic_smoke_report.md"
+DEFAULT_JSON = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "local_resource_diagnostic_smoke_report.json"
+DEFAULT_MD = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "local_resource_diagnostic_smoke_report.md"
 
 
 def main(argv: list[str] | None = None) -> int:

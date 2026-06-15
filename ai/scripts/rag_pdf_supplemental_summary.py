@@ -69,7 +69,7 @@ def build_summary(paths: Mapping[str, Path], json_report_path: Path, md_report_p
             blockers.append(f"protected source missing: {item['path']}")
         elif not item["matches_expected"]:
             blockers.append(f"protected source hash drift: {item['path']}")
-    c7 = read_optional_report(resolve_path("ai/eval/reports/rag-ingestion/rag_pdf_gold_policy_review.json"))
+    c7 = read_optional_report(resolve_path("reports/rag_eval/rag-ingestion/rag_pdf_gold_policy_review.json"))
     c7_summary = {
         "status": c7.get("status"),
         "human_decision_required_count": (c7.get("review_scope") or {}).get("failed_query_count")

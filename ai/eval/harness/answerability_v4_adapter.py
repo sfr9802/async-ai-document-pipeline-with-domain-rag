@@ -19,7 +19,7 @@ Input artifacts (v4 canonical only — Phase 7.x active path):
 
   * **Production retrieval emit JSONL** — for example::
 
-        eval/reports/phase7/seeds/human_gold_seed_50_tuning/
+        reports/rag_eval/phase7/seeds/human_gold_seed_50_tuning/
             retrieval_baseline_retrieval_title_section_top10_*.jsonl
 
     Record shape::

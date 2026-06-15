@@ -21,7 +21,7 @@ SHORT_RUN_ID = "nec_2026_local_election_xlsx_source_collection_diagnostic_nonpro
 CANONICAL_LONG_RUN_ID = SHORT_RUN_ID
 STATUS = "NEC_2026_LOCAL_ELECTION_XLSX_SOURCE_COLLECTION_DIAGNOSTIC_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 SHORT_REPORT_PATH = RUN_ROOT / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"

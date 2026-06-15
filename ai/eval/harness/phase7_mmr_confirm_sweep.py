@@ -110,7 +110,7 @@ PRODUCTION_INDEX_CACHE_DIR: str = (
     "namu-v4-2008-2026-04-retrieval-title-section-mseq512"
 )
 PRODUCTION_RAG_CHUNKS_PATH: str = (
-    "eval/reports/phase7/silver500/retrieval/"
+    "reports/rag_eval/phase7/silver500/retrieval/"
     "rag_chunks_retrieval_title_section.jsonl"
 )
 

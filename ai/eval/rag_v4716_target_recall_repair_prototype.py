@@ -21,7 +21,7 @@ CANONICAL_LONG_RUN_ID = (
 )
 STATUS = "V4_7_16_TARGET_RECALL_REPAIR_PROTOTYPE_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 SHORT_REPORT_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
 SOURCE_REGISTRY_JSONL = Path("ai/eval/source_registry/source_atom_registry_v1.jsonl")

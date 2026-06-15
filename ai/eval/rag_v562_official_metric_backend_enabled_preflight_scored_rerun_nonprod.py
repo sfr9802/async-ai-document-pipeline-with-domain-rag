@@ -25,7 +25,7 @@ STATUS = "V5_6_2_OFFICIAL_METRIC_BACKEND_ENABLED_PREFLIGHT_FAIL_CLOSED_NONPROD_R
 SCORED_STATUS = "V5_6_2_OFFICIAL_METRIC_BACKEND_ENABLED_PREFLIGHT_SCORED_RERUN_NONPROD_READY"
 
 CURRENT_RESOLVES_TO = v560.LOGICAL_RUN_KEY
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 SHORT_REPORT_PATH = RUN_ROOT / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
@@ -989,7 +989,7 @@ def _replace_current_status_block(progress_text: str, report: Mapping[str, Any])
         "`pytest ai/tests --rag-current -q` passed with 65 passed, 0 failed, 0 skipped, 1 warning, covering the explicit "
         "v5_6_2 checks plus the immutable v5_6 baseline. Generated report/status/official-metric artifacts remain ignored.\n\n"
         "Artifact policy:\n"
-        "- `ai/eval/reports/rag-ingestion/status.jsonl` remains local/ignored status ledger.\n"
+        "- `reports/rag_eval/rag-ingestion/status.jsonl` remains local/ignored status ledger.\n"
         f"- Immutable v5_6 baseline report: `{v560.SHORT_REPORT_PATH.as_posix()}`.\n"
         f"- Current explicit v5_6_2 report: `{SHORT_REPORT_PATH.as_posix()}`.\n"
         f"- Current explicit v5_6_2 backend preflight: `{BACKEND_PREFLIGHT_RESULT_PATH.as_posix()}`.\n"
@@ -997,13 +997,13 @@ def _replace_current_status_block(progress_text: str, report: Mapping[str, Any])
         f"- Current explicit v5_6_2 failure attribution: `{FAILURE_ATTRIBUTION_PATH.as_posix()}`.\n"
         f"- Source v5_5 report and official metric input: `{SOURCE_REPORT_JSON.as_posix()}`, "
         f"`{SOURCE_OFFICIAL_METRIC_INPUT_PATH.as_posix()}`.\n"
-        "- Prior basis reports remain explicit: `ai/eval/reports/rag-ingestion/runs/v5_4/report.json`, "
-        "`ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv`, "
-        "`ai/eval/reports/rag-ingestion/runs/v5_3/report.json`, "
-        "`ai/eval/reports/rag-ingestion/runs/v5_2/report.json`, "
-        "`ai/eval/reports/rag-ingestion/runs/v5_1/report.json`, "
-        "`ai/eval/reports/rag-ingestion/runs/v5_0/report.json`, and "
-        "`ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`.\n\n"
+        "- Prior basis reports remain explicit: `reports/rag_eval/rag-ingestion/runs/v5_4/report.json`, "
+        "`reports/rag_eval/rag-ingestion/runs/v5_4/user_review_packet.csv`, "
+        "`reports/rag_eval/rag-ingestion/runs/v5_3/report.json`, "
+        "`reports/rag_eval/rag-ingestion/runs/v5_2/report.json`, "
+        "`reports/rag_eval/rag-ingestion/runs/v5_1/report.json`, "
+        "`reports/rag_eval/rag-ingestion/runs/v5_0/report.json`, and "
+        "`reports/rag_eval/rag-ingestion/runs/v4_7_18/report.json`.\n\n"
     )
     return re.sub(r"## Current Status\n\n.*?(?=\n## Short History)", replacement, progress_text, count=1, flags=re.S)
 

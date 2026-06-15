@@ -154,7 +154,7 @@ def test_pre_execution_smoke_fails_on_human_inclusion_change(tmp_path: Path) -> 
 def write_fixture_bundle(module, tmp_path: Path, *, xlsx_missing_locator: bool = False) -> dict[str, object]:
     module.REPO_ROOT = tmp_path
     eval_queries = tmp_path / "ai" / "eval" / "eval_queries"
-    reports = tmp_path / "ai" / "eval" / "reports" / "rag-ingestion"
+    reports = tmp_path / "reports" / "rag_eval" / "rag-ingestion"
     corpus = tmp_path / "ai" / "eval" / "corpora" / "namu-v4-structured-combined"
     eval_queries.mkdir(parents=True)
     reports.mkdir(parents=True)

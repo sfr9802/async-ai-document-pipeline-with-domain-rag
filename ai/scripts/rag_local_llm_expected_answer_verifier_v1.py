@@ -417,7 +417,7 @@ def protected_path_diff_check(changed_paths: list[str]) -> dict[str, bool]:
         "gold_registry_changed": any("gold" in path and "gold_question_candidate_generation_v1" not in path for path in normalized),
         "production_vector_or_index_changed": any(
             ("production" in path or "vector" in path or "index" in path)
-            and not path.startswith("ai/eval/reports/")
+            and not path.startswith("ai/reports/rag_eval/")
             for path in normalized
         ),
     }

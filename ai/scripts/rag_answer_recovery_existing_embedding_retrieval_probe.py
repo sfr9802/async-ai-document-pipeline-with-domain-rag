@@ -61,7 +61,7 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--config", default=str(readiness.DEFAULT_CONFIG))
     parser.add_argument(
         "--readiness-report",
-        default="ai/eval/reports/rag-ingestion/answer_recovery_embedding_readiness.json",
+        default="reports/rag_eval/rag-ingestion/answer_recovery_embedding_readiness.json",
     )
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
     readiness.report_artifacts.add_reporting_args(parser)
@@ -275,19 +275,19 @@ def write_outputs(config: Mapping[str, Any], report: Mapping[str, Any]) -> None:
     json_path = readiness.resolve_path(
         paths.get(
             "existing_embedding_retrieval_probe_json",
-            "ai/eval/reports/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.json",
+            "reports/rag_eval/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.json",
         )
     )
     md_path = readiness.resolve_path(
         paths.get(
             "existing_embedding_retrieval_probe_md",
-            "ai/eval/reports/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.md",
+            "reports/rag_eval/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.md",
         )
     )
     csv_path = readiness.resolve_path(
         paths.get(
             "existing_embedding_retrieval_probe_csv",
-            "ai/eval/reports/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.csv",
+            "reports/rag_eval/rag-ingestion/answer_recovery_existing_embedding_retrieval_probe.csv",
         )
     )
     if options["emit_stage_reports"]:

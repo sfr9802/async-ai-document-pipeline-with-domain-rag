@@ -330,7 +330,7 @@ def test_report_bundle_writes_required_artifacts_docs_and_status(tmp_path: Path,
     v61_module.update_docs(tmp_path, written)
     v61_module.append_status(tmp_path, written, artifact_hashes=hashes)
 
-    run_root = tmp_path / "ai/eval/reports/rag-ingestion/runs" / RUN_KEY
+    run_root = tmp_path / "reports/rag_eval/rag-ingestion/runs" / RUN_KEY
     for name in REQUIRED_ARTIFACTS:
         assert (run_root / name).exists(), name
 
@@ -338,7 +338,7 @@ def test_report_bundle_writes_required_artifacts_docs_and_status(tmp_path: Path,
     assert len(_jsonl(run_root / "row_eligibility_ledger.jsonl")) == written["row_eligibility_ledger_rows"]
     assert len(_jsonl(run_root / "agentic_loop_trace.jsonl")) == len(written["agentic_loop_trace"])
     assert len(_jsonl(run_root / "structured_tool_diagnostics.jsonl")) == len(written["structured_tool_diagnostics"])
-    status_lines = _jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_lines = _jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     assert status_lines[-1]["current_resolves_to"] == RUN_KEY
     assert status_lines[-1]["rollback_key"] == ROLLBACK_KEY
     assert status_lines[-1]["metric_lanes_separate"] is True
@@ -348,7 +348,7 @@ def test_report_bundle_writes_required_artifacts_docs_and_status(tmp_path: Path,
     assert written["report_json_sha256_policy"] == "status_ledger_only_after_final_write"
     v61_module.require_status_report_hash(tmp_path, written)
     status_lines[-1]["artifact_sha256"]["report_json_sha256"] = "0" * 64
-    status_path = tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl"
+    status_path = tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl"
     status_path.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in status_lines) + "\n", encoding="utf-8")
     with pytest.raises(ValueError, match="status report hash"):
         v61_module.require_status_report_hash(tmp_path, written)
@@ -392,6 +392,6 @@ def test_required_report_fields_and_protected_surfaces_are_closed(report: dict[s
 
     assert "ai/eval/rag_v61_true_rag_corpus_expansion_and_metric_split_hardening.py" in report["changed_files"]
     assert set(report["generated_artifacts"]) >= {
-        f"ai/eval/reports/rag-ingestion/runs/{RUN_KEY}/{name}" for name in REQUIRED_ARTIFACTS
+        f"reports/rag_eval/rag-ingestion/runs/{RUN_KEY}/{name}" for name in REQUIRED_ARTIFACTS
     }
     assert report["remaining_blockers"]["user_owned_decision_blockers"] == []

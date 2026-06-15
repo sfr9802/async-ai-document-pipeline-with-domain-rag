@@ -156,10 +156,9 @@ ai/tests/_drafts/
 # ---- Eval harness generated artifacts ----
 # Reports change every run and should not be committed. Human-facing
 # RAG ingestion state lives in docs/rag-ingestion-*.md; machine-readable
-# report payloads are generated/local-only and may be regenerated or
-# externalized as needed.
+# report payloads are generated/local-only under reports/rag_eval/. The old
+# ai/eval/reports/ sink should stay empty if recreated by legacy commands.
 ai/eval/reports/*
-!ai/eval/reports/rag-ingestion/
 ai/eval/datasets/samples/
 
 # Dataset inputs and generated evidence files are local-only by default.
@@ -183,6 +182,9 @@ ai/eval/datasets/samples/
 !docs/agentops_trace_schema.json
 !reports/
 /reports/*
+# Root reports are tracked only through the small public allowlist below.
+# The active actual-RAG machine namespace `reports/rag_eval/` remains
+# ignored/generated and is summarized through docs/rag-ingestion-*.md.
 !reports/portfolio_agentops_report.md
 !reports/agentops_sample_trace.json
 # Repo-local archives are externalized under D:\_external_workspace_archive
@@ -206,7 +208,7 @@ archive/
 !ai/eval/silver/answer_citation_silver_readiness_v1.json
 # Human-facing rag-ingestion reports live in the append-only progress doc,
 # with measurements/triage as existing scoped ledgers under docs/.
-# Machine-readable JSON/JSONL under ai/eval/reports/rag-ingestion/ is
+# Machine-readable JSON/JSONL under reports/rag_eval/rag-ingestion/ is
 # generated/local-only. Keep the rolling docs as the tracked human-facing
 # record.
 !docs/rag-ingestion-progress.md
@@ -215,12 +217,12 @@ archive/
 !docs/rag_eval/
 !docs/rag_eval/*.md
 !docs/codex-goals/rag-v7-e2e-evaluation-plan.md
-ai/eval/reports/rag-ingestion/**/*.json
-ai/eval/reports/rag-ingestion/**/*.jsonl
-ai/eval/reports/rag-ingestion/**/*.csv
-ai/eval/reports/rag-ingestion/**/*.xlsx
-ai/eval/reports/rag-ingestion/**/*.sqlite
-ai/eval/reports/rag-ingestion/**/*.index
+reports/rag_eval/rag-ingestion/**/*.json
+reports/rag_eval/rag-ingestion/**/*.jsonl
+reports/rag_eval/rag-ingestion/**/*.csv
+reports/rag_eval/rag-ingestion/**/*.xlsx
+reports/rag_eval/rag-ingestion/**/*.sqlite
+reports/rag_eval/rag-ingestion/**/*.index
 **/datasets/
 ai/eval/artifacts/
 !ai/eval/artifacts/
@@ -316,9 +318,6 @@ ai/eval/eval_queries/_generation_log_*.jsonl
 !ai/eval/eval_queries/xlsx_silver_retrieval_evidence_dev_v0.jsonl
 !ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.csv
 !ai/eval/eval_queries/xlsx_silver_retrieval_evidence_holdout_v0.jsonl
-# Report-side JSON is generated/local-only; keep the human-facing note.
-!ai/eval/reports/rag-ingestion/xlsx_silver_retrieval_evidence_generation_report_20260507.md
-
 # ---- RAG build artifacts (local-only) ----
 # FAISS index + build manifest are rebuilt from fixtures via
 # ai/scripts/build_rag_index.py; keep them under ai/eval/indexes.

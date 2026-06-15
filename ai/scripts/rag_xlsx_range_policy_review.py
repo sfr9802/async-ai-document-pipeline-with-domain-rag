@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-DEFAULT_A1_REVIEW = Path("eval/reports/rag-ingestion/rag_xlsx_v3_failure_case_review.json")
-DEFAULT_SNAPSHOT = Path("eval/reports/rag-ingestion/rag_xlsx_v3_current_diagnostic_snapshot.json")
-DEFAULT_REVIEW_OUTPUT = Path("eval/reports/rag-ingestion/rag_xlsx_range_policy_review.json")
-DEFAULT_IMPACT_OUTPUT = Path("eval/reports/rag-ingestion/rag_xlsx_range_policy_dry_run_impact.json")
+DEFAULT_A1_REVIEW = Path("reports/rag_eval/rag-ingestion/rag_xlsx_v3_failure_case_review.json")
+DEFAULT_SNAPSHOT = Path("reports/rag_eval/rag-ingestion/rag_xlsx_v3_current_diagnostic_snapshot.json")
+DEFAULT_REVIEW_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_xlsx_range_policy_review.json")
+DEFAULT_IMPACT_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_xlsx_range_policy_dry_run_impact.json")
 TARGET_QUERY_ID = "gq_auto_041"
 
 

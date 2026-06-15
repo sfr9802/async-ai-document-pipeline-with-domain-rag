@@ -29,7 +29,7 @@ corpora:
   text_rag_chunks_jsonl: ai/eval/corpora/namu-v4-structured-combined/rag_chunks.jsonl
 
 leakage_guard_settings:
-  denominator_manifest: ai/eval/reports/rag-ingestion/denominator_manifest.json
+  denominator_manifest: reports/rag_eval/rag-ingestion/denominator_manifest.json
   require_silver_leakage_status: PASS
   require_query_overlap_count: 0
   require_query_id_overlap_count: 0
@@ -78,14 +78,14 @@ tuning:
 
 approved_xlsx_strict_wrapper:
   enabled_if_report_exists: true
-  report_json: ai/eval/reports/rag-ingestion/xlsx_strict_silver_generation_20260507.json
-  report_md: ai/eval/reports/rag-ingestion/xlsx_strict_silver_generation_20260507.md
+  report_json: reports/rag_eval/rag-ingestion/xlsx_strict_silver_generation_20260507.json
+  report_md: reports/rag_eval/rag-ingestion/xlsx_strict_silver_generation_20260507.md
 
 output_report_paths:
-  baseline_json: ai/eval/reports/rag-ingestion/silver_tuning_baseline_report_pdf_hneg_v2.json
-  baseline_md: ai/eval/reports/rag-ingestion/silver_tuning_baseline_report_pdf_hneg_v2.md
-  silver_tuning_run_json: ai/eval/reports/rag-ingestion/silver_tuning_run_report_pdf_hneg_v2.json
-  silver_tuning_run_md: ai/eval/reports/rag-ingestion/silver_tuning_run_report_pdf_hneg_v2.md
-  gold_eval_after_silver_tuning_json: ai/eval/reports/rag-ingestion/gold_eval_after_silver_tuning_report_pdf_hneg_v2.json
-  gold_eval_after_silver_tuning_md: ai/eval/reports/rag-ingestion/gold_eval_after_silver_tuning_report_pdf_hneg_v2.md
-  before_after_metric_delta_md: ai/eval/reports/rag-ingestion/before_after_metric_delta_pdf_hneg_v2.md
+  baseline_json: reports/rag_eval/rag-ingestion/silver_tuning_baseline_report_pdf_hneg_v2.json
+  baseline_md: reports/rag_eval/rag-ingestion/silver_tuning_baseline_report_pdf_hneg_v2.md
+  silver_tuning_run_json: reports/rag_eval/rag-ingestion/silver_tuning_run_report_pdf_hneg_v2.json
+  silver_tuning_run_md: reports/rag_eval/rag-ingestion/silver_tuning_run_report_pdf_hneg_v2.md
+  gold_eval_after_silver_tuning_json: reports/rag_eval/rag-ingestion/gold_eval_after_silver_tuning_report_pdf_hneg_v2.json
+  gold_eval_after_silver_tuning_md: reports/rag_eval/rag-ingestion/gold_eval_after_silver_tuning_report_pdf_hneg_v2.md
+  before_after_metric_delta_md: reports/rag_eval/rag-ingestion/before_after_metric_delta_pdf_hneg_v2.md

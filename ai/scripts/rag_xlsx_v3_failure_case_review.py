@@ -13,9 +13,9 @@ from typing import Any, Mapping
 
 
 DEFAULT_POSITIVE_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
-DEFAULT_DIAGNOSTIC_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
-DEFAULT_FAILURE_BREAKDOWN = Path("eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_failure_breakdown.json")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/rag_xlsx_v3_failure_case_review.json")
+DEFAULT_DIAGNOSTIC_REPORT = Path("reports/rag_eval/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
+DEFAULT_FAILURE_BREAKDOWN = Path("reports/rag_eval/rag-ingestion/rag_xlsx_v3_after_cleanup_failure_breakdown.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_xlsx_v3_failure_case_review.json")
 
 DEFAULT_TARGET_QUERY_IDS = [
     "gq_xlsx_lookup_002",

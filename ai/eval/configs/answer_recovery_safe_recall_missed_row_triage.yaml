@@ -7,13 +7,13 @@ description: >
   train on frozen gold, or use local LLMs/judges for answer correctness.
 
 inputs:
-  safe_recall_tuning_report: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_tuning_report.json
-  safe_recall_variants_csv: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_variants.csv
-  safe_recall_selected_policy: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_selected_policy.json
-  safe_recall_rejected_variants_md: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_rejected_variants.md
-  missed_safe_recovery_analysis: ai/eval/reports/rag-ingestion/answer_recovery_missed_safe_recovery_analysis.json
-  answer_recovery_expanded_trace: ai/eval/reports/rag-ingestion/answer_recovery_expanded_trace.jsonl
-  answer_sufficiency_expanded_report: ai/eval/reports/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
+  safe_recall_tuning_report: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_tuning_report.json
+  safe_recall_variants_csv: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_variants.csv
+  safe_recall_selected_policy: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_selected_policy.json
+  safe_recall_rejected_variants_md: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_rejected_variants.md
+  missed_safe_recovery_analysis: reports/rag_eval/rag-ingestion/answer_recovery_missed_safe_recovery_analysis.json
+  answer_recovery_expanded_trace: reports/rag_eval/rag-ingestion/answer_recovery_expanded_trace.jsonl
+  answer_sufficiency_expanded_report: reports/rag_eval/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
 
 excluded_frozen_gold_ids:
   source_files:
@@ -89,6 +89,6 @@ optuna:
     guardrails and must remain fixed.
 
 report_paths:
-  triage_md: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.md
-  triage_json: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.json
-  triage_csv: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.csv
+  triage_md: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.md
+  triage_json: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.json
+  triage_csv: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.csv

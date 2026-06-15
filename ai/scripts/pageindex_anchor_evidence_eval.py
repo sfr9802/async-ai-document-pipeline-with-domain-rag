@@ -34,7 +34,7 @@ from scripts.pageindex_ab_eval import (  # noqa: E402
 )
 
 
-DEFAULT_RUN_DIR = AI_WORKER_ROOT / "eval" / "reports" / "pageindex-ab" / "canary_smoke"
+DEFAULT_RUN_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "pageindex-ab" / "canary_smoke"
 DEFAULT_OUTPUT_DIR_NAME = "anchor_evidence"
 SUMMARY_COVERAGE_THRESHOLD = 0.25
 

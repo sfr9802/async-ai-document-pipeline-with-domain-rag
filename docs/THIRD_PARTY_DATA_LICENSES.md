@@ -53,12 +53,12 @@ ignored by git depending on artifact policy:
 - `ai/eval/review/retrieval_dataset_supplementation/existing_manifest_license_enriched.json`
 - `ai/eval/review/retrieval_dataset_supplementation/existing_manifest_license_enriched.csv`
 - `ai/eval/review/retrieval_dataset_supplementation/license_review_required_rows.csv`
-- `ai/eval/reports/rag-ingestion/existing_manifest_license_usage_gate.json`
-- `ai/eval/reports/rag-ingestion/existing_manifest_license_usage_gate.md`
-- `ai/eval/reports/rag-ingestion/existing_manifest_license_summary_by_source.json`
-- `ai/eval/reports/rag-ingestion/existing_manifest_license_summary_by_source.md`
-- `ai/eval/reports/rag-ingestion/existing_manifest_experiment_readiness.json`
-- `ai/eval/reports/rag-ingestion/existing_manifest_experiment_readiness.md`
+- `reports/rag_eval/rag-ingestion/existing_manifest_license_usage_gate.json`
+- `reports/rag_eval/rag-ingestion/existing_manifest_license_usage_gate.md`
+- `reports/rag_eval/rag-ingestion/existing_manifest_license_summary_by_source.json`
+- `reports/rag_eval/rag-ingestion/existing_manifest_license_summary_by_source.md`
+- `reports/rag_eval/rag-ingestion/existing_manifest_experiment_readiness.json`
+- `reports/rag_eval/rag-ingestion/existing_manifest_experiment_readiness.md`
 
 These files are diagnostic/review companions. They do not change upstream
 licenses and do not promote any row to gold/support/public release.

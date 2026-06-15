@@ -12,10 +12,10 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-DEFAULT_A1_REVIEW = Path("eval/reports/rag-ingestion/rag_xlsx_v3_failure_case_review.json")
-DEFAULT_PRIOR_CONTRACT_REVIEW = Path("eval/reports/rag-ingestion/rag_xlsx_formula_date_contract_review.json")
-DEFAULT_CONTRACT_OUTPUT = Path("eval/reports/rag-ingestion/rag_xlsx_formula_date_contract_review.json")
-DEFAULT_SURFACE_OUTPUT = Path("eval/reports/rag-ingestion/rag_xlsx_formula_date_surface_presence.json")
+DEFAULT_A1_REVIEW = Path("reports/rag_eval/rag-ingestion/rag_xlsx_v3_failure_case_review.json")
+DEFAULT_PRIOR_CONTRACT_REVIEW = Path("reports/rag_eval/rag-ingestion/rag_xlsx_formula_date_contract_review.json")
+DEFAULT_CONTRACT_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_xlsx_formula_date_contract_review.json")
+DEFAULT_SURFACE_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_xlsx_formula_date_surface_presence.json")
 DEFAULT_REVIEWED_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
 TARGET_QUERY_ID = "gq_xlsx_date_number_format_001"

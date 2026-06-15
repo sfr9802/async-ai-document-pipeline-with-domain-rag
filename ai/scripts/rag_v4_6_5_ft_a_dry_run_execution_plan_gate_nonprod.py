@@ -695,7 +695,7 @@ def update_triage_doc() -> None:
 ### v4_6_5 FT-A Dry-Run Execution Plan Gate Triage
 
 - Run: `{RUN_ID}`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/{RUN_ID}/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/{RUN_ID}/report.json`; single-report contract remains active.
 - v4_6_5 is diagnostic-only, non-production, execution-plan-gate-only FT-A dry-run preparation.
 - It is not the FT-A dry run, not dry-run execution, not manifest export, not prompt payload creation, not dataset export, and not a v4_7 opening.
 - User-owned gold/qrels/denominator/promotion decisions remain closed before any official metric or promotion-adjacent evaluation.

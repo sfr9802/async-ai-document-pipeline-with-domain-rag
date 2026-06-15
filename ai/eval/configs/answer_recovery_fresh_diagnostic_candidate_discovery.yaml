@@ -6,10 +6,10 @@ description: >
   answer denominators, does not mutate indexes, and does not write vectors.
 
 inputs:
-  compact_tuning_report: ai/eval/reports/rag-ingestion/answer_recovery_tuning_report.json
-  missed_row_triage: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.json
-  answer_recovery_expanded_trace: ai/eval/reports/rag-ingestion/answer_recovery_expanded_trace.jsonl
-  answer_sufficiency_expanded_report: ai/eval/reports/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
+  compact_tuning_report: reports/rag_eval/rag-ingestion/answer_recovery_tuning_report.json
+  missed_row_triage: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_missed_row_triage.json
+  answer_recovery_expanded_trace: reports/rag_eval/rag-ingestion/answer_recovery_expanded_trace.jsonl
+  answer_sufficiency_expanded_report: reports/rag_eval/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
   silver_manifest: ai/eval/review/gold_silver_tuning/silver_manifest.csv
   official_denominator_registry: ai/eval/eval_queries/official_denominator_registry.json
 
@@ -52,6 +52,6 @@ guardrail_assertions:
   raw_data_exposed_to_llm_analyst: false
 
 report_paths:
-  discovery_md: ai/eval/reports/rag-ingestion/answer_recovery_fresh_diagnostic_candidate_discovery.md
-  discovery_json: ai/eval/reports/rag-ingestion/answer_recovery_fresh_diagnostic_candidate_discovery.json
+  discovery_md: reports/rag_eval/rag-ingestion/answer_recovery_fresh_diagnostic_candidate_discovery.md
+  discovery_json: reports/rag_eval/rag-ingestion/answer_recovery_fresh_diagnostic_candidate_discovery.json
   review_pack_csv: ai/eval/review/answer_recovery/answer_recovery_fresh_diagnostic_candidate_review_pack.csv

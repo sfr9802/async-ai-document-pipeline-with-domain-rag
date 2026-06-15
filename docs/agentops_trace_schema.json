@@ -58,7 +58,7 @@
             "rag-data-all-source-citable-nonprod-v1",
             "rag-data-all-source-nonprod-v1",
             "rag-data-live-runtime-smoke-nonprod",
-            "ai/eval/reports/rag-ingestion/runs",
+            "reports/rag_eval/rag-ingestion/runs",
             "UNSUPPORTED_NAMESPACE"
           ]
         },
@@ -114,7 +114,7 @@
         "rag-data-all-source-citable-nonprod-v1",
         "rag-data-all-source-nonprod-v1",
         "rag-data-live-runtime-smoke-nonprod",
-        "ai/eval/reports/rag-ingestion/runs",
+        "reports/rag_eval/rag-ingestion/runs",
         "UNSUPPORTED_NAMESPACE"
       ]
     },
@@ -303,7 +303,7 @@
                   "rag-data-all-source-citable-nonprod-v1",
                   "rag-data-all-source-nonprod-v1",
                   "rag-data-live-runtime-smoke-nonprod",
-                  "ai/eval/reports/rag-ingestion/runs"
+                  "reports/rag_eval/rag-ingestion/runs"
                 ]
               },
               "indexing_scope": {
@@ -322,7 +322,7 @@
               "rag-data-all-source-citable-nonprod-v1",
               "rag-data-all-source-nonprod-v1",
               "rag-data-live-runtime-smoke-nonprod",
-              "ai/eval/reports/rag-ingestion/runs"
+              "reports/rag_eval/rag-ingestion/runs"
             ]
           },
           "indexing_scope": {

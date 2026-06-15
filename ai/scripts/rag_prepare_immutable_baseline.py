@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/a5_c3_immutable_baseline_readiness.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/a5_c3_immutable_baseline_readiness.json")
 INITIAL_BASELINE_BOOTSTRAP = "INITIAL_BASELINE_BOOTSTRAP"
 BOOTSTRAP_READY_NOT_PROMOTION = "BOOTSTRAP_READY_NOT_PROMOTION"
 VECTOR_BACKENDS = {"faiss"}

@@ -288,7 +288,7 @@ def test_report_bundle_artifacts_docs_status_and_ledgers_are_written_consistentl
     v60a.update_docs(tmp_path, written)
     v60a.append_status(tmp_path, written, artifact_hashes=hashes)
 
-    run_root = tmp_path / "ai/eval/reports/rag-ingestion/runs" / RUN_KEY
+    run_root = tmp_path / "reports/rag_eval/rag-ingestion/runs" / RUN_KEY
     for name in {
         "report.json",
         "true_rag_metric_results.json",
@@ -311,7 +311,7 @@ def test_report_bundle_artifacts_docs_status_and_ledgers_are_written_consistentl
     assert len(_jsonl(run_root / "legacy_non_rag_path_inventory.jsonl")) == len(
         written["legacy_non_rag_path_inventory"]
     )
-    status_lines = _jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_lines = _jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     assert status_lines[-1]["status"] == STATUS
     assert status_lines[-1]["current_resolves_to"] == RUN_KEY
 

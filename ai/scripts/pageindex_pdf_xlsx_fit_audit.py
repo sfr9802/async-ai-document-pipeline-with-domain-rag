@@ -9,7 +9,7 @@ PageIndex can help:
 * XLSX row/cell/header context: not natively supported by the open-source
   PageIndex repo; requires a workbook-to-Markdown/tree adapter first.
 
-All outputs are diagnostic-only and written under eval/reports/pageindex-ab.
+All outputs are diagnostic-only and written under reports/rag_eval/pageindex-ab.
 """
 
 from __future__ import annotations
@@ -28,35 +28,35 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 
 DEFAULT_PAGEINDEX_ROOT = REPO_ROOT / ".tmp" / "PageIndex"
 DEFAULT_XLSX_REPORT = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json"
 )
 DEFAULT_PDF_REPORT = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_retrieval_eval_pdf_vector_diagnostic_report.json"
 )
 DEFAULT_PDF_BREAKDOWN = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_pdf_vector_quality_breakdown.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_pdf_vector_quality_breakdown.json"
 )
 DEFAULT_KEYWORD_RISK = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_pdf_xlsx_keyword_echo_risk_review.csv"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_pdf_xlsx_keyword_echo_risk_review.csv"
 )
 DEFAULT_ANSWER_SHAPE = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_pdf_xlsx_answer_shape_local_llm_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_pdf_xlsx_answer_shape_local_llm_report.json"
 )
 DEFAULT_ANSWER_SHAPE_ROWS = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_pdf_xlsx_answer_shape_local_llm.csv"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_pdf_xlsx_answer_shape_local_llm.csv"
 )
 DEFAULT_REPAIR_PLAN = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_pdf_xlsx_answer_prompt_repair_plan.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_pdf_xlsx_answer_prompt_repair_plan.json"
 )
-DEFAULT_OUTPUT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "pageindex-ab" / "pdf_xlsx_fit_audit"
+DEFAULT_OUTPUT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "pageindex-ab" / "pdf_xlsx_fit_audit"
 
 
 def main(argv: list[str] | None = None) -> int:

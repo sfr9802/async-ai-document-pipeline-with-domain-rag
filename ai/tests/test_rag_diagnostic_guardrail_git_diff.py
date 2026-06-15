@@ -13,7 +13,7 @@ from ai.eval.harness import rag_diagnostic_common as diagnostic_common
 
 
 ROOT = Path(__file__).resolve().parents[2]
-REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion"
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
 
 
@@ -110,12 +110,12 @@ EXTERNAL_REPORT_ARCHIVE_DIRS = (
 STRICT_PROTECTED_PATHS = (
     "ai/eval/eval_queries/gold_queries_pdf_question_gold_v2.csv",
     "ai/eval/eval_queries/gold_queries_xlsx_question_gold_v2.csv",
-    "ai/eval/reports/rag-ingestion/baseline_v1.json",
-    "ai/eval/reports/rag-ingestion/scorer_v1.jsonl",
-    "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-    "ai/eval/reports/rag-ingestion/smoke_v1.json",
-    "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-    "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+    "reports/rag_eval/rag-ingestion/baseline_v1.json",
+    "reports/rag_eval/rag-ingestion/scorer_v1.jsonl",
+    "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+    "reports/rag_eval/rag-ingestion/smoke_v1.json",
+    "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+    "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
 )
 V3_1_9_ALLOWED_POLICY_APPLICATION_PATHS = (
     "ai/eval/eval_queries/official_denominator_registry.json",
@@ -573,10 +573,10 @@ def test_v5_5_user_approved_official_metric_dry_run_does_not_mutate_protected_or
         "ai/eval/gold",
         "ai/eval/qrels",
         "ai/eval/denominator",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/scorer_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/smoke_v1.json",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/scorer_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/smoke_v1.json",
     ):
         unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
         staged = subprocess.run(["git", "diff", "--cached", "--quiet", "--", protected_path], cwd=ROOT, check=False)
@@ -659,10 +659,10 @@ def test_v5_6_official_metric_scored_execution_fail_closed_does_not_mutate_prote
         "ai/eval/gold",
         "ai/eval/qrels",
         "ai/eval/denominator",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/scorer_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/smoke_v1.json",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/scorer_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/smoke_v1.json",
     ):
         unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
         staged = subprocess.run(["git", "diff", "--cached", "--quiet", "--", protected_path], cwd=ROOT, check=False)
@@ -674,7 +674,7 @@ def test_v5_6_official_metric_scored_execution_fail_closed_does_not_mutate_prote
     assert report["source_run_id"] == "v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run"
     assert report["approval_scope"] == {
         "source_run_id": "v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run",
-        "source_artifact_path": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+        "source_artifact_path": "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
         "row_count": 29,
         "scope_policy": "exact_v5_5_official_metric_input_rows_only",
         "excluded_scopes": [
@@ -777,10 +777,10 @@ def test_v5_6_2_official_metric_backend_enabled_preflight_does_not_mutate_protec
         "ai/eval/gold",
         "ai/eval/qrels",
         "ai/eval/denominator",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/scorer_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/smoke_v1.json",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/scorer_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/smoke_v1.json",
     ):
         unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
         staged = subprocess.run(["git", "diff", "--cached", "--quiet", "--", protected_path], cwd=ROOT, check=False)
@@ -793,7 +793,7 @@ def test_v5_6_2_official_metric_backend_enabled_preflight_does_not_mutate_protec
     assert report["current_resolves_to"] == "v5_6"
     assert report["approval_scope"] == {
         "source_run_id": "v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run",
-        "source_artifact_path": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+        "source_artifact_path": "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
         "row_count": 29,
         "scope_policy": "exact_v5_5_official_metric_input_rows_only",
         "excluded_scopes": [
@@ -898,10 +898,10 @@ def test_v5_6_3_official_metric_backend_probe_does_not_mutate_protected_or_expor
         "ai/eval/gold",
         "ai/eval/qrels",
         "ai/eval/denominator",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/scorer_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/smoke_v1.json",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/scorer_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/smoke_v1.json",
     ):
         unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
         staged = subprocess.run(["git", "diff", "--cached", "--quiet", "--", protected_path], cwd=ROOT, check=False)
@@ -916,7 +916,7 @@ def test_v5_6_3_official_metric_backend_probe_does_not_mutate_protected_or_expor
     assert report["v5_6_2_preflight_run_id"] == "v5_6_2_official_metric_backend_enabled_preflight_scored_rerun_nonprod"
     assert report["approval_scope"] == {
         "source_run_id": "v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run",
-        "source_artifact_path": "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
+        "source_artifact_path": "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl",
         "row_count": 29,
         "scope_policy": "exact_v5_5_official_metric_input_rows_only",
         "excluded_scopes": [
@@ -1369,7 +1369,7 @@ def test_v3_5_0_capacity_expansion_does_not_mutate_protected_surfaces_or_silver_
         "official_answer_citation_agentic_loop_run_v3_5_0_"
         "strict_non_official_source_bound_capacity_expansion"
     )
-    summary_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / f"{run_id}_capacity_summary.json"
+    summary_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / f"{run_id}_capacity_summary.json"
     event = next(
         item
         for item in reversed([json.loads(line) for line in STATUS_JSONL.read_text(encoding="utf-8").splitlines()])
@@ -1671,11 +1671,11 @@ def test_v3_5_5_quality_audit_does_not_mutate_v3_5_4_protected_surfaces_or_silve
         "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
         "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
         "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_audit.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_audit_sample_packet.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_next_phase_policy_boundary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_audit.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_audit_sample_packet.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_next_phase_policy_boundary.json",
     )
     summary = read_json(summary_path)
 
@@ -1753,16 +1753,16 @@ def test_v3_6_1_weak_noisy_candidate_generation_does_not_mutate_protected_surfac
         "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
         "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
         "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_audit.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_audit_sample_packet.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_next_phase_policy_boundary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_quality_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_manifest_validation.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_audit_sample_review_packet.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_duplicate_hash_audit.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_next_phase_policy_boundary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_audit.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_audit_sample_packet.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_next_phase_policy_boundary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_quality_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_manifest_validation.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_audit_sample_review_packet.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_duplicate_hash_audit.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_next_phase_policy_boundary.json",
     )
 
     for protected_path in protected_paths:
@@ -1822,19 +1822,19 @@ def test_v3_6_2_sanity_eval_does_not_mutate_protected_surfaces_or_promote_silver
         "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
         "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
         "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_quality_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_manifest_validation.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_audit_sample_review_packet.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_duplicate_hash_audit.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_next_phase_policy_boundary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_generation_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_generation_quality_distribution.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_split_manifest.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_policy_compliance_audit.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_next_phase_recommendation.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_quality_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_manifest_validation.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_audit_sample_review_packet.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_duplicate_hash_audit.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_5_balanced_source_manifest_quality_audit_next_phase_policy_boundary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_generation_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_generation_quality_distribution.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_split_manifest.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_policy_compliance_audit.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_next_phase_recommendation.json",
     )
 
     for protected_path in protected_paths:
@@ -1898,18 +1898,18 @@ def test_v3_6_3_manifest_freeze_does_not_mutate_protected_surfaces_or_promote_si
         "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
         "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
         "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_generation_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_generation_quality_distribution.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_split_manifest.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_policy_compliance_audit.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_candidate_sanity_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_candidate_sanity_per_row.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_candidate_quarantine_rows.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_candidate_metric_feasibility.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_split_independence_audit.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_hash_contract_audit.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_next_phase_recommendation.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_generation_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_generation_quality_distribution.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_split_manifest.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_policy_compliance_audit.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_candidate_sanity_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_candidate_sanity_per_row.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_candidate_quarantine_rows.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_candidate_metric_feasibility.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_split_independence_audit.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_hash_contract_audit.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_2_weak_noisy_silver_candidate_sanity_eval_next_phase_recommendation.json",
     )
 
     for protected_path in protected_paths:
@@ -1973,13 +1973,13 @@ def test_v3_6_4_metric_does_not_mutate_protected_surfaces_or_promote_silver():
         "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
         "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
         "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_policy_audit.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_next_phase_recommendation.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_policy_audit.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_next_phase_recommendation.json",
     )
 
     for protected_path in protected_paths:
@@ -2047,20 +2047,20 @@ def test_v3_6_5_triage_does_not_mutate_protected_surfaces_or_promote_silver():
         "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
         "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
         "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_policy_audit.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_next_phase_recommendation.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_per_row.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_aggregate_by_bucket.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_failure_taxonomy.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_sample_review.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_policy_audit.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_next_phase_recommendation.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_policy_audit.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_next_phase_recommendation.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_per_row.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_aggregate_by_bucket.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_failure_taxonomy.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_sample_review.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_policy_audit.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_next_phase_recommendation.json",
     )
 
     for protected_path in protected_paths:
@@ -2134,18 +2134,18 @@ def test_v3_6_6_sidecar_probe_does_not_mutate_protected_surfaces_or_promote_silv
         "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
         "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
         "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_per_row.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_per_row.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_policy_audit.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_next_phase_recommendation.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_per_row.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_per_row.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_policy_audit.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_next_phase_recommendation.json",
     )
 
     for protected_path in protected_paths:
@@ -2230,25 +2230,25 @@ def test_v3_6_7_runtime_stability_probe_does_not_mutate_protected_surfaces_or_pr
         "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
         "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
         "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_per_row.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_per_row.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_policy_audit.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_next_phase_recommendation.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_reference_sidecar.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_core_smoke_sample.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_runtime_probe_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_db_retrieval_surface_audit.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_policy_audit.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_next_phase_recommendation.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_per_row.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_per_row.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_policy_audit.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_5_rough_failure_bucket_triage_next_phase_recommendation.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_reference_sidecar.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_core_smoke_sample.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_runtime_probe_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_db_retrieval_surface_audit.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_policy_audit.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_next_phase_recommendation.json",
     )
 
     for protected_path in protected_paths:
@@ -2338,18 +2338,18 @@ def test_v3_6_8_nonprod_materialization_does_not_mutate_protected_surfaces_or_pr
         "ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json",
         "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
         "ai/eval/indexes/rag-data-official-denominator-v1/faiss.index",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_reference_sidecar.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_7_runtime_stability_probe_for_core_only_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_7_runtime_stability_probe_for_core_only_runtime_attempts.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_core.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_review_only.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_quarantine.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_reference_sidecar.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_7_runtime_stability_probe_for_core_only_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_7_runtime_stability_probe_for_core_only_runtime_attempts.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -2436,12 +2436,12 @@ def test_v3_6_8_source_registry_architecture_audit_does_not_mutate_protected_sur
         "ai/eval/indexes/rag-data-all-source-nonprod-v1/source_inventory.json",
         "ai/eval/indexes/rag-data-all-source-nonprod-v1/payload_contract_summary.json",
         "ai/eval/indexes/rag-data-all-source-nonprod-v1/faiss.index",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_reference_sidecar.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_8_nonprod_all_source_index_materialization_and_canonical_payload_wiring_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_reference_sidecar.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_8_nonprod_all_source_index_materialization_and_canonical_payload_wiring_summary.json",
     )
 
     for protected_path in protected_paths:
@@ -2542,12 +2542,12 @@ def test_v3_6_9_searchunit_searchview_sourceatom_refactor_does_not_mutate_protec
         "ai/eval/indexes/rag-data-all-source-nonprod-v1/source_inventory.json",
         "ai/eval/indexes/rag-data-all-source-nonprod-v1/payload_contract_summary.json",
         "ai/eval/indexes/rag-data-all-source-nonprod-v1/faiss.index",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_reference_sidecar.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_8_source_registry_first_evidence_bundle_architecture_audit_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_balanced_source_manifest.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_5_4_balanced_silver_source_manifest_freeze_freeze_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_1_balanced_weak_noisy_silver_candidate_generation_weak_silver_candidates.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_3_diagnostic_weak_noisy_silver_manifest_freeze_diagnostic_weak_noisy_silver_manifest_all.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_6_diagnostic_reference_sidecar_and_runtime_surface_probe_reference_sidecar.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_8_source_registry_first_evidence_bundle_architecture_audit_summary.json",
     )
 
     for protected_path in protected_paths:
@@ -2826,9 +2826,9 @@ def test_v3_7_2_source_registry_backed_retrieval_smoke_does_not_mutate_source_re
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_sourceatom_manifest.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_searchunit_manifest.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_index_build_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_sourceatom_manifest.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_searchunit_manifest.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_index_build_summary.json",
     )
 
     for protected_path in protected_paths:
@@ -3813,10 +3813,10 @@ def test_v3_13_pdf_file_identity_structural_locator_does_not_mutate_protected_su
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_10_"
         "fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_index_build_summary.json",
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_"
         "xlsx_nonprod_index_build_summary.json",
     )
@@ -3917,12 +3917,12 @@ def test_v3_14_layered_retrieval_runtime_adapter_does_not_mutate_protected_surfa
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_structural_locator_eval_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_layer_trace_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_score_components.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_structural_locator_eval_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_layer_trace_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_score_components.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_structural_locator_eval_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_layer_trace_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_score_components.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_structural_locator_eval_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_layer_trace_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_score_components.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -4021,13 +4021,13 @@ def test_v3_15_xlsx_l3_table_range_locator_does_not_mutate_protected_surfaces():
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_layer_trace_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_structural_locator_eval_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_layer_trace_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_score_components.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_sourceatom_manifest.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_searchunit_manifest.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_layer_trace_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_structural_locator_eval_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_layer_trace_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement_xlsx_score_components.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_sourceatom_manifest.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization_xlsx_nonprod_searchunit_manifest.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -4129,12 +4129,12 @@ def test_v3_16_final_llm_answer_quality_review_packet_does_not_mutate_protected_
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_layer_trace_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_layer_trace_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_structural_locator_eval_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_layer_trace_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_layer_trace_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_layer_trace_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_structural_locator_eval_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_layer_trace_per_query.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -4210,13 +4210,13 @@ def test_v3_17_user_locator_rough_query_packet_does_not_mutate_protected_surface
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod_summary.json",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_layer_trace_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_layer_trace_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_structural_locator_eval_per_query.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_layer_trace_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod_summary.json",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement_layer_trace_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod_layer_trace_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_structural_locator_eval_per_query.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment_pdf_layer_trace_per_query.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -4292,16 +4292,16 @@ def test_v3_18_agent_runtime_tool_invocation_contract_does_not_mutate_protected_
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/quality/"
+        "reports/rag_eval/rag-ingestion/quality/"
         "official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/"
         "summary.json",
-        "ai/eval/reports/rag-ingestion/quality/"
+        "reports/rag_eval/rag-ingestion/quality/"
         "official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/"
         "review_packet.jsonl",
-        "ai/eval/reports/rag-ingestion/quality/"
+        "reports/rag_eval/rag-ingestion/quality/"
         "official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/"
         "tool_registry.json",
-        "ai/eval/reports/rag-ingestion/quality/"
+        "reports/rag_eval/rag-ingestion/quality/"
         "official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/"
         "route_policy_audit.jsonl",
     )
@@ -4369,7 +4369,7 @@ def test_v3_19_locator_ambiguity_deictic_response_policy_does_not_mutate_protect
     guardrail_path = output_dir / "guardrail_audit.json"
     require_v3_9_local_artifacts(summary_path, metrics_path, guardrail_path)
     v3_18_dir = (
-        "ai/eval/reports/rag-ingestion/quality/"
+        "reports/rag_eval/rag-ingestion/quality/"
         "official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod/"
     )
     protected_paths = (
@@ -4472,7 +4472,7 @@ def test_v3_20_live_runtime_like_db_index_cache_smoke_does_not_mutate_protected_
     guardrail_path = output_dir / "guardrail_audit.json"
     require_v3_9_local_artifacts(summary_path, metrics_path, guardrail_path)
     v3_19_dir = (
-        "ai/eval/reports/rag-ingestion/quality/"
+        "reports/rag_eval/rag-ingestion/quality/"
         "official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod/"
     )
     protected_paths = (
@@ -4576,7 +4576,7 @@ def test_v3_21_agent_runtime_llm_io_observability_packet_does_not_mutate_protect
     guardrail_path = output_dir / "guardrail_audit.json"
     require_v3_9_local_artifacts(summary_path, metrics_path, guardrail_path)
     v3_20_dir = (
-        "ai/eval/reports/rag-ingestion/quality/"
+        "reports/rag_eval/rag-ingestion/quality/"
         "official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod/"
     )
     protected_paths = (
@@ -4688,7 +4688,7 @@ def test_v3_22_xlsx_display_value_and_range_rendering_does_not_mutate_protected_
     report_path = output_dir / "report.json"
     require_v3_9_local_artifacts(report_path)
     v3_21_dir = (
-        "ai/eval/reports/rag-ingestion/quality/"
+        "reports/rag_eval/rag-ingestion/quality/"
         "official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod/"
     )
     protected_paths = (
@@ -4822,10 +4822,10 @@ def test_phase1_diagnostic_contract_closure_after_v3_22_does_not_mutate_or_promo
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -4915,10 +4915,10 @@ def test_phase1_fastapi_diagnostic_integration_does_not_mutate_or_promote_surfac
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
     for protected_path in protected_paths:
         unstaged = subprocess.run(["git", "diff", "--quiet", "--", protected_path], cwd=ROOT, check=False)
@@ -5001,10 +5001,10 @@ def test_v4_0_charter_status_opening_does_not_mutate_or_promote_surfaces():
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -5080,7 +5080,7 @@ def test_v4_0_charter_status_opening_does_not_mutate_or_promote_surfaces():
     assert event["db_or_production_namespace_written"] is False
     assert event["artifact_paths"] == {
         "v3_22_report_json": v3_22_report_path.relative_to(ROOT).as_posix(),
-        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
+        "status_jsonl": "reports/rag_eval/rag-ingestion/status.jsonl",
         "progress_doc": "docs/rag-ingestion-progress.md",
         "measurements_doc": "docs/rag-ingestion-measurements.md",
         "triage_doc": "docs/rag-ingestion-triage.md",
@@ -5119,10 +5119,10 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_does_not_mutate_or_prom
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -5232,10 +5232,10 @@ def test_v4_7_3_human_reviewed_korean_query_candidate_decision_does_not_mutate_p
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -5351,10 +5351,10 @@ def test_v4_7_4_pdf_survivor_replay_does_not_mutate_protected_or_promote_surface
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -5466,10 +5466,10 @@ def test_v4_6_1_holdout_manifest_identity_contract_bridge_does_not_mutate_or_pro
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -5577,10 +5577,10 @@ def test_v4_6_2_ft_route_policy_fixture_contract_does_not_mutate_or_promote_surf
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -5697,10 +5697,10 @@ def test_v4_6_3_ft_a_prompt_policy_baseline_schema_does_not_mutate_or_promote_su
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -5817,10 +5817,10 @@ def test_v4_6_4_ft_a_dry_run_input_manifest_validator_does_not_mutate_or_promote
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -5939,10 +5939,10 @@ def test_v4_6_5_ft_a_dry_run_execution_plan_gate_does_not_mutate_or_promote_surf
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -6065,10 +6065,10 @@ def test_v4_2_xlsx_locator_v2_does_not_mutate_or_promote_surfaces():
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -6182,10 +6182,10 @@ def test_v4_3_pdf_file_identity_split_does_not_mutate_or_promote_surfaces():
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -6303,10 +6303,10 @@ def test_v4_6_6_holdout_gap_blocker_ledger_does_not_mutate_or_promote_surfaces()
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -6389,10 +6389,10 @@ def test_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_does_not_mutate_or_
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -6517,10 +6517,10 @@ def test_v4_6_8_runtime_readiness_dependency_freshness_gate_does_not_mutate_or_p
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -6634,10 +6634,10 @@ def test_v4_6_9_holdout_candidate_duplicate_hygiene_gate_does_not_mutate_or_prom
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -6750,10 +6750,10 @@ def test_v4_6_10_external_holdout_manifest_gate_replay_does_not_mutate_or_promot
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -6873,10 +6873,10 @@ def test_v4_7_preofficial_external_holdout_registration_does_not_mutate_or_promo
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -6988,10 +6988,10 @@ def test_v4_6_11_ft_a_runtime_input_validation_route_parity_does_not_mutate_or_p
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -7111,10 +7111,10 @@ def test_v4_6_12_external_holdout_runtime_replay_route_parity_does_not_mutate_or
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -7240,10 +7240,10 @@ def test_v4_4_real_blind_ood_holdout_leakage_does_not_mutate_or_promote_surfaces
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -7339,10 +7339,10 @@ def test_v4_5_finetune_readiness_packet_does_not_mutate_or_promote_surfaces():
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -7444,10 +7444,10 @@ def test_v4_5_1_holdout_candidate_intake_gate_does_not_mutate_or_promote_surface
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -7544,10 +7544,10 @@ def test_v4_5_2_external_source_identity_audit_does_not_mutate_or_promote_surfac
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -7650,10 +7650,10 @@ def test_v4_5_3_external_holdout_prior_identity_summary_does_not_mutate_or_promo
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -7758,10 +7758,10 @@ def test_v4_6_ft_route_policy_preflight_does_not_mutate_or_promote_surfaces():
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:
@@ -7858,10 +7858,10 @@ def test_v4_7_2_korean_review_packet_hydration_does_not_mutate_protected_or_prom
         "ai/eval/source_registry/source_atom_registry_build.json",
         "ai/eval/source_registry/source_atom_registry_inventory.json",
         "ai/eval/source_registry/source_atom_registry_blocked.jsonl",
-        "ai/eval/reports/rag-ingestion/baseline_v1.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl",
-        "ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/baseline_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl",
+        "reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl",
     )
 
     for protected_path in protected_paths:

@@ -21,7 +21,7 @@ from typing import Any, Iterable, Mapping, Sequence
 
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 OUTPUT_DIR = AI_WORKER_ROOT / "eval" / "review" / "gold_silver_tuning"
 TEXT_REVIEW_CSV = (
     AI_WORKER_ROOT
@@ -47,9 +47,9 @@ TEXT_CANDIDATE_CSV = (
 )
 NEMU_CHUNKS_JSONL = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined" / "rag_chunks.jsonl"
 PHASE7_SILVER_JSONL = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "phase7"
     / "7.12_silver_manual_curated"
     / "queries_v4_silver_manual_curated_500.jsonl"

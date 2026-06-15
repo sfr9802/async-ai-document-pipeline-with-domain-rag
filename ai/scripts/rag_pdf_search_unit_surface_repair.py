@@ -40,8 +40,8 @@ from pdf_candidate_scope_report import (  # noqa: E402
 )
 
 
-DEFAULT_SCOPE_REPORT = Path("eval/reports/rag-ingestion/pdf_candidate_scope_report.json")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/rag_pdf_search_unit_surface_repair_report.json")
+DEFAULT_SCOPE_REPORT = Path("reports/rag_eval/rag-ingestion/pdf_candidate_scope_report.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_pdf_search_unit_surface_repair_report.json")
 
 POLICY_EXCLUDED_SQL = """
 (

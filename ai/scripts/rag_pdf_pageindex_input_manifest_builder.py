@@ -24,10 +24,10 @@ AI_WORKER = SCRIPT_DIR.parent
 ROOT = AI_WORKER.parent
 
 DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_pdf_v1_review_draft.csv")
-DEFAULT_C5_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json")
-DEFAULT_C6_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_vector_quality_breakdown.json")
-DEFAULT_C7_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_gold_policy_review.json")
-DEFAULT_C7_DECISION_PACK = Path("eval/reports/rag-ingestion/rag_pdf_c7_decision_pack.csv")
+DEFAULT_C5_REPORT = Path("reports/rag_eval/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json")
+DEFAULT_C6_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_vector_quality_breakdown.json")
+DEFAULT_C7_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_gold_policy_review.json")
+DEFAULT_C7_DECISION_PACK = Path("reports/rag_eval/rag-ingestion/rag_pdf_c7_decision_pack.csv")
 DEFAULT_OUTPUT_ROOT = Path("eval/artifacts/eval_runs")
 DEFAULT_SEARCH_ROOTS = (
     Path("eval/datasets"),

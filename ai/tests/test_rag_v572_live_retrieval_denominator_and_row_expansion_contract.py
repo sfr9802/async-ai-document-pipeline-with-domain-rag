@@ -218,7 +218,7 @@ def test_v572_written_artifacts_status_runner_and_current_alias(tmp_path: Path, 
     assert (tmp_path / v572.ARTIFACT_PATHS["metric_restatement_json"]).exists()
     assert (tmp_path / v572.ARTIFACT_PATHS["expanded_live_retrieval_metrics_json"]).exists()
 
-    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_rows = _read_jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     latest = status_rows[-1]
     assert latest["short_run_id"] == written["short_run_id"]
     assert latest["valid_live_retrieval_metric_rows"] == written["valid_live_retrieval_metric_rows"]

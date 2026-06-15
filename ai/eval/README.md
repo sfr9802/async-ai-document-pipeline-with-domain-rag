@@ -15,6 +15,22 @@
 PDF에서 목차 점선, 단독 섹션 번호, 페이지 번호, 숫자축처럼 실제 답변 근거로 보기 어려운 content window는 답변처럼 노출하지 않고 `PDF_CONTENT_WINDOW_TOO_THIN`으로 표시합니다.
 이런 처리는 성능을 좋아 보이게 만들기 위한 장치가 아니라, 근거가 약한 답변을 막기 위한 방어선입니다.
 
+## Portfolio freeze v1 claim boundary
+
+`portfolio-freeze-v1`은 현재 구현과 report artifact를 기준으로 README,
+포트폴리오, 평가 설명의 claim을 맞추는 기준입니다. 신규 기능, gold 변경,
+denominator 변경, 평가 점수 개선용 로직 변경을 포함하지 않습니다.
+
+| 항목 | freeze 기준 |
+|---|---|
+| Latest report | `reports/rag_eval/latest.json` 및 `latest_text_gold.json` -> `actual_rag_eval_query_formulation_v3_agentic_guard_nonprod_20260614_v4/report.json` |
+| Retrieval/evidence boundary | active backend `weaviate_hybrid`, collection `SourceAtomNonprodRouteSelectedV2`, SearchUnit/SearchView는 후보/legacy diagnostic, SourceAtom/EvidenceBundle은 citation evidence truth |
+| Guardrail state | non-production, official_metric=false, raw prompt/response payload false, protected namespace mutation 없음 |
+| Strict quality | strict answer/evidence/citation/E2E denominators are unavailable or diagnostic-only where human-owned answerability/evidence policy is missing |
+| Actual Response Smoke | answer quality score가 아니라 response policy smoke. 29 approved queries 중 10 answered/citation-verified, 19 stopped/fail_closed |
+| XLSX | sheet/range/cell/axis locator와 sample은 구조 설명으로 유지. response smoke에서 XLSX-wide success claim은 하지 않음 |
+| Agent wording | 완성된 autonomous agent가 아니라 agent-ready/agentic system boundary를 위한 retrieval, evidence, citation, response-control 기반 |
+
 ## Actual RAG Eval Infrastructure
 
 `ai/eval/actual_rag_eval.py` and `python -m ai.scripts.rag_actual_eval`
@@ -275,7 +291,7 @@ VectorDB. The external VectorDB lane for this goal is Weaviate. FAISS is
 demoted to diagnostic/offline baseline only for that lane, and Chroma was not
 selected because Weaviate gives the clearer service boundary, collection
 schema, metadata filtering, and BM25/vector hybrid search contract needed for
-Agentic RAG scale-out. External VectorDB use must be explicitly
+agent-ready retrieval/evidence boundary experiments. External VectorDB use must be explicitly
 non-production, must report `external_vector_db.invoked=true`, and is recorded
 separately from the local FAISS path.
 
@@ -396,6 +412,8 @@ Phase 0-2 source-native contracts are documented in
 
 ## 정리와 보고 표면
 
-현재 RAG diagnostic `current`는 `v6_9_answer_quality_gate_packet_nonprod`입니다. `ai/eval/reports/rag-ingestion/**`의 machine report/status/run sidecar는 generated/local-only diagnostic evidence로 취급하고, 사람이 읽는 최신 상태와 정리 근거는 `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, `docs/rag-ingestion-triage.md`에 둡니다.
+포트폴리오 제출 기준의 최신 RAG diagnostic pointer는 `reports/rag_eval/latest.json`과 `reports/rag_eval/latest_text_gold.json`입니다. 현재 두 pointer 모두 `actual_rag_eval_query_formulation_v3_agentic_guard_nonprod_20260614_v4`를 가리킵니다. `reports/rag_eval/rag-ingestion/**`의 machine report/status/run sidecar는 generated/local-only diagnostic evidence로 취급하고, 사람이 읽는 최신 상태와 정리 근거는 `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, `docs/rag-ingestion-triage.md`에 둡니다.
+
+보고서 경로는 `ai/eval/report_paths.py`에서 중앙화합니다. 새 actual-RAG run, latest pointer, Weaviate manifest는 ignored `reports/rag_eval/` 아래에 둡니다. v3-v7 diagnostic ladder의 current/status/short-key evidence는 ignored `reports/rag_eval/rag-ingestion/` 아래에 보존하며, 현재 diagnostic ladder alias는 `v6_9_answer_quality_gate_packet_nonprod`입니다. tracked `reports/`는 sanitized portfolio report와 sample trace allowlist만 사용합니다. 새 실험 스크립트는 이 세 namespace 중 하나를 명시적으로 선택해야 하며, 임의의 `docs/reports`, `eval/reports`, root ad-hoc report path를 만들지 않습니다.
 
 삭제가 애매한 legacy 또는 generated diagnostic artifact는 hold가 기본입니다. 안전 삭제는 `.pytest_cache`, `__pycache__`, bytecode, `core-api/target`, `frontend/app/dist` 같은 transient cache/build output으로 제한하며, gold/qrels/official denominator/eval query/source registry/index/silver/current report/status 표면은 정리 대상이 아닙니다.

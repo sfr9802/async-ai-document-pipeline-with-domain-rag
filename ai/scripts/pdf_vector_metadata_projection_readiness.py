@@ -41,8 +41,8 @@ from pdf_candidate_scope_report import (  # noqa: E402
 )
 
 
-DEFAULT_SCOPE_REPORT = Path("eval/reports/rag-ingestion/pdf_candidate_scope_report.json")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json")
+DEFAULT_SCOPE_REPORT = Path("reports/rag_eval/rag-ingestion/pdf_candidate_scope_report.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/pdf_vector_metadata_projection_readiness.json")
 
 POLICY_EXCLUDED_SQL = """
 (

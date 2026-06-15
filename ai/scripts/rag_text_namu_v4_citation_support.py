@@ -24,25 +24,25 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 
 DEFAULT_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v4_v0.csv"
 DEFAULT_ANSWER_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_answer_eval_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_answer_eval_report.json"
 )
 DEFAULT_ANSWER_JSONL = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_answer_eval.jsonl"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_answer_eval.jsonl"
 )
 DEFAULT_CONTEXT_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_context_assembly_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_context_assembly_report.json"
 )
 DEFAULT_CONTEXT_JSONL = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_context_assembly.jsonl"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_context_assembly.jsonl"
 )
 DEFAULT_RETRIEVAL_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_retrieval_diagnostic_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_retrieval_diagnostic_report.json"
 )
 DEFAULT_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_citation_support_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_citation_support_report.json"
 )
 DEFAULT_JSONL = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_citation_support.jsonl"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_citation_support.jsonl"
 )
 
 PHASE = "R8_B5_NAMU_CITATION_SUPPORT"

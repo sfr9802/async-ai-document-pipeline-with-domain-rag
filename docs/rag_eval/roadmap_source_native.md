@@ -20,6 +20,9 @@ Actual RAG evaluation is non-production diagnostic infrastructure. Phase 0 throu
 - Query-focus repair checkpoint: deterministic selected-evidence composition now scores full selected contexts when query anchors are split across lines, and the evidence gate matches compact Korean query anchors against spaced Korean title text for longer Hangul anchors. The first Checkpoint H report keeps Weaviate route-selected retrieval and `report.json` only, improves deterministic enforce allowed/blocked `3/3 -> 5/1`, keeps retrieved-context-only citations at `0`, and keeps unsupported-after-gate at `0.0`.
 - Query-variant retrieval checkpoint: route-selected Weaviate retrieval now has bounded query-only alias variants (`weaviate_query_reformulation_v1`) for mixed Korean/Latin title/entity terms. The first Checkpoint I report keeps the same Weaviate route-selected boundary and full-index rollback, emits only `report.json`, and proves variants were used without gold/expected/qrels/labels/IDs. Outcomes remain `5/1` allowed/blocked because the residual `text_namu_v2_0014` still lacks any retrieved text/title containing `Adversary`, `애드버서리`, or `어드버서리`; this is diagnostic residual retrieval/corpus coverage work, not a citation or gate-loosening target.
 - Same-document residual checkpoint: route-selected Weaviate retrieval now has a bounded source-owned same-document residual probe (`bounded_query_variant_same_doc_weaviate_v1`) that uses only doc IDs already returned by Weaviate plus query-only variants. The first Checkpoint J report keeps the same boundary and rollback, emits only `report.json`, and shows the probe ran for the X-Men row but still did not retrieve any `Adversary`/`애드버서리`/`어드버서리` text. The next safe lane is explicit corpus-coverage audit before any broader retrieval expansion.
+- Corpus-coverage audit checkpoint: `text_namu_v2_0014` is report-backed as `corpus_present` with tokenization/alias failure and collision pressure, not corpus absence or route-filter failure. This keeps the next target on general query/evidence formulation under the unchanged gate.
+- Query-formulation v3 / portfolio-freeze-v1 checkpoint: the latest pointer now references `actual_rag_eval_query_formulation_v3_agentic_guard_nonprod_20260614_v4`. Static English alias gain from v2 is retracted from the active normal-query path; v3 keeps bounded query-text-only Korean numeral/punctuation/content-anchor variants, emits only `report.json`, keeps `--agentic-planner-mode off`, and preserves allowed/blocked `5/1`, unsupported-after-gate `0.0`, retrieved-context-only citations `0`, and citation_supported `8`. This is agent-ready boundary evidence, not broader-loop readiness.
+- XLSX/PDF SourceAtom v2 reindex checkpoint: report-only post-reindex runs improved citation support (`13 -> 22`) and citation precision/recall (`0.230769/0.375 -> 0.363636/0.571429`) without improving allowed answers or strict E2E. XLSX/PDF cell/axis locator structure is claimable as evidence representation, while XLSX-wide response-smoke success is not claimable.
 
 ## Phase 0
 
@@ -55,7 +58,7 @@ Phase 2 stabilizes source-native vector reporting:
 
 ## Not Claimable
 
-Do not claim product success, live readiness, official metric promotion, retrieval-quality improvement, or final-answer quality when strict denominators are unavailable or the generator remains diagnostic-only.
+Do not claim product success, live readiness, official metric promotion, autonomous agent completion, broader agent loop readiness/opening, XLSX-wide response-smoke success, retrieval-quality improvement, or final-answer quality when strict denominators are unavailable or the generator remains diagnostic-only.
 
 ## Later Phases
 

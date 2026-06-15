@@ -64,16 +64,24 @@ from ai.eval import rag_v691_retrieval_smoke_pre_review_packet_nonprod as v691
 from ai.eval import rag_v70_e2e_eval_architecture_closeout_nonprod as v70
 from ai.eval import rag_v701_premature_closeout_audit_and_v64_recovery_nonprod as v701
 from ai.eval import rag_nec_2026_local_election_xlsx_source_collection as nec2026
+from ai.eval.report_paths import (
+    LEGACY_RAG_INGESTION_ARCHIVE_MANIFEST,
+    LEGACY_RAG_INGESTION_REPORT_ROOT,
+    LEGACY_RAG_INGESTION_STATUS_JSONL,
+    RAG_INGESTION_MEASUREMENTS_DOC,
+    RAG_INGESTION_PROGRESS_DOC,
+    RAG_INGESTION_TRIAGE_DOC,
+)
 
 
 DEFAULT_RUN_KEY = "v6_9_answer_quality_gate_packet_nonprod"
 SAFE_LEGACY_CHECK_ALIASES = dict(v478.SAFE_LEGACY_CHECK_ALIASES)
-REPORT_ROOT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
-STATUS_JSONL = REPORT_ROOT / "status.jsonl"
-ARCHIVE_MANIFEST = REPORT_ROOT / "archive_manifest.jsonl"
-PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
-MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
-TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
+REPORT_ROOT = LEGACY_RAG_INGESTION_REPORT_ROOT
+STATUS_JSONL = LEGACY_RAG_INGESTION_STATUS_JSONL
+ARCHIVE_MANIFEST = LEGACY_RAG_INGESTION_ARCHIVE_MANIFEST
+PROGRESS_DOC = RAG_INGESTION_PROGRESS_DOC
+MEASUREMENTS_DOC = RAG_INGESTION_MEASUREMENTS_DOC
+TRIAGE_DOC = RAG_INGESTION_TRIAGE_DOC
 README = ROOT / "README.md"
 EVAL_README = ROOT / "ai" / "eval" / "README.md"
 SCRIPTS_README = ROOT / "ai" / "scripts" / "README.md"
@@ -135,7 +143,7 @@ def inventory_text_couplings() -> dict[str, int]:
         long_path_literal_count += text.count("official_answer_citation_agentic_loop_run_")
         direct_report_path_dependency_count += len(
             re.findall(
-                r"ai/eval/reports/rag-ingestion/quality/"
+                r"reports/rag_eval/rag-ingestion/quality/"
                 r"official_answer_citation_agentic_loop_run_[^`\"'\s]+/report\.json",
                 text,
             )
@@ -303,7 +311,7 @@ def update_measurements_doc(report: Mapping[str, Any]) -> None:
     text = MEASUREMENTS_DOC.read_text(encoding="utf-8")
     text = _upsert_block(text, start_marker=start, end_marker=end, block=block)
     text = text.replace(
-        f"- Primary artifact: `ai/eval/reports/rag-ingestion/quality/{v475.SOURCE_RUN_ID}/report.json`; row-level replay detail is embedded in `report.json` only.",
+        f"- Primary artifact: `reports/rag_eval/rag-ingestion/quality/{v475.SOURCE_RUN_ID}/report.json`; row-level replay detail is embedded in `report.json` only.",
         "- Resolver key: `v4_7_4`; legacy long-path alias remains supported by `ai/eval/rag_eval_registry.py`. Row-level replay detail is embedded in `report.json` only.",
     )
     MEASUREMENTS_DOC.write_text(text, encoding="utf-8")

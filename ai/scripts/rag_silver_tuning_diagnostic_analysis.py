@@ -38,7 +38,7 @@ from app.capabilities.rag.shadow_lane_contract import (
 
 
 DEFAULT_CONFIG = silver_pass.DEFAULT_CONFIG
-DEFAULT_REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+DEFAULT_REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 REPORT_NAMES = {
     "query_delta_json": "silver_tuning_query_delta_report.json",
     "query_delta_md": "silver_tuning_query_delta_report.md",

@@ -24,7 +24,7 @@ from typing import Any, Iterable, Mapping
 
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 DEFAULT_XLSX_REVIEW = AI_WORKER_ROOT / "eval" / "review" / "gold_set_review" / "xlsx_gold_review_pack.csv"
 DEFAULT_OUTPUT_JSON = Path(tempfile.gettempdir()) / "rag_pdf_xlsx_anti_overfit_audit.json"
 DEFAULT_OUTPUT_CSV = Path(tempfile.gettempdir()) / "rag_pdf_xlsx_anti_overfit_audit.csv"

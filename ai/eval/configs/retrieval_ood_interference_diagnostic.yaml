@@ -17,8 +17,8 @@ policy:
   pdf_file_lookup_claims_content_page_bbox_table_row_column_value_success: false
 
 prerequisites:
-  phase0_local_resource_preflight: ai/eval/reports/rag-ingestion/retrieval_local_resource_preflight.json
-  phase1_corpus_diversity_profile: ai/eval/reports/rag-ingestion/retrieval_corpus_diversity_profile.json
+  phase0_local_resource_preflight: reports/rag_eval/rag-ingestion/retrieval_local_resource_preflight.json
+  phase1_corpus_diversity_profile: reports/rag_eval/rag-ingestion/retrieval_corpus_diversity_profile.json
 
 diagnostic_namespace:
   required: false
@@ -139,8 +139,8 @@ lanes:
 
 outputs:
   split_manifest_csv: ai/eval/review/retrieval_ood/retrieval_ood_split_manifest.csv
-  split_report_json: ai/eval/reports/rag-ingestion/retrieval_ood_split_report.json
-  split_report_md: ai/eval/reports/rag-ingestion/retrieval_ood_split_report.md
-  interference_report_json: ai/eval/reports/rag-ingestion/vector_interference_diagnostic.json
-  interference_report_md: ai/eval/reports/rag-ingestion/vector_interference_diagnostic.md
-  interference_by_query_csv: ai/eval/reports/rag-ingestion/vector_interference_diagnostic_by_query.csv
+  split_report_json: reports/rag_eval/rag-ingestion/retrieval_ood_split_report.json
+  split_report_md: reports/rag_eval/rag-ingestion/retrieval_ood_split_report.md
+  interference_report_json: reports/rag_eval/rag-ingestion/vector_interference_diagnostic.json
+  interference_report_md: reports/rag_eval/rag-ingestion/vector_interference_diagnostic.md
+  interference_by_query_csv: reports/rag_eval/rag-ingestion/vector_interference_diagnostic_by_query.csv

@@ -16,7 +16,7 @@ Usage::
 
     python -m scripts.run_phase7_silver_500 \\
         --pages-v4 PATH/pages_v4.jsonl \\
-        --out-dir  eval/reports/<run-name>/
+        --out-dir  reports/rag_eval/<run-name>/
 
 Per-bucket targets default to (main_work=150, subpage_generic=200,
 subpage_named=150). Override with ``--main-work-target / --subpage-

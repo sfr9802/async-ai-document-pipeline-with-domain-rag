@@ -84,7 +84,7 @@ NONPROD_RETRIEVAL_NAMESPACES = (
     "rag-data-all-source-nonprod-v1",
     "rag-data-live-runtime-smoke-nonprod",
 )
-REPORT_NAMESPACES = ("ai/eval/reports/rag-ingestion/runs",)
+REPORT_NAMESPACES = ("reports/rag_eval/rag-ingestion/runs",)
 SUPPORTED_SOURCE_FAMILIES = ("PDF", "TEXT", "XLSX")
 UNSUPPORTED_SOURCE_FAMILY_TRACE_VALUE = "UNSUPPORTED_SOURCE_FAMILY"
 UNSUPPORTED_NAMESPACE_TRACE_VALUE = "UNSUPPORTED_NAMESPACE"

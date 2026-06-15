@@ -17,17 +17,17 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/rag_candidate_index_lineage_report.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_candidate_index_lineage_report.json")
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
-DEFAULT_BASELINE_DESCRIPTOR = Path("eval/reports/rag-ingestion/initial_immutable_vector_baseline_descriptor.json")
+DEFAULT_BASELINE_DESCRIPTOR = Path("reports/rag_eval/rag-ingestion/initial_immutable_vector_baseline_descriptor.json")
 DEFAULT_BASELINE_ARTIFACT_DIR = Path("eval/indexes/rag-data-canary")
 DEFAULT_XLSX_CANDIDATE_ARTIFACT_DIR = Path("eval/indexes/rag-data-xlsx-candidate-v1")
-DEFAULT_XLSX_SCOPE_REPORT = Path("eval/reports/rag-ingestion/xlsx_candidate_scope_report.json")
-DEFAULT_XLSX_INDEXING_REPORT = Path("eval/reports/rag-ingestion/xlsx_candidate_indexing_report.json")
-DEFAULT_XLSX_CONSISTENCY_REPORT = Path("eval/reports/rag-ingestion/xlsx_candidate_embedding_consistency_report.json")
-DEFAULT_XLSX_DIAGNOSTIC_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
-DEFAULT_FULL72_DIAGNOSTIC_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_full72_vector_diagnostic_report.json")
-DEFAULT_MIXED_CONSISTENCY_REPORT = Path("eval/reports/rag-ingestion/pdf_xlsx_candidate_embedding_consistency_report.json")
+DEFAULT_XLSX_SCOPE_REPORT = Path("reports/rag_eval/rag-ingestion/xlsx_candidate_scope_report.json")
+DEFAULT_XLSX_INDEXING_REPORT = Path("reports/rag_eval/rag-ingestion/xlsx_candidate_indexing_report.json")
+DEFAULT_XLSX_CONSISTENCY_REPORT = Path("reports/rag_eval/rag-ingestion/xlsx_candidate_embedding_consistency_report.json")
+DEFAULT_XLSX_DIAGNOSTIC_REPORT = Path("reports/rag_eval/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
+DEFAULT_FULL72_DIAGNOSTIC_REPORT = Path("reports/rag_eval/rag-ingestion/rag_retrieval_eval_full72_vector_diagnostic_report.json")
+DEFAULT_MIXED_CONSISTENCY_REPORT = Path("reports/rag_eval/rag-ingestion/pdf_xlsx_candidate_embedding_consistency_report.json")
 DEFAULT_BASELINE_INDEX_VERSION = "initial-full72-vector-baseline-v0"
 DEFAULT_XLSX_CANDIDATE_INDEX_VERSION = "rag-ingestion-v2-xlsx-candidate-v1"
 PDF_PARSER_VERSIONS = ("pdf-extract-v1", "pdf-extract-v2")

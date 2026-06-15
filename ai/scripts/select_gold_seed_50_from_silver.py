@@ -2,8 +2,8 @@
 
 Example:
     python -m scripts.select_gold_seed_50_from_silver \
-      --silver-path eval/reports/phase7/7.12_silver_manual_curated/queries_v4_silver_manual_curated_500.jsonl \
-      --out-dir eval/reports/phase7/seeds/gold_seed_50_manual_curated \
+      --silver-path reports/rag_eval/phase7/7.12_silver_manual_curated/queries_v4_silver_manual_curated_500.jsonl \
+      --out-dir reports/rag_eval/phase7/seeds/gold_seed_50_manual_curated \
       --target-count 50 \
       --seed 42
 """
@@ -30,9 +30,9 @@ from eval.harness.gold_seed_sampler import (
 log = logging.getLogger("scripts.select_gold_seed_50_from_silver")
 
 DEFAULT_SILVER_PATH = Path(
-    "eval/reports/phase7/7.12_silver_manual_curated/queries_v4_silver_manual_curated_500.jsonl"
+    "reports/rag_eval/phase7/7.12_silver_manual_curated/queries_v4_silver_manual_curated_500.jsonl"
 )
-DEFAULT_OUT_DIR = Path("eval/reports/phase7/seeds/gold_seed_50_manual_curated")
+DEFAULT_OUT_DIR = Path("reports/rag_eval/phase7/seeds/gold_seed_50_manual_curated")
 
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:

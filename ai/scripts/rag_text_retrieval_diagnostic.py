@@ -22,8 +22,8 @@ from typing import Any, Callable, Iterable, Mapping
 
 
 DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_text_e2e_v0.csv")
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_text_retrieval_diagnostic_report.json")
-DEFAULT_BACKEND_IDENTITY_REPORT = Path("eval/reports/rag-ingestion/rag_text_backend_identity_report.json")
+DEFAULT_REPORT = Path("reports/rag_eval/rag-ingestion/rag_text_retrieval_diagnostic_report.json")
+DEFAULT_BACKEND_IDENTITY_REPORT = Path("reports/rag_eval/rag-ingestion/rag_text_backend_identity_report.json")
 DEFAULT_API_URL = "http://localhost:8080/api/v1/library/search"
 
 REQUIRED_COLUMNS = [

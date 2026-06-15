@@ -1,3 +1,46 @@
+<!-- report_namespace_cleanup_v1:measurements-entry:start -->
+### report_namespace_cleanup_v1
+
+- Path inventory measurement: `root_reports_files=2`, `root_rag_eval_run_dirs=122`, `legacy_rag_ingestion_top_files=2`, `legacy_rag_ingestion_run_dirs=52`, `docs_report_dirs=[]`, and `docs_rag_eval_dirs=["docs/rag_eval"]`.
+- Ignore-policy measurement: `reports/rag_eval/latest.json`, `reports/rag_eval/example/report.json`, and `reports/rag_eval/rag-ingestion/runs/example/report.json` resolve to ignored/generated paths; `reports/portfolio_agentops_report.md`, `reports/agentops_sample_trace.json`, and `docs/rag-ingestion-*.md` remain tracked allowlist/human-ledger surfaces.
+- Physical-path measurement: `ai/eval/reports/rag-ingestion/` was moved to `reports/rag_eval/rag-ingestion/`; `old_rag_ingestion_exists=false`; `reports/rag_eval/rag-ingestion/` contains the legacy/current diagnostic ladder `quality/`, `runs/`, `status.jsonl`, and `archive_manifest.jsonl` surfaces.
+- Code-contract measurement: `ai/eval/report_paths.py` centralizes actual-RAG, legacy/current RAG ingestion, public report, and human-ledger roots; active report entrypoints import `ai.eval.report_paths`; legacy report-writing scripts and path-contract tests now target the consolidated `reports/rag_eval/` namespace.
+- Verification: changed Python source syntax compile passed with `compiled_changed_python=275`; path/cleanup contract tests passed (`12 passed, 1 warning`); current focused profile passed (`9 passed`); `rag_eval.py current --check` passed with `current_resolves_to=v6_9_answer_quality_gate_packet_nonprod` and `report_json=reports/rag_eval/rag-ingestion/runs/v6_9_answer_quality_gate_packet_nonprod/report.json`; `git diff --check` passed with LF/CRLF warnings only; protected gold/source/index/silver/latest status check returned no tracked changes.
+- Historical-suite measurement: a non-gating historical check of `test_rag_eval_v475_contract.py` and `test_rag_eval_v477_archive_aware_short_key_contract.py` failed (`39 failed, 82 passed, 1 warning`) because those tests still encode older current aliases (`v5_0`/`v5_6`) and archived phase7/legacy fixture assumptions. This is recorded as residual test debt rather than portfolio-freeze evidence.
+- Measurement conclusion: physical report consolidation is now performed for machine-readable RAG outputs. The current freeze gate is green; historical current-alias tests need a separate cleanup pass if they should remain runnable against the latest `current`.
+<!-- report_namespace_cleanup_v1:measurements-entry:end -->
+
+<!-- portfolio_freeze_v1:measurements-entry:start -->
+### portfolio_freeze_v1
+
+- Scope: portfolio/README/eval-doc/report claim alignment only. No feature logic was added, no live eval was promoted, and gold/qrels/labels/answerability/expected/denominator/source registry/current surfaces stayed untouched.
+- Baseline report measurement: `reports/rag_eval/actual_rag_eval_query_formulation_v3_agentic_guard_nonprod_20260614_v4/report.json` is the current `latest.json` and `latest_text_gold.json` target. Guardrail measurement: non_production=true, official_metric=false, raw_prompt_payload_written=false, raw_response_payload_written=false, protected_namespaces_touched=`[]`, backend=`weaviate_hybrid`, collection=`SourceAtomNonprodRouteSelectedV2`, item count=`6`.
+- Claim-lint measurement: `portfolio_freeze_claim_check=passed`; checked that root README and eval README include `portfolio-freeze-v1`, Actual Response Smoke as response policy smoke, no XLSX-wide success claim, and the current latest run id; checked portfolio source keeps `no XLSX-wide success claim` and `answer quality score가 아니라 response policy smoke`.
+- Test measurement: initial full `ai/tests/test_actual_rag_eval_metric_generation.py` run failed `1/257` on `test_evidence_mapping_packet_files_human_fields_and_summary_counts` because the reject fixture shared the `3기` anchor and current conservative mapping rules returned `review_needed`; after fixture-only narrowing, the targeted test passed (`1 passed, 1 warning`) and the full file passed (`257 passed, 1 warning`). `ai/tests/test_rag_current_focused_test_profile_v1.py` passed (`9 passed`). `py_compile` passed for the touched eval/portfolio Python files. `git diff --check` exited 0 with LF/CRLF warnings only.
+- Measurement conclusion: portfolio-freeze-v1 supports claims about candidate/evidence separation, SourceAtom/EvidenceBundle citation verification, fail-closed response policy, trace/report guardrails, route-selected Weaviate non-production boundary, and agent-ready control surfaces. It does not support official metrics, production/live readiness, product success, autonomous agent completion, broader-loop readiness/opening, XLSX-wide response success, or final answer-quality claims.
+<!-- portfolio_freeze_v1:measurements-entry:end -->
+
+<!-- actual_rag_eval_xlsx_pdf_vector_db_source_evidence_quality:measurements-entry:start -->
+### actual_rag_eval_xlsx_pdf_vector_db_source_evidence_quality
+
+- Scope: non-production XLSX/PDF source-native Vector DB evidence representation, bounded scoped re-query, and selected-evidence package assembly only. Evidence gate, protected gold/silver/qrels/labels/expected/denominator/current/latest/source registry surfaces, production routing, official metrics, and broader agent loops stayed closed.
+- Code-level measurement surface: `xlsx_pdf_residual_breakdown` is report-only and official_metric=false; SourceAtom v2 preserves XLSX axes (`sheet`, `cell_range`, `cell`, `row_index_1based`, `row_label`, `column_label`, `target_column`, `header`, `header_path`, `table_id`) and PDF axes (`page_number`, `physical_page_index`, `block_index`, `bbox`, `region_type`, `section_title`, `table_caption`, `row_label`, `column_label`, `locator_fingerprint`). Route-selected Weaviate now records bounded XLSX/PDF scoped expansion counters and guardrail booleans in `report.json`.
+- Test measurement: focused XLSX/PDF/source-derived/local-LLM/residual slice passed (`22 passed, 223 deselected`); selected-evidence/gate/route-selected slice passed (`19 passed, 226 deselected`); combined XLSX/PDF residual/route-selected slice passed (`21 passed, 224 deselected`). All commands used `PYTHONDONTWRITEBYTECODE=1` and `pytest -p no:cacheprovider`.
+- Fresh report-only runs: deterministic gold `reports/rag_eval/actual_rag_eval_gold29_xlsx_pdf_vector_db_det/report.json`, local LLM gold `reports/rag_eval/actual_rag_eval_gold29_xlsx_pdf_vector_db_llm/report.json`, and silver diagnostic `reports/rag_eval/actual_rag_eval_silver500_xlsx_vector_db_det/report.json`; each run directory contains only `report.json`.
+- Gold deterministic comparison: allowed `5 -> 5`, insufficient `24 -> 24`, strict E2E `0.0 -> 0.0`, citation precision `0.227273 -> 0.230769`, citation recall `0.333333 -> 0.375`, unsupported-after-gate `0.0 -> 0.0`. Scoped expansion ran with XLSX query/add counts `38/4` (`same_cell_range=4`) and PDF query/add counts `7/3` (`same_page=3`).
+- Gold local LLM comparison: allowed `2 -> 2`, insufficient `12 -> 27`, strict E2E `0.0 -> 0.0`, citation precision `0.344828 -> 0.272727`, citation recall `0.37037 -> 0.375`, unsupported-after-gate `0.0 -> 0.0`. Local LLM remains readability-only and did not repair retrieval.
+- Silver diagnostic comparison: allowed `15 -> 7`, insufficient `485 -> 493`, strict metrics remain N/A, unsupported-after-gate `0.0 -> 0.0`. Silver remains diagnostic-only, not official quality.
+- Follow-up code measurement: RED tests first failed for scoped expansion query text that did not use source-owned row/column axes and for direct SourceAtom mapping that did not materialize source-owned text tags. After implementation, focused tests passed: source-owned axis scoped-query tests (`2 passed`), source-owned tag materialization tests (`2 passed`), XLSX/PDF/source-derived/local-LLM/residual slice (`26 passed, 223 deselected`), and selected-evidence/gate/route-selected slice (`19 passed, 230 deselected`).
+- Follow-up report-only runs: `reports/rag_eval/actual_rag_eval_gold29_xlsx_pdf_vector_db_det_axis_v2/report.json` and `reports/rag_eval/actual_rag_eval_silver500_xlsx_vector_db_det_axis_v2/report.json`; both emitted only `report.json`, kept raw prompt/response payload flags false, and did not update latest/runs registry.
+- Follow-up live measurement: gold deterministic remained allowed/insufficient `5/24`, strict E2E `0.0`, citation precision/recall `0.230769/0.375`, residual `selected_evidence_has_value_missing_axis=23`, XLSX scoped query/add `38/4`, PDF scoped query/add `7/3`; silver remained allowed/insufficient `7/493`, residual `selected_evidence_has_value_missing_axis=478`, XLSX scoped query/add `881/0`, PDF scoped query/add `107/8`.
+- Reindex measurement: `reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_route_selected_v2/index_manifest.json` is valid with `indexed_count=136280`, `skipped_count=0`, `embedding_model=BAAI/bge-m3`, `schema_version_source_atom=weaviate_source_atom_v2`, route taxonomy available, non-production namespace, no FAISS active retrieval, and no SearchUnit/SearchView candidate surface. A separate live schema mismatch check against `SourceAtomNonprodRouteSelectedV2` returned `[]` and confirmed `row_label`, `column_label`, `target_column`, `header`, `header_path`, `table_id`, `block_index`, `section_title`, and `table_caption`; this is command evidence, not a persisted manifest field.
+- Post-reindex report-only runs: `reports/rag_eval/actual_rag_eval_gold29_xlsx_pdf_vector_db_det_reindexed_20260615/report.json` and `reports/rag_eval/actual_rag_eval_silver500_xlsx_vector_db_det_reindexed_20260615/report.json`; both emitted only `report.json`, kept raw prompt/response payload flags false, and did not update latest/runs registry/source registry.
+- Post-reindex gold measurement: allowed/insufficient stayed `5/24`, strict E2E stayed `0.0`, evidence_recall@10 stayed `0.344828`, citation precision/recall improved `0.230769/0.375 -> 0.363636/0.571429`, citation_supported improved `13 -> 22`, residual remained `selected_evidence_has_value_missing_axis=23`, XLSX scoped query/add stayed `38/4`, and PDF scoped query/add stayed `7/3`.
+- Post-reindex silver diagnostic measurement: allowed/insufficient stayed `7/493`, strict metrics stayed N/A, citation_supported improved `321 -> 379`, residual shifted `selected_evidence_has_value_missing_axis=478 -> 479`, XLSX scoped query/add moved `881/0 -> 888/0`, and PDF scoped query/add moved `107/8 -> 112/13`. Silver remains diagnostic-only and is not promoted into strict metric policy.
+- Final test measurement: after removing an out-of-scope axis-shadow silver dataset/test surface, the focused source-native XLSX/PDF route-selected slice passed (`32 passed, 225 deselected`) with `PYTHONPATH=.` and `PYTHONDONTWRITEBYTECODE=1`.
+- Measurement conclusion: v2 reindex improved source-native citation support and strict citation precision/recall without changing gate policy, but it did not improve allowed answers, strict E2E, or the dominant `selected_evidence_has_value_missing_axis` residual. The remaining safe target is general XLSX/PDF selected-evidence package assembly/retrieval representation, especially the XLSX-heavy silver diagnostic lane yielding scoped expansion `888/0` after v2 reindex while gold stays `38/4`, not local LLM repair, new silver rows, shortcut fields, or gate relaxation.
+<!-- actual_rag_eval_xlsx_pdf_vector_db_source_evidence_quality:measurements-entry:end -->
+
 <!-- actual_rag_eval_query_formulation_v3_agentic_guard_nonprod:measurements-entry:start -->
 ### actual_rag_eval_query_formulation_v3_agentic_guard_nonprod
 
@@ -261,7 +304,7 @@
 <!-- actual_rag_eval_source_native_legacy_cleanup_nonprod:measurements-entry:start -->
 ### actual_rag_eval_source_native_legacy_cleanup_nonprod
 
-- Scope: cleanup/deprecation/fencing only. Primary cleanup artifact is `ai/eval/reports/rag-ingestion/runs/actual_rag_eval_source_native_legacy_cleanup_nonprod/report.json`; it records SearchUnit/SearchView runtime/test/docs references, legacy sidecar/report writers, CLI aliases, stale generated ignored artifacts, protected namespace holds, classification counts, deletions, holds, guardrails, and remaining debt.
+- Scope: cleanup/deprecation/fencing only. Primary cleanup artifact is `reports/rag_eval/rag-ingestion/runs/actual_rag_eval_source_native_legacy_cleanup_nonprod/report.json`; it records SearchUnit/SearchView runtime/test/docs references, legacy sidecar/report writers, CLI aliases, stale generated ignored artifacts, protected namespace holds, classification counts, deletions, holds, guardrails, and remaining debt.
 - Artifact contract: routine actual-RAG `--output-mode single` stays `report.json` only. Legacy JSONL/Markdown/evidence sidecars require explicit legacy output mode, and a human review packet remains the one explicit CSV exception when requested.
 - Guardrails: no ranking tuning, source-native index rebuild/replacement, current movement, official metric rows, product/promotion/live-readiness claims, raw prompt/response artifacts, or gold/qrels/labels/answerability/expected/denominator/source-registry/index/eval-query mutation. Existing BGE-M3/layered/MMR artifacts are held as non-production diagnostic evidence for separate repair lanes, not cleanup success metrics.
 <!-- actual_rag_eval_source_native_legacy_cleanup_nonprod:measurements-entry:end -->
@@ -304,7 +347,7 @@
 ### actual_rag_eval_expected_evidence_resolution_bridge_nonprod
 
 - Scope: deterministic expected-evidence resolution bridge for actual RAG eval reports. It maps expected evidence rows to retrieved-context or current-index candidates for diagnostics only. It does not mutate gold/qrels/labels, alter strict denominator policy, change RAG generation inputs, tune retriever ranking, move `current`, or promote official/product/live-readiness metrics.
-- New sidecars: `reports/rag_eval/<run_id>/evidence_resolution_candidates.jsonl` and `reports/rag_eval/<run_id>/evidence_resolution_review.md`. Per-item rows include `expected_evidence_resolution`; summaries include diagnostic counts and provisional resolved-evidence metrics. Registry/latest/status/index surfaces continue under `reports/rag_eval/` plus `ai/eval/reports/rag-ingestion/status.jsonl`.
+- New sidecars: `reports/rag_eval/<run_id>/evidence_resolution_candidates.jsonl` and `reports/rag_eval/<run_id>/evidence_resolution_review.md`. Per-item rows include `expected_evidence_resolution`; summaries include diagnostic counts and provisional resolved-evidence metrics. Registry/latest/status/index surfaces continue under `reports/rag_eval/` plus `reports/rag_eval/rag-ingestion/status.jsonl`.
 - Fixture bridge run: `reports/rag_eval/actual_rag_eval_fixture_20260610_152143/rag_eval_summary.json`; evidence rows=1, missing IDs=1, exact resolved=0, candidate resolved=1, unresolved=0, candidates=1, high/medium/low=1/0/0, resolved_evidence_available_rate=1/1, resolved_evidence_recall@3_provisional=1/1, citation_matches_resolved_evidence_precision_provisional=1/1, citation_matches_resolved_evidence_recall_provisional=1/1, e2e_rag_success_resolved_evidence_provisional=1/1. This is controlled fixture evidence only.
 - Text-golden bridge run: `reports/rag_eval/actual_rag_eval_text_gold_20260610_152153/rag_eval_summary.json`; compared_to=`actual_rag_eval_text_gold_20260610_142731`; evidence rows=6, missing IDs=6, exact resolved=0, candidate resolved=0, unresolved=6, candidates=14, high/medium/low=0/0/6, review_only=6, resolved_evidence_available_rate=0/6, resolved_evidence_recall@10_provisional=0/0 unavailable, citation_matches_resolved_evidence_precision_provisional=0/0 unavailable, citation_matches_resolved_evidence_recall_provisional=0/0 unavailable, e2e_rag_success_resolved_evidence_provisional=0/0 unavailable.
 - Text-golden before/after evidence-resolution comparison: previous run lacked new evidence-resolution candidate/provisional fields; expected_evidence_id_missing_count stayed 6->6, expected_evidence_id_unresolved_count stayed 6->6, expected_evidence_id_resolved_candidate_count is new current 0, expected_evidence_resolution_candidate_count is new current 14, resolved_evidence_available_rate is new current 0/6. No strict metric became available.
@@ -314,7 +357,7 @@
 <!-- actual_rag_eval_run_accumulation_comparison_nonprod:measurements-entry:start -->
 ### actual_rag_eval_run_accumulation_comparison_nonprod
 
-- Scope: focused run-accumulation and comparison support for `ai/eval/actual_rag_eval.py`, `ai/scripts/rag_actual_eval.py`, `ai/tests/test_actual_rag_eval_metric_generation.py`, generated `reports/rag_eval/` artifacts, latest pointers, and compact `ai/eval/reports/rag-ingestion/status.jsonl` events. No retriever-ranking improvement, gold/qrels/label mutation, denominator mutation, official metric promotion, current alias movement, production routing, product-success claim, or live-readiness claim was made.
+- Scope: focused run-accumulation and comparison support for `ai/eval/actual_rag_eval.py`, `ai/scripts/rag_actual_eval.py`, `ai/tests/test_actual_rag_eval_metric_generation.py`, generated `reports/rag_eval/` artifacts, latest pointers, and compact `reports/rag_eval/rag-ingestion/status.jsonl` events. No retriever-ranking improvement, gold/qrels/label mutation, denominator mutation, official metric promotion, current alias movement, production routing, product-success claim, or live-readiness claim was made.
 - Registry/latest artifacts: `reports/rag_eval/runs.jsonl`, `reports/rag_eval/latest.json`, `reports/rag_eval/latest_fixture.json`, `reports/rag_eval/latest_text_gold.json`, and generated index `reports/rag_eval/README.md`.
 - Fixture baseline: `reports/rag_eval/actual_rag_eval_fixture_20260610_142701/rag_eval_summary.json`; items=2; exact_or_alias_answer_correctness=0/1, evidence_recall@3=0/1, citation_precision=0/1, citation_recall=0/1, judged_answer_correctness_provisional=0/1, weak_evidence_match_recall@3=0/1, e2e_rag_success_provisional=0/1, retrieval_empty_rate=0.5, pipeline_error_count=0.
 - Fixture comparison run: `reports/rag_eval/actual_rag_eval_fixture_20260610_142714/rag_eval_summary.json`; compared_to=`actual_rag_eval_fixture_20260610_142701`; exact_or_alias_answer_correctness=1/1 (delta +1.0), evidence_recall@3=1/1 (+1.0), citation_precision=1/1 (+1.0), citation_recall=1/1 (+1.0), judged_answer_correctness_provisional=1/1 (+1.0), weak_evidence_match_recall@3=1/1 (+1.0), e2e_rag_success_provisional=1/1 (+1.0), retrieval_empty_rate=0.5 (unchanged), pipeline_error_count=0 (unchanged). These fixture deltas are controlled-context smoke evidence only.
@@ -585,7 +628,7 @@
 ## NEC 2026 local-election XLSX source collection route
 
 - Run key: `nec_2026_local_election_xlsx`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/nec_2026_local_election_xlsx/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/nec_2026_local_election_xlsx/report.json`
 - Interpretation: direct diagnostic source-collection route only; `current` remains `v5_6`.
 
 | counter | value |
@@ -615,7 +658,7 @@
 ## v5_5 user-approved official metric dry-run input
 
 - Run key: `v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_5/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v5_5/report.json`
 - Interpretation: user-approved 29-row v5_4 packet ingestion and official metric input-contract dry-run only. No answer-generation scorer, final official metric, training, fine-tuning, promotion, product-success, or live-readiness evidence.
 
 | Counter | Value |
@@ -640,7 +683,7 @@
 ## v5_4 user-owned official-eval approval packet
 
 - Run key: `v5_4_user_owned_official_eval_approval_packet`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_4/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v5_4/report.json`
 - Interpretation: packet-only user approval materialization. No official metric dry-run, no official metric rows, and no user-owned final fields filled by Codex.
 
 | counter | value |
@@ -670,7 +713,7 @@
 ## v5_3 PDF/TEXT residual retrieval/evidence hardening
 
 - Run key: `v5_3_pdf_text_residual_retrieval_evidence_hardening`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_3/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v5_3/report.json`
 - Interpretation: aggregate PDF/TEXT residual taxonomy plus overlay-90 sample root-cause taxonomy. No row-level residual mask or new repair is created.
 
 | counter | value |
@@ -708,7 +751,7 @@
 ## v5_2 XLSX residual candidate-state taxonomy
 
 - Run key: `v5_2_xlsx_residual_candidate_only_retrieval_engineering`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_2/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v5_2/report.json`
 - Interpretation: candidate-state taxonomy only. Exact row-level residual overlap remains unavailable without a safe non-oracle residual mask.
 
 | counter | value |
@@ -744,7 +787,7 @@
 ## v5_1 official eval gate scaffolding
 
 - Run key: `v5_1_official_eval_gate_scaffolding`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_1/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v5_1/report.json`
 - Interpretation: schema and validator scaffold only; no official metric input rows, gold/qrels, denominator rows, training data, or promotion surface.
 
 | counter | value |
@@ -785,7 +828,7 @@
 ## v5_0 v4 closeout and v5 gate plan
 
 - Run key: `v5_0_v4_closeout_and_v5_gate_plan`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v5_0/report.json`
 - Interpretation: diagnostic-only closeout and gate planning; not official scoring, promotion, product-success evidence, or live readiness.
 
 | counter | value |
@@ -829,8 +872,8 @@
 ### v4_7_12 Layered Retrieval Generalization And Overfit Audit
 
 - Run key: `v4_7_12_layered_retrieval_generalization_and_overfit_audit`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_12/report.json`
-- Silver retrieval audit: `ai/eval/reports/rag-ingestion/runs/v4_7_12/silver_layered_retrieval_audit.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_12/report.json`
+- Silver retrieval audit: `reports/rag_eval/rag-ingestion/runs/v4_7_12/silver_layered_retrieval_audit.json`
 - Interpretation: diagnostic-only architecture/generalization audit. Not official scoring, not promotion evidence, not product-success evidence, and not live-readiness.
 
 | Counter | Value |
@@ -855,9 +898,9 @@
 ### v4_7_11 Actual LLM Answer Replay And Silver Diagnostic Smoke
 
 - Run key: `v4_7_11_actual_llm_answer_replay_and_silver_diagnostic_smoke`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_11/report.json`
-- Answer review packet: `ai/eval/reports/rag-ingestion/runs/v4_7_11/answer_review_packet_ko.jsonl`
-- Source artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_10/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_11/report.json`
+- Answer review packet: `reports/rag_eval/rag-ingestion/runs/v4_7_11/answer_review_packet_ko.jsonl`
+- Source artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_10/report.json`
 - Local LLM env gate: `RAG_V4_7_11_ENABLE_LOCAL_LLM_REPLAY`
 - Boundary: diagnostic-only localhost LLM replay over v4_7_10 EvidenceBundle-ready rows. No raw prompt or raw response payload is written to Markdown/status; no official metric, gold/qrels/labels/expected/supporting evidence mutation, denominator mutation, training/fine_tuning/FT-A, promotion, product success, or live-readiness is opened.
 - Replay result: candidates 9; skipped weak residual 1; generated 9; parsed answers 9; citations rendered 9; claim-support pass/fail 5/4; unsupported/evidence-underuse 4/4; Korean answers 9; non-Korean flags 0.
@@ -940,8 +983,8 @@
 ### v4_7_10 PDF Korean Evidence Normalization And Answer Replay Readiness
 
 - Run key: `v4_7_10_pdf_korean_evidence_normalization_and_answer_replay_readiness`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_10/report.json`
-- Source artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_10/report.json`
+- Source artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_9/report.json`
 - Boundary: diagnostic-only spacing-insensitive Korean evidence normalization over existing SourceAtom spans. No raw PDF broad scan, no gold/qrels/labels/expected/supporting evidence mutation, no denominator mutation, no training/fine_tuning/FT-A, no promotion, no live-readiness.
 - Before/after: weak evidence/window 3 -> 1; missing neighbor context 3 -> 1.
 - Answer-ready evidence bundles: 55 -> 57.
@@ -981,7 +1024,7 @@
 ### v4_7_9 PDF Evidence Residual Answer Quality Replay
 
 - Run key: `v4_7_9_pdf_evidence_residual_answer_quality_replay`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_9/report.json`
 - Local LLM status: `LOCAL_LLM_UNAVAILABLE_FAIL_CLOSED`; no raw prompt or raw response payload is written.
 
 | Counter | Value |
@@ -1010,7 +1053,7 @@
 ### v4_7_8 Test/Doc Dependency Decoupling And Runner Alias Expansion
 
 - Run key: `v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_8/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_8/report.json`
 - Interpretation: cleanup/refactor counters only. No retrieval, EvidenceBundle repair, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator, training, FT-A, promotion, product-success, or live-readiness surface is opened.
 
 | Counter | Before | After |
@@ -1031,7 +1074,7 @@
 ### v4_7_7 V3 Legacy Archive And Runner Consolidation
 
 - Run key: `v4_7_7_v3_legacy_archive_and_runner_consolidation`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_7/report.json`
 - Interpretation: archive-aware cleanup/refactor counters only. No retrieval, EvidenceBundle, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator, training, FT-A, promotion, product-success, or live-readiness surface is opened.
 
 | Counter | Value |
@@ -1050,7 +1093,7 @@
 ### v4_7_6 Eval Artifact Archive And Purge
 
 - Run key: `v4_7_6_eval_artifact_archive_purge`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_6/report.json`
 - Interpretation: cleanup/refactor counters only. No retrieval, EvidenceBundle, LLM answer generation, official metric, gold/qrels, labels, expected/supporting evidence, denominator, training, FT-A, promotion, product-success, or live-readiness surface is opened.
 
 | Counter | Before | After |
@@ -1068,7 +1111,7 @@
 ### v4_7_5 PDF Evidence Repair And Eval Surface Compaction
 
 - Run key: `v4_7_5_pdf_evidence_repair_eval_compaction`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_5/report.json`
 - Interpretation: diagnostic proxy before/after over the v4_7_4 PDF survivor 58 rows only. No official metric, gold/qrels, expected answers, supporting evidence approval, labels, training data, promotion evidence, product-success evidence, or live readiness is opened.
 
 | Counter | Before v4_7_4 | After v4_7_5 | Delta |
@@ -1119,7 +1162,7 @@
 ### v4_7_3 Human-Reviewed Korean Query Candidate Pass/Exclusion Application
 
 - Run: `official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod`
-- Resolver key: `v4_7_3`; primary report resolves to `ai/eval/reports/rag-ingestion/runs/v4_7_3/report.json`. Legacy long-path alias remains compatibility-only, and sidecar ledgers are embedded in `report.json` instead of written as JSONL.
+- Resolver key: `v4_7_3`; primary report resolves to `reports/rag_eval/rag-ingestion/runs/v4_7_3/report.json`. Legacy long-path alias remains compatibility-only, and sidecar ledgers are embedded in `report.json` instead of written as JSONL.
 - Interpretation: `검수상태=미검수` is user-clarified as pass only when `제외사유` is blank. Non-empty `제외사유` means user-excluded. Query candidate pass remains separate from gold/qrels, labels, expected answers/evidence, and official denominator decisions.
 
 | Counter | Value |
@@ -1145,7 +1188,7 @@
 ### v4_7_2 Source-Grounded Korean Query Review Packet Hydration
 
 - Run: `official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod`
-- Primary artifacts: `report.json`, `review_packet_ko_hydrated.xlsx`, `review_packet_ko_hydrated.csv`, `review_packet_ko_hydrated.jsonl`, `review_guidelines_ko.md`, `review_summary_ko.json` under `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod`.
+- Primary artifacts: `report.json`, `review_packet_ko_hydrated.xlsx`, `review_packet_ko_hydrated.csv`, `review_packet_ko_hydrated.jsonl`, `review_guidelines_ko.md`, `review_summary_ko.json` under `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod`.
 - Interpretation: hydrated Korean query/evidence/locator previews are machine-owned review hints only. They are not gold/qrels, labels, official metric input, training data, FT-A execution, promotion evidence, product-success evidence, or live readiness evidence.
 
 | Counter | Value |
@@ -1170,7 +1213,7 @@
 ### v4_7_1 Korean Review Packet And README Diagnostic Snapshot
 
 - Run: `official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod`
-- Primary artifacts: `report.json`, `review_packet_ko.xlsx`, `review_packet_ko.csv`, `review_packet_ko.jsonl`, `actual_query_llm_response_examples_ko.csv`, `review_guidelines_ko.md`, `review_summary_ko.json` under `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod`.
+- Primary artifacts: `report.json`, `review_packet_ko.xlsx`, `review_packet_ko.csv`, `review_packet_ko.jsonl`, `actual_query_llm_response_examples_ko.csv`, `review_guidelines_ko.md`, `review_summary_ko.json` under `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_7_1_korean_review_packet_and_readme_status_snapshot_nonprod`.
 - Source evidence: v4_7 pre-official registration report plus external manifest SHA-256 `15b2f5f61a03bf588bf49d74a95a11259e2a6a83c0a32a727625344cae7af58c`; source metadata fields are filled from SHA-256 matches against the `source_collection` manifest; actual LLM response examples are from v3_22 answer-allowed rows only.
 - Interpretation: Korean packet artifacts are user-owned review surfaces. They are not gold/qrels, expected answer, supporting evidence, official metric input, training data, FT-A execution, promotion evidence, product-success evidence, or live readiness evidence.
 
@@ -1201,7 +1244,7 @@
 - Run: `official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod`
 - v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
-- Resolver key: `v4_7_preofficial`; primary report resolves to `ai/eval/reports/rag-ingestion/runs/v4_7_preofficial/report.json`.
+- Resolver key: `v4_7_preofficial`; primary report resolves to `reports/rag_eval/rag-ingestion/runs/v4_7_preofficial/report.json`.
 - Source evidence: v4_5_1/v4_5_2/v4_6_10-compatible candidate manifest contract, v4_5_3 prior identity hash baseline, and optional external candidate manifest input. This is pre-official registration evidence only.
 - Interpretation: accepted counts here are candidate registration counters, not official metric rows, not promotion evidence, not product success evidence, and not FT-A execution.
 
@@ -1262,7 +1305,7 @@ No candidate manifest, validation sidecar, dry-run input manifest, prompt payloa
 - Run: `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod/report.json`
 - Source evidence: v4_6_7/v4_6_10/v4_6_11 report hashes, FastAPI holdout-candidate validation route, and transient external-manifest replay against v4_6_10.
 - Interpretation: route/replay parity and redaction are deterministic contract checks only. This is not real external holdout registration, not candidate manifest export, not FT-A dry-run execution, not official metric, not promotion evidence, and not product/live readiness.
 
@@ -1294,7 +1337,7 @@ Artifact policy: single ignored `report.json`; no route-parity sidecar, candidat
 - Run: `official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod`
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod/report.json`
 - Source evidence: v4_6_4/v4_6_5/v4_6_6/v4_6_10 report hashes and the FastAPI diagnostic/internal FT-A dry-run input validation route.
 - Interpretation: route parity and redaction are measured as deterministic contract checks only. This is not dry-run input manifest export, not FT-A dry-run execution, not official metric, not promotion evidence, not product-success evidence, and not live readiness.
 
@@ -1327,7 +1370,7 @@ Artifact policy: single ignored `report.json`; no route-parity sidecar, dry-run 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod`
 - v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod/report.json`
 - Source evidence: v4_5_1/v4_5_2/v4_5_3/v4_6_6/v4_6_8/v4_6_9 report hashes and the empty external holdout candidate manifest boundary. Optional `--candidate-manifest` replay is input-only and records redacted/hash metadata plus aggregate v4_5_1/v4_5_2 gate outcomes without writing sidecars.
 - Interpretation: the default artifact is an input-waiting manifest replay and v4_7-closed preflight only. Optional manifest replay is a no-write gate check, not external holdout acquisition, not candidate manifest export, not FT-A dry-run execution, not official metric, not promotion evidence, and not product/live readiness.
 
@@ -1358,7 +1401,7 @@ Artifact policy: single ignored `report.json`; no manifest replay sidecar, offic
 - Run: `official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod`
 - v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod/report.json`
 - Source evidence: sanitized in-memory duplicate probes against the default-disabled FastAPI holdout validator and v4_5_1 intake gate.
 - Interpretation: this is a deterministic duplicate-hygiene check only. It is not real external holdout acquisition, not candidate manifest export, not FT-A dry-run execution, not official metric, not promotion evidence, and not product/live readiness.
 
@@ -1386,7 +1429,7 @@ Artifact policy: single ignored `report.json`; no duplicate-hygiene sidecar, can
 - Run: `official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod`
 - v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod/report.json`
 - Source evidence: current report hashes for v4_5_1, v4_5_2, v4_5_3, v4_6_6, and v4_6_7 plus FastAPI readiness/holdout-candidate validation DTO projections.
 - Interpretation: this is a deterministic dependency-freshness and acquisition-requirements packet only. It is not real external holdout acquisition, not candidate manifest export, not FT-A dry-run execution, not official metric, not promotion evidence, and not product/live readiness.
 
@@ -1414,7 +1457,7 @@ Artifact policy: single ignored `report.json`; no acquisition sidecar, candidate
 - Run: `official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod`
 - v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod/report.json`
 - Source evidence: in-memory parity probes against FastAPI holdout candidate validation, v4_5_1 intake, v4_5_2 source-identity audit, and v4_5_3-compatible prior hash records.
 - Interpretation: this is a deterministic contract-parity check only. It is not real external holdout acquisition, not manifest export, not FT-A dry-run execution, not official metric, not promotion evidence, and not product/live readiness.
 
@@ -1443,7 +1486,7 @@ Artifact policy: single ignored `report.json`; no runtime parity sidecar, candid
 - v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, holdout-gap and dry-run-blocker ledger only, single `report.json`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod/report.json`
 - Source evidence: v4_4 through v4_6_5 diagnostic reports.
 
 | Field | Value |
@@ -1479,7 +1522,7 @@ Counter source-of-truth: `report.json` embeds holdout_gap_ledger, dry_run_blocke
 - v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, FT-A dry-run execution-plan-gate only, single `report.json`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod/report.json`
 - Source evidence: v4_6_4 FT-A dry-run input manifest validator report.
 
 | Field | Value |
@@ -1506,7 +1549,7 @@ Counter source-of-truth: `report.json` embeds the dry-run execution plan contrac
 ## v4_7_18 XLSX candidate-only materialization repair and lineage reproducibility
 
 - Run key: `v4_7_18_xlsx_candidate_only_materialization_repair_and_lineage_reproducibility`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_18/report.json`
 
 | counter | value |
 | --- | --- |
@@ -1543,7 +1586,7 @@ Counter source-of-truth: `report.json` embeds the dry-run execution plan contrac
 ## v4_7_17 candidate-only generalization validation and XLSX table-axis repair audit
 
 - Run key: `v4_7_17_candidate_only_generalization_validation_and_xlsx_table_axis_repair_audit`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_17/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_17/report.json`
 
 | counter | value |
 | --- | --- |
@@ -1577,7 +1620,7 @@ Counter source-of-truth: `report.json` embeds the dry-run execution plan contrac
 ## v4_7_16 target recall repair prototype
 
 - Run key: `v4_7_16_target_recall_repair_prototype`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_16/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_16/report.json`
 
 | counter | value |
 | --- | --- |
@@ -1609,7 +1652,7 @@ Counter source-of-truth: `report.json` embeds the dry-run execution plan contrac
 ## v4_7_15 read-only SearchIndexContract replay projection
 
 - Run key: `v4_7_15_read_only_searchindex_replay_projection`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_15/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_15/report.json`
 
 | counter | value |
 | --- | --- |
@@ -1642,7 +1685,7 @@ Counter source-of-truth: `report.json` embeds the dry-run execution plan contrac
 ## v4_7_14 diagnostic precondition hardening
 
 - Run key: `v4_7_14_diagnostic_precondition_hardening`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_14/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_14/report.json`
 
 | counter | value |
 | --- | --- |
@@ -1688,7 +1731,7 @@ measurement sections at the top, keep older sections as compact history, and do
 not create per-run Markdown reports for routine diagnostic runs.
 
 Machine-readable JSON/JSONL artifacts are evidence payloads, not the primary
-human report surface. As of the 2026-05-21 cleanup, `ai/eval/reports/` keeps
+human report surface. As of the 2026-05-21 cleanup, `ai/reports/rag_eval/` keeps
 only `rag-ingestion/`, and that directory keeps `status.jsonl` plus compact current v3_6_9 and later diagnostic artifacts required by the current RAG profile. Older measurement payloads, including the official
 baseline/scorer/input/smoke files and v3_1-v3_6_8 diagnostics, live in:
 
@@ -1705,7 +1748,7 @@ runtime archive under redacted external archive paths.
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, validator-only, single `report.json`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod/report.json`
 - Source evidence: v4_6_2 FT-A route-policy fixture contract and v4_6_3 prompt-policy baseline schema reports.
 
 | Diagnostic count | Value |
@@ -1744,7 +1787,7 @@ Counter source-of-truth: `report.json` embeds the dry-run input manifest contrac
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, schema-only, single `report.json`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod/report.json`
 - Source evidence: v4_6_2 FT-A route-policy fixture contract report.
 
 | Diagnostic count | Value |
@@ -1778,7 +1821,7 @@ Counter source-of-truth: `report.json` embeds the prompt-policy baseline schema,
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, fixture-contract-only, single `report.json`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod/report.json`
 - Source evidence: v4_6 preflight report and v4_6_1 holdout manifest identity contract bridge report.
 
 | Diagnostic count | Value |
@@ -1812,7 +1855,7 @@ Counter source-of-truth: `report.json` embeds the FT-A fixture contract, validat
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, identity-contract bridge only, single `report.json`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod/report.json`
 - Source evidence: v4_5_1/v4_5_2/v4_5_3 reports expose the shared holdout manifest contract hash, and v4_6 source report inputs re-lock those same hashes.
 
 | Diagnostic count | Value |
@@ -1844,7 +1887,7 @@ Counter source-of-truth: `report.json` embeds the shared contract hash, source r
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, preflight-only, single `report.json`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod/report.json`
 - Source evidence: v4_5/v4_5_1/v4_5_2/v4_5_3 report inputs are hash-locked in `source_report_inputs`; v4_5_3 supplies the hash-only prior identity baseline.
 
 | Diagnostic count | Value |
@@ -1877,7 +1920,7 @@ Counter source-of-truth: `report.json` embeds the preflight gates, source report
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, hash-only prior source-identity ledger summary only, single `report.json`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod/report.json`
 - Source evidence: `ai/eval/source_registry/source_atom_registry_v1.jsonl` PDF/XLSX SourceAtom rows.
 
 | Diagnostic count | Value |
@@ -1914,7 +1957,7 @@ Counter source-of-truth: `report.json` embeds the hash-only `prior_identity_ledg
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, external holdout candidate source-identity audit only, single `report.json`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod/report.json`
 - Source evidence: v4_5_1 candidate intake gate plus optional external candidate manifest, optional raw prior identity ledger input, and the v4_5_3 hash-only prior summary report when available.
 
 | Diagnostic count | Value |
@@ -1959,7 +2002,7 @@ Counter source-of-truth: `report.json` embeds candidate_manifest_input, prior_id
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, holdout-candidate-intake only, single `report.json`.
 - Candidate manifest input: optional external manifest path is input-only; raw external paths are redacted in reports/status.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod/report.json`
 - Source evidence: v4_5 fine-tuning-readiness packet plus v4_4 holdout/leakage gates.
 
 | Diagnostic count | Value |
@@ -1992,7 +2035,7 @@ Counter source-of-truth: `report.json` embeds candidate_manifest_input, candidat
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, fine-tuning-readiness only, single `report.json`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod/report.json`
 - Source evidence: v4_4 real blind/OOD holdout and leakage-audit report.
 
 | Diagnostic count | Value |
@@ -2031,7 +2074,7 @@ Counter source-of-truth: `report.json` embeds readiness_gates, fine_tuning_lanes
 - Routes: `POST /internal/rag/diagnostic/query`, `GET /internal/rag/diagnostic/readiness`, `POST /internal/rag/diagnostic/holdout-candidates/validate`, `POST /internal/rag/diagnostic/ft-a/dry-run-input/validate`
 - Feature flag: `AIPIPELINE_WORKER_RAG_FASTAPI_DIAGNOSTIC_ROUTE_ENABLED` / `rag_fastapi_diagnostic_route_enabled`
 - Primary app: `ai/app/main.py` exposes `app = create_app()`; `ai/app/api.py` owns the only discovered `FastAPI(...)` factory.
-- Counter source-of-truth: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`
+- Counter source-of-truth: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`
 - Script inventory: `ai/scripts/README.md`; no required v3 artifact/script was deleted.
 
 | Integration check | Value |
@@ -2058,7 +2101,7 @@ This section records integration and cleanup checks only. It does not add a new 
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, family-separated PDF/XLSX holdout infrastructure, TEXT comparison/control only, single `report.json`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod/report.json`
 - Source evidence: v3_10 holdout manifest, v3_10 query-fidelity audit, v3_10 leakage audit, v4_2 XLSX locator report, and v4_3 PDF file-identity split report.
 
 | Diagnostic count | Value |
@@ -2087,7 +2130,7 @@ Counter source-of-truth: `report.json` embeds summary, metrics, holdout_manifest
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, family-separated PDF-only, single `report.json`, `official_metric=false`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod/report.json`
 - Metric provenance: PDF file-identity and evidence-window counts are v3_13 reference-only seen diagnostics with `computed_by_v4_3=false`.
 
 | Diagnostic count | Value |
@@ -2120,7 +2163,7 @@ Counter source-of-truth: `report.json` embeds summary, metrics, per-query PDF fi
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, family-separated XLSX-only, single `report.json`.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod/report.json`
 - Metric provenance: table/range and cell/value counts are v3_12/v3_15 reference-only seen diagnostics with `computed_by_v4_2=false`.
 
 | Diagnostic count | Value |
@@ -2152,7 +2195,7 @@ Counter source-of-truth: `report.json` embeds summary, metrics, per-query XLSX l
 - v4 marker: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Run family: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Policy: diagnostic-only, non-production, single `report.json`; persisted/runtime-adjacent XLSX SourceAtom display metadata only.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod/report.json`
 
 | Diagnostic count | Value |
 | --- | ---: |
@@ -2182,7 +2225,7 @@ Counter source-of-truth: `report.json` embeds summary, metrics, persisted_source
 - v4 name: `v4_source_grounded_runtime_locator_and_finetune_readiness`
 - Recommended run family if a run is created: `official_answer_citation_agentic_loop_run_v4_source_grounded_runtime_locator_and_finetune_readiness_nonprod`
 - Phase 1 closure basis: `official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod`
-- Counter source-of-truth remains: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`
+- Counter source-of-truth remains: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`
 - Charter: v4 extends the Phase 1 diagnostic source-first RAG contract into persisted/runtime-adjacent paths, improves family-separated XLSX locator and PDF file-identity bottlenecks, builds real blind/OOD holdout and leakage-audit infrastructure, and prepares fine-tuning lanes only after evidence and split quality gates are satisfied.
 
 | v4 opening gate | Value |
@@ -2207,7 +2250,7 @@ Interpretation: v4 is opened as a non-production diagnostic charter, not as a sc
 
 - Closure: `phase1_diagnostic_contract_closure_after_v3_22`
 - Closure basis run: `official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod`
-- Counter source-of-truth: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`
+- Counter source-of-truth: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`
 - Artifact policy: single primary report artifact only. `status.jsonl is ignored`, `report.json is ignored`, and optional `review_packet.csv` remains user-owned/optional and ignored; it was not created for the closure.
 
 | Diagnostic count | Value |
@@ -2236,7 +2279,7 @@ Interpretation: Phase 1 is closed as a diagnostic contract closure only. These v
 
 - Run: `official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod`
 - Policy: diagnostic-only, non-production, SourceAtom/EvidenceBundle-owned XLSX display metadata; no raw XLSX query-time parsing, no sidecar primary artifacts, no review CSV unless user-owned review is required.
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`
 
 | Diagnostic count | Value |
 | --- | ---: |
@@ -2290,7 +2333,7 @@ Counter source-of-truth: `report.json` embeds summary, metrics, per_query, route
 | broad_source_atom_scan_attempt_count | 0 |
 | official_metric_input_rows | 0 |
 
-Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod/summary.json`, `metrics.json`, `per_query.jsonl`, `agent_tool_call_trace.jsonl`, `route_policy_audit.jsonl`, `runtime_contract_audit.jsonl`, `user_response_policy_audit.jsonl`, `db_contract_audit.jsonl`, `index_contract_audit.jsonl`, `cache_contract_audit.jsonl`, `live_runtime_smoke_audit.jsonl`, `llm_io_packet.jsonl`, `llm_io_packet.csv`, `llm_invocation_audit.jsonl`, `local_llm_readiness.json`, `prompt_manifest.json`, `guardrail_audit.json`, `leakage_audit.jsonl`, `review_packet.jsonl`, and `review_packet.csv`.
+Artifacts: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod/summary.json`, `metrics.json`, `per_query.jsonl`, `agent_tool_call_trace.jsonl`, `route_policy_audit.jsonl`, `runtime_contract_audit.jsonl`, `user_response_policy_audit.jsonl`, `db_contract_audit.jsonl`, `index_contract_audit.jsonl`, `cache_contract_audit.jsonl`, `live_runtime_smoke_audit.jsonl`, `llm_io_packet.jsonl`, `llm_io_packet.csv`, `llm_invocation_audit.jsonl`, `local_llm_readiness.json`, `prompt_manifest.json`, `guardrail_audit.json`, `leakage_audit.jsonl`, `review_packet.jsonl`, and `review_packet.csv`.
 
 Counter source-of-truth: `metrics.json` carries the LLM invocation, leakage, adapter, and guardrail counters; `status.jsonl` records only counts, paths, hashes, and policy flags, not raw prompts or raw responses.
 <!-- official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod:measurements-entry:end -->
@@ -2322,7 +2365,7 @@ Counter source-of-truth: `metrics.json` carries the LLM invocation, leakage, ada
 | vector_payload_evidence_truth_violation_count | 0 |
 | official_metric_input_rows | 0 |
 
-Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod/summary.json`, `metrics.json`, `per_query.jsonl`, `agent_tool_call_trace.jsonl`, `route_policy_audit.jsonl`, `runtime_contract_audit.jsonl`, `user_response_policy_audit.jsonl`, `db_contract_audit.jsonl`, `index_contract_audit.jsonl`, `cache_contract_audit.jsonl`, `live_runtime_smoke_audit.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `review_packet.jsonl`, and `review_packet.csv`.
+Artifacts: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod/summary.json`, `metrics.json`, `per_query.jsonl`, `agent_tool_call_trace.jsonl`, `route_policy_audit.jsonl`, `runtime_contract_audit.jsonl`, `user_response_policy_audit.jsonl`, `db_contract_audit.jsonl`, `index_contract_audit.jsonl`, `cache_contract_audit.jsonl`, `live_runtime_smoke_audit.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `review_packet.jsonl`, and `review_packet.csv`.
 
 Counter source-of-truth: `metrics.json` carries the adapter availability, fail-closed, cache, and guardrail counters; `status.jsonl` is a compact event ledger with acceptance counters and artifact hashes.
 <!-- official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod:measurements-entry:end -->
@@ -2354,7 +2397,7 @@ Counter source-of-truth: `metrics.json` carries the adapter availability, fail-c
 | runtime_contract_violation_count | 0 |
 | official_metric_input_rows | 0 |
 
-Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod/summary.json`, `metrics.json`, `per_query.jsonl`, `agent_tool_call_trace.jsonl`, `route_policy_audit.jsonl`, `runtime_contract_audit.jsonl`, `user_response_policy_audit.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `review_packet.jsonl`, and `review_packet.csv`.
+Artifacts: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod/summary.json`, `metrics.json`, `per_query.jsonl`, `agent_tool_call_trace.jsonl`, `route_policy_audit.jsonl`, `runtime_contract_audit.jsonl`, `user_response_policy_audit.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `review_packet.jsonl`, and `review_packet.csv`.
 
 Counter source-of-truth: `metrics.json` carries the full bucket maps and diagnostic counters; `status.jsonl` is a compact event ledger with the acceptance and headline diagnostic counters.
 
@@ -2379,7 +2422,7 @@ Verification note: the v3_19 `--check`, runtime-policy tests, artifact hash-lock
 | runtime_contract_violation_count | 0 |
 | official_metric_input_rows | 0 |
 
-Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod/summary.json`, `metrics.json`, `per_query.jsonl`, `agent_tool_call_trace.jsonl`, `route_policy_audit.jsonl`, `runtime_contract_audit.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `review_packet.csv`, and `review_packet.jsonl`.
+Artifacts: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod/summary.json`, `metrics.json`, `per_query.jsonl`, `agent_tool_call_trace.jsonl`, `route_policy_audit.jsonl`, `runtime_contract_audit.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `review_packet.csv`, and `review_packet.jsonl`.
 <!-- official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod:measurements-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:measurements-entry:start -->
@@ -2410,7 +2453,7 @@ Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agent
 | over_abstain_review_candidate_count | 3 |
 | official_metric_input_rows | 0 |
 
-Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/summary.json`, `metrics.json`, `per_family.json`, `per_query.jsonl`, `responses.jsonl`, `review_packet.csv`, `review_packet.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `prompt_manifest.json`, `user_locator_parse_audit.jsonl`, `user_locator_resolution_audit.jsonl`, `rough_query_bucket_audit.jsonl`, `tool_registry.json`, `route_policy_audit.jsonl`, `runtime_materialization_plan.json`, and `latency_budget_contract.json`.
+Artifacts: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod/summary.json`, `metrics.json`, `per_family.json`, `per_query.jsonl`, `responses.jsonl`, `review_packet.csv`, `review_packet.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `prompt_manifest.json`, `user_locator_parse_audit.jsonl`, `user_locator_resolution_audit.jsonl`, `rough_query_bucket_audit.jsonl`, `tool_registry.json`, `route_policy_audit.jsonl`, `runtime_materialization_plan.json`, and `latency_budget_contract.json`.
 <!-- official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod:measurements-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod:measurements-entry:start -->
@@ -2441,7 +2484,7 @@ Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agent
 
 Runtime materialization and latency budget: L0-L8 are classified exactly once across `ingestion_time_materialized`, `index_time_materialized`, `query_time_lightweight`, `query_time_cacheable`, or `forbidden_query_time_work`; raw PDF/XLSX query-time parsing, full workbook/sheet scans, full PDF page/block scans, broad SourceAtom scans, and vector-payload-as-evidence-truth are forbidden. L8 generation latency is diagnostic-only and is not mixed into retrieval latency.
 
-Artifacts: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod/review_packet.csv`, `review_packet.jsonl`, `responses.jsonl`, `summary.json`, `metrics.json`, `per_family.json`, `per_query.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `prompt_manifest.json`, `local_llm_readiness.json`, `runtime_materialization_plan.json`, `latency_budget_contract.json`, `per_layer_online_work_audit.jsonl`, `cache_key_contract.json`, and `forbidden_query_time_work_audit.json`.
+Artifacts: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod/review_packet.csv`, `review_packet.jsonl`, `responses.jsonl`, `summary.json`, `metrics.json`, `per_family.json`, `per_query.jsonl`, `guardrail_audit.json`, `leakage_audit.jsonl`, `prompt_manifest.json`, `local_llm_readiness.json`, `runtime_materialization_plan.json`, `latency_budget_contract.json`, `per_layer_online_work_audit.jsonl`, `cache_key_contract.json`, and `forbidden_query_time_work_audit.json`.
 <!-- official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod:measurements-entry:end -->
 
 <!-- official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement:measurements-entry:start -->
@@ -2672,7 +2715,7 @@ Commands:
 ```powershell
 python -X utf8 ai\scripts\rag_official_answer_citation_agentic_loop_run_v1.py --run-id official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic
 python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label v3_9_pdf_xlsx_bottleneck_quality_improvement_dev_6pf --cases-per-family 6 --source-families PDF,XLSX --max-tokens 220 --query-max-tokens 160 --timeout-seconds 90
-python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label v3_9_pdf_xlsx_bottleneck_quality_improvement_validation_6pf --cases-per-family 6 --source-families PDF,XLSX --split-role validation_holdout --dev-summary ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_pdf_xlsx_bottleneck_quality_improvement_dev_6pf_summary.json --max-tokens 220 --query-max-tokens 160 --timeout-seconds 90
+python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label v3_9_pdf_xlsx_bottleneck_quality_improvement_validation_6pf --cases-per-family 6 --source-families PDF,XLSX --split-role validation_holdout --dev-summary reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_pdf_xlsx_bottleneck_quality_improvement_dev_6pf_summary.json --max-tokens 220 --query-max-tokens 160 --timeout-seconds 90
 ```
 
 Split policy:
@@ -2720,15 +2763,15 @@ Artifacts:
 
 | Artifact | Path |
 |---|---|
-| Summary | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_summary.json` |
-| Metrics | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_metrics.json` |
-| Per-family | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_per_family.json` |
-| Per-query | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_per_query.jsonl` |
-| Failure taxonomy | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_failure_taxonomy.json` |
-| Query fidelity audit | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_query_fidelity_audit.jsonl` |
-| PDF residual review | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_pdf_residual_review.jsonl` |
-| XLSX locator residual review | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_xlsx_locator_residual_review.jsonl` |
-| Split manifest | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_split_manifest.json` |
+| Summary | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_summary.json` |
+| Metrics | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_metrics.json` |
+| Per-family | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_per_family.json` |
+| Per-query | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_per_query.jsonl` |
+| Failure taxonomy | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_failure_taxonomy.json` |
+| Query fidelity audit | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_query_fidelity_audit.jsonl` |
+| PDF residual review | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_pdf_residual_review.jsonl` |
+| XLSX locator residual review | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_xlsx_locator_residual_review.jsonl` |
+| Split manifest | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement_split_manifest.json` |
 
 Verification is recorded in the final Korean report and status event; this
 section will be amended only if a required verification command fails.
@@ -2745,7 +2788,7 @@ Commands:
 
 ```powershell
 python -X utf8 ai/scripts/rag_pdf_xlsx_llm_quality_benchmark.py --label v3_9_natural_answer_quality_dev_6pf --cases-per-family 6 --source-families PDF,XLSX,TEXT --max-tokens 220 --query-max-tokens 160 --timeout-seconds 90
-python -X utf8 ai/scripts/rag_pdf_xlsx_llm_quality_benchmark.py --label v3_9_natural_answer_quality_validation_6pf --cases-per-family 6 --source-families PDF,XLSX,TEXT --split-role validation_holdout --dev-summary ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_summary.json --max-tokens 220 --query-max-tokens 160 --timeout-seconds 90
+python -X utf8 ai/scripts/rag_pdf_xlsx_llm_quality_benchmark.py --label v3_9_natural_answer_quality_validation_6pf --cases-per-family 6 --source-families PDF,XLSX,TEXT --split-role validation_holdout --dev-summary reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_summary.json --max-tokens 220 --query-max-tokens 160 --timeout-seconds 90
 python -X utf8 ai/scripts/rag_pdf_xlsx_answer_quality_review_packet.py --run-label v3_9_natural_answer_quality_dev_6pf
 python -X utf8 ai/scripts/rag_pdf_xlsx_answer_quality_review_packet.py --run-label v3_9_natural_answer_quality_validation_6pf --previous-run-label v3_9_natural_answer_quality_dev_6pf
 ```
@@ -2806,16 +2849,16 @@ Artifacts:
 
 | Artifact | Path |
 |---|---|
-| Dev summary | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_summary.json` |
-| Dev metrics | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_metrics.json` |
-| Dev per-family | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_per_family.json` |
-| Dev per-query | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_per_query.jsonl` |
-| Validation summary | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_summary.json` |
-| Validation metrics | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_metrics.json` |
-| Validation per-family | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_per_family.json` |
-| Validation per-query | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_per_query.jsonl` |
-| Dev review packet | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_v3_9_natural_answer_quality_dev_6pf/` |
-| Validation review packet | `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_v3_9_natural_answer_quality_validation_6pf/` |
+| Dev summary | `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_summary.json` |
+| Dev metrics | `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_metrics.json` |
+| Dev per-family | `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_per_family.json` |
+| Dev per-query | `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_per_query.jsonl` |
+| Validation summary | `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_summary.json` |
+| Validation metrics | `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_metrics.json` |
+| Validation per-family | `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_per_family.json` |
+| Validation per-query | `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_per_query.jsonl` |
+| Dev review packet | `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_v3_9_natural_answer_quality_dev_6pf/` |
+| Validation review packet | `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_v3_9_natural_answer_quality_validation_6pf/` |
 
 Verification:
 
@@ -2886,11 +2929,11 @@ Artifacts:
 
 | Artifact | Path |
 |---|---|
-| Summary | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_summary.json` |
-| Metrics + compact miss matrix | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_metrics.json` |
-| Per-query diagnostics | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_per_query.jsonl` |
-| Per-family diagnostics | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_per_family.json` |
-| Status ledger | `ai/eval/reports/rag-ingestion/status.jsonl` |
+| Summary | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_summary.json` |
+| Metrics + compact miss matrix | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_metrics.json` |
+| Per-query diagnostics | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_per_query.jsonl` |
+| Per-family diagnostics | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_8_3_xlsx_scoped_cell_resolve_diagnostic_per_family.json` |
+| Status ledger | `reports/rag_eval/rag-ingestion/status.jsonl` |
 
 Verification:
 
@@ -2930,7 +2973,7 @@ Commands:
 ```powershell
 python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label answer_ready_pdf_v1_llm_15pf --cases-per-family 15 --max-tokens 220 --query-max-tokens 180 --timeout-seconds 90 --split-role dev_current_pdf_headline
 python -X utf8 ai\scripts\rag_pdf_xlsx_answer_quality_review_packet.py --run-label answer_ready_pdf_v1_llm_15pf
-python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label answer_ready_pdf_v1_llm_15pf_validation --cases-per-family 15 --max-tokens 220 --query-max-tokens 180 --timeout-seconds 90 --split-role validation_holdout --dev-summary ai\eval\reports\rag-ingestion\quality\pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_summary.json
+python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label answer_ready_pdf_v1_llm_15pf_validation --cases-per-family 15 --max-tokens 220 --query-max-tokens 180 --timeout-seconds 90 --split-role validation_holdout --dev-summary reports\rag_eval\rag-ingestion\quality\pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_summary.json
 python -X utf8 ai\scripts\rag_pdf_xlsx_answer_quality_review_packet.py --run-label answer_ready_pdf_v1_llm_15pf_validation --previous-run-label answer_ready_pdf_v1_llm_15pf
 ```
 
@@ -2990,15 +3033,15 @@ Residual review:
 Primary artifacts:
 
 - Dev summary:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_summary.json`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_summary.json`
 - Dev packet:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/`
 - Validation summary:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_validation_summary.json`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_validation_summary.json`
 - Validation packet:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf_validation/`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf_validation/`
 - Perf smoke:
-  `ai/eval/reports/rag-ingestion/perf/pdf_xlsx_perf_answer_ready_overfit_guard_smoke.json`
+  `reports/rag_eval/rag-ingestion/perf/pdf_xlsx_perf_answer_ready_overfit_guard_smoke.json`
 
 Boundary and OCR rationale:
 
@@ -3017,12 +3060,12 @@ Verification completed for this entry:
 python -X utf8 -m py_compile ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py ai\scripts\rag_pdf_xlsx_answer_quality_review_packet.py ai\scripts\rag_pdf_xlsx_anti_overfit_audit.py
 python -X utf8 -m pytest ai/tests/test_rag_answer_citation_silver_manifest_v1.py -q -k "pdf_xlsx_answer_quality_review_packet or pdf_answer_ready or query_fidelity or anti_overfit"
 python -X utf8 ai\scripts\rag_pdf_xlsx_anti_overfit_audit.py
-python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label answer_ready_pdf_overfit_guard_perf_smoke --warmups 1 --iterations 1 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_answer_ready_overfit_guard_smoke.json
+python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label answer_ready_pdf_overfit_guard_perf_smoke --warmups 1 --iterations 1 --output reports\rag_eval\rag-ingestion\perf\pdf_xlsx_perf_answer_ready_overfit_guard_smoke.json
 python -X utf8 -m pytest ai/tests/test_rag_diagnostic_status_sync.py -q -k "pdf_answer_ready or query_fidelity or status_jsonl"
 python -X utf8 -m pytest ai/tests/test_rag_anti_shortcut_guardrail_audit_v1.py ai/tests/test_rag_diagnostic_guardrail_git_diff.py -q
 python -X utf8 -m pytest ai/tests --rag-current -q
-git diff --name-only -- ai/eval/eval_queries ai/eval/source_registry ai/eval/indexes ai/eval/silver ai/eval/reports/rag-ingestion/baseline_v1.json ai/eval/reports/rag-ingestion/metric_input_v1.json ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl
-git diff --cached --name-only -- ai/eval/eval_queries ai/eval/source_registry ai/eval/indexes ai/eval/silver ai/eval/reports/rag-ingestion/baseline_v1.json ai/eval/reports/rag-ingestion/metric_input_v1.json ai/eval/reports/rag-ingestion/xlsx_candidate_v1.jsonl ai/eval/reports/rag-ingestion/pdf_candidate_v1.jsonl
+git diff --name-only -- ai/eval/eval_queries ai/eval/source_registry ai/eval/indexes ai/eval/silver reports/rag_eval/rag-ingestion/baseline_v1.json reports/rag_eval/rag-ingestion/metric_input_v1.json reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl
+git diff --cached --name-only -- ai/eval/eval_queries ai/eval/source_registry ai/eval/indexes ai/eval/silver reports/rag_eval/rag-ingestion/baseline_v1.json reports/rag_eval/rag-ingestion/metric_input_v1.json reports/rag_eval/rag-ingestion/xlsx_candidate_v1.jsonl reports/rag_eval/rag-ingestion/pdf_candidate_v1.jsonl
 git diff --check
 git status --short --untracked-files=all
 ```
@@ -3117,19 +3160,19 @@ Primary artifacts:
 - Run id:
   `pdf_xlsx_answer_quality_evidence_readiness_packet_answer_ready_pdf_v1_llm_15pf`
 - Summary:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_summary.json`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_summary.json`
 - Full responses:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_responses.jsonl`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_responses.jsonl`
 - PDF evidence-readiness audit:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_pdf_evidence_readiness_audit.jsonl`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_answer_ready_pdf_v1_llm_15pf_pdf_evidence_readiness_audit.jsonl`
 - Review packet:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/`
 - PDF delta audit:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/pdf_delta_audit.jsonl`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/pdf_delta_audit.jsonl`
 - Query fidelity audit:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/query_fidelity_audit.jsonl`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/query_fidelity_audit.jsonl`
 - PDF residual review:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/pdf_residual_review.md`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf/pdf_residual_review.md`
 
 The audit records raw snippets, normalized snippets, original locator/page/bbox
 metadata, character length, query overlap, repeated punctuation ratio,
@@ -3204,7 +3247,7 @@ Changed files for this slice:
 - `docs/rag-ingestion-progress.md`
 - `docs/rag-ingestion-measurements.md`
 - `docs/rag-ingestion-triage.md`
-- `ai/eval/reports/rag-ingestion/status.jsonl`
+- `reports/rag_eval/rag-ingestion/status.jsonl`
 
 Verification commands run:
 
@@ -3217,7 +3260,7 @@ python -X utf8 -m pytest ai/tests/test_rag_source_bound_official_denominator_ind
 python -X utf8 -m pytest ai/tests/test_rag_diagnostic_status_sync.py::test_progress_measurements_triage_and_status_record_pdf_xlsx_quality_review_packet_without_promotion ai/tests/test_rag_diagnostic_status_sync.py::test_progress_measurements_triage_and_status_record_pdf_answer_ready_evidence_without_promotion -q
 python -X utf8 -m pytest ai/tests --rag-current -q
 python -X utf8 -m pytest ai/tests/test_rag_anti_shortcut_guardrail_audit_v1.py -q
-python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label answer_ready_pdf_v1_perf_smoke --warmups 1 --iterations 1 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_answer_ready_pdf_v1_smoke.json
+python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label answer_ready_pdf_v1_perf_smoke --warmups 1 --iterations 1 --output reports\rag_eval\rag-ingestion\perf\pdf_xlsx_perf_answer_ready_pdf_v1_smoke.json
 git diff --check
 ```
 
@@ -3260,7 +3303,7 @@ python -X utf8 ai\scripts\rag_pdf_xlsx_llm_quality_benchmark.py --label final_ll
 python -X utf8 ai\scripts\rag_pdf_xlsx_answer_quality_review_packet.py --run-label final_llm_rewrite_all_llm_15pf_v3
 python -X utf8 -m pytest ai/tests/test_rag_source_bound_official_denominator_index.py -q
 python -X utf8 -m pytest ai/tests --rag-current -q
-python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label quality_goal_perf_smoke_final --warmups 1 --iterations 1 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_quality_goal_smoke_final.json
+python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label quality_goal_perf_smoke_final --warmups 1 --iterations 1 --output reports\rag_eval\rag-ingestion\perf\pdf_xlsx_perf_quality_goal_smoke_final.json
 ```
 
 Inputs and policy:
@@ -3268,7 +3311,7 @@ Inputs and policy:
 | Item | Value |
 |---|---|
 | SearchView manifest | `ai/eval/indexes/rag-data-all-source-citable-nonprod-v1/search_view_manifest.jsonl` |
-| Silver seed manifest | `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration_llm_natural_silver_manifest_all.jsonl` |
+| Silver seed manifest | `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_7_2_local_llm_natural_silver_query_regeneration_llm_natural_silver_manifest_all.jsonl` |
 | Join key | `source_family+source_identity+locator_fingerprint` |
 | Cases | PDF=15, XLSX=15 |
 | Silver seed rows | 30/30 |
@@ -3306,24 +3349,24 @@ Failure taxonomy:
 Primary artifacts:
 
 - Summary with 30 balanced sampled query/actual-response rows:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3_summary.json`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3_summary.json`
 - Full response JSONL:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3_responses.jsonl`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_final_llm_rewrite_all_llm_15pf_v3_responses.jsonl`
 
 Gold-review packet:
 
 - Run id:
   `pdf_xlsx_answer_quality_gold_review_packet_final_llm_rewrite_all_llm_15pf_v3`
 - Artifact directory:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/`
 - Review CSV:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/review_packet.csv`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/review_packet.csv`
 - Review JSONL:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/review_packet.jsonl`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/review_packet.jsonl`
 - Markdown summary:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/summary.md`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/summary.md`
 - Manifest / schema validation:
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/manifest.json`
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/manifest.json`
 
 Review packet rows=30. The packet pairs the 60 response rows into one row per
 case, rehydrates SourceAtom evidence/locator data from the benchmark manifest,
@@ -3408,9 +3451,9 @@ Environment assumptions:
 Commands:
 
 ```powershell
-python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label baseline_before_optimization --warmups 1 --iterations 3 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_baseline_before_optimization.json
-python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label final_after_pdf_probe_optimization_comparable_3x --warmups 1 --iterations 3 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_final_after_pdf_probe_optimization_comparable_3x.json
-python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label final_after_optimization --warmups 1 --iterations 5 --output ai\eval\reports\rag-ingestion\perf\pdf_xlsx_perf_final_after_optimization.json
+python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label baseline_before_optimization --warmups 1 --iterations 3 --output reports\rag_eval\rag-ingestion\perf\pdf_xlsx_perf_baseline_before_optimization.json
+python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label final_after_pdf_probe_optimization_comparable_3x --warmups 1 --iterations 3 --output reports\rag_eval\rag-ingestion\perf\pdf_xlsx_perf_final_after_pdf_probe_optimization_comparable_3x.json
+python -X utf8 ai\scripts\rag_pdf_xlsx_perf_benchmark.py --label final_after_optimization --warmups 1 --iterations 5 --output reports\rag_eval\rag-ingestion\perf\pdf_xlsx_perf_final_after_optimization.json
 ```
 
 Input sizes:
@@ -3471,17 +3514,17 @@ older evidence reproducible through the external archive resolver.
 
 Current repo-local machine payloads:
 
-- `ai/eval/reports/rag-ingestion/status.jsonl`
+- `reports/rag_eval/rag-ingestion/status.jsonl`
 - Compact current v3_6_9 and later diagnostic artifacts required by the current
   RAG profile, including v3_10-v3_15 root artifacts and v3_16-v3_21
   quality/runtime packet directories.
 
 Archived payload families:
 
-- `ai/eval/reports/rag-ingestion/*` except the compact current files listed above:
+- `reports/rag_eval/rag-ingestion/*` except the compact current files listed above:
   redacted external runtime archive for legacy RAG-ingestion reports
-- former `ai/eval/reports/phase7/` and
-  `ai/eval/reports/legacy-baseline-final/`:
+- former `ai/reports/rag_eval/phase7/` and
+  `ai/reports/rag_eval/legacy-baseline-final/`:
   redacted external runtime archive for legacy report trees
 
 Reader contract: use this file for metric ladder context, use
@@ -3563,11 +3606,11 @@ Interpretation:
 
 Primary machine artifacts:
 
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_summary.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_per_row.jsonl`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_aggregate_by_bucket.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_failure_taxonomy.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_policy_audit.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_summary.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_per_row.jsonl`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_aggregate_by_bucket.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_failure_taxonomy.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric_policy_audit.json`
 <!-- official_answer_citation_agentic_loop_run_v3_6_4_diagnostic_only_weak_noisy_silver_metric:measurements-entry:end -->
 
 ## 2026-05-19 - v3_4_0 Official Retrieval Metric Contract
@@ -3581,9 +3624,9 @@ Scope:
   creating qrels, labels, expected answers, supporting evidence, official
   Hit@K/MRR/nDCG values, or a collapsed Lane A/B/C score.
 - Contract artifacts:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_contract.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_contract.json`
   and
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_qrels_schema.json`.
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_qrels_schema.json`.
 - Source policy packet:
   `official_answer_citation_agentic_loop_run_v3_3_2_retrieval_relevance_answerability_label_design_packet`.
 
@@ -4147,7 +4190,7 @@ Run family:
 Scope:
 
 - Source of truth is the v3_1_5 machine remaining queue:
-  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_5_gq010_coverage_queue.json`.
+  `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_5_gq010_coverage_queue.json`.
 - Target row: `gq_auto_010` only.
 - This was a behavior-changing diagnostic branch because source-bound prompt
   context assembly changed. It was not answer renderer work, gold work,
@@ -4224,7 +4267,7 @@ Run family:
 Scope:
 
 - Source of truth is the v3_1_4 machine remaining queue:
-  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_4_pdf_residual_queue.json`.
+  `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_4_pdf_residual_queue.json`.
 - Target row: `gq_auto_010` only.
 - This run is classification-only and diagnostic-only. It did not invoke live
   generation, change answer rendering/scoring, rebuild indexes, mutate the
@@ -4286,7 +4329,7 @@ Run family:
 Scope:
 
 - Source of truth is the v3_1_3 machine remaining queue:
-  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_3_remaining_queue.json`.
+  `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_3_remaining_queue.json`.
 - Target rows: `gq_auto_010`, `gq_pdf_section_question_001`.
 - Behavior changes were limited to a source-bound PDF table-axis renderer for
   repeated amount/growth columns and post-generation diagnostic classification
@@ -4367,7 +4410,7 @@ Run family:
 Scope:
 
 - Source of truth is the v3_1_2 machine remaining queue:
-  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_2_span_queue.json`.
+  `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_2_span_queue.json`.
 - Target rows: `gq_auto_010`, `gq_auto_024`, `gq_auto_030`,
   `gq_auto_043`, `gq_pdf_section_question_001`,
   `gq_xlsx_date_number_format_001`, `text_namu_v2_0005`.
@@ -4468,7 +4511,7 @@ Scope:
 Queue source of truth:
 
 - Adopted
-  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_1_post_locator_queue.json`.
+  `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_1_post_locator_queue.json`.
 - This machine artifact supersedes the stale human Later Triage Queue text when
   they differ. The stale text omitted `text_namu_v2_0012` and
   `text_namu_v2_0005` and included `gq_auto_037`, while the machine artifact
@@ -4531,12 +4574,12 @@ Primary machine artifacts:
 
 | Artifact | Retention class | Current reason |
 |---|---|---|
-| `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_2_span_summary.json` | `machine_manifest` | Run-level counts, guardrails, source artifact identities, artifact hashes, and no-Markdown policy. |
-| `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_2_span_results.jsonl` | `canonical_result_payload` | Full six-row lane payload needed for reproducibility and current artifact tests. |
-| `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_2_span_spans.jsonl` | `canonical_result_payload` | Compact answer-span/renderer classification payload. |
-| `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_2_span_queue.json` | `queue_source_of_truth` | Authoritative next queue after removing the first five TEXT rows. |
-| `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_2_span_failure.json` | `forensic_debug_payload` | Taxonomy and row attribution details; kept because current guardrail tests read it. |
-| `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_2_span_audit.jsonl` | `forensic_debug_payload` | Strict JSON, locator, citation, and answer audit details for regression forensics. |
+| `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_2_span_summary.json` | `machine_manifest` | Run-level counts, guardrails, source artifact identities, artifact hashes, and no-Markdown policy. |
+| `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_2_span_results.jsonl` | `canonical_result_payload` | Full six-row lane payload needed for reproducibility and current artifact tests. |
+| `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_2_span_spans.jsonl` | `canonical_result_payload` | Compact answer-span/renderer classification payload. |
+| `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_2_span_queue.json` | `queue_source_of_truth` | Authoritative next queue after removing the first five TEXT rows. |
+| `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_2_span_failure.json` | `forensic_debug_payload` | Taxonomy and row attribution details; kept because current guardrail tests read it. |
+| `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_2_span_audit.jsonl` | `forensic_debug_payload` | Strict JSON, locator, citation, and answer audit details for regression forensics. |
 
 Minimum artifact set proposal for future classification-only runs:
 
@@ -4552,7 +4595,7 @@ Minimum artifact set proposal for future classification-only runs:
 ### 2026-06-09 Repo Cleanup Diagnostic Inventory
 
 - Run key: `repo_cleanup_20260609_diagnostic_inventory`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json`
 - Interpretation: repository hygiene counters only. These are not retrieval, answer-quality, official metric, promotion, product-success, or live-readiness metrics.
 
 | Counter | Value |
@@ -4679,12 +4722,12 @@ Interpretation:
 
 Primary machine artifacts:
 
-- `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_priority_results.jsonl`
-- `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_priority_summary.json`
-- `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_priority_failure.json`
-- `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_priority_audit.jsonl`
-- `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_priority_delta.json`
-- `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_priority_strict_json.json`
+- `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_priority_results.jsonl`
+- `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_priority_summary.json`
+- `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_priority_failure.json`
+- `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_priority_audit.jsonl`
+- `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_priority_delta.json`
+- `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_priority_strict_json.json`
 
 ## 2026-05-18 - v3_1 All-Track Foundation Measurement
 
@@ -4713,11 +4756,11 @@ Interpretation:
 
 Primary machine artifacts:
 
-- `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_foundation_results.jsonl`
-- `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_foundation_summary.json`
-- `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_foundation_failure.json`
-- `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_foundation_audit.jsonl`
-- `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_foundation_queue.json`
+- `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_foundation_results.jsonl`
+- `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_foundation_summary.json`
+- `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_foundation_failure.json`
+- `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_foundation_audit.jsonl`
+- `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_foundation_queue.json`
 
 ## Rolling Report Policy
 

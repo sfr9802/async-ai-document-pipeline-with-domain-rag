@@ -25,12 +25,12 @@ ROOT = AI_WORKER.parent
 
 PDF_INDEX_VERSION = "rag-ingestion-v2-pdf-candidate-v1"
 PDF_ARTIFACT_DIR = "ai/eval/indexes/rag-data-pdf-candidate-v1"
-DEFAULT_C6_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_vector_quality_breakdown.json")
-DEFAULT_C5_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json")
+DEFAULT_C6_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_vector_quality_breakdown.json")
+DEFAULT_C5_REPORT = Path("reports/rag_eval/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json")
 DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_pdf_v0.csv")
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_gold_policy_review.json")
+DEFAULT_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_gold_policy_review.json")
 DEFAULT_DECISIONS_TEMPLATE = Path(
-    "eval/reports/rag-ingestion/rag_pdf_gold_policy_review_decisions_template.csv"
+    "reports/rag_eval/rag-ingestion/rag_pdf_gold_policy_review_decisions_template.csv"
 )
 
 CLASSIFICATIONS = (

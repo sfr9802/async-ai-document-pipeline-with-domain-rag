@@ -1906,7 +1906,7 @@ def update_eval_readme(report: Mapping[str, Any]) -> None:
     text = re.sub(r"- Current RAG status: `[^`]+`", f"- Current RAG status: `{STATUS}`", text, count=1)
     section = f"""## Korean human review packet
 
-The previous v4_7_1 Korean review packet was abstract because v4_7 registration contained source-disjoint candidate identities but not query text. v4_7_2 supersedes it with `ai/eval/reports/rag-ingestion/quality/{RUN_ID}/review_packet_ko_hydrated.xlsx`, plus CSV/JSONL equivalents.
+The previous v4_7_1 Korean review packet was abstract because v4_7 registration contained source-disjoint candidate identities but not query text. v4_7_2 supersedes it with `reports/rag_eval/rag-ingestion/quality/{RUN_ID}/review_packet_ko_hydrated.xlsx`, plus CSV/JSONL equivalents.
 
 The hydrated packet contains actual Korean query candidates, bounded evidence previews, and locator previews for PDF {report["hydrated_pdf_row_count"]} rows and XLSX {report["hydrated_xlsx_row_count"]} rows. User-owned fields remain blank/default: expected answers, evidence judgment, relevance labels, answerability labels, official denominator inclusion, exclusion reasons, policy memo, reviewer, and review timestamp.
 

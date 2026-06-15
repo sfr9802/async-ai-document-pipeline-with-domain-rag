@@ -56,15 +56,15 @@ DEFAULT_V3_POSITIVE_GOLD = DEFAULT_HUMAN_REVIEW_OFFICIAL_RETRIEVAL_GOLD
 DEFAULT_V3_NATURALIZED_GOLD = LEGACY_CSV_ARCHIVE / "gold_queries_xlsx_v3_naturalized.csv"
 DEFAULT_V2_GOLD = LEGACY_CSV_ARCHIVE / "gold_queries_xlsx_v2.csv"
 DEFAULT_REPORT = Path(
-    "eval/reports/rag-ingestion/"
+    "reports/rag_eval/rag-ingestion/"
     "rag_retrieval_eval_xlsx_human_review_official_positive_v0_vector_diagnostic_report.json"
 )
 DEFAULT_SUMMARY = Path(
-    "eval/reports/rag-ingestion/"
+    "reports/rag_eval/rag-ingestion/"
     "rag_xlsx_human_review_official_positive_v0_retrieval_performance_summary.json"
 )
 DEFAULT_HIDDEN_REPORT = Path(
-    "eval/reports/rag-ingestion/"
+    "reports/rag_eval/rag-ingestion/"
     "rag_xlsx_human_review_official_positive_v0_hidden_negative_leakage_diagnostic.json"
 )
 

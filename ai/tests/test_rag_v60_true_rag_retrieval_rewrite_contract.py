@@ -268,7 +268,7 @@ def test_v60_artifacts_status_docs_runner_current_and_ledger_consistency(
         "status_jsonl",
     }
     assert set(written["artifact_paths"]) == expected_artifacts
-    run_root = tmp_path / "ai/eval/reports/rag-ingestion/runs/v6_0_true_rag_retrieval_rewrite"
+    run_root = tmp_path / "reports/rag_eval/rag-ingestion/runs/v6_0_true_rag_retrieval_rewrite"
     assert not list(run_root.glob("*.md"))
 
     denominator_rows = _read_jsonl(tmp_path / written["artifact_paths"]["denominator_manifest_jsonl"])
@@ -279,7 +279,7 @@ def test_v60_artifacts_status_docs_runner_current_and_ledger_consistency(
     assert len(eligibility_rows) == attempted
     assert len(exclusion_rows) == sum(1 for row in eligibility_rows if row["included_in_metric"] is False)
 
-    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_rows = _read_jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     latest = status_rows[-1]
     assert latest["short_run_id"] == SHORT_RUN_ID
     assert latest["current_resolves_to"] == "v5_6"

@@ -33,7 +33,7 @@ own ``text_max_chars`` truncation and OOM-fallback contract.
 Existing FAISS indexes / chunks caches are reused as-is — this run does
 not regenerate any embedding.
 
-Outputs (under ``eval/reports/_archive/confirm-runs/retrieval-
+Outputs (under ``reports/rag_eval/_archive/confirm-runs/retrieval-
 reranker-input-format-confirm-<TIMESTAMP>/``):
 
   - ``summary.csv``                — flat headline metrics per pair
@@ -72,7 +72,7 @@ _DEFAULT_DATASET = Path("eval/eval_queries/anime_silver_200.jsonl")
 _DEFAULT_CORPUS = Path(
     "eval/corpora/anime_namu_v3_token_chunked/corpus.combined.token-aware-v1.jsonl"
 )
-_DEFAULT_REPORTS_ROOT = Path("eval/reports/_archive/confirm-runs")
+_DEFAULT_REPORTS_ROOT = Path("reports/rag_eval/_archive/confirm-runs")
 _DEFAULT_QUERY_TYPE_DRAFT = Path(
     "eval/eval_queries/anime_silver_200.query_type_draft.jsonl"
 )

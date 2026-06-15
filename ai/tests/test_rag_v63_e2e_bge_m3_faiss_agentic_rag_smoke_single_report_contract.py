@@ -246,7 +246,7 @@ def test_single_report_policy_and_artifact_hashes(tmp_path: Path, v63_module, mo
     built = v63_module.build_report(
         root=ROOT,
         generated_at="2026-06-06T00:00:00Z",
-        run_artifact_root=tmp_path / "ai/eval/reports/rag-ingestion/runs" / RUN_KEY,
+        run_artifact_root=tmp_path / "reports/rag_eval/rag-ingestion/runs" / RUN_KEY,
     )
     written, hashes = v63_module.write_report_bundle(tmp_path, built)
     v63_module.check_report(written, root=tmp_path)
@@ -254,7 +254,7 @@ def test_single_report_policy_and_artifact_hashes(tmp_path: Path, v63_module, mo
     v63_module.append_status(tmp_path, written, artifact_hashes=hashes)
     v63_module.require_status_report_hash(tmp_path, written)
 
-    run_root = tmp_path / "ai/eval/reports/rag-ingestion/runs" / RUN_KEY
+    run_root = tmp_path / "reports/rag_eval/rag-ingestion/runs" / RUN_KEY
     assert (run_root / "report.json").exists()
     for name in FORBIDDEN_SEPARATE_REPORT_FILES:
         assert not (run_root / name).exists(), name
@@ -268,7 +268,7 @@ def test_single_report_policy_and_artifact_hashes(tmp_path: Path, v63_module, mo
 
     status_rows = [
         json.loads(line)
-        for line in (tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in (tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl").read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
     assert status_rows[-1]["current_resolves_to"] == RUN_KEY

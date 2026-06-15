@@ -10,10 +10,10 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-DEFAULT_QUERY_SURFACE_PLAN = Path("eval/reports/rag-ingestion/rag_xlsx_query_surface_patch_plan.json")
-DEFAULT_RANGE_POLICY_REVIEW = Path("eval/reports/rag-ingestion/rag_xlsx_range_policy_review.json")
-DEFAULT_FORMULA_DATE_REVIEW = Path("eval/reports/rag-ingestion/rag_xlsx_formula_date_contract_review.json")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/xlsx_candidate_v2_decision.json")
+DEFAULT_QUERY_SURFACE_PLAN = Path("reports/rag_eval/rag-ingestion/rag_xlsx_query_surface_patch_plan.json")
+DEFAULT_RANGE_POLICY_REVIEW = Path("reports/rag_eval/rag-ingestion/rag_xlsx_range_policy_review.json")
+DEFAULT_FORMULA_DATE_REVIEW = Path("reports/rag_eval/rag-ingestion/rag_xlsx_formula_date_contract_review.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/xlsx_candidate_v2_decision.json")
 
 
 def main(argv: list[str] | None = None) -> int:

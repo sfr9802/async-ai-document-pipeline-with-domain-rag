@@ -33,8 +33,8 @@ AI_WORKER_ROOT = SCRIPT_DIR.parents[0]
 REPO_ROOT = AI_WORKER_ROOT.parent
 
 DEFAULT_CONFIG = AI_WORKER_ROOT / "eval" / "configs" / "retrieval_corpus_diversity_profile.yaml"
-DEFAULT_REPORT_JSON = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "retrieval_corpus_diversity_profile.json"
-DEFAULT_REPORT_MD = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "retrieval_corpus_diversity_profile.md"
+DEFAULT_REPORT_JSON = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "retrieval_corpus_diversity_profile.json"
+DEFAULT_REPORT_MD = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "retrieval_corpus_diversity_profile.md"
 
 RISK_LOW = "LOW_DIVERSITY_HIGH_OVERFIT_RISK"
 RISK_MODERATE = "MODERATE_DIVERSITY"

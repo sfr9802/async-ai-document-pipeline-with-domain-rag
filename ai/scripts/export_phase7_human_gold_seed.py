@@ -16,12 +16,12 @@ precision/recall/accuracy report.
 Usage::
 
     python -m scripts.export_phase7_human_gold_seed \\
-        --silver-queries  eval/reports/<run>/queries_v4_silver_500.jsonl \\
-        --per-query       eval/reports/<run>/per_query_comparison.jsonl \\
-        --confidence      eval/reports/<run>/per_query_confidence.jsonl \\
-        --recovery        eval/reports/<run>/recovery_attempts.jsonl \\
-        --chunks          eval/reports/<run>/rag_chunks_retrieval_title_section.jsonl \\
-        --out-dir         eval/reports/<run>/phase7_human_gold_seed/
+        --silver-queries  reports/rag_eval/<run>/queries_v4_silver_500.jsonl \\
+        --per-query       reports/rag_eval/<run>/per_query_comparison.jsonl \\
+        --confidence      reports/rag_eval/<run>/per_query_confidence.jsonl \\
+        --recovery        reports/rag_eval/<run>/recovery_attempts.jsonl \\
+        --chunks          reports/rag_eval/<run>/rag_chunks_retrieval_title_section.jsonl \\
+        --out-dir         reports/rag_eval/<run>/phase7_human_gold_seed/
 
 Targets default to (main_work=10, subpage_generic=20, subpage_named=20).
 The exporter prioritises edge-case coverage over hitting the bucket

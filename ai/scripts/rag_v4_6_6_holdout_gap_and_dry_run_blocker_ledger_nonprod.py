@@ -845,7 +845,7 @@ def update_triage_doc() -> None:
 ### v4_6_6 Holdout Gap And Dry-Run Blocker Ledger Triage
 
 - Run: `{RUN_ID}`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/{RUN_ID}/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/{RUN_ID}/report.json`; single-report contract remains active.
 - v4_6_6 is diagnostic-only, non-production, ledger-only infrastructure over existing v4_4 through v4_6_5 reports.
 - It is not external holdout acquisition, not candidate manifest export, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
 - Codex-owned next work remains acquiring or registering source-disjoint candidates and rerunning non-gold gates; user-owned gold/qrels/denominator/promotion decisions remain closed before any official metric or promotion-adjacent evaluation.

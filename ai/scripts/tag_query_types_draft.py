@@ -19,7 +19,7 @@ Usage::
     python -m scripts.tag_query_types_draft \
         --input eval/eval_queries/anime_silver_200.jsonl \
         --out   eval/eval_queries/anime_silver_200.query_type_draft.jsonl \
-        --review-out eval/reports/.../query_type_tagging_review.md
+        --review-out reports/rag_eval/.../query_type_tagging_review.md
 """
 
 from __future__ import annotations

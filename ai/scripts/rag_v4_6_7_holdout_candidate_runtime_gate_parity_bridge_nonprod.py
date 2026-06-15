@@ -1041,7 +1041,7 @@ def update_triage_doc() -> None:
     entry = f"""### v4_6_7 Holdout Candidate Runtime Gate Parity Bridge Triage
 
 - Run: `{RUN_ID}`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/{RUN_ID}/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/{RUN_ID}/report.json`; single-report contract remains active.
 - v4_6_7 is diagnostic-only and parity-bridge-only. It compares runtime-adjacent FastAPI holdout validation with v4_5_1/v4_5_2 script gates using in-memory hash-only probes.
 - The bridge proves contract consistency only; it is not real holdout availability, not external holdout acquisition, not candidate manifest export, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
 - It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `real_holdout_sufficient=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.

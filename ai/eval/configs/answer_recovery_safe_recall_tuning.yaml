@@ -9,14 +9,14 @@ description: >
 baseline_policy:
   name: calibrated_identity_exact_v1
   source_config: ai/eval/configs/answer_recovery_narrow_silver_calibration.yaml
-  source_report: ai/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_report.json
-  source_selected_policy: ai/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_selected_policy.json
+  source_report: reports/rag_eval/rag-ingestion/answer_recovery_narrow_calibration_report.json
+  source_selected_policy: reports/rag_eval/rag-ingestion/answer_recovery_narrow_calibration_selected_policy.json
 
 diagnostic_inputs:
-  answer_sufficiency_expanded_report: ai/eval/reports/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
-  answer_recovery_expanded_trace: ai/eval/reports/rag-ingestion/answer_recovery_expanded_trace.jsonl
-  failure_taxonomy: ai/eval/reports/rag-ingestion/answer_recovery_failure_taxonomy.md
-  lane_breakdown: ai/eval/reports/rag-ingestion/answer_recovery_lane_breakdown.md
+  answer_sufficiency_expanded_report: reports/rag_eval/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
+  answer_recovery_expanded_trace: reports/rag_eval/rag-ingestion/answer_recovery_expanded_trace.jsonl
+  failure_taxonomy: reports/rag_eval/rag-ingestion/answer_recovery_failure_taxonomy.md
+  lane_breakdown: reports/rag_eval/rag-ingestion/answer_recovery_lane_breakdown.md
 
 excluded_frozen_gold_ids:
   source_files:
@@ -130,12 +130,12 @@ variants:
     max_query_rewrites: 3
 
 report_paths:
-  baseline_md: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_baseline.md
-  baseline_json: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_baseline.json
-  missed_analysis_md: ai/eval/reports/rag-ingestion/answer_recovery_missed_safe_recovery_analysis.md
-  missed_analysis_json: ai/eval/reports/rag-ingestion/answer_recovery_missed_safe_recovery_analysis.json
-  tuning_report_md: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_tuning_report.md
-  tuning_report_json: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_tuning_report.json
-  variants_csv: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_variants.csv
-  selected_policy_json: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_selected_policy.json
-  rejected_variants_md: ai/eval/reports/rag-ingestion/answer_recovery_safe_recall_rejected_variants.md
+  baseline_md: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_baseline.md
+  baseline_json: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_baseline.json
+  missed_analysis_md: reports/rag_eval/rag-ingestion/answer_recovery_missed_safe_recovery_analysis.md
+  missed_analysis_json: reports/rag_eval/rag-ingestion/answer_recovery_missed_safe_recovery_analysis.json
+  tuning_report_md: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_tuning_report.md
+  tuning_report_json: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_tuning_report.json
+  variants_csv: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_variants.csv
+  selected_policy_json: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_selected_policy.json
+  rejected_variants_md: reports/rag_eval/rag-ingestion/answer_recovery_safe_recall_rejected_variants.md

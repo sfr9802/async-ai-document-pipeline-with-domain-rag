@@ -924,7 +924,7 @@ def update_triage_doc() -> None:
     entry = f"""### v4_6_10 External Holdout Candidate Manifest Gate Replay Triage
 
 - Run: `{RUN_ID}`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/{RUN_ID}/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/{RUN_ID}/report.json`; single-report contract remains active.
 - v4_6_10 is diagnostic-only and external-holdout-candidate-manifest-gate-replay-only. The default artifact confirms the external candidate manifest is still missing and keeps the v4_7 opening preflight closed.
 - Optional `--candidate-manifest` input is a no-write replay through v4_5_1/v4_5_2 only; it records redacted/hash input metadata and aggregate gate outcomes, not raw candidate rows or raw source identities.
 - It is not external holdout acquisition, not real holdout availability, not candidate manifest export, not validation/source-audit sidecar creation, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.

@@ -8,7 +8,7 @@ experiment_id: phase7-v4-active-template
 
 objective:
   mode: rag
-  dataset: eval/reports/phase7/seeds/llm_silver_focus_50/queries_v4_llm_silver_focus_50.jsonl
+  dataset: reports/rag_eval/phase7/seeds/llm_silver_focus_50/queries_v4_llm_silver_focus_50.jsonl
   primary_metric: mrr
   secondary_metrics:
     - mean_hit_at_k

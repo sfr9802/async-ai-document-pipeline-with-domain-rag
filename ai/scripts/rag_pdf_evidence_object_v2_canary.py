@@ -38,7 +38,7 @@ from rag_pdf_gold_question_candidate_generation_v1 import content_nearby_paragra
 from rag_question_quality_gate_v1 import classify_question  # noqa: E402
 
 
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 DEFAULT_REPAIR_REPORT = REPORT_DIR / "pdf_evidence_readiness_repair_report.json"
 DEFAULT_LINEAGE_REPORT = REPORT_DIR / "pdf_gold_evidence_lineage_audit_v1.json"
 DEFAULT_CONTEXT_ENRICHMENT_REPORT = REPORT_DIR / "pdf_evidence_context_v2_enrichment_report.json"

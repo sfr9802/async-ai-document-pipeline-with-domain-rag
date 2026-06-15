@@ -18,7 +18,7 @@ from typing import Any, Mapping
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review"
-DEFAULT_REPORT_JSON = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "three_track_orchestration_report.json"
+DEFAULT_REPORT_JSON = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "three_track_orchestration_report.json"
 OFFICIAL_DENOMINATOR_REGISTRY = AI_WORKER_ROOT / "eval" / "eval_queries" / "official_denominator_registry.json"
 
 ROUTE_JSON_OUTPUT = REVIEW_DIR / "route_gold_label_review_pack_v1.json"

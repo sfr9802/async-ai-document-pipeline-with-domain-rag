@@ -42,11 +42,11 @@ from pdf_candidate_scope_report import (  # noqa: E402
 )
 
 
-DEFAULT_SCOPE_REPORT = Path("eval/reports/rag-ingestion/pdf_candidate_scope_report.json")
-DEFAULT_C2_REPORT = Path("eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json")
-DEFAULT_C3_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json")
-DEFAULT_REPAIR_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_search_unit_surface_repair_report.json")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/pdf_candidate_clean_rebuild_prepare_report.json")
+DEFAULT_SCOPE_REPORT = Path("reports/rag_eval/rag-ingestion/pdf_candidate_scope_report.json")
+DEFAULT_C2_REPORT = Path("reports/rag_eval/rag-ingestion/pdf_vector_metadata_projection_readiness.json")
+DEFAULT_C3_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_embedding_text_contract_audit.json")
+DEFAULT_REPAIR_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_search_unit_surface_repair_report.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/pdf_candidate_clean_rebuild_prepare_report.json")
 DEFAULT_ARTIFACT_DIR = Path(PDF_ARTIFACT_DIR)
 PDF_PARSER_VERSIONS = ("pdf-extract-v1", "pdf-extract-v2")
 

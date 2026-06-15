@@ -31,7 +31,7 @@ def windows_long_path(path: Path) -> Path:
     return path
 
 
-REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion"
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
 EXTERNAL_REPORT_ARCHIVE_DIR = windows_long_path(Path(
     "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
@@ -7927,13 +7927,13 @@ def test_v3_10_fresh_holdout_and_xlsx_nonprod_materialization_stays_diagnostic_o
     assert holdout["real_query_fidelity_included_counts"]["XLSX"] == 0
     assert holdout["real_query_fidelity_included_counts"]["PDF"] == 0
     assert all(
-        not path.startswith("ai/eval/reports/rag-ingestion/")
+        not path.startswith("reports/rag_eval/rag-ingestion/")
         for path in holdout["local_fixture_scan"]["candidate_file_paths_outside_registry"]
     )
     ignored_report_assets = [
         item
         for item in holdout["local_fixture_scan"]["ignored_non_holdout_assets"]
-        if item["path"].startswith("ai/eval/reports/rag-ingestion/")
+        if item["path"].startswith("reports/rag_eval/rag-ingestion/")
     ]
     assert all(
         item["reason"] == "rag_ingestion_generated_report_artifact_not_holdout_eligible"

@@ -23,7 +23,7 @@ from typing import Any
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review"
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 
 DEFAULT_GENERATED_ANSWER_JSONL = (
     REVIEW_DIR / "rag_text_namu_generated_answer_review_input_local_llm_v2_1.jsonl"

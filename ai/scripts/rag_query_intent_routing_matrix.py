@@ -25,7 +25,7 @@ DEFAULT_INPUTS = [
 ]
 DEFAULT_FUTURE_INPUTS: list[Path] = []
 DEFAULT_OUTPUT_CSV = Path("eval/eval_queries/query_intent_routing_matrix_v0.csv")
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_query_intent_routing_matrix_report.json")
+DEFAULT_REPORT = Path("reports/rag_eval/rag-ingestion/rag_query_intent_routing_matrix_report.json")
 
 TRACK_TEXT_NAMUWIKI_ANIMATION = "text_namuwiki_animation"
 TRACK_XLSX_BUSINESS_STRUCTURED = "xlsx_business_structured"

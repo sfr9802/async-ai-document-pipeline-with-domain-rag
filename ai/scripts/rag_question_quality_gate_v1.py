@@ -26,7 +26,7 @@ from rag_local_llm_expected_answer_generation_v1 import (  # noqa: E402
 )
 
 
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review"
 
 DEFAULT_HUMAN_AUDIT_V1 = REVIEW_DIR / "rag_human_audit_packet_v1.json"

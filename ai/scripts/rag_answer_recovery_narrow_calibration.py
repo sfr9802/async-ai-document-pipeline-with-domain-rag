@@ -29,7 +29,7 @@ if str(SCRIPT_DIR) not in sys.path:
 import rag_answer_recovery_report_artifacts as report_artifacts  # noqa: E402
 
 DEFAULT_CONFIG = AI_WORKER_ROOT / "eval" / "configs" / "answer_recovery_narrow_silver_calibration.yaml"
-DEFAULT_REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+DEFAULT_REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 PDF_FILE_LOOKUP = "PDF_FILE_LOOKUP"
 XLSX = "XLSX"
 SHADOW_LANES = {"OCR_SHADOW", "IDP_SHADOW", "MULTIMODAL_SHADOW"}

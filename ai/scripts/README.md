@@ -151,7 +151,7 @@ not scan the local corpus, use FAISS, call SearchUnit/SearchView, or read
 gold/expected/qrels/labels/IDs.
 
 `--append-registry` appends `reports/rag_eval/runs.jsonl` and a compact
-`actual_rag_eval_run` event to `ai/eval/reports/rag-ingestion/status.jsonl`.
+`actual_rag_eval_run` event to `reports/rag_eval/rag-ingestion/status.jsonl`.
 `--write-latest` updates `reports/rag_eval/latest.json`,
 dataset-specific latest pointers such as `latest_text_gold.json` or
 `latest_fixture.json`, and the generated `reports/rag_eval/README.md` index.
@@ -521,9 +521,44 @@ policy exist.
 | `dataset/` | Dataset and fixture generation helpers. |
 | `needs_review/` | Reserved for scripts that need a data-contract or migration review before relocation. |
 
+## Report And Artifact Namespaces
+
+RAG reports now use explicit namespaces instead of ad-hoc script defaults. The
+constants live in `ai/eval/report_paths.py`; new scripts should import that
+module rather than spelling these roots by hand.
+
+| Namespace | Path | Git policy | Role |
+|---|---|---|---|
+| Public portfolio reports | `reports/` allowlist | Track only `portfolio_agentops_report.md` and `agentops_sample_trace.json` | Small sanitized public artifacts |
+| Actual RAG reports | `reports/rag_eval/` | Ignored/generated | `report.json` runs, latest pointers, run registry, Weaviate manifests |
+| Legacy/current RAG ingestion reports | `reports/rag_eval/rag-ingestion/` | Ignored/generated | v3-v7 diagnostic ladder reports, `status.jsonl`, short-key/current evidence |
+| Human-facing ledgers | `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, `docs/rag-ingestion-triage.md` | Tracked | Append-only status, measurements, and triage summaries |
+
+Do not move ignored machine artifacts into tracked docs. For portfolio/freezing
+work, summarize the evidence in the tracked ledgers and keep the machine payloads
+local/generated unless a run contract explicitly names a tracked artifact.
+
+## Dependency Boundaries
+
+Use the smallest install surface that matches the command being run:
+
+| Scope | Install surface | Applies to |
+|---|---|---|
+| Worker/runtime | `pip install -r ai/requirements.txt` | FastAPI worker, RAG/PDF/XLSX capability code, Weaviate and local retrieval adapters |
+| Tests | `pip install -r ai/requirements.txt -r ai/requirements-dev.txt` or `pip install -e "ai[dev,experiments]"` | pytest plus experiment contract checks |
+| Experiment tooling | `pip install -e "ai[experiments]"` from repo root, or `pip install -e ".[experiments]"` from `ai/` | Optuna/plot/report helpers such as `tune.py`, `summarize_study.py`, and round-refinement diagnostics |
+| Optional OCR fallback | `pip install "paddleocr>=3.3.3,<3.4" "paddlepaddle>=3.2,<3.3"` | Live PaddleOCR fallback smoke only; native PDF/XLSX tests do not require it |
+
+Do not add experiment-only dependencies to the default worker runtime unless an
+active serving path imports them directly. Conversely, a script that needs an
+experiment-only package should fail with an explicit dependency message or live
+under the experiment install surface, not silently become a production
+requirement.
+
 ## Canonical Worker Paths
 
-Default script inputs and outputs should stay inside `ai/`:
+Default script inputs should stay inside `ai/`; generated report outputs should
+use the explicit report namespaces:
 
 | Kind | Path |
 |---|---|
@@ -531,12 +566,15 @@ Default script inputs and outputs should stay inside `ai/`:
 | Text corpora | `eval/corpora/` |
 | Dataset snapshots | `eval/datasets/` |
 | Ingestion manifests | `fixtures/manifests/` |
-| RAG ingestion reports | `eval/reports/rag-ingestion/` |
+| Legacy/current RAG ingestion reports | `reports/rag_eval/rag-ingestion/` |
 | FAISS/vector artifacts | `eval/indexes/` |
 
-Root-level `scripts/`, `eval/`, `samples/`, `datasets/`, `reports/`, and
-`rag-data*` directories are legacy/compatibility locations. Do not add new
-defaults that write there.
+Root-level `scripts/`, `eval/`, `samples/`, `datasets/`, and `rag-data*`
+directories are legacy/compatibility locations. Root `reports/rag_eval/` is the
+active actual-RAG machine report namespace, but it remains ignored/generated;
+root `reports/` itself is tracked only through the small public allowlist above.
+Do not add new defaults that write unclassified report payloads outside these
+namespaces.
 
 ## Lineage Policy
 
@@ -568,7 +606,7 @@ XLSX display/range helpers, and FastAPI-safe service boundaries live in
 |---|---|
 | `required_by_current_tests` | `status.jsonl`, the current v6_9 report, v6_0 through v6_8 rollback/source reports and required sidecars, v7_0/v7_0_1 audit reports, v5_6/v5_6_2/v5_6_3 fail-closed official-metric probe reports, the v5_5 run-local official metric dry-run artifacts, the explicit v5_4 packet, v5_3 through v5_0 basis reports, v4_7 lineage reports, and v3_9_2 through v3_22 scripts. |
 | `required_by_docs_or_status_sync` | v3_22 `report.json` and the rolling docs/status entries that anchor Phase 1 closure. |
-| `ignored_diagnostic_artifact` | RAG ingestion `report.json`, `status.jsonl`, and optional review packets under `eval/reports/rag-ingestion/`. |
+| `ignored_diagnostic_artifact` | RAG ingestion `report.json`, `status.jsonl`, and optional review packets under `reports/rag_eval/rag-ingestion/`. |
 | `external_archive_candidate` | Older ignored quality/perf payloads not read by current tests, after exact-stem `rg` and artifact-required gates. |
 | `legacy_script_entrypoint_to_keep` | v3_9_2-v3_22 runners/checks, `rag_xlsx_v3_failure_breakdown.py`, and `rag_xlsx_v3_failure_case_review.py`. |
 | `reusable_runtime_logic_to_extract` | v3_20 adapter contracts, v3_21 LLM I/O observability, v3_22 XLSX display/range rendering, and single-report status helpers. |
@@ -596,6 +634,6 @@ checkability.
 | `ai/eval/tune_eval_offline.py` | legacy-archived | Preserved in place and documented as legacy replay/offline adapter rather than moved. | Self-identifies as offline sister to `tune_eval.py`; useful for old bundle replay. | Low if preserved; medium if moved because old round bundles may import it. | Classification docs only; no semantic change. |
 | `ai/scripts/confirm_*`, `ai/scripts/rerender_variant_verdict.py`, wide-MMR helper scripts | active-diagnostic-only | Preserved. | Script headers and helper imports label silver/diagnostic retrieval comparisons and optuna-winner analysis. | Medium; may read historical reports and ignored outputs. | Current tests and no path moves. |
 | `ai/scripts/run_phase7_*`, `ai/scripts/rag_*optuna*`, `ai/eval/configs/*optuna*.yaml` | active-diagnostic-only | Preserved; `jsonschema` added to experiment dependencies for readiness diagnostics. | Phase 7 and answer-recovery configs set tuning/reporting gates explicitly. | High if these were removed because they encode gold/silver policy boundaries. | py_compile and dependency import smoke. |
-| `ai/eval/reports/rag-ingestion/*`, `ai/eval/indexes/*`, `ai/eval/eval_queries/*`, `ai/eval/source_registry/*`, `ai/eval/silver/*` | unknown-preserve | No deletion or semantic edits. | Boundary guardian and guardrail tests identify these as protected or evidence-critical even when ignored. | High; deletion or denominator edits would require human gold/eval policy. | Protected diff check and RAG checks. |
+| `reports/rag_eval/rag-ingestion/*`, `ai/eval/indexes/*`, `ai/eval/eval_queries/*`, `ai/eval/source_registry/*`, `ai/eval/silver/*` | unknown-preserve | No deletion or semantic edits. | Boundary guardian and guardrail tests identify these as protected or evidence-critical even when ignored. | High; deletion or denominator edits would require human gold/eval policy. | Protected diff check and RAG checks. |
 | `__pycache__`, `.pytest_cache`, `core-api/target`, `frontend/app/dist` | safe-transient-delete | Removed in the 2026-06-09 cleanup inventory only after path resolution proved every target stayed inside the repo. | `.gitignore` and `frontend/app/.gitignore` classify these as cache/build output; generated report `repo_cleanup_20260609_diagnostic_inventory` records the counters. | Low; they regenerate on test/build. | Re-run current RAG checks and targeted tests after cleanup. |
 | legacy-remove | legacy-remove | None. | No experiment had enough evidence to delete without risking diagnostic or gold/eval evidence loss. | N/A | Final diff review. |

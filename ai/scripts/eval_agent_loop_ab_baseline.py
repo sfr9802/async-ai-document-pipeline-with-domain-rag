@@ -32,7 +32,7 @@ Side-effect contract:
 Usage::
 
     python -m scripts.eval_agent_loop_ab_baseline \\
-        --baseline-dir eval/reports/legacy-baseline-final
+        --baseline-dir reports/rag_eval/legacy-baseline-final
 """
 
 from __future__ import annotations
@@ -87,7 +87,7 @@ from eval.harness.agent_loop_ab import (
 log = logging.getLogger("scripts.eval_agent_loop_ab_baseline")
 
 
-_DEFAULT_BASELINE_DIR = Path("eval/reports/legacy-baseline-final")
+_DEFAULT_BASELINE_DIR = Path("reports/rag_eval/legacy-baseline-final")
 _DEFAULT_OUTPUT_ROOT = Path("eval/legacy_agent_loop_ab")
 # Cache directory for the offline FAISS index + chunk metadata so that
 # successive baseline runs can skip the 30-60-minute corpus embedding
@@ -336,7 +336,7 @@ def _parse_args(argv: Optional[List[str]]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
             "Run the offline legacy-vs-graph A/B harness using the locked "
-            "legacy baseline config (eval/reports/legacy-baseline-final/)."
+            "legacy baseline config (reports/rag_eval/legacy-baseline-final/)."
         )
     )
     parser.add_argument(

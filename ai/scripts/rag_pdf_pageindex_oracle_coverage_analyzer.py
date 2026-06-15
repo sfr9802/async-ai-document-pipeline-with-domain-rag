@@ -25,13 +25,13 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 AI_WORKER = SCRIPT_DIR.parent
 ROOT = AI_WORKER.parent
 
-DEFAULT_LOCAL_CANARY_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_pageindex_local_canary_report.json")
-DEFAULT_LOCAL_CANARY_CSV = Path("eval/reports/rag-ingestion/rag_pdf_pageindex_local_canary.csv")
-DEFAULT_C5_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json")
-DEFAULT_C6_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_vector_quality_breakdown.json")
-DEFAULT_C7_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_gold_policy_review.json")
-DEFAULT_JSON_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_pageindex_oracle_coverage_report.json")
-DEFAULT_CSV_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_pageindex_oracle_coverage.csv")
+DEFAULT_LOCAL_CANARY_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_pageindex_local_canary_report.json")
+DEFAULT_LOCAL_CANARY_CSV = Path("reports/rag_eval/rag-ingestion/rag_pdf_pageindex_local_canary.csv")
+DEFAULT_C5_REPORT = Path("reports/rag_eval/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json")
+DEFAULT_C6_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_vector_quality_breakdown.json")
+DEFAULT_C7_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_gold_policy_review.json")
+DEFAULT_JSON_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_pageindex_oracle_coverage_report.json")
+DEFAULT_CSV_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_pageindex_oracle_coverage.csv")
 
 GUARDRAILS = {
     "promotion_evidence": False,

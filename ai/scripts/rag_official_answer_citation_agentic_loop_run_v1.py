@@ -41,7 +41,7 @@ from app.capabilities.rag.retrieval_contract import citation_payload  # noqa: E4
 from eval.harness import rag_diagnostic_common as diagnostic_common  # noqa: E402
 
 
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
 
 
@@ -8028,7 +8028,7 @@ def run_v3_1_7_post_residual_queue_closure_and_inventory_audit(
         "lane_score_collapsed": False,
         "source_run_path_resolution": {
             "requested_source_summary_artifact": (
-                "ai/eval/reports/rag-ingestion/"
+                "reports/rag_eval/rag-ingestion/"
                 f"{V3_1_6_GQ_AUTO_010_SAFE_PDF_PARAGRAPH_WINDOW_EXPANSION_RUN_ID}_summary.json"
             ),
             "active_repo_summary_artifact": official.repo_relative(DEFAULT_V3_1_6_PDF_WINDOW_EXPANSION_SUMMARY_JSON),
@@ -8183,7 +8183,7 @@ def run_v3_1_7_post_residual_queue_closure_and_inventory_audit(
                 "status_jsonl",
             ],
             "gitignore_policy": (
-                "machine JSON/JSONL under ai/eval/reports/rag-ingestion are generated/local-only; "
+                "machine JSON/JSONL under reports/rag_eval/rag-ingestion are generated/local-only; "
                 "rolling human-facing docs are tracked"
             ),
             "older_v3_1_2_to_v3_1_6_artifacts_deleted": False,
@@ -8817,7 +8817,7 @@ def run_v3_1_8_gold_policy_review_packet_preparation(
                 "status_jsonl",
             ],
             "gitignore_policy": (
-                "machine JSON/JSONL under ai/eval/reports/rag-ingestion are generated/local-only; "
+                "machine JSON/JSONL under reports/rag_eval/rag-ingestion are generated/local-only; "
                 "rolling human-facing docs are tracked"
             ),
         },
@@ -9208,7 +9208,7 @@ def locate_v3_1_9_gold_override_csv() -> Path:
         if path.exists():
             return path
     raise FileNotFoundError(
-        "gold_overrides.csv not found in repo root, ai/eval/eval_queries, or ai/eval/reports/rag-ingestion"
+        "gold_overrides.csv not found in repo root, ai/eval/eval_queries, or reports/rag_eval/rag-ingestion"
     )
 
 
@@ -16676,13 +16676,13 @@ def run_v3_4_0_official_retrieval_metric_contract(
             "approve_structured_pdf_xlsx_adapter_context_policy_without_importing_adapter_pass_as_qrel",
         ],
         "source_artifacts": [
-            "ai/eval/reports/rag-ingestion/status.jsonl",
+            "reports/rag_eval/rag-ingestion/status.jsonl",
             "ai/eval/eval_queries/official_denominator_registry.json",
-            "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-            "ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json",
+            "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+            "reports/rag_eval/rag-ingestion/source_bound_readiness_v1.json",
             "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
-            "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_summary.json",
-            "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl",
+            "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_summary.json",
+            "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl",
         ],
         "guardrails": guardrails,
     }
@@ -29855,7 +29855,7 @@ def v3_7_0_policy_blocked_artifact_rows(*, generated_at: str) -> list[dict[str, 
             "silver_questions_or_answers_are_not_source_content",
         ),
         (
-            "ai/eval/reports/rag-ingestion/*",
+            "reports/rag_eval/rag-ingestion/*",
             "blocked_eval_artifact",
             "run_reports_metrics_status_or_audits_are_not_source_content",
         ),
@@ -38072,7 +38072,7 @@ def v3_6_8_source_registry_source_object_audit(
         },
         {
             "artifact": "v3_5_4/v3_6 diagnostic manifests",
-            "path": "ai/eval/reports/rag-ingestion/*v3_5_4* and *v3_6_*",
+            "path": "reports/rag_eval/rag-ingestion/*v3_5_4* and *v3_6_*",
             "symbol": "source manifest and reference sidecar",
             "classification": "silver_or_gold_derived",
             "creates": ["source-bound evidence object", "supporting locator draft for audit only"],
@@ -42352,11 +42352,11 @@ Interpretation:
 
 Primary machine artifacts:
 
-- `ai/eval/reports/rag-ingestion/{DEFAULT_V3_6_4_METRIC_SUMMARY_JSON.name}`
-- `ai/eval/reports/rag-ingestion/{DEFAULT_V3_6_4_METRIC_PER_ROW_JSONL.name}`
-- `ai/eval/reports/rag-ingestion/{DEFAULT_V3_6_4_METRIC_AGGREGATE_BY_BUCKET_JSON.name}`
-- `ai/eval/reports/rag-ingestion/{DEFAULT_V3_6_4_METRIC_FAILURE_TAXONOMY_JSON.name}`
-- `ai/eval/reports/rag-ingestion/{DEFAULT_V3_6_4_METRIC_POLICY_AUDIT_JSON.name}`
+- `reports/rag_eval/rag-ingestion/{DEFAULT_V3_6_4_METRIC_SUMMARY_JSON.name}`
+- `reports/rag_eval/rag-ingestion/{DEFAULT_V3_6_4_METRIC_PER_ROW_JSONL.name}`
+- `reports/rag_eval/rag-ingestion/{DEFAULT_V3_6_4_METRIC_AGGREGATE_BY_BUCKET_JSON.name}`
+- `reports/rag_eval/rag-ingestion/{DEFAULT_V3_6_4_METRIC_FAILURE_TAXONOMY_JSON.name}`
+- `reports/rag_eval/rag-ingestion/{DEFAULT_V3_6_4_METRIC_POLICY_AUDIT_JSON.name}`
 {marker_end}
 """
     text = re.sub(

@@ -24,22 +24,22 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 
 DEFAULT_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v4_v0.csv"
 DEFAULT_CORPUS_INVENTORY_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_corpus_inventory_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_corpus_inventory_report.json"
 )
 DEFAULT_GOLD_VALIDATOR_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_gold_validate_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_gold_validate_report.json"
 )
 DEFAULT_R5_FRESH_EMIT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_retrieval_emit.jsonl"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_retrieval_emit.jsonl"
 )
 DEFAULT_R5_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_retrieval_diagnostic_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_retrieval_diagnostic_report.json"
 )
 DEFAULT_CONTEXT_EMIT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_context_assembly.jsonl"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_context_assembly.jsonl"
 )
 DEFAULT_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_text_namu_v4_context_assembly_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_text_namu_v4_context_assembly_report.json"
 )
 
 PHASE = "R6_B3_NAMU_CONTEXT_ASSEMBLY"
@@ -65,10 +65,10 @@ C4_FORBIDDEN_PATHS = [
     "ai/tests/test_pdf_candidate_",
     "ai/tests/test_search_unit_indexing_loop.py",
     "ai/eval/indexes/rag-data-pdf-candidate-v1",
-    "ai/eval/reports/rag-ingestion/pdf_candidate_embedding_consistency.json",
-    "ai/eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json",
-    "ai/eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json",
-    "ai/eval/reports/rag-ingestion/rag_pdf_search_unit_surface_repair_report.json",
+    "reports/rag_eval/rag-ingestion/pdf_candidate_embedding_consistency.json",
+    "reports/rag_eval/rag-ingestion/pdf_vector_metadata_projection_readiness.json",
+    "reports/rag_eval/rag-ingestion/rag_pdf_embedding_text_contract_audit.json",
+    "reports/rag_eval/rag-ingestion/rag_pdf_search_unit_surface_repair_report.json",
     "docs/track-c-pdf-embedding-preparation/",
 ]
 

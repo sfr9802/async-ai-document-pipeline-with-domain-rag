@@ -249,13 +249,13 @@ def test_v59_artifacts_status_docs_runner_current_and_mutation_rejection(
         "status_jsonl",
     }
     assert set(written["artifact_paths"]) == expected_artifacts
-    run_root = tmp_path / "ai/eval/reports/rag-ingestion/runs/v5_9_real_nonprod_structured_hybrid_retrieval_reset"
+    run_root = tmp_path / "reports/rag_eval/rag-ingestion/runs/v5_9_real_nonprod_structured_hybrid_retrieval_reset"
     assert not list(run_root.glob("*.md"))
     assert len(_read_jsonl(tmp_path / written["artifact_paths"]["denominator_manifest_jsonl"])) == sum(
         tier["attempted_rows"] for tier in written["metric_tiers"].values()
     )
 
-    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_rows = _read_jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     latest = status_rows[-1]
     assert latest["short_run_id"] == SHORT_RUN_ID
     assert latest["current_resolves_to"] == "v5_6"

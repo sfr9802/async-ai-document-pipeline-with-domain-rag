@@ -25,7 +25,7 @@ from typing import Any
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review" / "pdf_supplemental_gold_review"
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 DEFAULT_SOURCE_CSV = REVIEW_DIR / "pdf_supplemental_gold_review_pack.csv"
 DEFAULT_OUTPUT_PREFIX = "pdf_supplemental_gold_review_pack_v3_manual_curated"
 SUMMARY_NAME = "rag_pdf_supplemental_gold_review_pack_v3_manual_curated_summary.json"
@@ -33,15 +33,15 @@ SUMMARY_NAME = "rag_pdf_supplemental_gold_review_pack_v3_manual_curated_summary.
 REFERENCE_FILES = [
     REVIEW_DIR / "pdf_supplemental_gold_review_pack.csv",
     REVIEW_DIR / "pdf_supplemental_gold_review_pack_v2.csv",
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "phase7"
     / "7.12_silver_manual_curated"
     / "queries_v4_silver_manual_curated_500.jsonl",
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "phase7"
     / "seeds"
     / "gold_seed_50_manual_curated"

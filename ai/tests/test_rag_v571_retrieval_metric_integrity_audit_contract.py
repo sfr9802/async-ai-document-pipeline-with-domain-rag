@@ -210,24 +210,24 @@ def test_v571_written_artifacts_status_and_runner_are_additive(tmp_path: Path) -
     v571.append_status(tmp_path, written, artifact_hashes=artifact_hashes)
 
     expected_paths = {
-        "report_json": "ai/eval/reports/rag-ingestion/runs/v5_7_1_retrieval_metric_integrity_audit/report.json",
+        "report_json": "reports/rag_eval/rag-ingestion/runs/v5_7_1_retrieval_metric_integrity_audit/report.json",
         "metric_integrity_audit_jsonl": (
-            "ai/eval/reports/rag-ingestion/runs/v5_7_1_retrieval_metric_integrity_audit/"
+            "reports/rag_eval/rag-ingestion/runs/v5_7_1_retrieval_metric_integrity_audit/"
             "metric_integrity_audit.jsonl"
         ),
         "candidate_origin_audit_jsonl": (
-            "ai/eval/reports/rag-ingestion/runs/v5_7_1_retrieval_metric_integrity_audit/"
+            "reports/rag_eval/rag-ingestion/runs/v5_7_1_retrieval_metric_integrity_audit/"
             "candidate_origin_audit.jsonl"
         ),
         "leakage_probe_results_jsonl": (
-            "ai/eval/reports/rag-ingestion/runs/v5_7_1_retrieval_metric_integrity_audit/"
+            "reports/rag_eval/rag-ingestion/runs/v5_7_1_retrieval_metric_integrity_audit/"
             "leakage_probe_results.jsonl"
         ),
         "metric_restatement_json": (
-            "ai/eval/reports/rag-ingestion/runs/v5_7_1_retrieval_metric_integrity_audit/"
+            "reports/rag_eval/rag-ingestion/runs/v5_7_1_retrieval_metric_integrity_audit/"
             "metric_restatement.json"
         ),
-        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
+        "status_jsonl": "reports/rag_eval/rag-ingestion/status.jsonl",
     }
     assert written["artifact_paths"] == expected_paths
     for key, path in expected_paths.items():
@@ -239,7 +239,7 @@ def test_v571_written_artifacts_status_and_runner_are_additive(tmp_path: Path) -
     assert len(_read_jsonl(tmp_path / expected_paths["candidate_origin_audit_jsonl"])) == 29
     assert len(_read_jsonl(tmp_path / expected_paths["leakage_probe_results_jsonl"])) == 29
 
-    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_rows = _read_jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     latest = status_rows[-1]
     assert latest["short_run_id"] == written["short_run_id"]
     assert latest["metric_restatement_required"] is True

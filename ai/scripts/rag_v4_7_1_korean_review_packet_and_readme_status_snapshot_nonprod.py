@@ -1249,7 +1249,7 @@ def update_eval_readme(report: Mapping[str, Any]) -> None:
     text = re.sub(r"- Current RAG status: `[^`]+`", f"- Current RAG status: `{STATUS}`", text, count=1)
     packet_section = f"""## Korean human review packet
 
-The v4_7_1 Korean human review packet is generated under `ai/eval/reports/rag-ingestion/quality/{RUN_ID}/` with `report.json`, `review_packet_ko.xlsx`, `review_packet_ko.csv`, `review_packet_ko.jsonl`, `actual_query_llm_response_examples_ko.csv`, `review_guidelines_ko.md`, and `review_summary_ko.json`.
+The v4_7_1 Korean human review packet is generated under `reports/rag_eval/rag-ingestion/quality/{RUN_ID}/` with `report.json`, `review_packet_ko.xlsx`, `review_packet_ko.csv`, `review_packet_ko.jsonl`, `actual_query_llm_response_examples_ko.csv`, `review_guidelines_ko.md`, and `review_summary_ko.json`.
 
 The user decision columns are Korean and all start as `미검수`, `보류`, or blank. Codex did not fill gold/qrels, expected answers, supporting evidence, relevance labels, answerability labels, official denominator inclusion, or promotion policy. The completed packet should be returned as a user-owned review artifact; the next gate is user-owned adjudication of query/evidence text, gold/qrels, expected evidence, denominator policy, and promotion policy. v4_7 registration did not execute an LLM and did not provide actual query/answer artifacts, so the review packet keeps `질의문`, `기대답변_한국어`, and `근거판단_한국어` blank rather than inventing text. The `source_manifest_*` columns and redacted preview/locator columns are filled from SHA-256 matches against the `source_collection` manifest. Actual artifact-backed query/answer examples are exported separately in `actual_query_llm_response_examples_ko.csv`.
 

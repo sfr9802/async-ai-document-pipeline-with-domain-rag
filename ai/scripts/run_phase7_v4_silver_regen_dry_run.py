@@ -31,7 +31,7 @@ FORBIDDEN_STRINGS = (
     "rag-cheap-sweep-v3",
     "bge-m3-anime-namu-v3",
 )
-DEFAULT_REPORT_DIR = Path("eval/reports/phase7/7.9_silver_regen_dry_run")
+DEFAULT_REPORT_DIR = Path("reports/rag_eval/phase7/7.9_silver_regen_dry_run")
 
 
 def _parse_args() -> argparse.Namespace:

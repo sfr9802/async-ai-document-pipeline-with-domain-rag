@@ -70,6 +70,49 @@ def test_experiment_gitignore_keeps_reproducibility_receipts_trackable() -> None
     assert _git_ignore_decision("ai/eval/experiments/studies/demo/plots/plot.png") == "ignored"
 
 
+def test_report_namespace_policy_centralizes_scattered_artifact_roots() -> None:
+    from ai.eval import report_paths
+
+    namespaces = {namespace.name: namespace for namespace in report_paths.REPORT_NAMESPACES}
+
+    assert report_paths.PUBLIC_REPORT_ROOT == ROOT / "reports"
+    assert report_paths.ACTUAL_RAG_REPORT_ROOT == ROOT / "reports" / "rag_eval"
+    assert report_paths.LEGACY_RAG_INGESTION_REPORT_ROOT == ROOT / "reports" / "rag_eval" / "rag-ingestion"
+    assert report_paths.LEGACY_RAG_INGESTION_STATUS_JSONL == (
+        ROOT / "reports" / "rag_eval" / "rag-ingestion" / "status.jsonl"
+    )
+    assert not (ROOT / "ai" / "eval" / "reports" / "rag-ingestion").exists()
+    assert report_paths.RAG_INGESTION_PROGRESS_DOC == ROOT / "docs" / "rag-ingestion-progress.md"
+    assert report_paths.RAG_INGESTION_MEASUREMENTS_DOC == ROOT / "docs" / "rag-ingestion-measurements.md"
+    assert report_paths.RAG_INGESTION_TRIAGE_DOC == ROOT / "docs" / "rag-ingestion-triage.md"
+
+    assert namespaces["public_portfolio_reports"].git_policy == "tracked allowlist only"
+    assert namespaces["actual_rag_reports"].git_policy == "ignored generated machine artifacts"
+    assert namespaces["legacy_rag_ingestion_reports"].git_policy == "ignored generated machine artifacts"
+    assert namespaces["rag_ingestion_ledgers"].git_policy == "tracked human-facing ledgers"
+    assert report_paths.dataset_latest_pointer("text-gold") == ROOT / "reports" / "rag_eval" / "latest_text_gold.json"
+
+    assert _git_ignore_decision("reports/portfolio_agentops_report.md") == "trackable"
+    assert _git_ignore_decision("reports/agentops_sample_trace.json") == "trackable"
+    assert _git_ignore_decision("reports/rag_eval/latest.json") == "ignored"
+    assert _git_ignore_decision("reports/rag_eval/example/report.json") == "ignored"
+    assert _git_ignore_decision("reports/rag_eval/rag-ingestion/runs/example/report.json") == "ignored"
+    assert _git_ignore_decision("docs/rag-ingestion-progress.md") == "trackable"
+    assert _git_ignore_decision("docs/rag-ingestion-measurements.md") == "trackable"
+    assert _git_ignore_decision("docs/rag-ingestion-triage.md") == "trackable"
+
+
+def test_active_report_entrypoints_use_central_report_path_contract() -> None:
+    for rel_path in (
+        "ai/eval/actual_rag_eval.py",
+        "ai/eval/rag_eval_registry.py",
+        "ai/scripts/rag_eval.py",
+        "ai/scripts/rag_weaviate_source_atom_index.py",
+    ):
+        text = (ROOT / rel_path).read_text(encoding="utf-8")
+        assert "ai.eval.report_paths" in text, rel_path
+
+
 def _git_ignore_decision(repo_relative_path: str) -> str:
     result = subprocess.run(
         ["git", "check-ignore", "-v", "--", repo_relative_path],

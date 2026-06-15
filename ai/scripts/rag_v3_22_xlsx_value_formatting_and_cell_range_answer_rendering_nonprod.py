@@ -1691,7 +1691,7 @@ def build_report(
             "docs/rag-ingestion-progress.md",
             "docs/rag-ingestion-measurements.md",
             "docs/rag-ingestion-triage.md",
-            "ai/eval/reports/rag-ingestion/status.jsonl",
+            "reports/rag_eval/rag-ingestion/status.jsonl",
         ],
         "residual_risks": [
             "Diagnostic-only in-memory SourceAtom display metadata exercises the runtime contract but is not production routing.",

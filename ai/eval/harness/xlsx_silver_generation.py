@@ -53,9 +53,9 @@ TRACK = "XLSX"
 REPORT_DATE = "20260507"
 
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
-DEFAULT_PRE_SILVER_REPORT = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "xlsx_pre_silver_risk_closure_20260507.json"
+DEFAULT_PRE_SILVER_REPORT = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "xlsx_pre_silver_risk_closure_20260507.json"
 DEFAULT_OUTPUT_DIR = ROOT / "ai" / "eval" / "eval_queries"
-DEFAULT_REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+DEFAULT_REPORT_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion"
 
 ANSWER_SHAPES = {
     "CELL_VALUE",

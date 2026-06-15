@@ -24,7 +24,7 @@ PREVIOUS_CURRENT = v69.LOGICAL_RUN_KEY
 CURRENT_RESOLVES_TO = v69.LOGICAL_RUN_KEY
 ROLLBACK_KEY = v69.LOGICAL_RUN_KEY
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 REPORT_PATH = RUN_ROOT / "report.json"
 REVIEW_PACKET_JSONL_PATH = RUN_ROOT / "retrieval_smoke_review_packet.jsonl"

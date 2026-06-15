@@ -19,7 +19,7 @@ from typing import Any, Mapping, Sequence
 
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 EVAL_QUERY_DIR = AI_WORKER_ROOT / "eval" / "eval_queries"
 
 DEFAULT_PDF_STRICT_REPORT = REPORT_DIR / "pdf_strict_silver_generation_report.json"

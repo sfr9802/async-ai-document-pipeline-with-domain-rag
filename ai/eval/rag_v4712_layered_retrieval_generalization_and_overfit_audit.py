@@ -30,7 +30,7 @@ CANONICAL_LONG_RUN_ID = (
 )
 STATUS = "V4_7_12_LAYERED_RETRIEVAL_GENERALIZATION_AND_OVERFIT_AUDIT_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 SHORT_REPORT_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
 SILVER_LAYERED_RETRIEVAL_AUDIT_JSON = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "silver_layered_retrieval_audit.json"

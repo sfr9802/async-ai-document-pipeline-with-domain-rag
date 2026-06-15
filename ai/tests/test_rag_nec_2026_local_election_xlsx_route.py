@@ -172,7 +172,7 @@ def test_nec_2026_local_election_route_is_direct_and_does_not_move_current(tmp_p
     monkeypatch.setenv("RAG_NEC_2026_LOCAL_ELECTION_SOURCE_COLLECTION_ROOT", str(collection))
 
     resolved = registry.resolve_run("nec_2026_local_election_xlsx", root=ROOT)
-    assert resolved.report_path == ROOT / "ai/eval/reports/rag-ingestion/runs/nec_2026_local_election_xlsx/report.json"
+    assert resolved.report_path == ROOT / "reports/rag_eval/rag-ingestion/runs/nec_2026_local_election_xlsx/report.json"
     assert registry.resolve_run("current", root=ROOT).logical_key == "v5_6"
     assert runner.DEFAULT_RUN_KEY == "v5_6"
 

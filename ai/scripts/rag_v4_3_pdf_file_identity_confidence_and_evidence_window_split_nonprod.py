@@ -570,7 +570,7 @@ def build_report(
             "docs/rag-ingestion-triage.md",
             "README.md",
             "ai/eval/README.md",
-            "ai/eval/reports/rag-ingestion/status.jsonl",
+            "reports/rag_eval/rag-ingestion/status.jsonl",
         ],
         "residual_risks": [
             "v4_3 packages v3_13 PDF diagnostics as reference-only seen rows; it does not prove source-document-disjoint validation.",

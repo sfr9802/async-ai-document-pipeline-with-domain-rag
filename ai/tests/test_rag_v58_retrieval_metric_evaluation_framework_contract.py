@@ -55,7 +55,7 @@ def test_v58_report_defines_separate_metric_tiers_without_moving_current(v58_rep
     ]
 
     official = tiers["official_gold_smoke_metric"]
-    assert official["source_artifact"] == "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl"
+    assert official["source_artifact"] == "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl"
     assert official["attempted_rows"] == 29
     assert official["official_denominator"] == 29
     assert official["diagnostic_denominator"] == 0
@@ -127,7 +127,7 @@ def test_v58_ledgers_account_for_every_row_and_every_exclusion(v58_report: dict[
     official_rows = [row for row in denominator_rows if row["metric_tier"] == "official_gold_smoke_metric"]
     assert len(official_rows) == 29
     assert {row["source_artifact"] for row in official_rows} == {
-        "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl"
+        "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl"
     }
     assert all("silver" not in row["source_artifact"] for row in official_rows)
 
@@ -210,7 +210,7 @@ def test_v58_artifacts_status_docs_runner_and_current_alias_are_additive(
         written["artifact_paths"]["exclusion_ledger_jsonl"],
         written["artifact_paths"]["leakage_probe_summary_json"],
     ]
-    run_root = tmp_path / "ai/eval/reports/rag-ingestion/runs/v5_8_retrieval_metric_evaluation_framework"
+    run_root = tmp_path / "reports/rag_eval/rag-ingestion/runs/v5_8_retrieval_metric_evaluation_framework"
     assert not list(run_root.glob("*.md"))
     written_report_json = json.loads((tmp_path / written["artifact_paths"]["report_json"]).read_text(encoding="utf-8"))
     assert written_report_json["metric_tier_order"] == written["metric_tier_order"]
@@ -219,7 +219,7 @@ def test_v58_artifacts_status_docs_runner_and_current_alias_are_additive(
         tier["attempted_rows"] for tier in written["metric_tiers"].values()
     )
 
-    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_rows = _read_jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     latest = status_rows[-1]
     assert latest["short_run_id"] == SHORT_RUN_ID
     assert latest["current_resolves_to"] == "v5_6"
@@ -266,7 +266,7 @@ def test_v58_check_report_rejects_opened_gates_drift_and_silver_in_official_tier
         (("metric_tiers", "official_gold_smoke_metric", "attempted_rows"), 30, "official tier"),
         (
             ("metric_tiers", "official_gold_smoke_metric", "source_artifact"),
-            "ai/eval/reports/rag-ingestion/runs/v4_7_15/silver.jsonl",
+            "reports/rag_eval/rag-ingestion/runs/v4_7_15/silver.jsonl",
             "official tier",
         ),
         (("metric_tiers", "balanced_diagnostic_retrieval_metric", "source_family_distribution"), {"XLSX": 300}, "balanced"),

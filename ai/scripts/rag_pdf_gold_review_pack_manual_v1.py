@@ -36,7 +36,7 @@ DEFAULT_EVIDENCE_JSONL = (
     / "answer_evidence_objects.jsonl"
 )
 DEFAULT_OUTPUT_DIR = AI_WORKER_ROOT / "eval" / "review" / "pdf_supplemental_gold_review"
-DEFAULT_REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+DEFAULT_REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 DEFAULT_PREFIX = "pdf_gold_review_pack_manual_v1"
 SUMMARY_NAME = "rag_pdf_gold_review_pack_manual_v1_summary.json"
 

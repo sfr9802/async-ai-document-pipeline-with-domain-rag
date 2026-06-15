@@ -16,8 +16,8 @@ from pathlib import Path
 from typing import Any
 
 
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/xlsx_candidate_embedding_consistency_report.json")
-DEFAULT_SCOPE_REPORT = Path("eval/reports/rag-ingestion/xlsx_candidate_scope_report.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/xlsx_candidate_embedding_consistency_report.json")
+DEFAULT_SCOPE_REPORT = Path("reports/rag_eval/rag-ingestion/xlsx_candidate_scope_report.json")
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
 DEFAULT_INDEX_VERSION = "rag-ingestion-v2-xlsx-candidate-v1"
 EXPECTED_HIDDEN_POLICY = "exclude_hidden"

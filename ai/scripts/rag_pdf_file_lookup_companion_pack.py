@@ -21,7 +21,7 @@ from typing import Any
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review" / "pdf_supplemental_gold_review"
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 DEFAULT_SOURCE_CSV = REVIEW_DIR / "pdf_gold_review_pack_manual_v1.csv"
 
 COMPANION_CSV_NAME = "pdf_gold_review_pack_manual_v1_file_lookup_companion.csv"

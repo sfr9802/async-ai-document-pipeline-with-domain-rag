@@ -19,7 +19,7 @@ PREVIOUS_CURRENT = v651.LOGICAL_RUN_KEY
 CURRENT_RESOLVES_TO = LOGICAL_RUN_KEY
 ROLLBACK_KEY = PREVIOUS_CURRENT
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 REPORT_PATH = RUN_ROOT / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"

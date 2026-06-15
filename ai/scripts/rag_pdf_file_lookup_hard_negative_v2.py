@@ -25,8 +25,8 @@ import rag_silver_only_tuning_pass as silver_pass
 
 
 DEFAULT_OUTPUT_CSV = AI_WORKER_ROOT / "eval" / "review" / "gold_silver_tuning" / "silver_pdf_file_lookup_hard_negative_v2.csv"
-DEFAULT_REPORT_JSON = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "pdf_file_lookup_hard_negative_v2_report.json"
-DEFAULT_REPORT_MD = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "pdf_file_lookup_hard_negative_v2_report.md"
+DEFAULT_REPORT_JSON = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "pdf_file_lookup_hard_negative_v2_report.json"
+DEFAULT_REPORT_MD = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "pdf_file_lookup_hard_negative_v2_report.md"
 
 CSV_FIELDS = [
     "query_id",

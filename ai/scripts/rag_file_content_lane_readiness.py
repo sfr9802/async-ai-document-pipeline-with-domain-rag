@@ -23,93 +23,93 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 
 DEFAULT_R1_CSV = AI_WORKER_ROOT / "eval" / "eval_queries" / "query_intent_routing_matrix_v0.csv"
 DEFAULT_R1_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_query_intent_routing_matrix_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_query_intent_routing_matrix_report.json"
 )
 DEFAULT_NAMU_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_text_namu_v4_v0.csv"
 DEFAULT_XLSX_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_xlsx_v3_positive_reviewed.csv"
 DEFAULT_PDF_GOLD = AI_WORKER_ROOT / "eval" / "eval_queries" / "gold_queries_pdf_v0.csv"
 DEFAULT_REPORT = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_file_content_lane_readiness_report.json"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_file_content_lane_readiness_report.json"
 )
 DEFAULT_CSV = (
-    AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_file_content_lane_readiness.csv"
+    AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_file_content_lane_readiness.csv"
 )
 
 NAMU_ARTIFACTS = {
-    "gold_validate": AI_WORKER_ROOT
-    / "eval"
+    "gold_validate": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_text_namu_v4_gold_validate_report.json",
-    "retrieval_diagnostic": AI_WORKER_ROOT
-    / "eval"
+    "retrieval_diagnostic": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_text_namu_v4_retrieval_diagnostic_report.json",
-    "context_assembly": AI_WORKER_ROOT
-    / "eval"
+    "context_assembly": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_text_namu_v4_context_assembly_report.json",
-    "answer_eval": AI_WORKER_ROOT
-    / "eval"
+    "answer_eval": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_text_namu_v4_answer_eval_report.json",
-    "citation_support": AI_WORKER_ROOT
-    / "eval"
+    "citation_support": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_text_namu_v4_citation_support_report.json",
 }
 XLSX_ARTIFACTS = {
-    "retrieval_diagnostic": AI_WORKER_ROOT
-    / "eval"
+    "retrieval_diagnostic": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json",
-    "performance_summary": AI_WORKER_ROOT
-    / "eval"
+    "performance_summary": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_xlsx_v3_positive_reviewed_retrieval_performance_summary.json",
-    "promotion_readiness": AI_WORKER_ROOT
-    / "eval"
+    "promotion_readiness": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_xlsx_promotion_grade_eval_readiness.json",
 }
 PDF_ARTIFACTS = {
-    "gold_policy_review": AI_WORKER_ROOT
-    / "eval"
+    "gold_policy_review": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_pdf_gold_policy_review.json",
-    "c7_decision_pack": AI_WORKER_ROOT
-    / "eval"
+    "c7_decision_pack": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_pdf_c7_decision_pack_summary.json",
-    "vector_diagnostic": AI_WORKER_ROOT
-    / "eval"
+    "vector_diagnostic": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "rag_retrieval_eval_pdf_vector_diagnostic_report.json",
 }
 BASELINE_ARTIFACTS = {
-    "initial_immutable_vector_baseline_descriptor": AI_WORKER_ROOT
-    / "eval"
+    "initial_immutable_vector_baseline_descriptor": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "initial_immutable_vector_baseline_descriptor.json",
-    "initial_baseline_bootstrap_readiness": AI_WORKER_ROOT
-    / "eval"
+    "initial_baseline_bootstrap_readiness": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "initial_baseline_bootstrap_readiness.json",
-    "a5_c3_immutable_baseline_readiness": AI_WORKER_ROOT
-    / "eval"
+    "a5_c3_immutable_baseline_readiness": AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "a5_c3_immutable_baseline_readiness.json",
 }

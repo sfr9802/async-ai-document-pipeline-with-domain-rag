@@ -16,7 +16,7 @@ CANONICAL_LONG_RUN_ID = (
 )
 STATUS = "V4_7_7_V3_LEGACY_ARCHIVE_RUNNER_CONSOLIDATION_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 SHORT_REPORT_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "report.json"
 V3_LEGACY_MANIFEST_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "v3_legacy_artifact_manifest.jsonl"
 ARCHIVE_MANIFEST_PATH = REPORT_ROOT / "archive_manifest.jsonl"
@@ -379,11 +379,11 @@ def update_eval_readme(root: Path) -> None:
             text = text.replace(f"- Current RAG status: `{STATUS}`", f"- Current RAG status: `{STATUS}`\n{marker}", 1)
     text = text.replace(
         "v4_7_6 cleanup/refactor: `v4_7_6_eval_artifact_archive_purge` writes "
-        "`ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json` through `ai/scripts/rag_eval.py`; "
+        "`reports/rag_eval/rag-ingestion/runs/v4_7_6/report.json` through `ai/scripts/rag_eval.py`; "
         "use resolver key `current` for this report and short lineage keys for "
         "v4_7_preofficial/v4_7_2/v4_7_3/v4_7_4/v4_7_5 provenance.",
         "v4_7_6 cleanup/refactor: `v4_7_6_eval_artifact_archive_purge` writes "
-        "`ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json` through `ai/scripts/rag_eval.py`; "
+        "`reports/rag_eval/rag-ingestion/runs/v4_7_6/report.json` through `ai/scripts/rag_eval.py`; "
         "use resolver key `v4_7_6` for this prior archive-purge report and short lineage keys for "
         "v4_7_preofficial/v4_7_2/v4_7_3/v4_7_4/v4_7_5 provenance.",
     )

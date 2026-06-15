@@ -27,7 +27,7 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 EVAL_QUERY_DIR = AI_WORKER_ROOT / "eval" / "eval_queries"
 CORPUS_DIR = AI_WORKER_ROOT / "eval" / "corpora" / "namu-v4-structured-combined"
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review" / "text_namu_v2_gold_review"
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 
 V1_REVIEW_CSV = EVAL_QUERY_DIR / "text_gold_review_pack - text_gold_review_pack.csv"
 V1_ORIGINAL_CSV = EVAL_QUERY_DIR / "gold_queries_text_namu_v4_v0.csv"
@@ -42,7 +42,7 @@ V2_CLEANUP_EXPANSION_REPORT_MD = REPORT_DIR / "text_namu_v2_gold_cleanup_expansi
 SOURCE_DATASET = "ai/eval/corpora/namu-v4-structured-combined"
 SOURCE_ORIGINAL_GOLD = "ai/eval/eval_queries/gold_queries_text_namu_v4_v0.csv"
 SOURCE_SILVER_MANUAL = (
-    "ai/eval/reports/phase7/7.12_silver_manual_curated/"
+    "reports/rag_eval/phase7/7.12_silver_manual_curated/"
     "queries_v4_silver_manual_curated_500.jsonl"
 )
 

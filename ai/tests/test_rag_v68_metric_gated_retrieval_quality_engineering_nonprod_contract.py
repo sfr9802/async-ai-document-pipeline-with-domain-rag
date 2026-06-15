@@ -157,7 +157,7 @@ def test_v68_single_primary_report_status_docs_and_hash_contract(
     v68_module.append_status(tmp_path, written, artifact_hashes=hashes)
     v68_module.require_status_report_hash(tmp_path, written)
 
-    run_root = tmp_path / "ai/eval/reports/rag-ingestion/runs" / RUN_KEY
+    run_root = tmp_path / "reports/rag_eval/rag-ingestion/runs" / RUN_KEY
     assert (run_root / "report.json").exists()
     assert set(path.name for path in run_root.iterdir()) == {"report.json"}
     assert written["artifact_sha256"]["report_json_sha256"] == hashlib.sha256(
@@ -165,7 +165,7 @@ def test_v68_single_primary_report_status_docs_and_hash_contract(
     ).hexdigest()
     status_rows = [
         json.loads(line)
-        for line in (tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in (tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl").read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
     assert status_rows[-1]["logical_run_key"] == RUN_KEY

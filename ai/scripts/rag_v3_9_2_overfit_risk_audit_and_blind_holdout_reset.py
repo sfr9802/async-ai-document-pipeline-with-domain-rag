@@ -18,7 +18,7 @@ if str(AI_ROOT) not in sys.path:
 
 from eval.harness import rag_diagnostic_common as diagnostic_common  # noqa: E402
 
-REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion"
 QUALITY_DIR = REPORT_DIR / "quality"
 SOURCE_REGISTRY_JSONL = ROOT / "ai" / "eval" / "source_registry" / "source_atom_registry_v1.jsonl"
 STATUS_JSONL = REPORT_DIR / "status.jsonl"

@@ -30,8 +30,8 @@ REPO_ROOT = AI_WORKER_ROOT.parent
 
 DEFAULT_CONFIG = AI_WORKER_ROOT / "eval" / "configs" / "retrieval_ood_interference_diagnostic.yaml"
 DEFAULT_MANIFEST = AI_WORKER_ROOT / "eval" / "review" / "retrieval_ood" / "retrieval_ood_split_manifest.csv"
-DEFAULT_REPORT_JSON = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "retrieval_ood_split_report.json"
-DEFAULT_REPORT_MD = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "retrieval_ood_split_report.md"
+DEFAULT_REPORT_JSON = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "retrieval_ood_split_report.json"
+DEFAULT_REPORT_MD = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "retrieval_ood_split_report.md"
 
 SPLIT_RANDOM = "random_row_split"
 SPLIT_DOC_FAMILY = "leave_document_family_out"

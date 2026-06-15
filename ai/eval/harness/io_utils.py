@@ -5,7 +5,7 @@ No schemas beyond "the dict has a `query` or `file` field"; the
 harness-specific modules do their own validation and conversion.
 
 The writers make their parent directory so the CLI can be pointed at
-`eval/reports/ocr-2026-04-15.json` without the user having to run a
+`reports/rag_eval/ocr-2026-04-15.json` without the user having to run a
 separate mkdir step.
 """
 

@@ -31,7 +31,7 @@ Usage::
     python -m scripts.run_phase7_silver_500_full_eval \\
         --pages-v4   PATH/pages_v4.jsonl \\
         --rag-chunks PATH/rag_chunks.jsonl \\
-        --reports-root eval/reports/ \\
+        --reports-root reports/rag_eval/ \\
         --index-root   eval/indexes/ \\
         --print-commands
 
@@ -39,7 +39,7 @@ Usage::
     python -m scripts.run_phase7_silver_500_full_eval \\
         --pages-v4   PATH/pages_v4.jsonl \\
         --rag-chunks PATH/rag_chunks.jsonl \\
-        --reports-root eval/reports/ \\
+        --reports-root reports/rag_eval/ \\
         --index-root   eval/indexes/ \\
         --run
 
@@ -1160,7 +1160,7 @@ def _parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     )
     p.add_argument(
         "--reports-root", type=Path, required=True,
-        help="Eval reports root (e.g. eval/reports/).",
+        help="Eval reports root (e.g. reports/rag_eval/).",
     )
     p.add_argument(
         "--pages-v4", type=Path, default=None,

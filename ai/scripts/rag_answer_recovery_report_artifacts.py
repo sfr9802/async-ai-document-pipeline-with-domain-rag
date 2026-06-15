@@ -165,7 +165,7 @@ def compact_report_paths(
         if readiness_json:
             report_dir = resolve_path(readiness_json).parent
         else:
-            report_dir = resolve_path("ai/eval/reports/rag-ingestion")
+            report_dir = resolve_path("reports/rag_eval/rag-ingestion")
     return {
         "md": report_dir / f"{basename}.md",
         "json": report_dir / f"{basename}.json",

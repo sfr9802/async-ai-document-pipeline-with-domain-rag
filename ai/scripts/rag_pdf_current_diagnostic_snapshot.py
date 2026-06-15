@@ -20,14 +20,14 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-DEFAULT_RETRIEVAL_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_full72_vector_diagnostic_report.json")
-DEFAULT_QUALITY_BREAKDOWN = Path("eval/reports/rag-ingestion/rag_retrieval_full72_vector_quality_breakdown.json")
+DEFAULT_RETRIEVAL_REPORT = Path("reports/rag_eval/rag-ingestion/rag_retrieval_eval_full72_vector_diagnostic_report.json")
+DEFAULT_QUALITY_BREAKDOWN = Path("reports/rag_eval/rag-ingestion/rag_retrieval_full72_vector_quality_breakdown.json")
 DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_pdf_v0.csv")
-DEFAULT_BASELINE_DESCRIPTOR = Path("eval/reports/rag-ingestion/initial_immutable_vector_baseline_descriptor.json")
+DEFAULT_BASELINE_DESCRIPTOR = Path("reports/rag_eval/rag-ingestion/initial_immutable_vector_baseline_descriptor.json")
 DEFAULT_BASELINE_ARTIFACT_DIR = Path("eval/indexes/rag-data-canary")
-DEFAULT_LINEAGE_REPORT = Path("eval/reports/rag-ingestion/rag_candidate_index_lineage_report.json")
+DEFAULT_LINEAGE_REPORT = Path("reports/rag_eval/rag-ingestion/rag_candidate_index_lineage_report.json")
 DEFAULT_XLSX_CANDIDATE_ARTIFACT_DIR = Path("eval/indexes/rag-data-xlsx-candidate-v1")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/rag_pdf_current_diagnostic_snapshot.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_pdf_current_diagnostic_snapshot.json")
 
 PDF_INDEX_VERSION = "rag-ingestion-v2-pdf-candidate-v1"
 PDF_ARTIFACT_DIR = "eval/indexes/rag-data-pdf-candidate-v1"

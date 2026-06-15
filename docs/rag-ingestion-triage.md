@@ -1,3 +1,15 @@
+<!-- report_namespace_cleanup_v1:triage-entry:start -->
+- report_namespace_cleanup_v1: scattered machine-report paths are now physically merged under `reports/rag_eval/`. `reports/` is a tracked public allowlist only; `reports/rag_eval/` is the ignored actual-RAG run/latest/Weaviate-manifest namespace; `reports/rag_eval/rag-ingestion/` is the ignored legacy/current diagnostic ladder namespace moved from `ai/eval/reports/rag-ingestion/`; `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md` are the tracked human ledgers; `docs/rag_eval/` is documentation, not a machine report sink. Active entrypoints and legacy report-writing scripts now share the consolidated path contract. Deletion/move triage remains conservative: no protected current/latest/gold/qrels/label/expected/denominator/source-registry/index/silver surface was moved or deleted. Residual test debt is limited to non-current historical suites that still expect older current aliases or archived phase7/legacy fixtures; the current freeze gate and cleanup/path contract pass.
+<!-- report_namespace_cleanup_v1:triage-entry:end -->
+
+<!-- portfolio_freeze_v1:triage-entry:start -->
+- portfolio_freeze_v1: README/eval README/roadmap/portfolio source claims are aligned to the current non-production latest report `actual_rag_eval_query_formulation_v3_agentic_guard_nonprod_20260614_v4`. Safe public framing is AI backend / agent-ready boundary work: route-selected Weaviate retrieval, SearchUnit/SearchView candidate-only diagnostics, SourceAtom/EvidenceBundle citation evidence truth, selected-evidence citation verification, fail-closed response policy, and redacted trace/report guardrails. Actual Response Smoke is response policy smoke only, not an answer-quality score; XLSX cell/range/axis citation structure is explainable, but XLSX-wide response-smoke success is not claimable. The only test repair was fixture-only: a reject packet fixture stopped sharing the `3기` anchor so it again exercises `likely_reject` under the current conservative evidence-mapping policy. Remaining non-claimable items: official metric, production/live readiness, product success, autonomous agent completion, broader agent-loop ready/opened, final answer quality, strict XLSX/PDF/TEXT headline score, or any gold/qrels/label/expected/denominator mutation.
+<!-- portfolio_freeze_v1:triage-entry:end -->
+
+<!-- actual_rag_eval_xlsx_pdf_vector_db_source_evidence_quality:triage-entry:start -->
+- actual_rag_eval_xlsx_pdf_vector_db_source_evidence_quality: non-production route-selected SourceAtom v2 was rebuilt/re-upserted (`indexed_count=136280`, `skipped_count=0`, valid manifest) and a separate live schema check returned no mismatches with v2 XLSX/PDF axis properties present. Post-reindex report-only runs are `reports/rag_eval/actual_rag_eval_gold29_xlsx_pdf_vector_db_det_reindexed_20260615/report.json` and `reports/rag_eval/actual_rag_eval_silver500_xlsx_vector_db_det_reindexed_20260615/report.json`; each emitted only `report.json` and kept `--append-registry`/`--write-latest` off. Guardrails stayed closed: evidence gate unchanged, unsupported-after-gate `0.0`, retrieved-context-only citations not promoted, raw prompt/response payloads false, production routing false, and latest/current/source_registry/runs registry/gold/silver/qrels/labels/expected/denominator unchanged. Live impact is partial: gold allowed/insufficient and strict E2E stayed `5/24` and `0.0`, but citation precision/recall improved `0.230769/0.375 -> 0.363636/0.571429`; silver stayed diagnostic-only with allowed/insufficient `7/493`, citation_supported `321 -> 379`, and residual `selected_evidence_has_value_missing_axis=478 -> 479`. Triage conclusion: stale v2 index materialization is resolved, but XLSX selected-evidence assembly remains the main blocker because the XLSX-heavy silver diagnostic lane still has scoped expansion `888/0` while gold stays `38/4`. Next safe target is general source-native XLSX evidence representation/retrieval/package assembly, not raw XLSX/PDF query-time parsing, filename/workbook/title shortcuts, formula/normalized-value shortcuts, new silver rows, denominator changes, row-specific repairs, local LLM repair, or protected-surface mutation.
+<!-- actual_rag_eval_xlsx_pdf_vector_db_source_evidence_quality:triage-entry:end -->
+
 <!-- actual_rag_eval_query_formulation_v3_agentic_guard_nonprod:triage-entry:start -->
 - actual_rag_eval_query_formulation_v3_agentic_guard_nonprod: Normal route-selected Weaviate query formulation now has `weaviate_query_reformulation_v3` for bounded Korean numeral normalization, punctuation-normalized numeric/title variants, and original-order content-anchor compaction only when a numeric normalization trigger exists; numeric alias replacement is token-boundary based so unrelated Korean substrings are not rewritten. The earlier v2 static English alias gain is retracted from the active path because code-local `X-Men`/`Adversary`/`Project` translations were too heuristic. Fresh report `reports/rag_eval/actual_rag_eval_query_formulation_v3_agentic_guard_nonprod_20260614_v4/report.json` emitted only `report.json`, moved latest pointers, kept planner mode off, and preserved official_metric=false, production routing closed, raw prompt/response artifacts false, retrieved-context-only citation promotion false, and gate loosening false. The current live result is conservative: allowed/blocked remains `5/1`, citation_supported is `8`, query_count_per_item is `4.833333`, and `text_namu_v2_0014` no longer retrieves the target Adversary/Alison line. Agentic execute-once is also narrowed: only sanitized query-text retrieval probes may execute by default; PDF/XLSX tool use, selected-evidence LLM retry, and run-local memory reuse remain deferred without an explicit future execution gate. Triage conclusion: v3 reduces heuristic risk but does not improve the live residual, so broader agent-loop readiness remains false; next work should be source-backed alias/anchor evidence design or selected-package anchor composition under the unchanged gate, not row-specific aliases, gold/qrels/label/expected/denominator mutation, gate loosening, or retrieved-context-only citation promotion.
 <!-- actual_rag_eval_query_formulation_v3_agentic_guard_nonprod:triage-entry:end -->
@@ -88,7 +100,7 @@
 <!-- actual_rag_eval_source_native_phase0_phase2_full_corpus_bge_m3_nonprod:triage-entry:end -->
 
 <!-- actual_rag_eval_source_native_legacy_cleanup_nonprod:triage-entry:start -->
-- actual_rag_eval_source_native_legacy_cleanup_nonprod: cleanup/fencing is complete as a non-production maintenance lane. Routine actual-RAG auto surface remains source_native when source-native units are available; SearchUnit/SearchView is explicit legacy comparison/debug only, routine candidate-surface use is disabled, and auto fallback to SearchUnit/SearchView is false. Routine output-mode single remains `report.json` only; legacy sidecars require explicit legacy mode, and human review packet CSV remains the explicit exception. Cleanup report: `ai/eval/reports/rag-ingestion/runs/actual_rag_eval_source_native_legacy_cleanup_nonprod/report.json`. This lane did not tune retrieval ranking, rebuild/replace source-native indexes, move `current`, mutate protected source registry/index/eval query/gold/qrels/labels/answerability/expected/denominator surfaces, write raw prompt/response artifacts, or open official/product/promotion/live-readiness gates. Existing BGE-M3/layered/MMR artifacts are held as diagnostic evidence for separate future repair lanes; remaining debt is source-native ranking/query formulation, BGE-M3 artifacts held read-only with future remeasurement only when explicitly opened or not current, and `extractive-v1` answer generation replacement.
+- actual_rag_eval_source_native_legacy_cleanup_nonprod: cleanup/fencing is complete as a non-production maintenance lane. Routine actual-RAG auto surface remains source_native when source-native units are available; SearchUnit/SearchView is explicit legacy comparison/debug only, routine candidate-surface use is disabled, and auto fallback to SearchUnit/SearchView is false. Routine output-mode single remains `report.json` only; legacy sidecars require explicit legacy mode, and human review packet CSV remains the explicit exception. Cleanup report: `reports/rag_eval/rag-ingestion/runs/actual_rag_eval_source_native_legacy_cleanup_nonprod/report.json`. This lane did not tune retrieval ranking, rebuild/replace source-native indexes, move `current`, mutate protected source registry/index/eval query/gold/qrels/labels/answerability/expected/denominator surfaces, write raw prompt/response artifacts, or open official/product/promotion/live-readiness gates. Existing BGE-M3/layered/MMR artifacts are held as diagnostic evidence for separate future repair lanes; remaining debt is source-native ranking/query formulation, BGE-M3 artifacts held read-only with future remeasurement only when explicitly opened or not current, and `extractive-v1` answer generation replacement.
 <!-- actual_rag_eval_source_native_legacy_cleanup_nonprod:triage-entry:end -->
 
 <!-- actual_rag_eval_source_native_bge_m3_mmr_nonprod:triage-entry:start -->
@@ -250,7 +262,7 @@
 <!-- v5_7_1_retrieval_metric_integrity_audit_diagnostic_nonprod:triage-entry:end -->
 
 <!-- v5_7_vector_llm_candidate_routing_with_regression_remediation_diagnostic_nonprod:triage-entry:start -->
-- v5_7_vector_llm_candidate_routing_with_regression_remediation_diagnostic_nonprod: heuristic inventory rows=15 are recorded in `ai/eval/reports/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/heuristic_inventory.jsonl` with existing historical occurrences blocked from direct deletion and rejected in the v5_7 route/candidate scoring path. Regression attribution is empty because the v5_7 diagnostic vector candidates preserve the v5_6 full-packet new retrieval baseline; future remediation lanes are pre-classified as route, vector candidate generation, hybrid ranking, evidence assembly, answer synthesis, latency/cost, infrastructure fail-closed, or metric-ineligible. Fine-tuning readiness is reserved only for repeated answer synthesis/citation-discipline failures after retrieval and evidence are correct; retrieval/candidate/evidence-boundary failures are not FT candidates.
+- v5_7_vector_llm_candidate_routing_with_regression_remediation_diagnostic_nonprod: heuristic inventory rows=15 are recorded in `reports/rag_eval/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/heuristic_inventory.jsonl` with existing historical occurrences blocked from direct deletion and rejected in the v5_7 route/candidate scoring path. Regression attribution is empty because the v5_7 diagnostic vector candidates preserve the v5_6 full-packet new retrieval baseline; future remediation lanes are pre-classified as route, vector candidate generation, hybrid ranking, evidence assembly, answer synthesis, latency/cost, infrastructure fail-closed, or metric-ineligible. Fine-tuning readiness is reserved only for repeated answer synthesis/citation-discipline failures after retrieval and evidence are correct; retrieval/candidate/evidence-boundary failures are not FT candidates.
 <!-- v5_7_vector_llm_candidate_routing_with_regression_remediation_diagnostic_nonprod:triage-entry:end -->
 
 <!-- v5_6_full_packet_route_retrieval_comparison_diagnostic_nonprod:triage-entry:start -->
@@ -281,7 +293,7 @@
 ### v5_5 user approval ingestion boundary
 
 - Run key: `v5_5_user_approved_gold_packet_ingestion_and_official_metric_dry_run`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v5_5/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v5_5/report.json`
 - Scope: exactly the 29 v5_4 user review packet rows. It excludes all 1000 silver rows, v5_2/v5_3 residual rows, overlay-90, XLSX candidate-state rows, and PDF/TEXT residual taxonomy rows from denominator/label creation.
 - Evidence IDs are derived only from `machine_existing_citation_locator_hint`; TEXT uses `cited_chunk_ids`, while XLSX/PDF use `search_unit_id` with the full locator preserved for row-level precision audit.
 - Duplicate evidence IDs are recorded as diagnostic metadata, not silently collapsed. Run-local official-eval artifacts are ignored and protected namespaces remain untouched.
@@ -379,8 +391,8 @@
 ### v4_7_8 Test/Doc Dependency Decoupling And Runner Alias Expansion
 
 - Run key: `v4_7_8_test_doc_dependency_decoupling_runner_alias_expansion`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_8/report.json`
-- Reference graph: `ai/eval/reports/rag-ingestion/runs/v4_7_8/v3_legacy_hold_reduction_manifest.jsonl` records sample readers for each v3 legacy artifact and separates test/doc readers from script/core readers.
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_8/report.json`
+- Reference graph: `reports/rag_eval/rag-ingestion/runs/v4_7_8/v3_legacy_hold_reduction_manifest.jsonl` records sample readers for each v3 legacy artifact and separates test/doc readers from script/core readers.
 - Archive/purge: safe generated root-level v3 artifacts, v3_16 generated quality payloads, and nonessential ambiguous v3_9 response/taxonomy payloads were copied to an external v4_7_8 archive namespace, SHA-256 verified, and removed repo-local.
 - Narrowed holds: documented review packets remain held; retained v3_9 metric/per-family/per-query payloads are `REVIEW_MANUAL_HOLD`; retained v3_17-v3_22 quality payloads remain current contract holds only where current checks or docs still need them.
 - Runner consolidation: `ai/scripts/rag_eval.py` owns `current`, `v4_7_8`, prior v4_7 cleanup keys, and verified check-only aliases v3_9_2, v3_10, v3_11, v3_12, v3_13, v3_14, v3_15, v3_18, v3_19, v3_20, v3_21, v3_22. Held entrypoints: v3_16=check returned nonzero or opened a forbidden gate; alias not added, v3_17=check returned nonzero or opened a forbidden gate; alias not added.
@@ -391,7 +403,7 @@
 ### v4_7_7 V3 Legacy Archive And Runner Consolidation
 
 - Run key: `v4_7_7_v3_legacy_archive_and_runner_consolidation`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_7/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_7/report.json`
 - EXTERNALLY_ARCHIVED_REMOVED: v4_7_6 verified archive copies and removed repo-local generated v3 artifacts.
 - EXPLICIT_HOLD_CURRENT_TEST_OR_DOC_CONTRACT: repo-local v3 artifacts still read by current tests/docs remain held with reasons.
 - EXPLICIT_HOLD_DOCUMENTED_LEGACY_REVIEW_PACKET: documented legacy review packet surfaces remain held until their readers move.
@@ -403,7 +415,7 @@
 ### v4_7_6 Eval Artifact Cleanup Decision Boundary
 
 - Run key: `v4_7_6_eval_artifact_archive_purge`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_6/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_6/report.json`
 - KEEP_PROTECTED: eval queries, source registry, indexes, silver, source-of-truth/gold/qrels/denominator surfaces, raw user review evidence, and non-generated source/test/doc files.
 - KEEP_CURRENT_MINIMAL: status ledger, archive manifest, v4_7 lineage short report paths, and current resolver-required compatibility reports.
 - ARCHIVE_THEN_REMOVE: verified ignored/generated legacy diagnostic payloads already represented by report/status/docs. Archive copies are hash-verified before repo-local removal.
@@ -415,10 +427,10 @@
 ### v4_7_5 PDF Evidence Repair Failure Taxonomy And Cleanup Boundary
 
 - Run key: `v4_7_5_pdf_evidence_repair_eval_compaction`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/v4_7_5/report.json`
 - Evidence boundary: SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only. Query-time raw PDF parsing, broad SourceAtom scans, hidden target/gold locators, expected/supporting gold text, and source-file title shortcuts remain disabled.
 - Failure taxonomy after repair: RIGHT_PAGE_WEAK_WINDOW 10; CONTEXT_NEIGHBOR_MISSING 10; TABLE_OR_FIGURE_STRUCTURE_LOST 0; UNSUPPORTED_CLAIM_RISK 0; ANSWER_READY 48; CONTRACT_FAIL_CLOSED 10.
-- Cleanup boundary: generated ignored artifacts are inventoried in `ai/eval/reports/rag-ingestion/archive_manifest.jsonl` with hashes and classifications. Physical cleanup is skipped because the external archive target was not revalidated in this slice. Protected namespaces, raw user CSV/uploaded review evidence, source manifests, and current-profile v4_7_2/v4_7_3/v4_7_4/v4_7_5 evidence remain preserved.
+- Cleanup boundary: generated ignored artifacts are inventoried in `reports/rag_eval/rag-ingestion/archive_manifest.jsonl` with hashes and classifications. Physical cleanup is skipped because the external archive target was not revalidated in this slice. Protected namespaces, raw user CSV/uploaded review evidence, source manifests, and current-profile v4_7_2/v4_7_3/v4_7_4/v4_7_5 evidence remain preserved.
 - XLSX remains parked because v4_7_3 passed XLSX count is 0. This is not official metric, product-success evidence, promotion evidence, FT-A execution, fine-tuning, training data, or live DB/index/cache readiness.
 <!-- v4_7_5_pdf_evidence_repair_eval_compaction:triage-entry:end -->
 <!-- official_answer_citation_agentic_loop_run_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod:triage-entry:start -->
@@ -466,7 +478,7 @@
 ### v4_7 Preofficial External Holdout Candidate Manifest Registration Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod`
-- Resolver key: `v4_7_preofficial`; primary report resolves to `ai/eval/reports/rag-ingestion/runs/v4_7_preofficial/report.json`. Legacy long-path alias remains compatibility-only.
+- Resolver key: `v4_7_preofficial`; primary report resolves to `reports/rag_eval/rag-ingestion/runs/v4_7_preofficial/report.json`. Legacy long-path alias remains compatibility-only.
 - This opens only the v4_7 pre-official external holdout candidate manifest acquisition/registration lane.
 - Candidate rows are accepted only if v4_5_1/v4_5_2-compatible validation accepts them, PDF identity is document-level, XLSX identity is workbook-level, prior SourceAtom identity collisions are excluded, leakage buckets are empty, protected oracle fields are absent, and query-fidelity included rows meet the registration target.
 - It is not official metric, not FT-A dry-run execution, not fine-tuning, not dataset export, not promotion evidence, not product-success evidence, not production routing, and not live DB/index/cache readiness.
@@ -489,7 +501,7 @@
 ### v4_6_12 External Holdout Runtime Replay Route Parity Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_12_external_holdout_runtime_replay_route_parity_nonprod/report.json`; single-report contract remains active.
 - v4_6_12 is diagnostic-only, non-production, and route-parity-probe-only.
 - It verifies the FastAPI holdout-candidate validation route matches v4_6_10 transient manifest replay counts/audit state and redacts route validation errors.
 - It is not real holdout registration, not candidate manifest export, not validation/source-audit sidecar creation, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
@@ -500,7 +512,7 @@
 ### v4_6_11 FT-A Runtime Input Validation Route Parity Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_11_ft_a_runtime_input_validation_route_parity_nonprod/report.json`; single-report contract remains active.
 - v4_6_11 is diagnostic-only, non-production, and runtime-parity-probe-only.
 - It verifies the FastAPI FT-A dry-run input validation route preserves v4_6_4 validator counts, rejects forbidden prompt/gold/output and operational fields, redacts validation error input, and stays default-disabled and production-disabled.
 - It is not dry-run input manifest export, not FT-A dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
@@ -511,7 +523,7 @@
 ### v4_6_10 External Holdout Candidate Manifest Gate Replay Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod/report.json`; single-report contract remains active.
 - v4_6_10 is diagnostic-only and external-holdout-candidate-manifest-gate-replay-only. The default artifact confirms the external candidate manifest is still missing and keeps the v4_7 opening preflight closed.
 - Optional `--candidate-manifest` input is a no-write replay through v4_5_1/v4_5_2 only; it records redacted/hash input metadata and aggregate gate outcomes, not raw candidate rows or raw source identities.
 - The default-disabled FastAPI readiness route originally projected the v4_6_10 report's bounded manifest replay/preflight fields, redacted provided manifest input paths, and failed closed on sidecar/raw-surface openings or inconsistent replay counters. Current readiness now defaults to the later v4_6_12 route-parity report while retaining v4_6_10 projection support. The default-disabled FT-A dry-run input validation route reuses the v4_6_4 row-shape contract in memory and returns sanitized/hash-only diagnostics without exporting dry-run inputs, prompt payloads, datasets, jobs, checkpoints, official metrics, promotion evidence, product-success evidence, or live-readiness claims.
@@ -523,7 +535,7 @@
 ### v4_6_9 Holdout Candidate Duplicate Hygiene Gate Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_9_holdout_candidate_duplicate_hygiene_gate_nonprod/report.json`; single-report contract remains active.
 - v4_6_9 is diagnostic-only and duplicate-hygiene-gate-only. It checks that invalid-first duplicate candidate/query IDs fail closed across runtime and v4_5_1 script validation.
 - It proves duplicate boundary hardening only; it is not real holdout availability, not external holdout acquisition, not candidate manifest export, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
 - It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `real_holdout_sufficient=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.
@@ -533,7 +545,7 @@
 ### v4_6_8 Runtime Readiness Dependency Freshness Gate Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_8_runtime_readiness_dependency_freshness_gate_nonprod/report.json`; single-report contract remains active.
 - v4_6_8 is diagnostic-only, dependency-freshness-gate-only, and external-holdout-acquisition-requirements-packet-only.
 - It proves current dependency freshness and FastAPI DTO projection consistency only; it is not real holdout availability, not external holdout acquisition, not candidate manifest export, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
 - It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `real_holdout_sufficient=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.
@@ -543,7 +555,7 @@
 ### v4_6_7 Holdout Candidate Runtime Gate Parity Bridge Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod/report.json`; single-report contract remains active.
 - v4_6_7 is diagnostic-only and parity-bridge-only. It compares runtime-adjacent FastAPI holdout validation with v4_5_1/v4_5_2 script gates using in-memory hash-only probes.
 - The bridge proves contract consistency only; it is not real holdout availability, not external holdout acquisition, not candidate manifest export, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
 - It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `real_holdout_sufficient=false`, `ft_route_policy_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.
@@ -553,7 +565,7 @@
 ### v4_6_6 Holdout Gap And Dry-Run Blocker Ledger Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_6_holdout_gap_and_dry_run_blocker_ledger_nonprod/report.json`; single-report contract remains active.
 - v4_6_6 is diagnostic-only, non-production, ledger-only infrastructure over existing v4_4 through v4_6_5 reports.
 - It is not external holdout acquisition, not candidate manifest export, not dry-run execution, not prompt payload creation, not dataset export, and not a v4_7 opening.
 - The FastAPI holdout-candidate validation route is an internal, default-disabled, non-writing projection of this contract: candidate rows are request-body input only, accepted/excluded rows are hash-only, raw source identities and local paths are not exposed, and optional prior identity hashes are collision checks rather than persisted ledgers.
@@ -564,7 +576,7 @@
 ### v4_6_5 FT-A Dry-Run Execution Plan Gate Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_5_ft_a_dry_run_execution_plan_gate_nonprod/report.json`; single-report contract remains active.
 - v4_6_5 is diagnostic-only, non-production, execution-plan-gate-only FT-A dry-run preparation.
 - It is not the FT-A dry run, not dry-run execution, not manifest export, not prompt payload creation, not dataset export, and not a v4_7 opening.
 - User-owned gold/qrels/denominator/promotion decisions remain closed before any official metric or promotion-adjacent evaluation.
@@ -619,7 +631,7 @@ archived under the same redacted external runtime archive family.
 ### v4_6_4 FT-A Dry-Run Input Manifest Validator Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_4_ft_a_dry_run_input_manifest_validator_nonprod/report.json`; single-report contract remains active.
 - v4_6_4 is diagnostic-only, non-production, validator-only FT-A dry-run input manifest preparation.
 - It validates manifest row shape and rejects prompt/gold/output leakage; it is not the FT-A dry run, not manifest export, not prompt payload creation, not dataset export, and not a v4_7 opening.
 - It keeps raw prompt text, prompt manifests, raw LLM responses, datasets, training manifests, jobs, checkpoints, official metrics, promotion evidence, and product-success evidence absent.
@@ -630,7 +642,7 @@ archived under the same redacted external runtime archive family.
 ### v4_6_3 FT-A Prompt-Policy Baseline Schema Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_3_ft_a_prompt_policy_baseline_schema_nonprod/report.json`; single-report contract remains active.
 - v4_6_3 is diagnostic-only, non-production, schema-only FT-A prompt-policy baseline preparation.
 - It freezes prompt-policy baseline identifiers and future dry-run output fields; it is not the FT-A dry run, not prompt payload creation, not dataset export, and not a v4_7 opening.
 - It keeps raw prompt text, prompt manifests, raw LLM responses, datasets, training manifests, jobs, checkpoints, official metrics, promotion evidence, and product-success evidence absent.
@@ -641,7 +653,7 @@ archived under the same redacted external runtime archive family.
 ### v4_6_2 FT-A Route-Policy Fixture Contract Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_2_ft_route_policy_fixture_contract_nonprod/report.json`; single-report contract remains active.
 - v4_6_2 is diagnostic-only, non-production, FT-A route-policy fixture contract only.
 - The contract prepares row-shape and leakage/no-go rules only; it is not the FT-A dry run, not dataset export, and not a v4_7 opening.
 - It rejects gold/oracle answer text, supporting evidence, target/gold locators, prompt payloads, raw LLM responses, final answers, direct answer values, and local file paths as model inputs.
@@ -653,7 +665,7 @@ archived under the same redacted external runtime archive family.
 ### v4_6_1 Holdout Candidate Manifest Identity Contract Bridge Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_1_holdout_candidate_manifest_identity_contract_bridge_nonprod/report.json`; single-report contract remains active.
 - v4_6_1 is diagnostic-only, non-production, holdout-candidate manifest identity contract bridge only.
 - The bridge proves contract consistency only; it is not split sufficiency, not holdout availability, not the FT-A dry run, and not a v4_7 opening.
 - It keeps `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `v4_6_ft_dry_run_opened=false`, and `v4_7_official_metric_gate_opened=false`.
@@ -665,7 +677,7 @@ archived under the same redacted external runtime archive family.
 ### v4_6 FT Route Policy Dry-Run Preflight Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_6_ft_route_policy_dry_run_preflight_nonprod/report.json`; single-report contract remains active.
 - v4_6 is preflight only and is not the FT-A dry run itself.
 - The current default run keeps the dry run closed because v4_5, v4_5_1, v4_5_2, and user-owned gold/qrels/denominator policy gates are not open.
 - v4_5_3 prior identity baseline provenance is accepted only as hash-only SourceAtom-registry-derived evidence; raw source identities and local paths remain unexposed.
@@ -678,7 +690,7 @@ archived under the same redacted external runtime archive family.
 ### v4_5_3 External Holdout Prior Source Identity Ledger Summary Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_3_external_holdout_prior_source_identity_ledger_summary_nonprod/report.json`; single-report contract remains active.
 - v4_5_3 is diagnostic hash-only prior identity baseline infrastructure, not a v4_6 fine-tuning dry run.
 - Hash records are derived from existing SourceAtom registry PDF document and XLSX workbook identities only; raw local paths and raw source identities are not exposed.
 - The summary does not create external holdout candidates, labels, qrels, denominator rows, review packets, training data, jobs, or checkpoints.
@@ -691,7 +703,7 @@ archived under the same redacted external runtime archive family.
 ### v4_5_2 External Holdout Candidate Source Identity Audit Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_2_external_holdout_candidate_source_identity_audit_nonprod/report.json`; single-report contract remains active.
 - v4_5_2 is diagnostic source-identity audit infrastructure over external holdout candidate manifests, not a v4_6 fine-tuning dry run.
 - Candidate manifests, raw prior identity ledgers, and v4_5_3 hash-only prior summary reports are read as input only; external paths are redacted and inputs are not copied into the run directory.
 - PDF candidates require document-level identity; XLSX candidates require workbook-level identity. XLSX row/cell-level `source_identity` alone is not accepted as workbook-disjoint proof.
@@ -705,7 +717,7 @@ archived under the same redacted external runtime archive family.
 ### v4_5_1 Holdout Candidate Intake Gate Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_1_holdout_candidate_intake_gate_nonprod/report.json`; single-report contract remains active.
 - v4_5_1 is a diagnostic holdout-candidate intake gate, not a v4_6 fine-tuning dry run.
 - Optional candidate manifest paths are read as input only; external paths are redacted and the manifest is not copied into the run directory.
 - Current candidate manifest is absent, so accepted PDF source-document-disjoint and XLSX workbook-disjoint candidates remain below target.
@@ -720,7 +732,7 @@ archived under the same redacted external runtime archive family.
 ### v4_5 Fine-Tuning Readiness Packet Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_5_finetune_readiness_packet_nonprod/report.json`; single-report contract remains active.
 - v4_5 is a diagnostic fine-tuning-readiness packet, not actual fine-tuning/training.
 - Evidence path quality is read from v4_4 guardrails: SourceAtom/EvidenceBundle remains evidence truth and SearchView/vector remains candidate-only.
 - Split quality remains blocked: PDF source-document-disjoint and XLSX workbook-disjoint holdout counts are below target, and real query-fidelity rows remain below the per-family target.
@@ -752,7 +764,7 @@ archived under the same redacted external runtime archive family.
 ### v4_4 Real Blind/OOD Holdout And Leakage Audit Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_4_real_blind_ood_holdout_and_leakage_audit_nonprod/report.json`; single-report contract remains active.
 - v4_4 materializes holdout, split, query-fidelity, leakage-bucket, and excluded-row ledger infrastructure.
 - PDF source-document-disjoint and XLSX workbook-disjoint real holdout rows remain unavailable; TEXT remains comparison/control only.
 - Fresh real holdout remains unavailable, so synthetic OOD rows are anti-overfit guards only and cannot be interpreted as product success.
@@ -766,7 +778,7 @@ archived under the same redacted external runtime archive family.
 ### v4_3 PDF File Identity Confidence And Evidence-Window Split Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_3_pdf_file_identity_confidence_and_evidence_window_split_nonprod/report.json`; single-report contract remains active.
 - v4_3 keeps XLSX/TEXT lanes excluded and reports PDF diagnostics separately.
 - The 329-row denominator remains the v3_13 PDF file-identity/evidence-window seen diagnostic surface.
 - File identity metrics are kept separate from answer-ready evidence-window metrics; bbox correctness remains uncomputed without independent gold-free evidence.
@@ -781,7 +793,7 @@ archived under the same redacted external runtime archive family.
 ### v4_2 XLSX Locator v2 Table/Range/Cell Structural Materialization Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod/report.json`; single-report contract remains active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_2_xlsx_locator_v2_table_range_cell_structural_materialization_nonprod/report.json`; single-report contract remains active.
 - v4_2 keeps PDF/TEXT lanes excluded and reports XLSX locator diagnostics separately.
 - The 344-row denominator remains the v3_12/v3_15 XLSX locator surface; v4_1 display metadata rows are input readiness only.
 - Table/range and cell/value metrics are `reference_only_seen_diagnostic` with `computed_by_v4_2=false`.
@@ -795,7 +807,7 @@ archived under the same redacted external runtime archive family.
 ### v4_1 Persisted XLSX SourceAtom Display Metadata Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod/report.json`; single-report contract is active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v4_1_persisted_xlsx_sourceatom_display_metadata_nonprod/report.json`; single-report contract is active.
 - v4_1 closes the first persisted/runtime-adjacent gap after v3_22: XLSX display metadata now exists as SourceAtom-owned manifest fields instead of only report-local runtime fixture data.
 - Formula cells carry cached values only; formula text is not exposed and formulas are not evaluated at query time.
 - Missing display metadata remains explicit low-confidence raw fallback with FORMAT_METADATA_UNAVAILABLE.
@@ -832,7 +844,7 @@ archived under the same redacted external runtime archive family.
 ### v3_22 XLSX Display-Value And Cell/Range Rendering Triage
 
 - Run: `official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod`
-- Primary artifact: `ai/eval/reports/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`; single-report contract is active.
+- Primary artifact: `reports/rag_eval/rag-ingestion/quality/official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod/report.json`; single-report contract is active.
 - Formatting uses bounded materialized SourceAtom/runtime metadata only; missing or ambiguous display metadata falls back to raw_value with low confidence and FORMAT_METADATA_UNAVAILABLE.
 - Formula cells use cached values only; formula text is not exposed and formulas are not evaluated at query time.
 - Small ranges render as bounded tables, broad bounded ranges render compact summaries, unsupported large ranges and ambiguous/deictic context-missing rows fail closed without LLM invocation.
@@ -1297,7 +1309,7 @@ diagnostic-only and non-promotional:
 - Gold-review packet preparation
   (`pdf_xlsx_answer_quality_gold_review_packet_final_llm_rewrite_all_llm_15pf_v3`)
   packages the 30 cases in
-  `ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/review_packet.csv`.
+  `reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3/review_packet.csv`.
   No official metric input rows are created; all user-owned fields remain
   blank. The remaining human-owned decisions are answerable, relevance, expected answer, supporting evidence, pass/fail, denominator eligibility, and policy note.
 - PDF residual routing is review-only: retrieval_miss=0, weak_snippet=9,
@@ -1325,7 +1337,7 @@ were resolved conservatively:
 
 No queue state changed in this cleanup. The change is evidence layout only:
 keep current status and the latest v3_6_9 contract proof in
-`ai/eval/reports/rag-ingestion/`, together with later compact v3_7/v3_8
+`reports/rag_eval/rag-ingestion/`, together with later compact v3_7/v3_8
 diagnostic artifacts, and resolve older queue, failure, audit, and
 measurement payloads from the external archive. This file remains the rolling
 row-level triage surface; avoid recreating per-run Markdown reports unless a
@@ -1435,14 +1447,14 @@ Previous all-track source run:
 
 Source artifacts:
 
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_official_retrieval_qrels.jsonl`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_coverage_summary.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_exclusion_ledger.jsonl`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_official_retrieval_qrels.jsonl`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_coverage_summary.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_exclusion_ledger.jsonl`
 
 Metric artifacts:
 
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation_metrics.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation_per_query.jsonl`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation_metrics.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation_per_query.jsonl`
 
 Metric denominator:
 
@@ -1497,17 +1509,17 @@ Interpretation guardrails:
 
 Source artifacts:
 
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_qrels_candidates.jsonl`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_qrels_candidates.csv`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_qrels_human_query_group_review.csv`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_qrels_ambiguous_candidate_review.csv`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_contract.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_qrels_candidates.jsonl`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_qrels_candidates.csv`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_qrels_human_query_group_review.csv`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1a_official_retrieval_qrels_human_minimal_review_packet_qrels_ambiguous_candidate_review.csv`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_contract.json`
 
 Applied qrels artifacts:
 
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_official_retrieval_qrels.jsonl`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_coverage_summary.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_exclusion_ledger.jsonl`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_official_retrieval_qrels.jsonl`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_coverage_summary.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_qrels_exclusion_ledger.jsonl`
 
 Decision boundary:
 
@@ -1558,15 +1570,15 @@ Source artifacts:
 
 - `ai/eval/eval_queries/official_denominator_registry.json`
 - `ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl`
-- `ai/eval/reports/rag-ingestion/status.jsonl`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_contract.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl`
+- `reports/rag_eval/rag-ingestion/status.jsonl`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_contract.json`
 
 Human-review artifacts:
 
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_qrels_candidates.jsonl`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_qrels_candidates.csv`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_summary.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_qrels_candidates.jsonl`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_qrels_candidates.csv`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_summary.json`
 
 Candidate packet status:
 
@@ -1609,18 +1621,18 @@ Guardrails:
 
 Source artifacts:
 
-- `ai/eval/reports/rag-ingestion/status.jsonl`
+- `reports/rag_eval/rag-ingestion/status.jsonl`
 - `ai/eval/eval_queries/official_denominator_registry.json`
-- `ai/eval/reports/rag-ingestion/metric_input_v1.json`
-- `ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json`
+- `reports/rag_eval/rag-ingestion/metric_input_v1.json`
+- `reports/rag_eval/rag-ingestion/source_bound_readiness_v1.json`
 - `ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_summary.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_summary.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl`
 
 Contract artifacts:
 
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_contract.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_qrels_schema.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_contract.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_qrels_schema.json`
 
 Contract status:
 
@@ -1660,13 +1672,13 @@ Run family:
 Source artifacts:
 
 - `ai/eval/eval_queries/official_denominator_registry.json`
-- `ai/eval/reports/rag-ingestion/metric_input_v1.json`
-- `ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json`
+- `reports/rag_eval/rag-ingestion/metric_input_v1.json`
+- `reports/rag_eval/rag-ingestion/source_bound_readiness_v1.json`
 - `ai/eval/indexes/rag-data-official-denominator-v1/build.json`
 - `ai/eval/indexes/rag-data-official-denominator-v1/ingest_manifest.json`
 - `ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_summary.json`
-- `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_summary.json`
+- `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl`
 
 Design packet status:
 
@@ -1722,7 +1734,7 @@ Source artifacts:
 
 - `ai/eval/silver/answer_citation_silver_manifest_v1.json`
 - `ai/eval/silver/answer_citation_silver_readiness_v1.json`
-- `ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json`
+- `reports/rag_eval/rag-ingestion/source_bound_readiness_v1.json`
 - `ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl`
 - `ai/eval/eval_queries/official_denominator_registry.json`
 
@@ -1763,7 +1775,7 @@ Audit run:
 Machine artifacts:
 
 - Status event:
-  `ai/eval/reports/rag-ingestion/status.jsonl`
+  `reports/rag_eval/rag-ingestion/status.jsonl`
 
 Decision:
 
@@ -1809,7 +1821,7 @@ Closure run:
 Machine artifacts:
 
 - Status event:
-  `ai/eval/reports/rag-ingestion/status.jsonl`
+  `reports/rag_eval/rag-ingestion/status.jsonl`
 
 Decision:
 
@@ -1858,19 +1870,19 @@ Remeasurement run:
 Machine artifacts:
 
 - Summary:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_summary.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_summary.json`
 - Results:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl`
 - Failure attribution:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_failure.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_failure.json`
 - Actual response audit:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_audit.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_audit.jsonl`
 - TEXT prompt/span diagnostics:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_text_prompt_span_diagnostics.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_text_prompt_span_diagnostics.jsonl`
 - Queue:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_queue.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_queue.json`
 - Status event:
-  `ai/eval/reports/rag-ingestion/status.jsonl`
+  `reports/rag_eval/rag-ingestion/status.jsonl`
 
 Decision:
 
@@ -1928,19 +1940,19 @@ Fix run:
 Machine artifacts:
 
 - Summary:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_summary.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_summary.json`
 - Results:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_results.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_results.jsonl`
 - Failure attribution:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_failure.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_failure.json`
 - Actual response audit:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_audit.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_audit.jsonl`
 - PDF context diagnostics:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_pdf_context_diagnostics.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_pdf_context_diagnostics.jsonl`
 - Queue:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_queue.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_5_gq_auto_010_pdf_context_reconciliation_fix_queue.json`
 - Status event:
-  `ai/eval/reports/rag-ingestion/status.jsonl`
+  `reports/rag_eval/rag-ingestion/status.jsonl`
 
 Decision:
 
@@ -1991,13 +2003,13 @@ Diagnostic run:
 Machine artifacts:
 
 - Summary:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_4_gq_auto_010_pdf_context_provenance_diagnostic_summary.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_4_gq_auto_010_pdf_context_provenance_diagnostic_summary.json`
 - Diagnostics:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_4_gq_auto_010_pdf_context_provenance_diagnostic_pdf_context_provenance_diagnostics.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_4_gq_auto_010_pdf_context_provenance_diagnostic_pdf_context_provenance_diagnostics.jsonl`
 - Recommended queue:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_4_gq_auto_010_pdf_context_provenance_diagnostic_queue.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_4_gq_auto_010_pdf_context_provenance_diagnostic_queue.json`
 - Status event:
-  `ai/eval/reports/rag-ingestion/status.jsonl`
+  `reports/rag_eval/rag-ingestion/status.jsonl`
 
 Decision:
 
@@ -2053,13 +2065,13 @@ Reconciliation run:
 Machine artifacts:
 
 - Summary:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_3_queue_lane_actionability_reconciliation_summary.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_3_queue_lane_actionability_reconciliation_summary.json`
 - Diagnostics:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_3_queue_lane_actionability_reconciliation_diagnostics.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_3_queue_lane_actionability_reconciliation_diagnostics.jsonl`
 - Reconciled queue:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_3_queue_lane_actionability_reconciliation_queue.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_3_queue_lane_actionability_reconciliation_queue.json`
 - Status event:
-  `ai/eval/reports/rag-ingestion/status.jsonl`
+  `reports/rag_eval/rag-ingestion/status.jsonl`
 
 Actionability table:
 
@@ -2107,15 +2119,15 @@ Post-fix remeasurement:
 Machine artifacts:
 
 - v3_2_0 summary:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_0_current_system_live_baseline_summary.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_0_current_system_live_baseline_summary.json`
 - v3_2_0 results:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_0_current_system_live_baseline_results.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_0_current_system_live_baseline_results.jsonl`
 - v3_2_1 residual triage:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_1_text_residual_triage_residual_triage.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_1_text_residual_triage_residual_triage.jsonl`
 - v3_2_2 summary:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_2_post_fix_remeasurement_summary.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_2_post_fix_remeasurement_summary.json`
 - v3_2_2 results:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_2_post_fix_remeasurement_results.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_2_post_fix_remeasurement_results.jsonl`
 
 Residual triage table:
 
@@ -2154,15 +2166,15 @@ Source run:
 Machine artifacts:
 
 - Summary:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_summary.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_summary.json`
 - Applied overrides:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_applied_overrides.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_applied_overrides.jsonl`
 - Gold diff:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_gold_diff.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_gold_diff.jsonl`
 - Rescored results:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_rescored_results.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_rescored_results.jsonl`
 - Remaining queue:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_remaining_triage_queue.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_9_user_gold_policy_override_application_and_scoring_remeasurement_remaining_triage_queue.json`
 
 Applied override rows:
 
@@ -2215,13 +2227,13 @@ Source run:
 Machine artifacts:
 
 - Summary:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation_summary.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation_summary.json`
 - Human review packet:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation_human_review_packet.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation_human_review_packet.json`
 - Decision matrix:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation_decision_matrix.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation_decision_matrix.jsonl`
 - Remaining queue:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation_remaining_triage_queue.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_8_gold_policy_review_packet_preparation_remaining_triage_queue.json`
 
 Historical status, superseded by v3_2_7/v3_3_0:
 
@@ -2273,13 +2285,13 @@ Source run:
 Machine artifacts:
 
 - Summary:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit_summary.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit_summary.json`
 - Residual inventory:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit_all_track_residual_inventory.jsonl`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit_all_track_residual_inventory.jsonl`
 - Remaining queue:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit_remaining_triage_queue.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit_remaining_triage_queue.json`
 - User decision packet:
-  `ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit_user_decision_packet.json`
+  `reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_1_7_post_residual_queue_closure_and_residual_inventory_audit_user_decision_packet.json`
 
 Decision boundary:
 
@@ -2325,7 +2337,7 @@ Strict JSON / locator residual count: `0`.
 Queue source of truth:
 
 - The authoritative queue is the machine artifact
-  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_1_post_locator_queue.json`.
+  `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_1_post_locator_queue.json`.
 - If this file and human queue notes differ, use the machine artifact. That is
   why the first batch includes `text_namu_v2_0012`, and why
   `text_namu_v2_0005` is kept as queue rank 12 instead of being dropped.
@@ -2427,7 +2439,7 @@ Remaining queue after batch 1:
 | 7 | `text_namu_v2_0005` | secondary TEXT watchlist, Lane C-only answer renderer/span |
 
 Machine remaining-queue artifact:
-`ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_2_span_queue.json`
+`reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_2_span_queue.json`
 
 Artifact policy for this triage lane:
 
@@ -2455,7 +2467,7 @@ Run family:
 Source of truth:
 
 - The authoritative input queue is
-  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_2_span_queue.json`.
+  `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_2_span_queue.json`.
 - Rolling docs are human-facing narrative only. If docs and machine queue
   differ, use the machine queue. The stale `gq_auto_037` human queue wording is
   not active.
@@ -2508,7 +2520,7 @@ Remaining queue after v3_1_3:
 | 2 | `gq_pdf_section_question_001` | PDF table repeated amount/growth groups still require value disambiguation for `수출입차 금액`. |
 
 Machine remaining-queue artifact:
-`ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_3_remaining_queue.json`
+`reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_3_remaining_queue.json`
 
 Guardrail audit:
 
@@ -2531,7 +2543,7 @@ Run family:
 Source of truth:
 
 - The authoritative input queue is
-  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_3_remaining_queue.json`.
+  `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_3_remaining_queue.json`.
 - Rolling docs are human-facing narrative only. If docs and machine queue
   differ, use the machine queue.
 
@@ -2576,7 +2588,7 @@ Remaining queue after v3_1_4:
 | 1 | `gq_auto_010` | Source-bound retrieval/context coverage: cited context lacks numeric answer span. |
 
 Machine remaining-queue artifact:
-`ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_4_pdf_residual_queue.json`
+`reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_4_pdf_residual_queue.json`
 
 Guardrail audit:
 
@@ -2599,7 +2611,7 @@ Run family:
 Source of truth:
 
 - The authoritative input queue is
-  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_4_pdf_residual_queue.json`.
+  `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_4_pdf_residual_queue.json`.
 - Queue preflight confirmed only `gq_auto_010` remains, strict JSON /
   locator residual count is `0`, `diagnostic_only=true`,
   `promotion_evidence=false`, and `reference_span_text_embedded=false`.
@@ -2648,9 +2660,9 @@ Repair decision:
 ### 2026-06-09 Repo Cleanup Diagnostic Decision Boundary
 
 - Run key: `repo_cleanup_20260609_diagnostic_inventory`
-- Primary artifact: `ai/eval/reports/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json`
+- Primary artifact: `reports/rag_eval/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json`
 - ACTIVE_SOURCE / PROTECTED: tracked source, tests, README/docs, `ai/eval/rag_eval_registry.py`, `ai/scripts/rag_eval.py`, current profile tests, official denominator/gold/qrels/eval-query/silver/source-registry/index surfaces, and the `v6_9` current report/status chain.
-- DIAGNOSTIC_ARTIFACT_HOLD: ignored `ai/eval/reports/rag-ingestion/**`, report/status/archive manifests, v3-v7 run bundles, sidecars required by report artifact maps, and historical `quality/**` evidence. Do not bulk-delete; external archive plus hash verification is required before any future removal.
+- DIAGNOSTIC_ARTIFACT_HOLD: ignored `reports/rag_eval/rag-ingestion/**`, report/status/archive manifests, v3-v7 run bundles, sidecars required by report artifact maps, and historical `quality/**` evidence. Do not bulk-delete; external archive plus hash verification is required before any future removal.
 - GENERATED_ARTIFACT_HOLD: generated but useful or user-facing local outputs such as portfolio PDFs/reports, `node_modules`, local notes, `output`, `local-storage`, and `.tmp`. `.tmp` is held because recursive inspection produced permission noise in this checkout.
 - LEGACY_DIAGNOSTIC_HOLD: v3/v4/v5 scripts and reports that are still registry-, test-, or doc-readable. Preserve compatibility aliases unless a dedicated cleanup run proves readers moved.
 - SAFE_TRANSIENT_DELETE: root/AI `.pytest_cache`, Python `__pycache__`/bytecode, `core-api/target`, and `frontend/app/dist`. Initial removal count: 20 directories, 357 files, 6,825,734 bytes; verification-created cache sweeps removed 16 directories/178 files/9,122,698 bytes, 8 directories/72 files/3,747,180 bytes, and 9 directories/123 files/3,652,483 bytes.
@@ -2669,7 +2681,7 @@ Remaining queue after v3_1_5:
 | 1 | `gq_auto_010` | Safe source-bound PDF paragraph/window coverage decision: raw PDF contains the numeric span, but current SearchUnit surfaces do not. |
 
 Machine remaining-queue artifact:
-`ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_5_gq010_coverage_queue.json`
+`reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_5_gq010_coverage_queue.json`
 
 Guardrail audit:
 
@@ -2695,7 +2707,7 @@ Run family:
 Source of truth:
 
 - The authoritative input queue is
-  `ai/eval/reports/rag-ingestion/_archive/legacy/v3_1_5_gq010_coverage_queue.json`.
+  `reports/rag_eval/rag-ingestion/_archive/legacy/v3_1_5_gq010_coverage_queue.json`.
 - Queue preflight confirmed only `gq_auto_010` remained and the v3_1_5
   classification was `query_bound_searchunit_too_narrow`.
 
@@ -2735,7 +2747,7 @@ Remaining queue after v3_1_6: empty.
 
 Machine remaining-queue artifact:
 logical/externalized provenance path
-`ai/eval/reports/rag-ingestion/v3_1_6_gq010_pdfwin_queue.json`; the physical
+`reports/rag_eval/rag-ingestion/v3_1_6_gq010_pdfwin_queue.json`; the physical
 payload is resolved through the external runtime archive when it is not present
 repo-locally.
 

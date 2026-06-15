@@ -25,7 +25,7 @@ DEFAULT_BASE_URL = "http://localhost:8080"
 DEFAULT_DB_CONTAINER = "aipipeline-postgres"
 DEFAULT_DB_USER = "aipipeline"
 DEFAULT_DB_NAME = "aipipeline"
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_ingestion_smoke_report.json")
+DEFAULT_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_ingestion_smoke_report.json")
 TERMINAL_STATUSES = {"SUCCEEDED", "FAILED", "CANCELLED"}
 
 

@@ -41,11 +41,11 @@ from rag_pdf_current_diagnostic_snapshot import (  # noqa: E402
 PDF_INDEX_VERSION = "rag-ingestion-v2-pdf-candidate-v1"
 PDF_ARTIFACT_DIR = Path("eval/indexes/rag-data-pdf-candidate-v1")
 DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_pdf_v0.csv")
-DEFAULT_C1_REPORT = Path("eval/reports/rag-ingestion/pdf_candidate_scope_report.json")
-DEFAULT_C2_REPORT = Path("eval/reports/rag-ingestion/pdf_vector_metadata_projection_readiness.json")
-DEFAULT_C3_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_embedding_text_contract_audit.json")
-DEFAULT_C4_REPORT = Path("eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json")
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json")
+DEFAULT_C1_REPORT = Path("reports/rag_eval/rag-ingestion/pdf_candidate_scope_report.json")
+DEFAULT_C2_REPORT = Path("reports/rag_eval/rag-ingestion/pdf_vector_metadata_projection_readiness.json")
+DEFAULT_C3_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_embedding_text_contract_audit.json")
+DEFAULT_C4_REPORT = Path("reports/rag_eval/rag-ingestion/pdf_candidate_embedding_consistency_report.json")
+DEFAULT_REPORT = Path("reports/rag_eval/rag-ingestion/rag_retrieval_eval_pdf_vector_diagnostic_report.json")
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
 
 PDF_ONLY_WARNING_KEYS = (

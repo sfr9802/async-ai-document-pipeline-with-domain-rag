@@ -22,7 +22,7 @@ SOURCE_V57_SHORT_RUN_ID = v57.SHORT_RUN_ID
 BASELINE_LOGICAL_RUN_KEY = v57.BASELINE_LOGICAL_RUN_KEY
 BASELINE_SHORT_RUN_ID = v57.BASELINE_SHORT_RUN_ID
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 REPORT_PATH = RUN_ROOT / "report.json"
 METRIC_INTEGRITY_AUDIT_PATH = RUN_ROOT / "metric_integrity_audit.jsonl"

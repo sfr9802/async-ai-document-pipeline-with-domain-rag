@@ -52,7 +52,7 @@ from app.capabilities.rag.shadow_lane_contract import (
 )
 
 
-DEFAULT_REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+DEFAULT_REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 
 
 @dataclass(frozen=True)
@@ -505,11 +505,11 @@ def expanded_diagnostic_cases() -> tuple[list[DiagnosticCase], dict[str, Any]]:
         sample_xlsx_cases(),
         sample_pdf_content_cases(),
         sample_pdf_file_lookup_cases(),
-        sample_shadow_cases(OCR_SHADOW, AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "ocr_shadow_small_sample_report.json"),
-        sample_shadow_cases(IDP_SHADOW, AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "idp_shadow_small_sample_report.json"),
+        sample_shadow_cases(OCR_SHADOW, AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "ocr_shadow_small_sample_report.json"),
+        sample_shadow_cases(IDP_SHADOW, AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "idp_shadow_small_sample_report.json"),
         sample_shadow_cases(
             MULTIMODAL_SHADOW,
-            AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "multimodal_shadow_small_sample_report.json",
+            AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "multimodal_shadow_small_sample_report.json",
         ),
     ]
     cases: list[DiagnosticCase] = []
@@ -733,7 +733,7 @@ def sample_xlsx_cases() -> tuple[list[DiagnosticCase], dict[str, Any]]:
 
 
 def sample_pdf_content_cases() -> tuple[list[DiagnosticCase], dict[str, Any]]:
-    path = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "rag_pdf_supplemental_answer_evidence_diagnostic.csv"
+    path = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "rag_pdf_supplemental_answer_evidence_diagnostic.csv"
     rows = read_csv_rows(path)
     cases: list[DiagnosticCase] = []
     for index, row in enumerate(rows[:40], start=1):

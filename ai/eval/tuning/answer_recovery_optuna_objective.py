@@ -14,11 +14,11 @@ from typing import Any, Mapping
 
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
-DEFAULT_TUNING_REPORT = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "answer_recovery_tuning_report.json"
+DEFAULT_TUNING_REPORT = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "answer_recovery_tuning_report.json"
 DEFAULT_CANDIDATE_REPORT = (
-    AI_WORKER_ROOT
-    / "eval"
+    AI_WORKER_ROOT.parent
     / "reports"
+    / "rag_eval"
     / "rag-ingestion"
     / "answer_recovery_fresh_diagnostic_candidate_discovery.json"
 )

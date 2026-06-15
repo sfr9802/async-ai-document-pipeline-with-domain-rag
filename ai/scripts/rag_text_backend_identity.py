@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Mapping
 
 
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/rag_text_backend_identity_report.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_text_backend_identity_report.json")
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
 DEFAULT_API_URL = "http://localhost:8080/api/v1/library/search"
 

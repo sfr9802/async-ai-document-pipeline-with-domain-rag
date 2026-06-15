@@ -19,7 +19,7 @@ from typing import Any
 
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review"
 
 DEFAULT_BOARD = REPORT_DIR / "three_track_metric_preflight_board.json"

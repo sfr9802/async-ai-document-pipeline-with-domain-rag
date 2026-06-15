@@ -514,10 +514,10 @@ readiness_thresholds:
 outputs:
   enriched_json: ai/eval/review/retrieval_dataset_supplementation/existing_manifest_license_enriched.json
   enriched_csv: ai/eval/review/retrieval_dataset_supplementation/existing_manifest_license_enriched.csv
-  gate_md: ai/eval/reports/rag-ingestion/existing_manifest_license_usage_gate.md
-  gate_json: ai/eval/reports/rag-ingestion/existing_manifest_license_usage_gate.json
-  summary_by_source_md: ai/eval/reports/rag-ingestion/existing_manifest_license_summary_by_source.md
-  summary_by_source_json: ai/eval/reports/rag-ingestion/existing_manifest_license_summary_by_source.json
-  readiness_md: ai/eval/reports/rag-ingestion/existing_manifest_experiment_readiness.md
-  readiness_json: ai/eval/reports/rag-ingestion/existing_manifest_experiment_readiness.json
+  gate_md: reports/rag_eval/rag-ingestion/existing_manifest_license_usage_gate.md
+  gate_json: reports/rag_eval/rag-ingestion/existing_manifest_license_usage_gate.json
+  summary_by_source_md: reports/rag_eval/rag-ingestion/existing_manifest_license_summary_by_source.md
+  summary_by_source_json: reports/rag_eval/rag-ingestion/existing_manifest_license_summary_by_source.json
+  readiness_md: reports/rag_eval/rag-ingestion/existing_manifest_experiment_readiness.md
+  readiness_json: reports/rag_eval/rag-ingestion/existing_manifest_experiment_readiness.json
   review_required_csv: ai/eval/review/retrieval_dataset_supplementation/license_review_required_rows.csv

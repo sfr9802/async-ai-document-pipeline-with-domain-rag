@@ -13,15 +13,15 @@ from typing import Any, Mapping
 
 
 DEFAULT_POSITIVE_GOLD = Path("eval/eval_queries/gold_queries_xlsx_v3_positive_reviewed.csv")
-DEFAULT_DIAGNOSTIC_REPORT = Path("eval/reports/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
-DEFAULT_PERFORMANCE_SUMMARY = Path("eval/reports/rag-ingestion/rag_xlsx_v3_positive_reviewed_retrieval_performance_summary.json")
-DEFAULT_FAILURE_BREAKDOWN = Path("eval/reports/rag-ingestion/rag_xlsx_v3_after_cleanup_failure_breakdown.json")
-DEFAULT_HIDDEN_LEAKAGE_REPORT = Path("eval/reports/rag-ingestion/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json")
+DEFAULT_DIAGNOSTIC_REPORT = Path("reports/rag_eval/rag-ingestion/rag_retrieval_eval_xlsx_v3_positive_reviewed_vector_diagnostic_report.json")
+DEFAULT_PERFORMANCE_SUMMARY = Path("reports/rag_eval/rag-ingestion/rag_xlsx_v3_positive_reviewed_retrieval_performance_summary.json")
+DEFAULT_FAILURE_BREAKDOWN = Path("reports/rag_eval/rag-ingestion/rag_xlsx_v3_after_cleanup_failure_breakdown.json")
+DEFAULT_HIDDEN_LEAKAGE_REPORT = Path("reports/rag_eval/rag-ingestion/rag_xlsx_v3_positive_reviewed_hidden_negative_leakage_diagnostic.json")
 DEFAULT_ARTIFACT_DIR = Path("eval/indexes/rag-data-xlsx-candidate-v1")
-DEFAULT_BASELINE_DESCRIPTOR = Path("eval/reports/rag-ingestion/initial_immutable_vector_baseline_descriptor.json")
+DEFAULT_BASELINE_DESCRIPTOR = Path("reports/rag_eval/rag-ingestion/initial_immutable_vector_baseline_descriptor.json")
 DEFAULT_RAG_DATA_CANARY = Path("eval/indexes/rag-data-canary")
-DEFAULT_LINEAGE_OUTPUT = Path("eval/reports/rag-ingestion/rag_xlsx_candidate_lineage_before_tuning.json")
-DEFAULT_SNAPSHOT_OUTPUT = Path("eval/reports/rag-ingestion/rag_xlsx_v3_current_diagnostic_snapshot.json")
+DEFAULT_LINEAGE_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_xlsx_candidate_lineage_before_tuning.json")
+DEFAULT_SNAPSHOT_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_xlsx_v3_current_diagnostic_snapshot.json")
 
 XLSX_CANDIDATE_INDEX_VERSION = "rag-ingestion-v2-xlsx-candidate-v1"
 METRIC_KEYS = [

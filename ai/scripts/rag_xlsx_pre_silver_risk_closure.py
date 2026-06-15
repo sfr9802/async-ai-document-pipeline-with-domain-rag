@@ -38,7 +38,7 @@ CURRENT_RETRIEVAL_REPO_PATH = (
     "ai/eval/eval_queries/gold_queries_xlsx_human_review_official_positive_v0_retrieval.csv"
 )
 CURRENT_NORMALIZATION_REPORT_REPO_PATH = (
-    "ai/eval/reports/rag-ingestion/rag_xlsx_human_review_gold_normalization_report.json"
+    "reports/rag_eval/rag-ingestion/rag_xlsx_human_review_gold_normalization_report.json"
 )
 
 EXPECTED_NORMALIZED_ROW_COUNT = 50

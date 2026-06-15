@@ -10,7 +10,7 @@ from typing import Any, Mapping
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT_PATH = ROOT / "ai" / "scripts" / "rag_official_answer_citation_metric_first_run_v1.py"
-REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion"
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
 
 
@@ -488,7 +488,7 @@ def test_latest_first_run_artifacts_are_scored_baseline_not_backend_unavailable(
     assert report["official_scoring_attempt_count"] == 29
     assert report["scored_count"] == 29
     assert report["artifact_paths"]["scorer_results_jsonl"] == (
-        "ai/eval/reports/rag-ingestion/scorer_v1.jsonl"
+        "reports/rag_eval/rag-ingestion/scorer_v1.jsonl"
     )
     assert report["execution_blocker_category"] is None
     assert report["primary_failure_category"] == "CITATION_UNSUPPORTED"
@@ -548,7 +548,7 @@ def test_malformed_pass_scorer_result_is_invalid(tmp_path: Path) -> None:
 def write_official_fixture_bundle(module, tmp_path: Path) -> dict[str, Any]:
     module.REPO_ROOT = tmp_path
     eval_queries = tmp_path / "ai" / "eval" / "eval_queries"
-    reports = tmp_path / "ai" / "eval" / "reports" / "rag-ingestion"
+    reports = tmp_path / "reports" / "rag_eval" / "rag-ingestion"
     eval_queries.mkdir(parents=True)
     reports.mkdir(parents=True)
 
@@ -698,7 +698,7 @@ def config_payload(module, csv_paths: Mapping[str, Path], sha_by_track: Mapping[
         "official_metric_input_artifacts": artifacts,
         "metric_lanes": artifacts,
         "source_artifacts": {
-            "registry_application_report": "ai/eval/reports/rag-ingestion/official_question_gold_v2_registry_application_report.json"
+            "registry_application_report": "reports/rag_eval/rag-ingestion/official_question_gold_v2_registry_application_report.json"
         },
         "validation": {"ok": True, "errors": []},
     }

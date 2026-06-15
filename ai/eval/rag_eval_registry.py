@@ -7,7 +7,10 @@ from pathlib import Path
 from typing import Any
 
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+from ai.eval.report_paths import LEGACY_RAG_INGESTION_REPORT_ROOT, REPO_ROOT
+
+
+REPORT_ROOT = LEGACY_RAG_INGESTION_REPORT_ROOT.relative_to(REPO_ROOT)
 
 V4_7_PREOFFICIAL_LONG_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v4_7_preofficial_"

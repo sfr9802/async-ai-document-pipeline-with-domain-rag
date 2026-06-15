@@ -306,27 +306,27 @@ def test_v57_written_artifacts_status_and_runner_are_additive_without_moving_cur
     v57.append_status(tmp_path, written, artifact_hashes=artifact_hashes)
 
     expected_paths = {
-        "report_json": "ai/eval/reports/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/report.json",
+        "report_json": "reports/rag_eval/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/report.json",
         "route_candidate_diagnostics_jsonl": (
-            "ai/eval/reports/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/"
+            "reports/rag_eval/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/"
             "route_candidate_diagnostics.jsonl"
         ),
         "heuristic_inventory_jsonl": (
-            "ai/eval/reports/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/heuristic_inventory.jsonl"
+            "reports/rag_eval/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/heuristic_inventory.jsonl"
         ),
         "quality_regression_attribution_jsonl": (
-            "ai/eval/reports/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/"
+            "reports/rag_eval/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/"
             "quality_regression_attribution.jsonl"
         ),
         "finetuning_readiness_candidates_jsonl": (
-            "ai/eval/reports/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/"
+            "reports/rag_eval/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/"
             "finetuning_readiness_candidates.jsonl"
         ),
         "vector_candidate_metrics_json": (
-            "ai/eval/reports/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/"
+            "reports/rag_eval/rag-ingestion/runs/v5_7_vector_llm_candidate_routing/"
             "vector_candidate_metrics.json"
         ),
-        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
+        "status_jsonl": "reports/rag_eval/rag-ingestion/status.jsonl",
     }
     assert written["artifact_paths"] == expected_paths
     for key, path in expected_paths.items():
@@ -339,7 +339,7 @@ def test_v57_written_artifacts_status_and_runner_are_additive_without_moving_cur
     assert len(_read_jsonl(tmp_path / expected_paths["finetuning_readiness_candidates_jsonl"])) == 0
     assert len(_read_jsonl(tmp_path / expected_paths["heuristic_inventory_jsonl"])) == written["heuristic_inventory_count"]
 
-    status_rows = _read_jsonl(tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl")
+    status_rows = _read_jsonl(tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl")
     latest = status_rows[-1]
     assert latest["short_run_id"] == written["short_run_id"]
     assert latest["source_official_metric_input_rows"] == 29

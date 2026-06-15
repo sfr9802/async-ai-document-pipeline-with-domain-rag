@@ -31,7 +31,7 @@ def windows_long_path(path: Path) -> Path:
     return path
 
 
-REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion"
 REPORT_ARCHIVE_DIR = REPORT_DIR / "_archive" / "legacy"
 EXTERNAL_REPORT_ARCHIVE_DIR = windows_long_path(Path(
     "D:/_external_runtime_artifacts/async-ocr-rag-multimodal-pipeline/"
@@ -8360,7 +8360,7 @@ def test_pdf_candidate_locator_repair_artifacts_are_locked_to_current_report_onl
                     row.get("classification") == "EXTERNALLY_ARCHIVED_REMOVED"
                     or (row.get("classification") == "ARCHIVE_THEN_REMOVE" and row.get("removed_from_repo_at"))
                 )
-                and original.parent == Path("ai/eval/reports/rag-ingestion")
+                and original.parent == Path("reports/rag_eval/rag-ingestion")
             ):
                 archived_root_filenames.add(original.name)
 
@@ -8947,7 +8947,7 @@ def test_v2_source_bound_diagnostic_artifacts_are_separate_and_guarded() -> None
             "text_namu_v2_1": 6,
             "xlsx_business_structured": 19,
         },
-        "path": "ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json",
+        "path": "reports/rag_eval/rag-ingestion/source_bound_readiness_v1.json",
         "rerun_allowed": True,
         "status": "BUILD_READY_LOAD_CHECK_PASSED",
         "target_index_built": True,
@@ -11157,7 +11157,7 @@ def test_v3_1_9_user_gold_policy_override_application_and_rescore_is_guarded() -
     assert summary["run_class"] == "user_approved_gold_policy_override_application"
     assert summary["diagnostic_only"] is False
     assert summary["user_assertion_count"] == 30
-    assert summary["override_source_found"] == "ai/eval/reports/rag-ingestion/gold_overrides.csv"
+    assert summary["override_source_found"] == "reports/rag_eval/rag-ingestion/gold_overrides.csv"
     assert summary["human_approved_override_source"] == "gold_overrides.csv"
     assert summary["optional_jsonl_override_source_validated"] is True
     assert summary["gold_application_mode"] == "v2_csv_in_place"
@@ -12275,7 +12275,7 @@ def test_v3_2_7_post_fix_closure_status_event_is_guarded_and_compact() -> None:
         "v3_2_5_vs_v3_2_2": 0,
         "v3_2_6_vs_v3_2_5": 0,
     }
-    assert event["artifact_paths"] == {"status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl"}
+    assert event["artifact_paths"] == {"status_jsonl": "reports/rag_eval/rag-ingestion/status.jsonl"}
     assert not report_artifact_path(AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID, "summary.md").exists()
     assert not report_artifact_path(AGENTIC_V3_2_7_POST_FIX_CLOSURE_RUN_ID, "summary.json").exists()
     assert event["deferred_metrics"]["official_ndcg"]["computed"] is False
@@ -12375,7 +12375,7 @@ def test_v3_3_0_post_closure_source_of_truth_audit_is_status_only_and_guarded() 
         "queue.json",
     )
     assert event["source_of_truth_relationships"]["v3_2_7"]["source_artifact"] == (
-        "ai/eval/reports/rag-ingestion/status.jsonl"
+        "reports/rag_eval/rag-ingestion/status.jsonl"
     )
     assert event["residual_queue_by_bucket"] == {
         "diagnostic_only": ["text_namu_v2_0017", "text_namu_v2_0084"],
@@ -12445,10 +12445,10 @@ def test_v3_3_2_retrieval_label_design_packet_blocks_metrics_until_user_decision
     }
     assert set(event["source_artifacts"]) >= {
         "ai/eval/eval_queries/official_denominator_registry.json",
-        "ai/eval/reports/rag-ingestion/metric_input_v1.json",
-        "ai/eval/reports/rag-ingestion/source_bound_readiness_v1.json",
+        "reports/rag_eval/rag-ingestion/metric_input_v1.json",
+        "reports/rag_eval/rag-ingestion/source_bound_readiness_v1.json",
         "ai/eval/indexes/rag-data-official-denominator-v1/search_unit_manifest.jsonl",
-        "ai/eval/reports/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl",
+        "reports/rag_eval/rag-ingestion/official_answer_citation_agentic_loop_run_v3_2_6_text_prompt_span_rule_remeasurement_results.jsonl",
     }
 
     schema = event["proposed_label_schema_options"]
@@ -12736,17 +12736,17 @@ def test_v3_4_1_official_retrieval_qrels_candidate_packet_is_pending_human_revie
         "official_ndcg_at_5": "blocked_until_pending_user_review_labels_are_approved",
     }
     assert event["artifact_paths"]["qrels_candidate_jsonl"] == (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_"
         "qrels_candidates.jsonl"
     )
     assert event["artifact_paths"]["qrels_candidate_csv"] == (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_"
         "qrels_candidates.csv"
     )
     assert event["artifact_paths"]["summary_json"] == (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_"
         "summary.json"
     )
@@ -13429,7 +13429,7 @@ def test_v3_4_4_readme_metric_card_and_silver_readiness_artifacts_are_guarded() 
         "readme_metric_card_json": report_artifact_repo_relative(run_id, "readme_metric_card.json"),
         "readme_section_md": report_artifact_repo_relative(run_id, "readme_section.md"),
         "silver_readiness_summary_json": report_artifact_repo_relative(run_id, "silver_readiness_summary.json"),
-        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
+        "status_jsonl": "reports/rag_eval/rag-ingestion/status.jsonl",
         "progress_doc": "docs/rag-ingestion-progress.md",
     }
     assert run_id not in readme

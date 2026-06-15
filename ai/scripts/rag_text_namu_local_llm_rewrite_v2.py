@@ -16,7 +16,7 @@ from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[2]
 REVIEW_DIR = ROOT / "ai" / "eval" / "review"
-REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion"
 OFFICIAL_DENOMINATOR_REGISTRY = ROOT / "ai" / "eval" / "eval_queries" / "official_denominator_registry.json"
 
 DEFAULT_GENERATED_INPUT = REPORT_DIR / "rag_text_namu_generated_answer_review_input.jsonl"

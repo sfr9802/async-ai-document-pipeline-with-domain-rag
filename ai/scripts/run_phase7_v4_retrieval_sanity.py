@@ -31,7 +31,7 @@ FORBIDDEN_ACTIVE_STRINGS = (
     "bge-m3-anime-namu-v3",
 )
 DEFAULT_INDEX_CACHE = "namu-v4-2008-2026-04-retrieval-title-section-mseq512"
-DEFAULT_REPORT_DIR = Path("eval/reports/phase7/7.8_retrieval_sanity")
+DEFAULT_REPORT_DIR = Path("reports/rag_eval/phase7/7.8_retrieval_sanity")
 
 
 @dataclass(frozen=True)

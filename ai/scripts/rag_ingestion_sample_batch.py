@@ -22,7 +22,7 @@ import httpx
 
 DEFAULT_BASE_URL = "http://localhost:8080"
 DEFAULT_MANIFEST = Path("fixtures/manifests/rag_ingestion_manifest.json")
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_ingestion_sample_batch_report.json")
+DEFAULT_REPORT = Path("reports/rag_eval/rag-ingestion/rag_ingestion_sample_batch_report.json")
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_DB_CONTAINER = "aipipeline-postgres"
 DEFAULT_DB_USER = "aipipeline"

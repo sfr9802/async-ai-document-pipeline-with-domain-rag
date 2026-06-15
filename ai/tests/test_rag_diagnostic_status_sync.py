@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"
-STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+STATUS_JSONL = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "status.jsonl"
 V5_4_CURRENT_STATUS = "V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY"
 V5_5_CURRENT_STATUS = "V5_5_USER_APPROVED_GOLD_PACKET_INGESTION_AND_OFFICIAL_METRIC_DRY_RUN_NONPROD_READY"
 V5_6_CURRENT_STATUS = "V5_6_OFFICIAL_METRIC_SCORED_EXECUTION_BACKEND_UNAVAILABLE_FAIL_CLOSED_NONPROD_READY"
@@ -220,7 +220,7 @@ def test_progress_doc_current_board_records_v563_backend_probe_v562_preflight_an
     assert "default-off `/api/rag/query`" in current_text
     assert "does not move `current` away from `v5_6`" in current_text
     assert "AIPIPELINE_WORKER_RAG_PRODUCT_PREVIEW_ROUTE_ENABLED" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_5/official_metric_input.jsonl" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_5/official_metric_input.jsonl" in current_text
     assert "source hash matches the v5_5, v5_6, and v5_6_2 recorded source hashes" in current_text
     assert "exactly 29 user-approved v5_4 packet rows via v5_5 (TEXT 6, XLSX 19, PDF 4)" in current_text
     assert "no silver/residual/overlay-90/XLSX candidate-state/PDF-TEXT residual taxonomy expansion" in current_text
@@ -240,23 +240,23 @@ def test_progress_doc_current_board_records_v563_backend_probe_v562_preflight_an
     assert "protected_namespaces_touched=[]" in current_text
     assert "pytest ai/tests --rag-current -q" in current_text
     assert "status.jsonl" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_6/report.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_6_2/report.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_6_2/backend_preflight_result.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_6_2/official_metric_scored_result.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_6_2/failure_attribution.jsonl" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_6_3/report.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_6_3/backend_preflight_result.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_6_3/official_metric_scored_result.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_6_3/failure_attribution.jsonl" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_5/report.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_4/report.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_4/user_review_packet.csv" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_3/report.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_2/report.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_1/report.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v5_0/report.json" in current_text
-    assert "ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_6/report.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_6_2/report.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_6_2/backend_preflight_result.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_6_2/official_metric_scored_result.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_6_2/failure_attribution.jsonl" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_6_3/report.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_6_3/backend_preflight_result.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_6_3/official_metric_scored_result.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_6_3/failure_attribution.jsonl" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_5/report.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_4/report.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_4/user_review_packet.csv" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_3/report.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_2/report.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_1/report.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v5_0/report.json" in current_text
+    assert "reports/rag_eval/rag-ingestion/runs/v4_7_18/report.json" in current_text
     assert "`current` resolves to `v5_5`" not in current_text
     assert "`current` resolves to `v5_2`" not in current_text
     assert "`current` resolves to `v5_1`" not in current_text
@@ -592,11 +592,11 @@ def test_progress_docs_record_v3_4_0_official_retrieval_metric_contract_without_
 
     run_id = "official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract"
     contract_json = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_contract.json"
     )
     qrels_schema_json = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_0_official_retrieval_metric_contract_qrels_schema.json"
     )
 
@@ -633,17 +633,17 @@ def test_progress_docs_record_v3_4_1_official_retrieval_qrels_candidate_packet_w
 
     run_id = "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet"
     qrels_jsonl = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_"
         "qrels_candidates.jsonl"
     )
     qrels_csv = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_"
         "qrels_candidates.csv"
     )
     summary_json = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_1_official_retrieval_qrels_candidate_packet_"
         "summary.json"
     )
@@ -681,27 +681,27 @@ def test_progress_doc_records_v3_4_1a_human_minimal_review_packet_without_metric
         "official_retrieval_qrels_human_minimal_review_packet"
     )
     policy_json = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_1a_"
         "official_retrieval_qrels_human_minimal_review_packet_qrels_policy_approval.json"
     )
     query_group_csv = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_1a_"
         "official_retrieval_qrels_human_minimal_review_packet_qrels_human_query_group_review.csv"
     )
     ambiguous_csv = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_1a_"
         "official_retrieval_qrels_human_minimal_review_packet_qrels_ambiguous_candidate_review.csv"
     )
     auto_label_plan = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_1a_"
         "official_retrieval_qrels_human_minimal_review_packet_qrels_auto_label_plan.json"
     )
     summary_json = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_1a_"
         "official_retrieval_qrels_human_minimal_review_packet_summary.json"
     )
@@ -730,17 +730,17 @@ def test_progress_and_triage_docs_record_v3_4_2_exact_evidence_qrels_without_met
 
     run_id = "official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels"
     qrels_jsonl = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_"
         "official_retrieval_qrels.jsonl"
     )
     coverage_json = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_"
         "qrels_coverage_summary.json"
     )
     exclusion_jsonl = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_2_apply_user_official_retrieval_qrels_labels_"
         "qrels_exclusion_ledger.jsonl"
     )
@@ -814,12 +814,12 @@ def test_progress_and_triage_docs_record_v3_4_3_exact_evidence_smoke_metrics():
 
     run_id = "official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation"
     metrics_json = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation_"
         "metrics.json"
     )
     per_query_jsonl = (
-        "ai/eval/reports/rag-ingestion/"
+        "reports/rag_eval/rag-ingestion/"
         "official_answer_citation_agentic_loop_run_v3_4_3_official_exact_evidence_retrieval_smoke_metric_computation_"
         "per_query.jsonl"
     )
@@ -2732,7 +2732,7 @@ def test_progress_measurements_triage_and_status_record_pdf_xlsx_quality_review_
     for artifact_key in ("manifest_json", "review_csv", "review_jsonl", "summary_md"):
         assert artifact_key in event["artifact_paths"]
 
-    packet_dir = "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3"
+    packet_dir = "reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_final_llm_rewrite_all_llm_15pf_v3"
     assert packet_dir in current_text
     assert "Review packet rows=30" in current_flat
     assert "future scored adapter disabled" in current_flat
@@ -2805,7 +2805,7 @@ def test_progress_measurements_triage_and_status_record_pdf_answer_ready_evidenc
     ):
         assert artifact_key in event["artifact_paths"]
 
-    packet_dir = "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf"
+    packet_dir = "reports/rag_eval/rag-ingestion/quality/pdf_xlsx_answer_quality_review_packet_answer_ready_pdf_v1_llm_15pf"
     assert "pdf_xlsx_answer_quality_evidence_readiness_packet_ready" in current_text
     assert packet_dir in current_text
     assert "PDF raw final answer quality improved from 5/15 to answer-ready 8/15" in current_flat
@@ -2894,27 +2894,27 @@ def test_progress_measurements_triage_and_status_record_pdf_query_fidelity_packe
 def test_progress_measurements_triage_and_status_record_v3_9_natural_answer_quality_without_promotion():
     dev_metrics_path = (
         ROOT
-        / "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_metrics.json"
+        / "reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_metrics.json"
     )
     dev_per_family_path = (
         ROOT
-        / "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_per_family.json"
+        / "reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_per_family.json"
     )
     dev_per_query_path = (
         ROOT
-        / "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_per_query.jsonl"
+        / "reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_dev_6pf_per_query.jsonl"
     )
     validation_metrics_path = (
         ROOT
-        / "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_metrics.json"
+        / "reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_metrics.json"
     )
     validation_per_family_path = (
         ROOT
-        / "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_per_family.json"
+        / "reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_per_family.json"
     )
     validation_per_query_path = (
         ROOT
-        / "ai/eval/reports/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_per_query.jsonl"
+        / "reports/rag_eval/rag-ingestion/quality/pdf_xlsx_llm_quality_v3_9_natural_answer_quality_validation_6pf_per_query.jsonl"
     )
     require_v3_9_local_artifacts(
         STATUS_JSONL,
@@ -2984,7 +2984,7 @@ def test_progress_measurements_triage_and_status_record_v3_9_natural_answer_qual
     assert event["query_fidelity_classifier_synced_between_metrics_and_packet"] is True
     assert event["raw_pass_to_ready_fail_regression_neutralized"] is True
     assert event["non_pdf_answer_ready_reuses_final_locator_response"] is True
-    assert "ai/eval/reports/rag-ingestion/status.jsonl" not in event["changed_tracked_files"]
+    assert "reports/rag_eval/rag-ingestion/status.jsonl" not in event["changed_tracked_files"]
     assert event["ocr_rationale"]["decision"] == "skipped"
     assert event["ocr_rationale"]["ocr_touched"] is False
 
@@ -3044,16 +3044,16 @@ def test_progress_measurements_triage_and_status_record_v3_9_natural_answer_qual
 def test_progress_measurements_triage_and_status_record_v3_9_pdf_xlsx_bottleneck_quality_without_promotion():
     run_id = "official_answer_citation_agentic_loop_run_v3_9_pdf_xlsx_bottleneck_quality_improvement"
     artifact_paths = {
-        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
-        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
-        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
-        "per_query_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_query.jsonl",
-        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
-        "query_fidelity_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_query_fidelity_audit.jsonl",
-        "pdf_residual_review_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_pdf_residual_review.jsonl",
+        "summary_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_per_family.json",
+        "per_query_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_per_query.jsonl",
+        "failure_taxonomy_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "query_fidelity_audit_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_query_fidelity_audit.jsonl",
+        "pdf_residual_review_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_pdf_residual_review.jsonl",
         "xlsx_locator_residual_review_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_locator_residual_review.jsonl",
-        "split_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_split_manifest.json",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_xlsx_locator_residual_review.jsonl",
+        "split_manifest_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_split_manifest.json",
     }
     require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
 
@@ -3146,13 +3146,13 @@ def test_progress_measurements_triage_and_status_record_v3_9_pdf_xlsx_bottleneck
 def test_progress_measurements_triage_and_status_record_v3_9_1_xlsx_table_axis_pdf_file_identity_without_promotion():
     run_id = "official_answer_citation_agentic_loop_run_v3_9_1_xlsx_sourceatom_table_axis_pdf_file_identity_diagnostic"
     artifact_paths = {
-        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
-        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
-        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
-        "per_query_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_query.jsonl",
-        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
-        "query_fidelity_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_query_fidelity_audit.jsonl",
-        "split_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_split_manifest.json",
+        "summary_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_per_family.json",
+        "per_query_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_per_query.jsonl",
+        "failure_taxonomy_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "query_fidelity_audit_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_query_fidelity_audit.jsonl",
+        "split_manifest_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_split_manifest.json",
     }
     require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
 
@@ -3257,16 +3257,16 @@ def test_progress_measurements_triage_and_status_record_v3_9_1_xlsx_table_axis_p
 def test_progress_measurements_triage_and_status_record_v3_9_2_overfit_risk_audit_holdout_reset():
     run_id = "official_answer_citation_agentic_loop_run_v3_9_2_overfit_risk_audit_and_blind_holdout_reset"
     artifact_paths = {
-        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
-        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
-        "overfit_risk_by_delta_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_overfit_risk_by_delta.jsonl",
-        "seen_surface_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_seen_surface_manifest.json",
-        "fresh_holdout_candidate_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_fresh_holdout_candidate_manifest.json",
-        "fresh_holdout_split_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_fresh_holdout_split_manifest.json",
-        "query_fidelity_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_query_fidelity_audit.jsonl",
-        "leakage_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_leakage_audit.jsonl",
-        "architecture_scope_assessment_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_architecture_scope_assessment.json",
-        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "summary_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_metrics.json",
+        "overfit_risk_by_delta_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_overfit_risk_by_delta.jsonl",
+        "seen_surface_manifest_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_seen_surface_manifest.json",
+        "fresh_holdout_candidate_manifest_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_fresh_holdout_candidate_manifest.json",
+        "fresh_holdout_split_manifest_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_fresh_holdout_split_manifest.json",
+        "query_fidelity_audit_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_query_fidelity_audit.jsonl",
+        "leakage_audit_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_leakage_audit.jsonl",
+        "architecture_scope_assessment_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_architecture_scope_assessment.json",
+        "failure_taxonomy_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_failure_taxonomy.json",
     }
     require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
 
@@ -3380,21 +3380,21 @@ def test_progress_measurements_triage_and_status_record_v3_9_2_overfit_risk_audi
 def test_progress_measurements_triage_and_status_record_v3_10_fresh_holdout_xlsx_table_axis_nonprod():
     run_id = "official_answer_citation_agentic_loop_run_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization"
     artifact_paths = {
-        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
-        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
-        "fresh_real_holdout_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_fresh_real_holdout_manifest.json",
-        "seen_surface_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_seen_surface_manifest.json",
-        "query_fidelity_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_query_fidelity_audit.jsonl",
-        "leakage_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_leakage_audit.jsonl",
+        "summary_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_metrics.json",
+        "fresh_real_holdout_manifest_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_fresh_real_holdout_manifest.json",
+        "seen_surface_manifest_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_seen_surface_manifest.json",
+        "query_fidelity_audit_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_query_fidelity_audit.jsonl",
+        "leakage_audit_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_leakage_audit.jsonl",
         "xlsx_nonprod_sourceatom_manifest_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_nonprod_sourceatom_manifest.jsonl",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_xlsx_nonprod_sourceatom_manifest.jsonl",
         "xlsx_nonprod_searchunit_manifest_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_nonprod_searchunit_manifest.jsonl",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_xlsx_nonprod_searchunit_manifest.jsonl",
         "xlsx_nonprod_index_build_summary_json": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_nonprod_index_build_summary.json",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_xlsx_nonprod_index_build_summary.json",
         "xlsx_table_axis_eval_per_query_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_table_axis_eval_per_query.jsonl",
-        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_xlsx_table_axis_eval_per_query.jsonl",
+        "failure_taxonomy_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_failure_taxonomy.json",
     }
     require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
 
@@ -3501,19 +3501,19 @@ def test_progress_measurements_triage_and_status_record_v3_10_fresh_holdout_xlsx
 def test_progress_measurements_triage_and_status_record_v3_11_layered_retrieval():
     run_id = "official_answer_citation_agentic_loop_run_v3_11_layered_retrieval_diagnostic"
     artifact_paths = {
-        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
-        "bootstrap_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_bootstrap.json",
-        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
-        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
-        "per_query_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_query.jsonl",
-        "layer_trace_sample_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_layer_trace_sample.jsonl",
-        "query_routing_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_query_routing_audit.jsonl",
+        "summary_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_summary.json",
+        "bootstrap_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_bootstrap.json",
+        "metrics_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_per_family.json",
+        "per_query_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_per_query.jsonl",
+        "layer_trace_sample_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_layer_trace_sample.jsonl",
+        "query_routing_audit_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_query_routing_audit.jsonl",
         "query_guardrail_summary_json": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_query_guardrail_summary.json",
-        "selected_evidence_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_selected_evidence.jsonl",
-        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
-        "guardrail_audit_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_guardrail_audit.json",
-        "holdout_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_holdout_manifest.json",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_query_guardrail_summary.json",
+        "selected_evidence_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_selected_evidence.jsonl",
+        "failure_taxonomy_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "guardrail_audit_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_guardrail_audit.json",
+        "holdout_manifest_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_holdout_manifest.json",
     }
     require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
 
@@ -3578,24 +3578,24 @@ def test_progress_measurements_triage_and_status_record_v3_11_layered_retrieval(
 def test_progress_measurements_triage_and_status_record_v3_12_xlsx_structural_locator():
     run_id = "official_answer_citation_agentic_loop_run_v3_12_xlsx_structural_locator_nonprod_improvement"
     artifact_paths = {
-        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
-        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
-        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
+        "summary_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_per_family.json",
         "xlsx_structural_locator_eval_per_query_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_structural_locator_eval_per_query.jsonl",
-        "xlsx_score_components_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_score_components.jsonl",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_xlsx_structural_locator_eval_per_query.jsonl",
+        "xlsx_score_components_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_xlsx_score_components.jsonl",
         "xlsx_layer_trace_per_query_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_layer_trace_per_query.jsonl",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_xlsx_layer_trace_per_query.jsonl",
         "xlsx_nonprod_sourceatom_manifest_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_nonprod_sourceatom_manifest.jsonl",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_xlsx_nonprod_sourceatom_manifest.jsonl",
         "xlsx_nonprod_searchunit_manifest_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_nonprod_searchunit_manifest.jsonl",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_xlsx_nonprod_searchunit_manifest.jsonl",
         "xlsx_nonprod_index_build_summary_json": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_xlsx_nonprod_index_build_summary.json",
-        "leakage_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_leakage_audit.jsonl",
-        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
-        "guardrail_audit_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_guardrail_audit.json",
-        "holdout_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_holdout_manifest.json",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_xlsx_nonprod_index_build_summary.json",
+        "leakage_audit_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_leakage_audit.jsonl",
+        "failure_taxonomy_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "guardrail_audit_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_guardrail_audit.json",
+        "holdout_manifest_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_holdout_manifest.json",
     }
     require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
 
@@ -3660,21 +3660,21 @@ def test_progress_measurements_triage_and_status_record_v3_12_xlsx_structural_lo
 def test_progress_measurements_triage_and_status_record_v3_13_pdf_file_identity_structural_locator():
     run_id = "official_answer_citation_agentic_loop_run_v3_13_pdf_file_identity_structural_locator_nonprod_alignment"
     artifact_paths = {
-        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
-        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
-        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
+        "summary_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_per_family.json",
         "pdf_structural_locator_eval_per_query_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_pdf_structural_locator_eval_per_query.jsonl",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_pdf_structural_locator_eval_per_query.jsonl",
         "pdf_layer_trace_per_query_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_pdf_layer_trace_per_query.jsonl",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_pdf_layer_trace_per_query.jsonl",
         "pdf_score_components_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_pdf_score_components.jsonl",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_pdf_score_components.jsonl",
         "pdf_nonprod_manifest_summary_json": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_pdf_nonprod_manifest_summary.json",
-        "leakage_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_leakage_audit.jsonl",
-        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
-        "guardrail_audit_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_guardrail_audit.json",
-        "holdout_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_holdout_manifest.json",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_pdf_nonprod_manifest_summary.json",
+        "leakage_audit_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_leakage_audit.jsonl",
+        "failure_taxonomy_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "guardrail_audit_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_guardrail_audit.json",
+        "holdout_manifest_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_holdout_manifest.json",
     }
     require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
 
@@ -3741,19 +3741,19 @@ def test_progress_measurements_triage_and_status_record_v3_13_pdf_file_identity_
 def test_progress_measurements_triage_and_status_record_v3_14_layered_retrieval_runtime_adapter():
     run_id = "official_answer_citation_agentic_loop_run_v3_14_layered_retrieval_runtime_adapter_nonprod"
     artifact_paths = {
-        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
-        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
-        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
-        "per_query_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_query.jsonl",
+        "summary_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_per_family.json",
+        "per_query_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_per_query.jsonl",
         "layer_trace_per_query_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_layer_trace_per_query.jsonl",
-        "latency_summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_latency_summary.json",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_layer_trace_per_query.jsonl",
+        "latency_summary_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_latency_summary.json",
         "candidate_flow_summary_json": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_candidate_flow_summary.json",
-        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
-        "guardrail_audit_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_guardrail_audit.json",
-        "leakage_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_leakage_audit.jsonl",
-        "holdout_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_holdout_manifest.json",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_candidate_flow_summary.json",
+        "failure_taxonomy_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "guardrail_audit_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_guardrail_audit.json",
+        "leakage_audit_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_leakage_audit.jsonl",
+        "holdout_manifest_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_holdout_manifest.json",
     }
     require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
 
@@ -3826,19 +3826,19 @@ def test_progress_measurements_triage_and_status_record_v3_14_layered_retrieval_
 def test_progress_measurements_triage_and_status_record_v3_15_xlsx_l3_table_range_locator():
     run_id = "official_answer_citation_agentic_loop_run_v3_15_xlsx_l3_table_range_locator_nonprod_improvement"
     artifact_paths = {
-        "summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_summary.json",
-        "metrics_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_metrics.json",
-        "per_family_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_family.json",
-        "per_query_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_per_query.jsonl",
+        "summary_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_summary.json",
+        "metrics_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_metrics.json",
+        "per_family_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_per_family.json",
+        "per_query_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_per_query.jsonl",
         "layer_trace_per_query_jsonl": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_layer_trace_per_query.jsonl",
-        "latency_summary_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_latency_summary.json",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_layer_trace_per_query.jsonl",
+        "latency_summary_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_latency_summary.json",
         "candidate_flow_summary_json": ROOT
-        / f"ai/eval/reports/rag-ingestion/{run_id}_candidate_flow_summary.json",
-        "failure_taxonomy_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_failure_taxonomy.json",
-        "guardrail_audit_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_guardrail_audit.json",
-        "leakage_audit_jsonl": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_leakage_audit.jsonl",
-        "holdout_manifest_json": ROOT / f"ai/eval/reports/rag-ingestion/{run_id}_holdout_manifest.json",
+        / f"reports/rag_eval/rag-ingestion/{run_id}_candidate_flow_summary.json",
+        "failure_taxonomy_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_failure_taxonomy.json",
+        "guardrail_audit_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_guardrail_audit.json",
+        "leakage_audit_jsonl": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_leakage_audit.jsonl",
+        "holdout_manifest_json": ROOT / f"reports/rag_eval/rag-ingestion/{run_id}_holdout_manifest.json",
     }
     require_v3_9_local_artifacts(STATUS_JSONL, *artifact_paths.values())
 
@@ -3910,7 +3910,7 @@ def test_progress_measurements_triage_and_status_record_v3_15_xlsx_l3_table_rang
 
 def test_progress_measurements_triage_and_status_record_v3_16_final_llm_answer_quality_review_packet():
     run_id = "official_answer_citation_agentic_loop_run_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod"
-    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    output_dir = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id
     artifact_paths = {
         "summary_json": output_dir / "summary.json",
         "metrics_json": output_dir / "metrics.json",
@@ -4007,7 +4007,7 @@ def test_progress_measurements_triage_and_status_record_v3_16_final_llm_answer_q
 
 def test_progress_measurements_triage_and_status_record_v3_17_user_locator_rough_query_packet():
     run_id = "official_answer_citation_agentic_loop_run_v3_17_user_locator_and_rough_query_answer_quality_nonprod"
-    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    output_dir = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id
     artifact_paths = {
         "summary_json": output_dir / "summary.json",
         "metrics_json": output_dir / "metrics.json",
@@ -4105,7 +4105,7 @@ def test_progress_measurements_triage_and_status_record_v3_17_user_locator_rough
 
 def test_progress_measurements_triage_and_status_record_v3_18_agent_runtime_tool_invocation_contract():
     run_id = "official_answer_citation_agentic_loop_run_v3_18_agent_runtime_tool_invocation_contract_nonprod"
-    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    output_dir = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id
     artifact_paths = {
         "summary_json": output_dir / "summary.json",
         "metrics_json": output_dir / "metrics.json",
@@ -4193,7 +4193,7 @@ def test_progress_measurements_triage_and_status_record_v3_18_agent_runtime_tool
 
 def test_progress_measurements_triage_and_status_record_v3_19_locator_ambiguity_deictic_response_policy():
     run_id = "official_answer_citation_agentic_loop_run_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod"
-    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    output_dir = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id
     artifact_paths = {
         "summary_json": output_dir / "summary.json",
         "metrics_json": output_dir / "metrics.json",
@@ -4285,7 +4285,7 @@ def test_progress_measurements_triage_and_status_record_v3_19_locator_ambiguity_
 
 def test_progress_measurements_triage_and_status_record_v3_20_live_runtime_like_db_index_cache_smoke():
     run_id = "official_answer_citation_agentic_loop_run_v3_20_live_runtime_like_db_index_cache_smoke_nonprod"
-    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    output_dir = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id
     artifact_paths = {
         "summary_json": output_dir / "summary.json",
         "metrics_json": output_dir / "metrics.json",
@@ -4389,7 +4389,7 @@ def test_progress_measurements_triage_and_status_record_v3_20_live_runtime_like_
 
 def test_progress_measurements_triage_and_status_record_v3_21_agent_runtime_llm_io_observability_packet():
     run_id = "official_answer_citation_agentic_loop_run_v3_21_agent_runtime_llm_io_observability_packet_nonprod"
-    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    output_dir = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id
     artifact_paths = {
         "summary_json": output_dir / "summary.json",
         "metrics_json": output_dir / "metrics.json",
@@ -4494,7 +4494,7 @@ def test_progress_measurements_triage_and_status_record_v3_21_agent_runtime_llm_
 
 def test_progress_measurements_triage_and_status_record_v3_22_xlsx_display_value_and_range_rendering_single_report():
     run_id = "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
-    output_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    output_dir = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id
     report_path = output_dir / "report.json"
     require_v3_9_local_artifacts(STATUS_JSONL, report_path)
 
@@ -4651,7 +4651,7 @@ def test_phase1_diagnostic_contract_closure_after_v3_22_records_boundary_and_bac
     assert event["protected_namespaces_touched"] == []
     assert event["artifact_paths"] == {
         "v3_22_report_json": v3_22_report_path.relative_to(ROOT).as_posix(),
-        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
+        "status_jsonl": "reports/rag_eval/rag-ingestion/status.jsonl",
         "progress_doc": "docs/rag-ingestion-progress.md",
         "measurements_doc": "docs/rag-ingestion-measurements.md",
         "triage_doc": "docs/rag-ingestion-triage.md",
@@ -4985,7 +4985,7 @@ def test_v4_0_charter_status_opening_records_boundary_and_non_promotion_status()
     assert event["db_or_production_namespace_written"] is False
     assert event["artifact_paths"] == {
         "v3_22_report_json": v3_22_report_path.relative_to(ROOT).as_posix(),
-        "status_jsonl": "ai/eval/reports/rag-ingestion/status.jsonl",
+        "status_jsonl": "reports/rag_eval/rag-ingestion/status.jsonl",
         "progress_doc": "docs/rag-ingestion-progress.md",
         "measurements_doc": "docs/rag-ingestion-measurements.md",
         "triage_doc": "docs/rag-ingestion-triage.md",
@@ -5127,7 +5127,7 @@ def test_v4_1_persisted_xlsx_sourceatom_display_metadata_records_status_docs_and
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -5289,7 +5289,7 @@ def test_v4_2_xlsx_locator_v2_records_status_docs_and_guardrails():
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -5457,7 +5457,7 @@ def test_v4_3_pdf_file_identity_split_records_status_docs_and_guardrails():
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -5707,7 +5707,7 @@ def test_v4_4_real_blind_ood_holdout_leakage_records_status_docs_and_guardrails(
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -5912,7 +5912,7 @@ def test_v4_5_finetune_readiness_packet_records_status_docs_and_guardrails():
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -6073,7 +6073,7 @@ def test_v4_5_1_holdout_candidate_intake_gate_records_status_docs_and_guardrails
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -6221,7 +6221,7 @@ def test_v4_5_2_external_holdout_candidate_source_identity_audit_records_status_
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -6387,7 +6387,7 @@ def test_v4_5_3_external_holdout_prior_identity_summary_records_status_docs_and_
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -6525,7 +6525,7 @@ def test_v4_6_ft_route_policy_preflight_records_status_docs_and_guardrails():
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -6667,7 +6667,7 @@ def test_v4_6_1_holdout_manifest_identity_contract_bridge_records_status_docs_an
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -6842,7 +6842,7 @@ def test_v4_6_2_ft_route_policy_fixture_contract_records_status_docs_and_guardra
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -7028,7 +7028,7 @@ def test_v4_6_3_ft_a_prompt_policy_baseline_schema_records_status_docs_and_guard
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -7167,7 +7167,7 @@ def test_v4_6_4_ft_a_dry_run_input_manifest_validator_records_status_docs_and_gu
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -7311,7 +7311,7 @@ def test_v4_6_5_ft_a_dry_run_execution_plan_gate_records_status_docs_and_guardra
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -7449,7 +7449,7 @@ def test_v4_6_6_holdout_gap_blocker_ledger_records_status_docs_and_guardrails():
         "official_answer_citation_agentic_loop_run_v4_"
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -7606,7 +7606,7 @@ def test_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_records_status_docs
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
     script_name = "rag_v4_6_7_holdout_candidate_runtime_gate_parity_bridge_nonprod.py"
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -7750,7 +7750,7 @@ def test_v4_6_8_runtime_readiness_dependency_freshness_gate_records_status_docs_
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
     script_name = V4_6_8_SCRIPT
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -7889,7 +7889,7 @@ def test_v4_6_9_holdout_candidate_duplicate_hygiene_gate_records_status_docs_and
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
     script_name = V4_6_9_SCRIPT
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -8028,7 +8028,7 @@ def test_v4_6_10_external_holdout_manifest_gate_replay_records_status_docs_and_g
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
     script_name = V4_6_10_SCRIPT
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -8165,7 +8165,7 @@ def test_v4_6_11_ft_a_runtime_input_validation_route_parity_records_status_docs_
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
     script_name = V4_6_11_SCRIPT
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -8292,7 +8292,7 @@ def test_v4_6_12_external_holdout_runtime_replay_route_parity_records_status_doc
         "source_grounded_runtime_locator_and_finetune_readiness_nonprod"
     )
     script_name = V4_6_12_SCRIPT
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -8533,7 +8533,7 @@ def test_v4_7_preofficial_external_holdout_registration_records_status_docs_and_
     run_id = "official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
     event_type = "diagnostic_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
     current_status = V4_7_CURRENT_STATUS
-    report_path = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id / "report.json"
+    report_path = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
     report = read_json(report_path)
@@ -8653,7 +8653,7 @@ def test_v4_7_1_korean_review_packet_records_status_docs_and_safe_examples():
     example_source_run_id = (
         "official_answer_citation_agentic_loop_run_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod"
     )
-    report_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    report_dir = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id
     report_path = report_dir / "report.json"
     packet_xlsx = report_dir / "review_packet_ko.xlsx"
     packet_csv = report_dir / "review_packet_ko.csv"
@@ -8814,7 +8814,7 @@ def test_v4_7_2_source_grounded_korean_review_packet_records_status_docs_and_gua
     run_id = "official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod"
     event_type = "diagnostic_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod"
     source_run_id = "official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
-    report_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    report_dir = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id
     report_path = report_dir / "report.json"
     packet_xlsx = report_dir / "review_packet_ko_hydrated.xlsx"
     packet_csv = report_dir / "review_packet_ko_hydrated.csv"
@@ -8981,7 +8981,7 @@ def test_v4_7_3_human_reviewed_korean_query_candidate_records_status_docs_and_gu
     event_type = "diagnostic_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod"
     source_run_id = "official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod"
     source_registration_run_id = "official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
-    report_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    report_dir = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id
     report_path = report_dir / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 
@@ -9123,7 +9123,7 @@ def test_v4_7_4_pdf_survivor_replay_records_status_docs_and_guardrails():
     event_type = "diagnostic_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod"
     source_run_id = "official_answer_citation_agentic_loop_run_v4_7_3_human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod"
     source_hydration_run_id = "official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod"
-    report_dir = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / run_id
+    report_dir = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / run_id
     report_path = report_dir / "report.json"
     require_v4_3_local_artifacts(STATUS_JSONL, report_path)
 

@@ -37,7 +37,7 @@ from rag_local_llm_expected_answer_generation_v1 import (  # noqa: E402
 )
 
 
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 DEFAULT_REPAIR_REPORT = REPORT_DIR / "pdf_evidence_readiness_repair_report.json"
 DEFAULT_METADATA_ENRICHMENT_REPORT = REPORT_DIR / "pdf_evidence_metadata_enrichment_report.json"
 DEFAULT_OUTPUT_JSON = REPORT_DIR / "pdf_evidence_context_v2_enrichment_report.json"

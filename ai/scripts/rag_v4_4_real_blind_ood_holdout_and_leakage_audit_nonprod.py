@@ -596,7 +596,7 @@ def build_report(
             "docs/rag-ingestion-triage.md",
             "README.md",
             "ai/eval/README.md",
-            "ai/eval/reports/rag-ingestion/status.jsonl",
+            "reports/rag_eval/rag-ingestion/status.jsonl",
         ],
         "residual_risks": [
             "Real PDF source-document-disjoint and XLSX workbook-disjoint holdout rows remain unavailable in this checkout.",

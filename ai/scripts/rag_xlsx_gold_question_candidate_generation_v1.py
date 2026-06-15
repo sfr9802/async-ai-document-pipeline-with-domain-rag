@@ -31,7 +31,7 @@ from rag_local_llm_expected_answer_generation_v1 import (  # noqa: E402
 from rag_question_quality_gate_v1 import classify_question  # noqa: E402
 
 
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review"
 
 DEFAULT_INPUT_JSONL = REPORT_DIR / "xlsx_answer_citation_diagnostic_review_input.jsonl"

@@ -241,7 +241,7 @@ Current verification run:
 | `python -X utf8 ai/scripts/rag_eval.py v6_9_1_retrieval_smoke_pre_review_packet_nonprod --check` | passed; review packet exists, metric gate remains closed |
 | `python -X utf8 -m pytest ai/tests/test_rag_v691_retrieval_smoke_pre_review_packet_nonprod_contract.py -q -p no:cacheprovider` | 14 passed |
 | `python -X utf8 -m pytest ai/tests/test_agentops_portfolio_runtime_contract.py ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py -q` | 53 passed, 8 warnings |
-| `git status --short -- ai/eval/eval_queries ai/eval/source_registry ai/eval/indexes ai/eval/silver ai/eval/reports/rag-ingestion/status.jsonl` | no protected-surface changes |
+| `git status --short -- ai/eval/eval_queries ai/eval/source_registry ai/eval/indexes ai/eval/silver reports/rag_eval/rag-ingestion/status.jsonl` | no protected-surface changes |
 
 Warnings were FAISS/Numpy, pydantic, requests, and pytest-asyncio environment
 deprecation/configuration warnings; they did not fail the test runs.

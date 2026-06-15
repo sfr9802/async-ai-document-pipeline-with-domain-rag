@@ -534,7 +534,7 @@ def build_report(
             "docs/rag-ingestion-triage.md",
             "README.md",
             "ai/eval/README.md",
-            "ai/eval/reports/rag-ingestion/status.jsonl",
+            "reports/rag_eval/rag-ingestion/status.jsonl",
         ],
         "residual_risks": [
             "v4_2 packages v3_12/v3_15 XLSX locator diagnostics as reference-only seen rows; it does not prove workbook-disjoint validation.",

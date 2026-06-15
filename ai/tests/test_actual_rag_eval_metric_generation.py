@@ -51,6 +51,7 @@ from ai.eval.actual_rag_eval import (
 from ai.eval.weaviate_source_atom import (
     BgeM3EmbeddingBuilder,
     WEAVIATE_SOURCE_ATOM_REQUIRED_PROPERTIES,
+    WEAVIATE_SOURCE_ATOM_V2_EXTRA_PROPERTIES,
     FakeWeaviateSourceAtomClient,
     WeaviateSourceAtomAdapter,
     WeaviateSourceAtomClient,
@@ -358,6 +359,181 @@ def test_weaviate_existing_collection_schema_mismatch_fails_closed() -> None:
 
     with pytest.raises(WeaviateUnavailableError, match="collection_schema_mismatch"):
         client.ensure_collection(build_weaviate_source_atom_schema(config))
+
+
+def test_weaviate_existing_v2_collection_adds_missing_metadata_properties() -> None:
+    class ExistingProperty:
+        def __init__(self, name: str, *, filterable: bool = False, searchable: bool = False, tokenization: str = "field") -> None:
+            self.name = name
+            self.index_filterable = filterable
+            self.index_searchable = searchable
+            self.tokenization = tokenization
+
+    class ExistingCollectionConfig:
+        vectorizer = "none"
+        vector_config = {}
+
+        def __init__(self, properties: list[object]) -> None:
+            self.properties = properties
+
+    class ExistingCollection:
+        def __init__(self, properties: list[object]) -> None:
+            self._properties = properties
+            self.added_property_names: list[str] = []
+            self.config = self.Config(self)
+
+        class Config:
+            def __init__(self, collection: "ExistingCollection") -> None:
+                self.collection = collection
+
+            def get(self) -> ExistingCollectionConfig:
+                return ExistingCollectionConfig(list(self.collection._properties))
+
+            def add_property(self, prop: object) -> None:
+                self.collection.added_property_names.append(str(getattr(prop, "name", "")))
+                self.collection._properties.append(prop)
+
+    class ExistingCollections:
+        def __init__(self, collection: ExistingCollection) -> None:
+            self.collection = collection
+
+        def exists(self, name: str) -> bool:
+            return True
+
+        def use(self, name: str) -> ExistingCollection:
+            return self.collection
+
+    class ExistingClient:
+        def __init__(self, collection: ExistingCollection) -> None:
+            self.collections = ExistingCollections(collection)
+
+    class ExistingSchemaWeaviateClient(WeaviateSourceAtomClient):
+        def __init__(self, config: WeaviateSourceAtomConfig, collection: ExistingCollection) -> None:
+            super().__init__(config)
+            self._fake_client = ExistingClient(collection)
+
+        def _connect(self) -> ExistingClient:
+            return self._fake_client
+
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    schema = build_weaviate_source_atom_schema(config)
+    missing_v2_names = {"row_label", "column_label", "target_column", "header", "header_path", "table_id"}
+    existing_properties = [
+        ExistingProperty(
+            prop["name"],
+            filterable=bool(prop["index_filterable"]),
+            searchable=bool(prop["index_searchable"]),
+            tokenization=str(prop["tokenization"]),
+        )
+        for prop in schema["properties"]
+        if prop["name"] not in missing_v2_names
+    ]
+    collection = ExistingCollection(existing_properties)
+    client = ExistingSchemaWeaviateClient(config, collection)
+
+    client.ensure_collection(schema)
+
+    assert sorted(collection.added_property_names) == sorted(missing_v2_names)
+    assert set(collection.added_property_names).issubset(set(WEAVIATE_SOURCE_ATOM_V2_EXTRA_PROPERTIES))
+
+
+def test_weaviate_existing_v2_schema_repair_does_not_partially_mutate_on_mismatch() -> None:
+    class ExistingProperty:
+        def __init__(self, name: str, *, filterable: bool = False, searchable: bool = False, tokenization: str = "field") -> None:
+            self.name = name
+            self.index_filterable = filterable
+            self.index_searchable = searchable
+            self.tokenization = tokenization
+
+    class ExistingCollectionConfig:
+        vectorizer = "none"
+        vector_config = {}
+
+        def __init__(self, properties: list[object]) -> None:
+            self.properties = properties
+
+    class ExistingCollection:
+        def __init__(self, properties: list[object]) -> None:
+            self._properties = properties
+            self.added_property_names: list[str] = []
+            self.config = self.Config(self)
+
+        class Config:
+            def __init__(self, collection: "ExistingCollection") -> None:
+                self.collection = collection
+
+            def get(self) -> ExistingCollectionConfig:
+                return ExistingCollectionConfig(list(self.collection._properties))
+
+            def add_property(self, prop: object) -> None:
+                self.collection.added_property_names.append(str(getattr(prop, "name", "")))
+                self.collection._properties.append(prop)
+
+    class ExistingCollections:
+        def __init__(self, collection: ExistingCollection) -> None:
+            self.collection = collection
+
+        def exists(self, name: str) -> bool:
+            return True
+
+        def use(self, name: str) -> ExistingCollection:
+            return self.collection
+
+    class ExistingClient:
+        def __init__(self, collection: ExistingCollection) -> None:
+            self.collections = ExistingCollections(collection)
+
+    class ExistingSchemaWeaviateClient(WeaviateSourceAtomClient):
+        def __init__(self, config: WeaviateSourceAtomConfig, collection: ExistingCollection) -> None:
+            super().__init__(config)
+            self._fake_client = ExistingClient(collection)
+
+        def _connect(self) -> ExistingClient:
+            return self._fake_client
+
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    schema = build_weaviate_source_atom_schema(config)
+    missing_v2_names = {"row_label", "column_label"}
+    existing_properties = []
+    for prop in schema["properties"]:
+        if prop["name"] in missing_v2_names:
+            continue
+        tokenization = str(prop["tokenization"])
+        if prop["name"] == "text":
+            tokenization = "field"
+        existing_properties.append(
+            ExistingProperty(
+                prop["name"],
+                filterable=bool(prop["index_filterable"]),
+                searchable=bool(prop["index_searchable"]),
+                tokenization=tokenization,
+            )
+        )
+    collection = ExistingCollection(existing_properties)
+    client = ExistingSchemaWeaviateClient(config, collection)
+
+    with pytest.raises(WeaviateUnavailableError, match="tokenization_mismatch:text"):
+        client.ensure_collection(schema)
+
+    assert collection.added_property_names == []
 
 
 def test_weaviate_checkpoint_atomic_write_retries_transient_windows_lock(
@@ -900,6 +1076,397 @@ def test_weaviate_route_selected_query_variants_probe_same_doc_without_gold_ids(
         assert "expected_evidence" not in query_payload
         assert "row_id" not in query_payload
         assert "target_id" not in query_payload
+
+
+def test_xlsx_same_table_vector_expansion_is_bounded_by_source_owned_scope(tmp_path: Path) -> None:
+    class SameTableSensitiveWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(
+                {
+                    "mode": kwargs["mode"],
+                    "query_text": kwargs["query_text"],
+                    "vector_dim": len(kwargs.get("query_vector") or []),
+                    "filters": dict(kwargs["filters"]),
+                    "limit": int(kwargs["limit"]),
+                    "alpha": float(kwargs["alpha"]),
+                }
+            )
+            filters = dict(kwargs["filters"])
+            scoped = filters.get("doc_id") == "doc-subway" and filters.get("sheet") == "2019년 2월"
+            scoped = scoped and filters.get("table_id") == "subway-201902-main"
+            rows: list[dict] = []
+            for obj in self.objects:
+                if _filter_mismatch(obj, filters):
+                    continue
+                source_atom_id = obj.get("source_atom_id")
+                if scoped and source_atom_id == "srcatom-subway-5line-target":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+                elif not scoped and source_atom_id == "srcatom-subway-table-summary":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+            return rows[: int(kwargs["limit"])]
+
+    def _filter_mismatch(obj: dict, filters: dict) -> bool:
+        for key, value in filters.items():
+            if not value:
+                continue
+            if isinstance(value, list):
+                if obj.get(key) not in value:
+                    return True
+            elif obj.get(key) != value:
+                return True
+        return False
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_same_table_scope"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx-same-table",
+                "query": "2019년 2월 5호선 승차총승객수는 얼마야?",
+                "answerability": "answerable",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    summary = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                701,
+                text="2019년 2월 지하철 승하차 표는 노선별 승차총승객수와 하차총승객수를 제공한다.",
+            ),
+            "source_atom_id": "srcatom-subway-table-summary",
+            "evidence_bundle_id": "bundle-subway-table-summary",
+            "doc_id": "doc-subway",
+            "chunk_id": "chunk-subway-table-summary",
+            "source_family": "XLSX",
+            "granularity": "table_summary",
+            "retrieval_route": "xlsx_table",
+            "sheet": "2019년 2월",
+            "cell_range": "A1:J30",
+            "table_id": "subway-201902-main",
+        },
+        config,
+    )
+    target = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                702,
+                text="2019년 2월 5호선 승차총승객수는 15,446,522명입니다.",
+            ),
+            "source_atom_id": "srcatom-subway-5line-target",
+            "evidence_bundle_id": "bundle-subway-5line-target",
+            "doc_id": "doc-subway",
+            "chunk_id": "chunk-subway-5line-target",
+            "source_family": "XLSX",
+            "granularity": "table_row",
+            "retrieval_route": "xlsx_table",
+            "sheet": "2019년 2월",
+            "cell_range": "A7:J7",
+            "cell": "F7",
+            "row_index_1based": "7",
+            "row_label": "5호선",
+            "column_label": "승차총승객수",
+            "target_column": "승차총승객수",
+            "header_path": "승하차 > 승차총승객수",
+            "table_id": "subway-201902-main",
+        },
+        config,
+    )
+    wrong_sheet = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                703,
+                text="2019년 3월 5호선 승차총승객수는 15,446,522명입니다.",
+            ),
+            "source_atom_id": "srcatom-subway-wrong-sheet",
+            "evidence_bundle_id": "bundle-subway-wrong-sheet",
+            "doc_id": "doc-subway",
+            "chunk_id": "chunk-subway-wrong-sheet",
+            "source_family": "XLSX",
+            "granularity": "table_row",
+            "retrieval_route": "xlsx_table",
+            "sheet": "2019년 3월",
+            "row_label": "5호선",
+            "column_label": "승차총승객수",
+            "target_column": "승차총승객수",
+            "table_id": "subway-201903-main",
+        },
+        config,
+    )
+    client = SameTableSensitiveWeaviateClient(objects=[summary, target, wrong_sheet])
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="xlsx_same_table_scope",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    contexts = report["items"][0]["retrieved_contexts"]
+    scoped_queries = [query for query in client.query_log if query["filters"].get("table_id") == "subway-201902-main"]
+    assert scoped_queries
+    assert contexts[0]["source_atom_id"] == "srcatom-subway-5line-target"
+    assert contexts[0]["xlsx_scoped_expansion_policy"] == "bounded_source_owned_xlsx_scope_weaviate_v1"
+    assert contexts[0]["xlsx_scoped_expansion_scope_type"] == "same_table"
+    assert all(query["filters"]["source_family"] == "XLSX" for query in scoped_queries)
+    assert all(query["filters"]["sheet"] == "2019년 2월" for query in scoped_queries)
+    assert all(query["filters"]["doc_id"] == "doc-subway" for query in scoped_queries)
+    assert report["items"][0]["weaviate_xlsx_scoped_expansion"]["added_count"] == 1
+    assert report["items"][0]["weaviate_xlsx_scoped_expansion"]["uses_ids"] is False
+    assert report["items"][0]["weaviate_xlsx_scoped_expansion"]["uses_protected_eval_ids"] is False
+    assert report["items"][0]["weaviate_xlsx_scoped_expansion"]["uses_source_owned_scope_ids"] is True
+    assert report["weaviate_post_processing"]["xlsx_scoped_expansion_added_count"] == 1
+    query_payload = json.dumps(client.query_log, ensure_ascii=False)
+    assert "expected_answer" not in query_payload
+    assert "expected_evidence" not in query_payload
+    assert "qrels" not in query_payload
+    assert "labels" not in query_payload
+    assert "row_id" not in query_payload
+    assert "target_id" not in query_payload
+    assert "formula" not in query_payload
+    assert "normalized_value" not in query_payload
+    assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_xlsx_scoped_expansion_query_uses_source_owned_axis_terms(tmp_path: Path) -> None:
+    class AxisSensitiveWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(
+                {
+                    "mode": kwargs["mode"],
+                    "query_text": kwargs["query_text"],
+                    "vector_dim": len(kwargs.get("query_vector") or []),
+                    "filters": dict(kwargs["filters"]),
+                    "limit": int(kwargs["limit"]),
+                    "alpha": float(kwargs["alpha"]),
+                }
+            )
+            filters = dict(kwargs["filters"])
+            query_text = str(kwargs["query_text"])
+            scoped = (
+                filters.get("source_family") == "XLSX"
+                and filters.get("doc_id") == "doc-subway"
+                and filters.get("sheet") == "2019년 2월"
+                and filters.get("table_id") == "subway-201902-main"
+            )
+            rows: list[dict] = []
+            for obj in self.objects:
+                if _filter_mismatch(obj, filters):
+                    continue
+                source_atom_id = obj.get("source_atom_id")
+                if scoped and source_atom_id == "srcatom-subway-5line-target":
+                    if "승차총승객수" not in query_text:
+                        continue
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+                elif not scoped and source_atom_id == "srcatom-subway-table-summary":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+            return rows[: int(kwargs["limit"])]
+
+    def _filter_mismatch(obj: dict, filters: dict) -> bool:
+        for key, value in filters.items():
+            if not value:
+                continue
+            if isinstance(value, list):
+                if obj.get(key) not in value:
+                    return True
+            elif obj.get(key) != value:
+                return True
+        return False
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_source_axis_scope"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx-source-axis-scope",
+                "query": "2019년 2월 5호선 승차 인원은 얼마야?",
+                "answerability": "answerable",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    summary = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                704,
+                text="2019년 2월 지하철 승하차 표는 노선별 승차와 하차 인원을 제공한다.",
+            ),
+            "source_atom_id": "srcatom-subway-table-summary",
+            "evidence_bundle_id": "bundle-subway-table-summary",
+            "doc_id": "doc-subway",
+            "chunk_id": "chunk-subway-table-summary",
+            "source_family": "XLSX",
+            "granularity": "table_summary",
+            "retrieval_route": "xlsx_table",
+            "sheet": "2019년 2월",
+            "cell_range": "A1:J30",
+            "table_id": "subway-201902-main",
+            "row_label": "5호선",
+            "column_label": "승차총승객수",
+            "target_column": "승차총승객수",
+            "header_path": "승하차 > 승차총승객수",
+        },
+        config,
+    )
+    target = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                705,
+                text="2019년 2월 5호선 승차총승객수는 15,446,522명입니다.",
+            ),
+            "source_atom_id": "srcatom-subway-5line-target",
+            "evidence_bundle_id": "bundle-subway-5line-target",
+            "doc_id": "doc-subway",
+            "chunk_id": "chunk-subway-5line-target",
+            "source_family": "XLSX",
+            "granularity": "table_row",
+            "retrieval_route": "xlsx_table",
+            "sheet": "2019년 2월",
+            "cell_range": "A7:J7",
+            "cell": "F7",
+            "row_index_1based": "7",
+            "row_label": "5호선",
+            "column_label": "승차총승객수",
+            "target_column": "승차총승객수",
+            "header_path": "승하차 > 승차총승객수",
+            "table_id": "subway-201902-main",
+        },
+        config,
+    )
+    client = AxisSensitiveWeaviateClient(objects=[summary, target])
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="xlsx_source_axis_scope",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    contexts = report["items"][0]["retrieved_contexts"]
+    scoped_queries = [query for query in client.query_log if query["filters"].get("table_id") == "subway-201902-main"]
+    assert scoped_queries
+    assert contexts[0]["source_atom_id"] == "srcatom-subway-5line-target"
+    assert any("승차총승객수" in query["query_text"] for query in scoped_queries)
+    query_payload = json.dumps(client.query_log, ensure_ascii=False)
+    assert "15,446,522" not in query_payload
+    assert "expected_answer" not in query_payload
+    assert "expected_evidence" not in query_payload
+    assert "qrels" not in query_payload
+    assert "labels" not in query_payload
+    assert "row_id" not in query_payload
+    assert "target_id" not in query_payload
+    assert "formula" not in query_payload
+    assert "normalized_value" not in query_payload
+    assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_xlsx_selected_evidence_requires_value_and_axes_to_cooccur() -> None:
+    selected = select_composer_evidence(
+        "2019년 2월 5호선 승차총승객수는 얼마야?",
+        [
+            {
+                "doc_id": "doc-xlsx",
+                "chunk_id": "chunk-value-only",
+                "source_atom_id": "src-value-only",
+                "evidence_bundle_id": "bundle-value-only",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": "15,446,522명",
+            },
+            {
+                "doc_id": "doc-xlsx",
+                "chunk_id": "chunk-axis-only",
+                "source_atom_id": "src-axis-only",
+                "evidence_bundle_id": "bundle-axis-only",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": "2019년 2월 5호선 승차총승객수 행입니다.",
+                "sheet": "2019년 2월",
+                "row_label": "5호선",
+                "column_label": "승차총승객수",
+                "target_column": "승차총승객수",
+            },
+            {
+                "doc_id": "doc-xlsx",
+                "chunk_id": "chunk-value-axis",
+                "source_atom_id": "src-value-axis",
+                "evidence_bundle_id": "bundle-value-axis",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": "2019년 2월 5호선 승차총승객수는 15,446,522명입니다.",
+                "sheet": "2019년 2월",
+                "row_label": "5호선",
+                "column_label": "승차총승객수",
+                "target_column": "승차총승객수",
+            },
+        ],
+    )
+
+    assert [row["source_atom_id"] for row in selected] == ["src-value-axis"]
 
 
 def test_weaviate_query_variants_build_collision_aware_anchor_queries_from_query_text_only() -> None:
@@ -3126,7 +3693,7 @@ def test_weaviate_route_ab_sidecar_includes_mixed_route_diagnostic_rows(
     tmp_path: Path,
 ) -> None:
     monkeypatch.setattr("ai.eval.actual_rag_eval.ROOT", tmp_path)
-    mixed_path = tmp_path / "ai" / "eval" / "reports" / "rag-ingestion" / "runs" / "v5_5" / "official_metric_input.jsonl"
+    mixed_path = tmp_path / "reports" / "rag_eval" / "rag-ingestion" / "runs" / "v5_5" / "official_metric_input.jsonl"
     mixed_path.parent.mkdir(parents=True, exist_ok=True)
     write_jsonl(
         mixed_path,
@@ -3743,6 +4310,26 @@ def test_weaviate_full_index_route_mode_uses_rollback_even_when_default_config_e
 def test_weaviate_route_selected_default_report_records_config_path_filters_and_no_fallback(tmp_path: Path) -> None:
     dataset = tmp_path / "fixture_gold.jsonl"
     output_dir = tmp_path / "reports" / "rag_eval" / "weaviate_route_selected_default"
+    manifest_path = tmp_path / "weaviate_source_atom_route_selected_v2_manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "valid": True,
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "index_object_count": 2,
+                "indexed_count": 2,
+                "route_taxonomy_available": True,
+                "route_taxonomy_filterable_fields": ["source_family", "granularity", "retrieval_route"],
+                "schema_index_v2_rebuild_required_for_metadata_only_policy": False,
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    config_data = json.loads(Path("ai/eval/configs/weaviate_route_selected_nonprod_default.json").read_text(encoding="utf-8"))
+    config_data["index_manifest_path"] = manifest_path.as_posix()
+    config_path = tmp_path / "weaviate_route_selected_nonprod_default.json"
+    config_path.write_text(json.dumps(config_data, ensure_ascii=False), encoding="utf-8")
     write_jsonl(dataset, [{"id": "q1", "query": "2020년 11월 sheet cell row amount 승인 금액은?", "answerability": "unknown"}])
     client = FakeWeaviateSourceAtomClient(
         objects=[
@@ -3761,6 +4348,7 @@ def test_weaviate_route_selected_default_report_records_config_path_filters_and_
     )
     adapter = build_default_weaviate_adapter(
         requested_backend="weaviate-hybrid",
+        config_path=config_path.as_posix(),
         client=client,
         embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
     )
@@ -3789,6 +4377,9 @@ def test_weaviate_route_selected_default_report_records_config_path_filters_and_
     assert report["route_filters_sent_to_weaviate"]["retrieval_route"] == "xlsx_table"
     assert report["weaviate_filter_policy"]["python_post_filtering"] == "safety_validation_only"
     assert report["weaviate_default_config"]["selection"] == "route_selected_nonprod_default"
+    assert report["weaviate_default_config"]["config_path"] == config_path.as_posix()
+    assert report["weaviate_default_config"]["index_manifest_path"] == manifest_path.as_posix()
+    assert report["weaviate_index_manifest_path"] == manifest_path.as_posix()
     assert report["weaviate_default_config"]["explicit_nonprod_config_path"] is True
     assert report["rollback_key"] == "weaviate_full_index_nonprod_rollback"
     assert report["rollback_config"]["collection"] == "SourceAtomNonprod"
@@ -3866,6 +4457,1026 @@ def test_weaviate_v2_indexer_keeps_cells_metadata_only_without_embedding() -> No
         paragraph["source_atom_id"]: 4,
         xlsx_cell["source_atom_id"]: 0,
     }
+
+
+def test_xlsx_source_atom_materializes_general_table_axes_for_vector_db() -> None:
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+        }
+    )
+    record = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                501,
+                text="sheet=2019년 2월 | row_label=5호선 | column_label=승차총승객수 | value=15,446,522명",
+            ),
+            "source_family": "XLSX",
+            "granularity": "table_row",
+            "retrieval_route": "xlsx_table",
+            "sheet": "2019년 2월",
+            "cell_range": "A7:J7",
+            "cell": "F7",
+            "row_index_1based": 7,
+            "row_label": "5호선",
+            "column_label": "승차총승객수",
+            "target_column": "승차총승객수",
+            "header": "승차총승객수",
+            "header_path": "승하차 > 승차총승객수",
+            "table_id": "sheet-201902-main-table",
+            "locator_fingerprint": "xlsx-locator-fp",
+        },
+        config,
+    )
+    schema = build_weaviate_source_atom_schema(config)
+    properties = {prop["name"]: prop for prop in schema["properties"]}
+
+    for field in (
+        "sheet",
+        "cell_range",
+        "cell",
+        "row_index_1based",
+        "row_label",
+        "column_label",
+        "target_column",
+        "header",
+        "header_path",
+        "table_id",
+        "locator_fingerprint",
+    ):
+        assert record[field]
+        assert properties[field]["index_filterable"] is True
+    assert "formula" not in record
+    assert "normalized_value" not in record
+
+
+def test_xlsx_source_atom_record_materializes_source_owned_tags_without_value_or_file_shortcuts() -> None:
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+        }
+    )
+    record = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                503,
+                text=(
+                    "Sheet=2019년 2월 | RANGE=A7:J7 | Cell=F7 | Row_Label=5호선 | "
+                    "Column_Label=승차총승객수 | TARGET_COLUMN=승차총승객수 | "
+                    "Header_Path=승하차 > 승차총승객수 | Table_ID=subway-201902-main | "
+                    "Value=15,446,522 | NORMALIZED_VALUE=15446522 | Formula==SUM(F7:F7) | "
+                    "Source_Title=서울교통공사 승하차 workbook | Workbook_ID=subway-workbook | "
+                    "Workbook_Version_ID=subway-workbook-v1 | Workbook=서울교통공사.xlsx | "
+                    "Source_Workbook=서울교통공사-source.xlsx | Title=서울교통공사 shortcut title | "
+                    "Source_Path=D:/private/subway.xlsx | File_Name=subway.xlsx"
+                ),
+            ),
+            "source_family": "XLSX",
+            "granularity": "table_row",
+            "retrieval_route": "xlsx_table",
+        },
+        config,
+    )
+
+    assert record["sheet"] == "2019년 2월"
+    assert record["cell_range"] == "A7:J7"
+    assert record["cell"] == "F7"
+    assert record["row_index_1based"] == "7"
+    assert record["row_label"] == "5호선"
+    assert record["column_label"] == "승차총승객수"
+    assert record["target_column"] == "승차총승객수"
+    assert record["header_path"] == "승하차 > 승차총승객수"
+    assert record["table_id"] == "subway-201902-main"
+    for forbidden in (
+        "value",
+        "normalized_value",
+        "formula",
+        "source_path",
+        "source_file_name",
+        "file_name",
+    ):
+        assert forbidden not in record
+    searchable_text = record["text"]
+    assert "Sheet=2019년 2월" in searchable_text
+    assert "Cell=F7" in searchable_text
+    assert "Value=15,446,522" in searchable_text
+    assert "normalized_value" not in searchable_text
+    assert "NORMALIZED_VALUE" not in searchable_text
+    assert "15446522" not in searchable_text
+    assert "formula" not in searchable_text
+    assert "Formula" not in searchable_text
+    assert "=SUM" not in searchable_text
+    assert "source_path" not in searchable_text
+    assert "Source_Path" not in searchable_text
+    assert "file_name" not in searchable_text
+    assert "File_Name" not in searchable_text
+    assert "subway.xlsx" not in searchable_text
+    assert "source_title" not in searchable_text
+    assert "Source_Title" not in searchable_text
+    assert "서울교통공사 승하차 workbook" not in searchable_text
+    assert "workbook_id" not in searchable_text
+    assert "Workbook_ID" not in searchable_text
+    assert "subway-workbook" not in searchable_text
+    assert "workbook_version_id" not in searchable_text
+    assert "Workbook_Version_ID" not in searchable_text
+    assert "workbook=서울교통공사.xlsx" not in searchable_text
+    assert "Workbook=서울교통공사.xlsx" not in searchable_text
+    assert "source_workbook" not in searchable_text
+    assert "Source_Workbook" not in searchable_text
+    assert "서울교통공사-source.xlsx" not in searchable_text
+    assert "title=서울교통공사 shortcut title" not in searchable_text
+    assert "Title=서울교통공사 shortcut title" not in searchable_text
+    assert record["text_sha256"] == hashlib.sha256(searchable_text.encode("utf-8")).hexdigest()
+
+
+def test_source_atom_record_materializes_semicolon_delimited_source_owned_tags_without_shortcuts() -> None:
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+
+    record = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                988,
+                text=(
+                    "value=15,446,522명; sheet=2019년 2월; row_label=5호선; "
+                    "column_label=승차총승객수; target_column=승차총승객수; "
+                    "header_path=승하차 > 승차총승객수; table_id=subway-201902-main; "
+                    "formula==SUM(F1:F6); source_file_name=D:/private/Subway.xlsx; "
+                    "2019년 2월 5호선 승차총승객수는 15,446,522명입니다."
+                ),
+            ),
+            "source_atom_id": "srcatom-semicolon-tags",
+            "evidence_bundle_id": "bundle-semicolon-tags",
+            "doc_id": "doc-subway",
+            "chunk_id": "chunk-semicolon-tags",
+            "source_family": "XLSX",
+            "granularity": "table_row",
+            "retrieval_route": "xlsx_table",
+        },
+        config,
+    )
+
+    assert record["sheet"] == "2019년 2월"
+    assert record["row_label"] == "5호선"
+    assert record["column_label"] == "승차총승객수"
+    assert record["target_column"] == "승차총승객수"
+    assert record["header_path"] == "승하차 > 승차총승객수"
+    assert record["table_id"] == "subway-201902-main"
+    assert "15,446,522명" in record["text"]
+    assert "=SUM" not in record["text"]
+    assert "D:/private/Subway.xlsx" not in record["text"]
+
+
+def test_xlsx_pdf_query_properties_exclude_title_shortcut_when_family_filtered() -> None:
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+        }
+    )
+    client = WeaviateSourceAtomClient(config)
+
+    assert client._query_properties_for_filters({"source_family": "XLSX"}) == ["text"]
+    assert client._query_properties_for_filters({"source_family": ["PDF"]}) == ["text"]
+    assert client._query_properties_for_filters({"source_family": ["XLSX", "PDF"]}) == ["text"]
+    assert client._query_properties_for_filters({"source_family": ["TEXT", "PDF", "XLSX"]}) == ["text"]
+    assert client._query_properties_for_filters({}) == ["text"]
+    assert client._query_properties_for_filters({"source_family": "TEXT"}) == ["text", "title"]
+
+
+def test_weaviate_bm25_and_hybrid_mixed_family_filters_pass_text_only_query_properties() -> None:
+    class SpyResponse:
+        objects: list[object] = []
+
+    class SpyQuery:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, object]] = []
+
+        def bm25(self, **kwargs: object) -> SpyResponse:
+            self.calls.append({"method": "bm25", **kwargs})
+            return SpyResponse()
+
+        def hybrid(self, **kwargs: object) -> SpyResponse:
+            self.calls.append({"method": "hybrid", **kwargs})
+            return SpyResponse()
+
+    class SpyCollection:
+        def __init__(self) -> None:
+            self.query = SpyQuery()
+
+    class SpyWeaviateSourceAtomClient(WeaviateSourceAtomClient):
+        def __init__(self, config: WeaviateSourceAtomConfig, collection: SpyCollection) -> None:
+            super().__init__(config)
+            self._spy_collection = collection
+
+        def _use_collection(self) -> SpyCollection:
+            return self._spy_collection
+
+        def _filters(self, filters: Mapping[str, object]) -> dict[str, object]:
+            return dict(filters)
+
+        def _metadata_query(self, *, mode: str) -> dict[str, str]:
+            return {"mode": mode}
+
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+        }
+    )
+    collection = SpyCollection()
+    client = SpyWeaviateSourceAtomClient(config, collection)
+    filters = {"source_family": ["TEXT", "PDF", "XLSX"], "namespace": "actual_rag_eval_nonprod"}
+
+    client.query(mode="bm25", query_text="ambiguous document query", query_vector=None, filters=filters, limit=3, alpha=0.5)
+    client.query(mode="hybrid", query_text="ambiguous document query", query_vector=[0.1, 0.2], filters=filters, limit=3, alpha=0.5)
+
+    assert [call["method"] for call in collection.query.calls] == ["bm25", "hybrid"]
+    assert all(call["query_properties"] == ["text"] for call in collection.query.calls)
+
+
+def test_normalize_citation_preserves_source_native_axes_without_shortcuts() -> None:
+    citation = actual_rag_eval._normalize_citation(
+        {
+            "doc_id": "doc-xlsx",
+            "chunk_id": "chunk-1",
+            "text": "value=15,446,522",
+            "source_atom_id": "srcatom-xlsx-1",
+            "evidence_bundle_id": "bundle-1",
+            "sheet": "2019년 2월",
+            "cell_range": "A7:J7",
+            "cell": "F7",
+            "row_index_1based": "7",
+            "row_label": "5호선",
+            "column_label": "승차총승객수",
+            "target_column": "승차총승객수",
+            "header_path": "승하차 > 승차총승객수",
+            "table_id": "subway-201902-main",
+            "source_title": "서울교통공사 shortcut title",
+            "workbook": "서울교통공사.xlsx",
+            "file_name": "subway.xlsx",
+            "normalized_value": "15446522",
+            "formula": "=SUM(F7)",
+        }
+    )
+
+    for field in (
+        "sheet",
+        "cell_range",
+        "cell",
+        "row_index_1based",
+        "row_label",
+        "column_label",
+        "target_column",
+        "header_path",
+        "table_id",
+    ):
+        assert citation[field]
+    for forbidden in ("source_title", "workbook", "file_name", "normalized_value", "formula"):
+        assert forbidden not in citation
+
+
+def test_xlsx_vector_db_query_uses_query_text_and_source_axes_without_value_shortcut(
+    tmp_path: Path,
+) -> None:
+    dataset = tmp_path / "xlsx_query.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_vector_axes"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx-axis-query",
+                "query": "2019년 2월 5호선 승차총승객수는 얼마야?",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+        }
+    )
+    record = {
+        **weaviate_source_atom_record(
+            601,
+            text=(
+                "2019년 2월 지하철 5호선 row_label=5호선 "
+                "column_label=승차총승객수 value=15,446,522명"
+            ),
+        ),
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "retrieval_route": "xlsx_table",
+        "sheet": "2019년 2월",
+        "cell_range": "A7:J7",
+        "cell": "F7",
+        "row_index_1based": "7",
+        "row_label": "5호선",
+        "column_label": "승차총승객수",
+        "target_column": "승차총승객수",
+        "header_path": "승하차 > 승차총승객수",
+        "table_id": "sheet-201902-main-table",
+        "locator_fingerprint": "xlsx-locator-fp",
+    }
+    client = FakeWeaviateSourceAtomClient(objects=[source_atom_record_from_mapping(record, config)])
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=3,
+        run_id="xlsx_vector_axes",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    context = row["retrieved_contexts"][0]
+    selected = row["evidence_gate"]["selected_evidence"][0]
+    assert context["row_label"] == "5호선"
+    assert context["column_label"] == "승차총승객수"
+    assert context["header_path"] == "승하차 > 승차총승객수"
+    assert context["table_id"] == "sheet-201902-main-table"
+    assert selected["row_label"] == "5호선"
+    assert selected["column_label"] == "승차총승객수"
+    assert report["evidence_gate"]["allowed_answer_count"] == 1
+    primary_queries = [query for query in client.query_log if query["mode"] != "neighbor_by_id"]
+    assert primary_queries
+    assert all(query["query_text"] for query in primary_queries)
+    query_payload = json.dumps(client.query_log, ensure_ascii=False)
+    assert "15,446,522" not in query_payload
+    assert "normalized_value" not in query_payload
+    assert "formula" not in query_payload
+    assert "expected_answer" not in query_payload
+    assert "qrels" not in query_payload
+    assert "labels" not in query_payload
+    assert "row_id" not in query_payload
+    assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_pdf_source_atom_materializes_page_section_table_axes_for_vector_db() -> None:
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+        }
+    )
+    record = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                801,
+                text=(
+                    "page=7 | section_title=연결 손익계산서 | table_caption=영업실적 표 | "
+                    "row_label=영업이익 | column_label=2024년 | value=12.3억원"
+                ),
+            ),
+            "source_family": "PDF",
+            "granularity": "table_row",
+            "retrieval_route": "pdf_table",
+            "page_number": 7,
+            "physical_page_index": 6,
+            "block_index": 14,
+            "bbox": [72.0, 260.0, 510.0, 318.0],
+            "region_type": "table",
+            "section_title": "연결 손익계산서",
+            "table_caption": "영업실적 표",
+            "row_label": "영업이익",
+            "column_label": "2024년",
+            "locator_fingerprint": "pdf-locator-fp",
+            "source_file_name": "do-not-use-file-name-shortcut.pdf",
+            "file_name": "do-not-use-file-name-shortcut.pdf",
+        },
+        config,
+    )
+    schema = build_weaviate_source_atom_schema(config)
+    properties = {prop["name"]: prop for prop in schema["properties"]}
+
+    assert record["source_family"] == "PDF"
+    filterable_fields = (
+        "page_number",
+        "physical_page_index",
+        "block_index",
+        "region_type",
+        "section_title",
+        "table_caption",
+        "row_label",
+        "column_label",
+        "locator_fingerprint",
+    )
+    for field in filterable_fields:
+        assert record[field]
+        assert properties[field]["index_filterable"] is True
+    assert record["bbox"]
+    assert properties["bbox"]["index_filterable"] is False
+    serialized = json.dumps(record, ensure_ascii=False)
+    assert "source_file_name" not in serialized
+    assert "file_name" not in serialized
+    assert "do-not-use-file-name-shortcut" not in serialized
+
+
+def test_pdf_source_atom_record_materializes_source_owned_tags_without_file_shortcuts() -> None:
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+        }
+    )
+    record = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                804,
+                text=(
+                    "Page=7 | Physical_Page_Index=6 | Block_Index=14 | Region_Type=table | "
+                    "Section_Title=연결 손익계산서 | Table_Caption=영업실적 표 | "
+                    "Row_Label=영업이익 | Column_Label=2024년 | BBox=[72,260,510,318] | "
+                    "Value=12.3억원 | File_Name=do-not-use-file-name-shortcut.pdf | "
+                    "Source_File_Name=do-not-use-source-file-shortcut.pdf"
+                ),
+            ),
+            "source_family": "PDF",
+            "granularity": "table_row",
+            "retrieval_route": "pdf_table",
+        },
+        config,
+    )
+
+    assert record["page_number"] == "7"
+    assert record["physical_page_index"] == "6"
+    assert record["block_index"] == "14"
+    assert record["region_type"] == "table"
+    assert record["section_title"] == "연결 손익계산서"
+    assert record["table_caption"] == "영업실적 표"
+    assert record["row_label"] == "영업이익"
+    assert record["column_label"] == "2024년"
+    assert record["bbox"] == "[72,260,510,318]"
+    assert "value" not in record
+    assert "file_name" not in record
+    assert "source_file_name" not in record
+    searchable_text = record["text"]
+    assert "Value=12.3억원" in searchable_text
+    assert "File_Name" not in searchable_text
+    assert "Source_File_Name" not in searchable_text
+    assert "do-not-use-file-name-shortcut" not in searchable_text
+    assert "do-not-use-source-file-shortcut" not in searchable_text
+
+
+def test_pdf_vector_db_query_uses_page_section_caption_axes_without_filename_shortcut(
+    tmp_path: Path,
+) -> None:
+    dataset = tmp_path / "pdf_query.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "pdf_vector_axes"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "pdf-axis-query",
+                "query": "2024년 연결 손익계산서 영업이익은 얼마야?",
+                "answerability": "answerable",
+                "track": "pdf_business_ocr_mm",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+        }
+    )
+    record = {
+        **weaviate_source_atom_record(
+            802,
+            text=(
+                "2024년 연결 손익계산서 영업실적 표에서 "
+                "영업이익 row_label=영업이익 column_label=2024년 value=12.3억원"
+            ),
+        ),
+        "source_family": "PDF",
+        "granularity": "table_row",
+        "retrieval_route": "pdf_table",
+        "title": "do-not-use-title-shortcut-999억원.pdf",
+        "page_number": "7",
+        "physical_page_index": "6",
+        "block_index": "14",
+        "bbox": "[72.0,260.0,510.0,318.0]",
+        "region_type": "table",
+        "section_title": "연결 손익계산서",
+        "table_caption": "영업실적 표",
+        "row_label": "영업이익",
+        "column_label": "2024년",
+        "locator_fingerprint": "pdf-locator-fp",
+        "source_file_name": "do-not-use-file-name-shortcut-999억원.pdf",
+        "file_name": "do-not-use-file-name-shortcut-999억원.pdf",
+    }
+    client = FakeWeaviateSourceAtomClient(objects=[source_atom_record_from_mapping(record, config)])
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=3,
+        run_id="pdf_vector_axes",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    context = row["retrieved_contexts"][0]
+    selected = row["evidence_gate"]["selected_evidence"][0]
+    assert context["page_number"] == "7"
+    assert context["section_title"] == "연결 손익계산서"
+    assert context["table_caption"] == "영업실적 표"
+    assert context["row_label"] == "영업이익"
+    assert context["column_label"] == "2024년"
+    assert selected["page_number"] == "7"
+    assert selected["section_title"] == "연결 손익계산서"
+    assert selected["table_caption"] == "영업실적 표"
+    metadata_text, metadata_fields = actual_rag_eval.source_derived_evidence_metadata(selected)
+    assert "page_number=7" in metadata_text
+    assert "section_title=연결 손익계산서" in metadata_text
+    assert "table_caption=영업실적 표" in metadata_text
+    assert "title" not in metadata_fields
+    assert "file_name" not in metadata_fields
+    assert "source_file_name" not in metadata_fields
+    assert report["evidence_gate"]["allowed_answer_count"] == 1
+    primary_queries = [query for query in client.query_log if query["mode"] != "neighbor_by_id"]
+    assert primary_queries
+    assert all(query["query_text"] for query in primary_queries)
+    query_payload = json.dumps(client.query_log, ensure_ascii=False)
+    assert "12.3억원" not in query_payload
+    assert "999억원" not in query_payload
+    assert "do-not-use-title-shortcut" not in query_payload
+    assert "do-not-use-file-name-shortcut" not in query_payload
+    assert "expected_answer" not in query_payload
+    assert "expected_evidence" not in query_payload
+    assert "qrels" not in query_payload
+    assert "labels" not in query_payload
+    assert "row_id" not in query_payload
+    assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_pdf_same_page_or_section_vector_expansion_is_bounded_by_source_owned_scope(tmp_path: Path) -> None:
+    class SamePageSensitiveWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(
+                {
+                    "mode": kwargs["mode"],
+                    "query_text": kwargs["query_text"],
+                    "vector_dim": len(kwargs.get("query_vector") or []),
+                    "filters": dict(kwargs["filters"]),
+                    "limit": int(kwargs["limit"]),
+                    "alpha": float(kwargs["alpha"]),
+                }
+            )
+            filters = dict(kwargs["filters"])
+            scoped = (
+                filters.get("source_family") == "PDF"
+                and filters.get("doc_id") == "doc-financial"
+                and filters.get("page_number") == "7"
+                and filters.get("table_caption") == "영업실적 표"
+            )
+            rows: list[dict] = []
+            for obj in self.objects:
+                if _filter_mismatch(obj, filters):
+                    continue
+                source_atom_id = obj.get("source_atom_id")
+                if scoped and source_atom_id == "srcatom-financial-operating-profit":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+                elif not scoped and source_atom_id == "srcatom-financial-table-summary":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+            return rows[: int(kwargs["limit"])]
+
+    def _filter_mismatch(obj: dict, filters: dict) -> bool:
+        for key, value in filters.items():
+            if not value:
+                continue
+            if isinstance(value, list):
+                if obj.get(key) not in value:
+                    return True
+            elif obj.get(key) != value:
+                return True
+        return False
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "pdf_same_page_scope"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "pdf-same-page",
+                "query": "2024년 보고서 도표 연결 손익계산서 영업이익은 얼마야?",
+                "answerability": "answerable",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    summary = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                811,
+                text="2024년 보고서 연결 손익계산서 영업실적 표는 주요 손익 항목을 제공한다.",
+            ),
+            "source_atom_id": "srcatom-financial-table-summary",
+            "evidence_bundle_id": "bundle-financial-table-summary",
+            "doc_id": "doc-financial",
+            "chunk_id": "chunk-financial-table-summary",
+            "source_family": "PDF",
+            "granularity": "table_summary",
+            "retrieval_route": "pdf_table",
+            "page_number": "7",
+            "section_title": "연결 손익계산서",
+            "table_caption": "영업실적 표",
+        },
+        config,
+    )
+    target = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                812,
+                text="2024년 연결 손익계산서 영업실적 표에서 영업이익은 12.3억원입니다.",
+            ),
+            "source_atom_id": "srcatom-financial-operating-profit",
+            "evidence_bundle_id": "bundle-financial-operating-profit",
+            "doc_id": "doc-financial",
+            "chunk_id": "chunk-financial-operating-profit",
+            "source_family": "PDF",
+            "granularity": "table_row",
+            "retrieval_route": "pdf_table",
+            "page_number": "7",
+            "physical_page_index": "6",
+            "block_index": "14",
+            "bbox": "[72.0,260.0,510.0,318.0]",
+            "region_type": "table",
+            "section_title": "연결 손익계산서",
+            "table_caption": "영업실적 표",
+            "row_label": "영업이익",
+            "column_label": "2024년",
+            "locator_fingerprint": "pdf-locator-fp",
+        },
+        config,
+    )
+    wrong_page = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                813,
+                text="2024년 다른 페이지 영업이익은 12.3억원입니다.",
+            ),
+            "source_atom_id": "srcatom-financial-wrong-page",
+            "evidence_bundle_id": "bundle-financial-wrong-page",
+            "doc_id": "doc-financial",
+            "chunk_id": "chunk-financial-wrong-page",
+            "source_family": "PDF",
+            "granularity": "table_row",
+            "retrieval_route": "pdf_table",
+            "page_number": "9",
+            "section_title": "별도 손익계산서",
+            "table_caption": "영업실적 표",
+            "row_label": "영업이익",
+            "column_label": "2024년",
+        },
+        config,
+    )
+    client = SamePageSensitiveWeaviateClient(objects=[summary, target, wrong_page])
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="pdf_same_page_scope",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    contexts = report["items"][0]["retrieved_contexts"]
+    scoped_queries = [
+        query
+        for query in client.query_log
+        if query["filters"].get("doc_id") == "doc-financial"
+        and query["filters"].get("page_number") == "7"
+        and query["filters"].get("table_caption") == "영업실적 표"
+    ]
+    assert scoped_queries
+    assert contexts[0]["source_atom_id"] == "srcatom-financial-operating-profit"
+    assert contexts[0]["pdf_scoped_expansion_policy"] == "bounded_source_owned_pdf_scope_weaviate_v1"
+    assert contexts[0]["pdf_scoped_expansion_scope_type"] == "same_table"
+    assert all(query["filters"]["source_family"] == "PDF" for query in scoped_queries)
+    assert all(query["filters"]["page_number"] == "7" for query in scoped_queries)
+    assert report["items"][0]["weaviate_pdf_scoped_expansion"]["added_count"] == 1
+    assert report["items"][0]["weaviate_pdf_scoped_expansion"]["uses_ids"] is False
+    assert report["items"][0]["weaviate_pdf_scoped_expansion"]["uses_protected_eval_ids"] is False
+    assert report["items"][0]["weaviate_pdf_scoped_expansion"]["uses_source_owned_scope_ids"] is True
+    assert report["weaviate_post_processing"]["pdf_scoped_expansion_added_count"] == 1
+    query_payload = json.dumps(client.query_log, ensure_ascii=False)
+    assert "12.3억원" not in query_payload
+    assert "expected_answer" not in query_payload
+    assert "expected_evidence" not in query_payload
+    assert "qrels" not in query_payload
+    assert "labels" not in query_payload
+    assert "row_id" not in query_payload
+    assert "target_id" not in query_payload
+    assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_pdf_scoped_expansion_query_uses_source_owned_axis_terms(tmp_path: Path) -> None:
+    class AxisSensitiveWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(
+                {
+                    "mode": kwargs["mode"],
+                    "query_text": kwargs["query_text"],
+                    "vector_dim": len(kwargs.get("query_vector") or []),
+                    "filters": dict(kwargs["filters"]),
+                    "limit": int(kwargs["limit"]),
+                    "alpha": float(kwargs["alpha"]),
+                }
+            )
+            filters = dict(kwargs["filters"])
+            query_text = str(kwargs["query_text"])
+            scoped = (
+                filters.get("source_family") == "PDF"
+                and filters.get("doc_id") == "doc-financial"
+                and filters.get("page_number") == "7"
+                and filters.get("table_caption") == "영업실적 표"
+            )
+            rows: list[dict] = []
+            for obj in self.objects:
+                if _filter_mismatch(obj, filters):
+                    continue
+                source_atom_id = obj.get("source_atom_id")
+                if scoped and source_atom_id == "srcatom-financial-operating-profit":
+                    if "영업이익" not in query_text:
+                        continue
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+                elif not scoped and source_atom_id == "srcatom-financial-table-summary":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+            return rows[: int(kwargs["limit"])]
+
+    def _filter_mismatch(obj: dict, filters: dict) -> bool:
+        for key, value in filters.items():
+            if not value:
+                continue
+            if isinstance(value, list):
+                if obj.get(key) not in value:
+                    return True
+            elif obj.get(key) != value:
+                return True
+        return False
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "pdf_source_axis_scope"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "pdf-source-axis-scope",
+                "query": "2024년 보고서 도표 해당 항목 금액은 얼마야?",
+                "answerability": "answerable",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    summary = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                814,
+                text="2024년 보고서 연결 손익계산서 영업실적 표는 주요 항목의 금액을 제공한다.",
+            ),
+            "source_atom_id": "srcatom-financial-table-summary",
+            "evidence_bundle_id": "bundle-financial-table-summary",
+            "doc_id": "doc-financial",
+            "chunk_id": "chunk-financial-table-summary",
+            "source_family": "PDF",
+            "granularity": "table_summary",
+            "retrieval_route": "pdf_table",
+            "page_number": "7",
+            "section_title": "연결 손익계산서",
+            "table_caption": "영업실적 표",
+            "row_label": "영업이익",
+            "column_label": "2024년",
+        },
+        config,
+    )
+    target = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                815,
+                text="2024년 연결 손익계산서 영업실적 표에서 영업이익은 12.3억원입니다.",
+            ),
+            "source_atom_id": "srcatom-financial-operating-profit",
+            "evidence_bundle_id": "bundle-financial-operating-profit",
+            "doc_id": "doc-financial",
+            "chunk_id": "chunk-financial-operating-profit",
+            "source_family": "PDF",
+            "granularity": "table_row",
+            "retrieval_route": "pdf_table",
+            "page_number": "7",
+            "physical_page_index": "6",
+            "block_index": "14",
+            "bbox": "[72.0,260.0,510.0,318.0]",
+            "region_type": "table",
+            "section_title": "연결 손익계산서",
+            "table_caption": "영업실적 표",
+            "row_label": "영업이익",
+            "column_label": "2024년",
+            "locator_fingerprint": "pdf-locator-fp",
+        },
+        config,
+    )
+    client = AxisSensitiveWeaviateClient(objects=[summary, target])
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="pdf_source_axis_scope",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    contexts = report["items"][0]["retrieved_contexts"]
+    scoped_queries = [
+        query
+        for query in client.query_log
+        if query["filters"].get("doc_id") == "doc-financial"
+        and query["filters"].get("page_number") == "7"
+        and query["filters"].get("table_caption") == "영업실적 표"
+    ]
+    assert scoped_queries
+    assert contexts[0]["source_atom_id"] == "srcatom-financial-operating-profit"
+    assert any("영업이익" in query["query_text"] for query in scoped_queries)
+    query_payload = json.dumps(client.query_log, ensure_ascii=False)
+    assert "12.3억원" not in query_payload
+    assert "expected_answer" not in query_payload
+    assert "expected_evidence" not in query_payload
+    assert "qrels" not in query_payload
+    assert "labels" not in query_payload
+    assert "row_id" not in query_payload
+    assert "target_id" not in query_payload
+    assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_pdf_selected_evidence_requires_value_and_page_section_axes_to_cooccur() -> None:
+    selected = select_composer_evidence(
+        "2024년 보고서 도표 연결 손익계산서 영업이익은 얼마야?",
+        [
+            {
+                "doc_id": "doc-pdf",
+                "chunk_id": "chunk-value-only",
+                "source_atom_id": "src-pdf-value-only",
+                "evidence_bundle_id": "bundle-pdf-value-only",
+                "source_family": "PDF",
+                "granularity": "table_row",
+                "text": "12.3억원",
+            },
+            {
+                "doc_id": "doc-pdf",
+                "chunk_id": "chunk-axis-only",
+                "source_atom_id": "src-pdf-axis-only",
+                "evidence_bundle_id": "bundle-pdf-axis-only",
+                "source_family": "PDF",
+                "granularity": "table_row",
+                "text": "2024년 보고서 도표 연결 손익계산서 영업이익 행입니다.",
+                "page_number": "7",
+                "section_title": "연결 손익계산서",
+                "table_caption": "영업실적 표",
+                "row_label": "영업이익",
+                "column_label": "2024년",
+            },
+            {
+                "doc_id": "doc-pdf",
+                "chunk_id": "chunk-value-axis",
+                "source_atom_id": "src-pdf-value-axis",
+                "evidence_bundle_id": "bundle-pdf-value-axis",
+                "source_family": "PDF",
+                "granularity": "table_row",
+                "text": "2024년 연결 손익계산서 영업실적 표에서 영업이익은 12.3억원입니다.",
+                "page_number": "7",
+                "section_title": "연결 손익계산서",
+                "table_caption": "영업실적 표",
+                "row_label": "영업이익",
+                "column_label": "2024년",
+            },
+        ],
+    )
+
+    assert [row["source_atom_id"] for row in selected] == ["src-pdf-value-axis"]
 
 
 def test_weaviate_v2_streaming_indexer_checkpoints_metadata_only_without_embedding(tmp_path: Path) -> None:
@@ -4010,6 +5621,14 @@ def test_source_native_corpus_loader_bridges_source_registry_structural_metadata
                     "sheet": "Approvals",
                     "range": "A2:D2",
                     "cell": "B2",
+                    "row_index_1based": 2,
+                    "row_label": "department=Ops | month=202602",
+                    "column_label": "approved_amount",
+                    "target_column": "approved_amount",
+                    "header_path": ["budget", "approved_amount"],
+                    "table_id": "approvals-main-table",
+                    "normalized_value": "15446522",
+                    "formula": "=SUM(B1:B6)",
                     "source_path": "D:/private/Budget.xlsx",
                     "stable_locator_fingerprint": "locator-sha",
                 },
@@ -4017,6 +5636,11 @@ def test_source_native_corpus_loader_bridges_source_registry_structural_metadata
                     "sheet": "Approvals",
                     "range": "A2:D2",
                     "cell": "B2",
+                    "row_label": "department=Ops | month=202602",
+                    "column_label": "approved_amount",
+                    "target_column": "approved_amount",
+                    "header_path": ["budget", "approved_amount"],
+                    "table_id": "approvals-main-table",
                     "locator_fingerprint": "locator-sha",
                 },
             }
@@ -4042,14 +5666,30 @@ def test_source_native_corpus_loader_bridges_source_registry_structural_metadata
     assert unit["metadata"]["sheet"] == "Approvals"
     assert unit["metadata"]["cell_range"] == "A2:D2"
     assert unit["metadata"]["cell"] == "B2"
+    assert unit["metadata"]["row_index_1based"] == "2"
+    assert unit["metadata"]["row_label"] == "department=Ops | month=202602"
+    assert unit["metadata"]["column_label"] == "approved_amount"
+    assert unit["metadata"]["target_column"] == "approved_amount"
+    assert unit["metadata"]["header_path"] == '["budget","approved_amount"]'
+    assert unit["metadata"]["table_id"] == "approvals-main-table"
     assert unit["metadata"]["locator_fingerprint"] == "locator-sha"
     assert record["sheet"] == "Approvals"
     assert record["cell_range"] == "A2:D2"
     assert record["cell"] == "B2"
+    assert record["row_index_1based"] == "2"
+    assert record["row_label"] == "department=Ops | month=202602"
+    assert record["column_label"] == "approved_amount"
+    assert record["target_column"] == "approved_amount"
+    assert record["header_path"] == '["budget","approved_amount"]'
+    assert record["table_id"] == "approvals-main-table"
     assert "D:/private/Budget.xlsx" not in serialized_unit
     assert "D:/private/Budget.xlsx" not in serialized_record
     assert "source_path" not in serialized_unit
     assert "source_path" not in serialized_record
+    assert "15446522" not in serialized_unit
+    assert "15446522" not in serialized_record
+    assert "=SUM" not in serialized_unit
+    assert "=SUM" not in serialized_record
 
 
 def test_weaviate_streaming_indexer_rejects_faiss_seeded_checkpoint(tmp_path: Path) -> None:
@@ -7758,6 +9398,329 @@ def test_run_eval_response_quality_summary_marks_silver_strict_metrics_not_appli
     assert output_file_names(output_dir) == ["report.json"]
 
 
+def test_xlsx_pdf_residual_breakdown_classifies_source_derived_failures_without_gold_fields(
+    tmp_path: Path,
+) -> None:
+    dataset = tmp_path / "gold29_xlsx_pdf_probe.jsonl"
+    context = tmp_path / "xlsx_pdf_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_pdf_residual_breakdown"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx-axis-missing",
+                "query": "2019년 2월 5호선 승차총승객수는 얼마야?",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            },
+            {
+                "id": "pdf-axis-missing",
+                "query": "2024년 영업이익 표의 값은 얼마야?",
+                "answerability": "answerable",
+                "track": "pdf_business_ocr_mm",
+            },
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx-axis-missing",
+                "generated_answer": "15,446,522명",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx",
+                        "chunk_id": "chunk-xlsx",
+                        "source_atom_id": "src-xlsx",
+                        "evidence_bundle_id": "bundle-xlsx",
+                        "source_family": "XLSX",
+                        "granularity": "table_row",
+                        "text": "2019년 2월 값은 15,446,522명입니다.",
+                        "sheet": "2019년 2월",
+                    }
+                ],
+                "citations": [
+                    {
+                        "doc_id": "doc-xlsx",
+                        "chunk_id": "chunk-xlsx",
+                        "source_atom_id": "src-xlsx",
+                        "evidence_bundle_id": "bundle-xlsx",
+                        "text": "2019년 2월 값은 15,446,522명입니다.",
+                    }
+                ],
+            },
+            {
+                "id": "pdf-axis-missing",
+                "generated_answer": "12.3억원",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-pdf",
+                        "chunk_id": "chunk-pdf",
+                        "source_atom_id": "src-pdf",
+                        "evidence_bundle_id": "bundle-pdf",
+                        "source_family": "PDF",
+                        "granularity": "page_text",
+                        "text": "2024년 값은 12.3억원입니다.",
+                        "page_number": 7,
+                    }
+                ],
+                "citations": [
+                    {
+                        "doc_id": "doc-pdf",
+                        "chunk_id": "chunk-pdf",
+                        "source_atom_id": "src-pdf",
+                        "evidence_bundle_id": "bundle-pdf",
+                        "text": "2024년 값은 12.3억원입니다.",
+                    }
+                ],
+            },
+        ],
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_pdf_residual_breakdown",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    breakdown = report["xlsx_pdf_residual_breakdown"]
+    assert breakdown["schema_version"] == "actual_rag_eval.xlsx_pdf_residual_breakdown.v1"
+    assert breakdown["enabled"] is True
+    assert breakdown["report_only_diagnostic"] is True
+    assert breakdown["official_metric"] is False
+    assert breakdown["official_metric_input_rows"] == 0
+    assert breakdown["uses_expected_fields"] is False
+    assert breakdown["uses_gold_fields"] is False
+    assert breakdown["uses_qrels"] is False
+    assert breakdown["uses_labels"] is False
+    assert breakdown["uses_ids"] is False
+    assert breakdown["classification_counts"] == {"selected_evidence_has_value_missing_axis": 2}
+    rows_by_id = {row["item_id"]: row for row in breakdown["rows"]}
+    assert rows_by_id["xlsx-axis-missing"]["source_family"] == "XLSX"
+    assert rows_by_id["xlsx-axis-missing"]["source_axis_fields_present"] == ["sheet"]
+    assert rows_by_id["xlsx-axis-missing"]["source_axis_fields_missing"] == [
+        "cell",
+        "cell_range",
+        "column_label",
+        "header",
+        "header_path",
+        "row_index_1based",
+        "row_label",
+        "table_id",
+        "target_column",
+    ]
+    assert rows_by_id["pdf-axis-missing"]["source_family"] == "PDF"
+    assert rows_by_id["pdf-axis-missing"]["source_axis_fields_present"] == ["page_number"]
+    assert rows_by_id["pdf-axis-missing"]["source_axis_fields_missing"] == [
+        "bbox",
+        "block_index",
+        "column_label",
+        "row_label",
+        "section_title",
+        "table_caption",
+    ]
+    assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_xlsx_pdf_residual_breakdown_rejects_forbidden_shortcut_fields(tmp_path: Path) -> None:
+    dataset = tmp_path / "forbidden_shortcuts.jsonl"
+    context = tmp_path / "forbidden_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_pdf_forbidden_shortcuts"
+    forbidden_fields = {
+        "expected_answer": "15,446,522명",
+        "expected_evidence": [{"chunk_id": "gold-chunk", "text": "5호선 승차총승객수"}],
+        "qrels": {"doc-xlsx": 1},
+        "labels": ["answerable"],
+        "query_id": "gold-query-id",
+        "row_id": "gold-row-id",
+        "target_id": "gold-target-id",
+        "gold_locator": "Sheet1!B7",
+        "target_locator": "Sheet1!B7",
+        "normalized_value": "15446522",
+        "formula": "=SUM(B1:B6)",
+    }
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "forbidden-xlsx",
+                "query": "2019년 2월 5호선 승차총승객수는 얼마야?",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+                **forbidden_fields,
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "forbidden-xlsx",
+                "generated_answer": "15,446,522명",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx",
+                        "chunk_id": "chunk-xlsx",
+                        "source_atom_id": "src-xlsx",
+                        "evidence_bundle_id": "bundle-xlsx",
+                        "source_family": "XLSX",
+                        "text": "이 문장은 질의 축이나 값 근거를 제공하지 않습니다.",
+                        **forbidden_fields,
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_pdf_forbidden_shortcuts",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    breakdown = report["xlsx_pdf_residual_breakdown"]
+    row = breakdown["rows"][0]
+    assert breakdown["uses_expected_fields"] is False
+    assert breakdown["uses_gold_fields"] is False
+    assert breakdown["uses_qrels"] is False
+    assert breakdown["uses_labels"] is False
+    assert breakdown["uses_ids"] is False
+    assert breakdown["forbidden_shortcut_fields_used"] == []
+    assert row["classification"] in {"candidate_present_anchor_missing", "selected_evidence_absent"}
+    ignored_fields = set(row["forbidden_shortcut_fields_ignored"])
+    assert set(forbidden_fields).issubset(ignored_fields)
+    assert ignored_fields.issubset({*forbidden_fields, "answerability"})
+    assert set(forbidden_fields).issubset(set(breakdown["forbidden_shortcut_fields_seen"]))
+    assert row["forbidden_shortcut_fields_used"] == []
+    row_payload = json.dumps(row, ensure_ascii=False)
+    assert "15446522" not in row_payload
+    assert "=SUM" not in row_payload
+    assert "gold-query-id" not in row_payload
+    assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_xlsx_pdf_residual_breakdown_excludes_supported_allowed_rows() -> None:
+    row = {
+        "id": "supported-xlsx",
+        "generated_answer": "15,446,522명",
+        "evidence_gate": {
+            "evidence_package_status": "sufficient",
+            "answer_gate_decision": "allow_answer",
+            "validation_reasons": [],
+            "retrieved_evidence_candidates": [
+                {
+                    "source_family": "XLSX",
+                    "text": "2019년 2월 5호선 승차총승객수는 15,446,522명입니다.",
+                    "sheet": "2019년 2월",
+                    "cell_range": "A7:J7",
+                    "cell": "F7",
+                    "row_index_1based": "7",
+                    "row_label": "5호선",
+                    "column_label": "승차총승객수",
+                    "target_column": "승차총승객수",
+                    "header_path": "승하차 > 승차총승객수",
+                    "table_id": "sheet-201902-main-table",
+                }
+            ],
+            "selected_evidence": [
+                {
+                    "source_family": "XLSX",
+                    "text": "2019년 2월 5호선 승차총승객수는 15,446,522명입니다.",
+                    "sheet": "2019년 2월",
+                    "cell_range": "A7:J7",
+                    "cell": "F7",
+                    "row_index_1based": "7",
+                    "row_label": "5호선",
+                    "column_label": "승차총승객수",
+                    "target_column": "승차총승객수",
+                    "header_path": "승하차 > 승차총승객수",
+                    "table_id": "sheet-201902-main-table",
+                }
+            ],
+        },
+    }
+
+    breakdown = actual_rag_eval.build_xlsx_pdf_residual_breakdown(items=[], rows=[row])
+
+    assert breakdown["classification_counts"] == {}
+    assert breakdown["rows"] == []
+    assert breakdown["excluded_classification_counts"] == {"no_residual": 1}
+    assert breakdown["uses_ids"] is False
+
+
+def test_xlsx_pdf_residual_breakdown_does_not_use_item_id_track_fallback() -> None:
+    item = actual_rag_eval.EvalItem(
+        id="track-only-xlsx",
+        query="2019년 2월 5호선 승차총승객수는 얼마야?",
+        source_row={"track": "xlsx_business_structured"},
+    )
+    row = {
+        "id": "track-only-xlsx",
+        "generated_answer": "제공된 근거만으로는 답할 수 없습니다.",
+        "evidence_gate": {
+            "evidence_package_status": "insufficient",
+            "answer_gate_decision": "block_answer",
+            "validation_reasons": ["missing_query_anchor"],
+            "retrieved_evidence_candidates": [],
+            "selected_evidence": [],
+        },
+    }
+
+    breakdown = actual_rag_eval.build_xlsx_pdf_residual_breakdown(items=[item], rows=[row])
+
+    assert breakdown["uses_ids"] is False
+    assert breakdown["classification_counts"] == {}
+    assert breakdown["rows"] == []
+    assert breakdown["excluded_classification_counts"] == {"not_xlsx_pdf": 1}
+
+
+def test_xlsx_pdf_residual_breakdown_date_only_text_is_not_value_evidence() -> None:
+    row = {
+        "id": "xlsx-date-only",
+        "generated_answer": "2019년 2월 5호선입니다.",
+        "evidence_gate": {
+            "evidence_package_status": "insufficient",
+            "answer_gate_decision": "block_answer",
+            "validation_reasons": ["missing_numeric_or_date_anchor"],
+            "retrieved_evidence_candidates": [
+                {
+                    "source_family": "XLSX",
+                    "text": "2019년 2월 5호선 행입니다.",
+                    "sheet": "2019년 2월",
+                    "row_label": "5호선",
+                }
+            ],
+            "selected_evidence": [
+                {
+                    "source_family": "XLSX",
+                    "text": "2019년 2월 5호선 행입니다.",
+                    "sheet": "2019년 2월",
+                    "row_label": "5호선",
+                }
+            ],
+        },
+    }
+
+    breakdown = actual_rag_eval.build_xlsx_pdf_residual_breakdown(items=[], rows=[row])
+
+    assert breakdown["classification_counts"] == {"selected_evidence_has_axis_missing_value": 1}
+    assert breakdown["rows"][0]["classification"] == "selected_evidence_has_axis_missing_value"
+    assert breakdown["rows"][0]["selected_evidence_value_anchor_present"] is False
+
+
 def test_select_composer_evidence_uses_source_derived_xlsx_metadata_without_shortcuts() -> None:
     selected = select_composer_evidence(
         "2019년 2월 5호선 승차총승객수는 얼마야?",
@@ -8531,6 +10494,96 @@ def test_evidence_gate_does_not_use_title_or_workbook_metadata_as_support() -> N
     assert summary["insufficient_evidence_abstained_count"] == 1
 
 
+def test_evidence_gate_does_not_use_xlsx_cell_axis_as_answer_value_support() -> None:
+    raw_outputs = [
+        {
+            "id": "q-xlsx-cell-axis-only",
+            "query": "2019년 2월 5호선 승차총승객수는 얼마야?",
+            "generated_answer": "F7입니다.",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-xlsx",
+                    "chunk_id": "chunk-xlsx",
+                    "source_atom_id": "src-xlsx",
+                    "evidence_bundle_id": "bundle-xlsx",
+                    "source_family": "XLSX",
+                    "text": "2019년 2월 5호선 승차총승객수 항목입니다.",
+                    "sheet": "2019년 2월",
+                    "cell": "F7",
+                    "row_label": "5호선",
+                    "column_label": "승차총승객수",
+                }
+            ],
+            "citations": [
+                {
+                    "doc_id": "doc-xlsx",
+                    "chunk_id": "chunk-xlsx",
+                    "source_atom_id": "src-xlsx",
+                    "evidence_bundle_id": "bundle-xlsx",
+                    "source_family": "XLSX",
+                    "text": "2019년 2월 5호선 승차총승객수 항목입니다.",
+                    "sheet": "2019년 2월",
+                    "cell": "F7",
+                    "row_label": "5호선",
+                    "column_label": "승차총승객수",
+                }
+            ],
+        }
+    ]
+
+    gated_outputs, summary = apply_evidence_gate_to_outputs(raw_outputs, mode="enforce")
+
+    assert gated_outputs[0]["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
+    assert gated_outputs[0]["answer_gate_decision"] == "block_unsupported_answer"
+    assert gated_outputs[0]["evidence_gate"]["evidence_package_status"] == "insufficient"
+    assert summary["allowed_answer_count"] == 0
+    assert summary["insufficient_evidence_abstained_count"] == 1
+
+
+def test_evidence_gate_does_not_use_pdf_page_axis_as_answer_value_support() -> None:
+    raw_outputs = [
+        {
+            "id": "q-pdf-page-axis-only",
+            "query": "2024년 영업이익 표의 값은 얼마야?",
+            "generated_answer": "7입니다.",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-pdf",
+                    "chunk_id": "chunk-pdf",
+                    "source_atom_id": "src-pdf",
+                    "evidence_bundle_id": "bundle-pdf",
+                    "source_family": "PDF",
+                    "text": "2024년 영업이익 표 항목입니다.",
+                    "page_number": "7",
+                    "table_caption": "영업실적 표",
+                    "bbox": "[10,20,30,40]",
+                }
+            ],
+            "citations": [
+                {
+                    "doc_id": "doc-pdf",
+                    "chunk_id": "chunk-pdf",
+                    "source_atom_id": "src-pdf",
+                    "evidence_bundle_id": "bundle-pdf",
+                    "source_family": "PDF",
+                    "text": "2024년 영업이익 표 항목입니다.",
+                    "page_number": "7",
+                    "table_caption": "영업실적 표",
+                    "bbox": "[10,20,30,40]",
+                }
+            ],
+        }
+    ]
+
+    gated_outputs, summary = apply_evidence_gate_to_outputs(raw_outputs, mode="enforce")
+
+    assert gated_outputs[0]["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
+    assert gated_outputs[0]["answer_gate_decision"] == "block_unsupported_answer"
+    assert gated_outputs[0]["evidence_gate"]["evidence_package_status"] == "insufficient"
+    assert summary["allowed_answer_count"] == 0
+    assert summary["insufficient_evidence_abstained_count"] == 1
+
+
 def test_validate_actual_rag_guardrails_rejects_semantic_raw_response_without_evidence_gate() -> None:
     summary = {
         "run_id": "raw-response-guard",
@@ -9225,7 +11278,7 @@ def test_evidence_mapping_packet_files_human_fields_and_summary_counts(tmp_path:
                         "doc_id": "doc-wrong",
                         "chunk_id": "chunk-2006",
                         "score": 0.8,
-                        "text": "PDF source text 다른 만화 TV 애니메이션 제3기 방영 시기는 2006년 10월입니다.",
+                        "text": "PDF source text 다른 만화 TV 애니메이션 방영 시기는 2006년 10월입니다.",
                         "source_family": "PDF",
                         "source_kind": "source_derived_semantic_snippet",
                     }

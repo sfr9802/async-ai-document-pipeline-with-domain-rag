@@ -22,7 +22,7 @@ from typing import Any, Iterable, Mapping
 
 AI_WORKER_ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = AI_WORKER_ROOT.parent
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 
 DEFAULT_REPORT = REPORT_DIR / "rag_pdf_xlsx_answer_shape_local_llm_report.json"
 DEFAULT_CSV = REPORT_DIR / "rag_pdf_xlsx_answer_shape_local_llm.csv"

@@ -14,12 +14,12 @@ silver_only_diagnostic_inputs:
     - ai/eval/review/gold_silver_tuning/silver_pdf_file_lookup_positive_train.csv
     - ai/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv
   diagnostic_shadow:
-    - ai/eval/reports/rag-ingestion/ocr_shadow_small_sample_report.json
-    - ai/eval/reports/rag-ingestion/idp_shadow_small_sample_report.json
-    - ai/eval/reports/rag-ingestion/multimodal_shadow_small_sample_report.json
+    - reports/rag_eval/rag-ingestion/ocr_shadow_small_sample_report.json
+    - reports/rag_eval/rag-ingestion/idp_shadow_small_sample_report.json
+    - reports/rag_eval/rag-ingestion/multimodal_shadow_small_sample_report.json
   answer_recovery_expanded_input:
-    - ai/eval/reports/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
-    - ai/eval/reports/rag-ingestion/answer_recovery_expanded_trace.jsonl
+    - reports/rag_eval/rag-ingestion/answer_sufficiency_expanded_diagnostic_report.json
+    - reports/rag_eval/rag-ingestion/answer_recovery_expanded_trace.jsonl
 
 excluded_frozen_gold_ids:
   source_files:
@@ -189,10 +189,10 @@ variants:
     diagnostic_only_support: enabled
 
 report_paths:
-  calibration_report_md: ai/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_report.md
-  calibration_report_json: ai/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_report.json
-  variants_csv: ai/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_variants.csv
-  selected_policy_json: ai/eval/reports/rag-ingestion/answer_recovery_narrow_calibration_selected_policy.json
+  calibration_report_md: reports/rag_eval/rag-ingestion/answer_recovery_narrow_calibration_report.md
+  calibration_report_json: reports/rag_eval/rag-ingestion/answer_recovery_narrow_calibration_report.json
+  variants_csv: reports/rag_eval/rag-ingestion/answer_recovery_narrow_calibration_variants.csv
+  selected_policy_json: reports/rag_eval/rag-ingestion/answer_recovery_narrow_calibration_selected_policy.json
 
 guardrail_assertions:
   official_denominator_registry_changed: false

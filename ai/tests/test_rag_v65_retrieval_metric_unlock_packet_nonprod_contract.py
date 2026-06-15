@@ -20,7 +20,7 @@ ROLLBACK_KEY = "v6_4_e2e_coverage_and_failure_taxonomy_nonprod"
 V7_0_RUN_KEY = "v7_0_e2e_eval_architecture_closeout_nonprod"
 V701_RUN_KEY = "v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod"
 STATUS = "V6_5_RETRIEVAL_METRIC_UNLOCK_PACKET_NONPROD_READY"
-V5_5_ROOT = Path("ai/eval/reports/rag-ingestion/runs/v5_5")
+V5_5_ROOT = Path("reports/rag_eval/rag-ingestion/runs/v5_5")
 V5_5_ARTIFACTS = {
     "official_metric_input": V5_5_ROOT / "official_metric_input.jsonl",
     "user_approved_gold_packet": V5_5_ROOT / "user_approved_gold_packet.jsonl",
@@ -405,7 +405,7 @@ def test_single_primary_report_status_docs_and_hash_contract(
     v65_module.append_status(tmp_path, written, artifact_hashes=hashes)
     v65_module.require_status_report_hash(tmp_path, written)
 
-    run_root = tmp_path / "ai/eval/reports/rag-ingestion/runs" / RUN_KEY
+    run_root = tmp_path / "reports/rag_eval/rag-ingestion/runs" / RUN_KEY
     assert (run_root / "report.json").exists()
     assert set(path.name for path in run_root.iterdir()) == {"report.json"}
     assert written["consolidated_report_policy"]["primary_report_only"] is True
@@ -415,7 +415,7 @@ def test_single_primary_report_status_docs_and_hash_contract(
 
     status_rows = [
         json.loads(line)
-        for line in (tmp_path / "ai/eval/reports/rag-ingestion/status.jsonl").read_text(encoding="utf-8").splitlines()
+        for line in (tmp_path / "reports/rag_eval/rag-ingestion/status.jsonl").read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
     assert status_rows[-1]["logical_run_key"] == RUN_KEY

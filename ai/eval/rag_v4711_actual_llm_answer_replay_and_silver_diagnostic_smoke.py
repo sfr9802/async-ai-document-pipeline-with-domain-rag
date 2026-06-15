@@ -21,7 +21,7 @@ CANONICAL_LONG_RUN_ID = (
 )
 STATUS = "V4_7_11_ACTUAL_LLM_ANSWER_REPLAY_AND_SILVER_DIAGNOSTIC_SMOKE_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 SHORT_REPORT_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
 ANSWER_REVIEW_PACKET_JSONL_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "answer_review_packet_ko.jsonl"

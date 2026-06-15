@@ -9,6 +9,20 @@ RAG runtime into tool-style policy and trace records for technical analysis; it
 does not create an autonomous agent framework, mutate gold labels, or claim
 production readiness.
 
+## Portfolio freeze v1 기준
+
+`portfolio-freeze-v1`은 신규 기능이나 평가 점수 개선이 아니라, 현재 repo
+artifact에 맞춘 제출용 claim 정리 기준입니다.
+
+| 항목 | 현재 기준 |
+|---|---|
+| 기준 report | `reports/rag_eval/latest.json` -> `actual_rag_eval_query_formulation_v3_agentic_guard_nonprod_20260614_v4/report.json` |
+| 핵심 claim | 검색 후보와 실제 답변 근거 분리, SourceAtom/EvidenceBundle citation verification, fail-closed response policy, trace/report 기반 검증 |
+| Agent 표현 | 완성된 autonomous agent가 아니라, agent-ready/agentic system boundary에 필요한 검색·근거·응답 제어 기반 |
+| Actual Response Smoke | answer quality score가 아니라 response policy smoke. 29개 승인 질의에서 10개 answered/citation-verified, 19개 stopped/fail_closed로 기록 |
+| XLSX 표현 | sheet/range/cell/axis locator와 citation 구조는 설명 가능. 현재 smoke 기준으로 XLSX-wide success claim은 하지 않음 |
+| 금지 claim | production readiness, live readiness, product success, official metric, broader agent loop opened/ready |
+
 ## 프로젝트 개요
 
 | 항목 | 내용 |
@@ -16,7 +30,7 @@ production readiness.
 | 프로젝트 성격 | 문서 검색·질의응답 AI 파이프라인 |
 | 처리 문서 | TEXT, PDF, XLSX |
 | 핵심 기능 | 문서 파싱, OCR, 검색 인덱싱, RAG 답변 생성, citation 표시 |
-| 주요 기술 | Spring Boot, FastAPI, Python, PostgreSQL, Redis, FAISS, React/Vite |
+| 주요 기술 | Spring Boot, FastAPI, Python, PostgreSQL, Redis, Weaviate, FAISS, React/Vite |
 | 구현 방향 | 긴 AI 작업은 비동기 job으로 처리하고, 답변의 원문 근거는 추적 가능한 evidence 구조로 관리 |
 
 ## 핵심 목표
@@ -34,7 +48,7 @@ AI 문서 검색에서 중요한 것은 답변의 자연스러움만이 아닙�
 | citation 제공 | 답변에 사용된 PDF page, XLSX sheet/cell, TEXT chunk 정보를 함께 반환 |
 | 비동기 작업 처리 | OCR, 인덱싱, RAG처럼 오래 걸리는 작업을 job pipeline으로 분리 |
 
-## RAG 응답 품질 예시
+## RAG 응답/근거 예시
 
 아래 예시는 전체 성능 지표를 대체하기 위한 벤치마크가 아니라, 이 프로젝트가 문서 유형별로 어떤 질문을 처리하고 어떤 근거를 함께 반환하는지 보여주는 대표 샘플입니다.
 
@@ -48,6 +62,10 @@ AI 문서 검색에서 중요한 것은 답변의 자연스러움만이 아닙�
 | 2024년 수출입차 금액은 얼마인가요? | 2024년 수출입차 금액은 6,836.1입니다. | 최근경제동향 PDF p.61 | PDF 내 경제지표 표에서 질문 항목과 연도를 매칭 |
 
 ### XLSX 문서 질의
+
+아래 XLSX 행은 셀 단위 citation 구조 예시입니다. 현재 `Actual Response Smoke`
+정책과 충돌하지 않도록, XLSX 전반의 응답 성공률이나 품질 성공 claim으로
+해석하지 않습니다.
 
 | 질문 | 응답 | 근거 | 확인 가능한 점 |
 |---|---|---|---|
@@ -115,10 +133,10 @@ flowchart LR
 | 문서 등록 및 작업 관리 | 문서 처리 job 생성, 상태 조회, 결과 artifact 조회 |
 | 비동기 AI 처리 | Redis signal 기반 worker dispatch, callback delivery, job 상태 추적 |
 | 문서 파싱 | TEXT chunking, PDF text/table 처리, XLSX workbook 구조 및 display value 추출 |
-| 검색 인덱싱 | SearchUnit/SearchView 기반 검색 단위 구성, FAISS 기반 retrieval |
+| 검색 인덱싱 | SearchUnit/SearchView 후보 구성, Weaviate route-selected retrieval, FAISS diagnostic baseline |
 | RAG 답변 생성 | 검색 결과를 기반으로 답변 생성 및 citation artifact 구성 |
 | 근거 추적 | PDF page, XLSX sheet/range/cell, TEXT chunk 단위의 evidence 관리 |
-| 평가 도구 | answer/citation scorer, retrieval smoke metric, diagnostic-only 결과 관리 |
+| 평가 도구 | citation/evidence gate, response policy smoke, retrieval diagnostics, diagnostic-only 결과 관리 |
 | 화면 구성 | React/Vite 기반 작업 목록, 상태 timeline, 결과 preview 화면 |
 
 ## 해결한 문제
@@ -191,11 +209,13 @@ PDF 문서에서는 본문 텍스트뿐 아니라 표 안의 값이 답변 근�
 
 ## 저장소 artifact 관리
 
-이 저장소는 코드와 진단 evidence를 의도적으로 분리합니다. 현재 RAG 진단 `current`는 `v6_9_answer_quality_gate_packet_nonprod`이며, `ai/eval/reports/rag-ingestion/**` 아래의 `report.json`, `status.jsonl`, run sidecar는 대부분 generated/local-only diagnostic artifact입니다.
+이 저장소는 코드와 진단 evidence를 의도적으로 분리합니다. `portfolio-freeze-v1` 기준 latest pointer는 `reports/rag_eval/latest.json`과 `reports/rag_eval/latest_text_gold.json`이며, 현재 둘 다 `actual_rag_eval_query_formulation_v3_agentic_guard_nonprod_20260614_v4`를 가리킵니다. `reports/rag_eval/rag-ingestion/**` 아래의 `report.json`, `status.jsonl`, run sidecar는 대부분 generated/local-only diagnostic artifact입니다.
+
+보고서 루트는 역할별로 나눕니다. `reports/`에는 작은 public portfolio artifact allowlist만 추적하고, `reports/rag_eval/`은 ignored actual-RAG machine report/latest namespace로 둡니다. `reports/rag_eval/rag-ingestion/`은 legacy/current diagnostic ladder와 short-key check evidence를 보존하는 ignored namespace이며, 현재 diagnostic ladder alias는 `v6_9_answer_quality_gate_packet_nonprod`입니다. 사람이 읽는 canonical 상태는 `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, `docs/rag-ingestion-triage.md`에 남깁니다. 새 스크립트는 이 경로를 직접 하드코딩하지 말고 `ai/eval/report_paths.py`의 상수를 사용합니다.
 
 정리 기준은 보수적입니다. active source, 테스트, README/docs, registry/runner, gold/qrels/official denominator/eval query/source registry/index/silver 표면은 보존합니다. 삭제가 애매한 legacy 또는 diagnostic bundle은 hold로 남기며, 해시 검증된 외부 archive 없이 bulk-delete하지 않습니다. 안전 삭제 대상은 `.pytest_cache`, `__pycache__`, bytecode, `core-api/target`, `frontend/app/dist`처럼 재생성 가능한 transient cache/build output으로 제한합니다.
 
-최신 정리 근거는 [`docs/rag-ingestion-progress.md`](docs/rag-ingestion-progress.md), [`docs/rag-ingestion-measurements.md`](docs/rag-ingestion-measurements.md), [`docs/rag-ingestion-triage.md`](docs/rag-ingestion-triage.md), 그리고 generated report `ai/eval/reports/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json`에 남깁니다.
+최신 정리 근거는 [`docs/rag-ingestion-progress.md`](docs/rag-ingestion-progress.md), [`docs/rag-ingestion-measurements.md`](docs/rag-ingestion-measurements.md), [`docs/rag-ingestion-triage.md`](docs/rag-ingestion-triage.md), 그리고 generated report `reports/rag_eval/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json`에 남깁니다.
 
 ## 라이선스와 외부 데이터
 

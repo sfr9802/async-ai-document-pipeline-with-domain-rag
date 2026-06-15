@@ -1556,12 +1556,12 @@ def output_paths(config: Mapping[str, Any]) -> dict[str, Path]:
     defaults = {
         "enriched_json": AI_WORKER_ROOT / "eval" / "review" / "retrieval_dataset_supplementation" / "existing_manifest_license_enriched.json",
         "enriched_csv": AI_WORKER_ROOT / "eval" / "review" / "retrieval_dataset_supplementation" / "existing_manifest_license_enriched.csv",
-        "gate_md": AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "existing_manifest_license_usage_gate.md",
-        "gate_json": AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "existing_manifest_license_usage_gate.json",
-        "summary_by_source_md": AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "existing_manifest_license_summary_by_source.md",
-        "summary_by_source_json": AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "existing_manifest_license_summary_by_source.json",
-        "readiness_md": AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "existing_manifest_experiment_readiness.md",
-        "readiness_json": AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion" / "existing_manifest_experiment_readiness.json",
+        "gate_md": AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "existing_manifest_license_usage_gate.md",
+        "gate_json": AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "existing_manifest_license_usage_gate.json",
+        "summary_by_source_md": AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "existing_manifest_license_summary_by_source.md",
+        "summary_by_source_json": AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "existing_manifest_license_summary_by_source.json",
+        "readiness_md": AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "existing_manifest_experiment_readiness.md",
+        "readiness_json": AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion" / "existing_manifest_experiment_readiness.json",
         "review_required_csv": AI_WORKER_ROOT / "eval" / "review" / "retrieval_dataset_supplementation" / "license_review_required_rows.csv",
     }
     return {key: resolve_path(str(outputs.get(key) or value)) for key, value in defaults.items()}

@@ -121,12 +121,12 @@ def v4_6_readiness_report() -> dict[str, object]:
         },
         "source_report_inputs": {
             "v4_5": {
-                "source_report_json": "ai/eval/reports/rag-ingestion/quality/v4_5/report.json",
+                "source_report_json": "reports/rag_eval/rag-ingestion/quality/v4_5/report.json",
                 "source_report_sha256": "v45-sha",
                 "source_report_exists": True,
             },
             "v4_5_3": {
-                "source_report_json": "ai/eval/reports/rag-ingestion/quality/v4_5_3/report.json",
+                "source_report_json": "reports/rag_eval/rag-ingestion/quality/v4_5_3/report.json",
                 "source_report_sha256": "v453-sha",
                 "source_report_exists": True,
             },
@@ -316,13 +316,13 @@ def v4_6_6_holdout_gap_blocker_report() -> dict[str, object]:
         },
         "source_report_inputs": {
             "v4_6": {
-                "source_report_json": "ai/eval/reports/rag-ingestion/quality/v4_6/report.json",
+                "source_report_json": "reports/rag_eval/rag-ingestion/quality/v4_6/report.json",
                 "source_report_sha256": "v46-sha",
                 "source_report_exists": True,
                 "source_report_boundary_flags_clean": True,
             },
             "v4_6_5": {
-                "source_report_json": "ai/eval/reports/rag-ingestion/quality/v4_6_5/report.json",
+                "source_report_json": "reports/rag_eval/rag-ingestion/quality/v4_6_5/report.json",
                 "source_report_sha256": "v465-sha",
                 "source_report_exists": True,
                 "source_report_boundary_flags_clean": True,
@@ -576,7 +576,7 @@ def v4_6_12_runtime_replay_route_parity_report() -> dict[str, object]:
         "source_report_inputs": {
             "v4_6_10": {
                 "source_report_json": (
-                    "ai/eval/reports/rag-ingestion/quality/"
+                    "reports/rag_eval/rag-ingestion/quality/"
                     "official_answer_citation_agentic_loop_run_v4_6_10_external_holdout_candidate_manifest_gate_replay_nonprod/"
                     "report.json"
                 ),

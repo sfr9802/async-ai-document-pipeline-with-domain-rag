@@ -36,7 +36,7 @@ from rag_local_llm_expected_answer_generation_v1 import (  # noqa: E402
 from rag_question_quality_gate_v1 import NATURAL_LANGUAGE_QUESTION, classify_question  # noqa: E402
 
 
-REPORT_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+REPORT_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review"
 
 DEFAULT_VECTOR_REPORT = REPO_ROOT / "reports" / "rag_retrieval_eval_pdf_vector_diagnostic_report.json"

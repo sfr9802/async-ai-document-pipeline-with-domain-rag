@@ -26,9 +26,9 @@ from scripts.run_phase7_v4_silver_regen_dry_run import (
 log = logging.getLogger("scripts.run_phase7_v4_human_gold_seed50")
 
 DEFAULT_INPUT = Path(
-    "eval/reports/phase7/7.10_silver_regen_full/queries_v4_silver_500.jsonl"
+    "reports/rag_eval/phase7/7.10_silver_regen_full/queries_v4_silver_500.jsonl"
 )
-DEFAULT_REPORT_DIR = Path("eval/reports/phase7/7.11_human_gold_seed_50")
+DEFAULT_REPORT_DIR = Path("reports/rag_eval/phase7/7.11_human_gold_seed_50")
 DEFAULT_BUCKET_TARGETS = {
     "main_work": 15,
     "subpage_generic": 22,

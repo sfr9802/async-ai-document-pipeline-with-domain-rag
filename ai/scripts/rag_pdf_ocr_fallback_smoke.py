@@ -37,7 +37,7 @@ from rag_pdf_ingestion_smoke import (  # noqa: E402
 )
 
 
-DEFAULT_REPORT = Path("eval/reports/rag-ingestion/rag_pdf_ocr_fallback_smoke_report.json")
+DEFAULT_REPORT = Path("reports/rag_eval/rag-ingestion/rag_pdf_ocr_fallback_smoke_report.json")
 
 
 def main(argv: list[str] | None = None) -> int:

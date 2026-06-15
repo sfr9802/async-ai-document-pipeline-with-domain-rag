@@ -101,5 +101,5 @@ lanes:
         path: ai/eval/review/gold_silver_tuning/silver_pdf_file_lookup_hard_negative_v2.csv
 
 outputs:
-  json: ai/eval/reports/rag-ingestion/retrieval_corpus_diversity_profile.json
-  markdown: ai/eval/reports/rag-ingestion/retrieval_corpus_diversity_profile.md
+  json: reports/rag_eval/rag-ingestion/retrieval_corpus_diversity_profile.json
+  markdown: reports/rag_eval/rag-ingestion/retrieval_corpus_diversity_profile.md

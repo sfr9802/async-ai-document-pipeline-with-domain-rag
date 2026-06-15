@@ -44,7 +44,7 @@ CLEANUP_HANDOFF_INTEGRITY_NOTE = {
     ],
 }
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 SHORT_REPORT_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
 SOURCE_LOGICAL_RUN_KEY = v520.LOGICAL_RUN_KEY
@@ -723,10 +723,10 @@ def _replace_current_status_block(progress_text: str, report: Mapping[str, Any])
         "`pytest ai/tests --rag-current -q` passed with 33 passed, 0 failed, 0 skipped, 1 warning, while historical "
         "focused runs remain directly checkable by explicit key. Generated report/status artifacts remain ignored.\n\n"
         "Artifact policy:\n"
-        "- `ai/eval/reports/rag-ingestion/status.jsonl` remains local/ignored status ledger.\n"
+        "- `reports/rag_eval/rag-ingestion/status.jsonl` remains local/ignored status ledger.\n"
         f"- Current v5_3 report: `{SHORT_REPORT_PATH.as_posix()}`.\n"
         f"- Prior basis reports remain explicit: `{v520.SHORT_REPORT_PATH.as_posix()}`, "
-        f"`{v520.SOURCE_REPORT_JSON.as_posix()}`, `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`, "
+        f"`{v520.SOURCE_REPORT_JSON.as_posix()}`, `reports/rag_eval/rag-ingestion/runs/v5_0/report.json`, "
         f"and frozen v4 basis `{v520.V4_CLOSEOUT_REPORT_JSON.as_posix()}`.\n"
     )
     return re.sub(r"## Current Status\n\n.*?(?=\n## Short History)", replacement, progress_text, count=1, flags=re.S)

@@ -24,8 +24,8 @@ SOURCE_DECISION_RUN_ID = (
     "official_answer_citation_agentic_loop_run_v4_7_3_"
     "human_reviewed_korean_query_candidate_pass_exclusion_application_nonprod"
 )
-SHORT_REPORT_PATH = "ai/eval/reports/rag-ingestion/runs/v4_7_5/report.json"
-ARCHIVE_MANIFEST_PATH = "ai/eval/reports/rag-ingestion/archive_manifest.jsonl"
+SHORT_REPORT_PATH = "reports/rag_eval/rag-ingestion/runs/v4_7_5/report.json"
+ARCHIVE_MANIFEST_PATH = "reports/rag_eval/rag-ingestion/archive_manifest.jsonl"
 
 METRIC_KEYS = (
     "evidence_window_sufficient_proxy_count",

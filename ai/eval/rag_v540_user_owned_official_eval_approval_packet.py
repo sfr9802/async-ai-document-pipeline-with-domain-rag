@@ -18,7 +18,7 @@ SHORT_RUN_ID = "v5_4_user_owned_official_eval_approval_packet"
 CANONICAL_LONG_RUN_ID = "official_answer_citation_agentic_loop_run_v5_4_user_owned_official_eval_approval_packet_nonprod"
 STATUS = "V5_4_USER_OWNED_OFFICIAL_EVAL_APPROVAL_PACKET_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 SHORT_REPORT_PATH = RUN_ROOT / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
@@ -706,13 +706,13 @@ def _replace_current_status_block(progress_text: str, report: Mapping[str, Any])
         "`pytest ai/tests --rag-current -q` passed with 38 passed, 0 failed, 0 skipped, 1 warning, while historical "
         "focused runs remain directly checkable by explicit key. Generated report/status/packet artifacts remain ignored.\n\n"
         "Artifact policy:\n"
-        "- `ai/eval/reports/rag-ingestion/status.jsonl` remains local/ignored status ledger.\n"
+        "- `reports/rag_eval/rag-ingestion/status.jsonl` remains local/ignored status ledger.\n"
         f"- Current v5_4 report: `{SHORT_REPORT_PATH.as_posix()}`.\n"
         f"- Current user packet paths: `{SCHEMA_PATH.as_posix()}`, `{POLICY_TEMPLATE_PATH.as_posix()}`, "
         f"`{PACKET_JSONL_PATH.as_posix()}`, `{PACKET_CSV_PATH.as_posix()}`, `{PACKET_XLSX_PATH.as_posix()}`.\n"
         f"- Prior basis reports remain explicit: `{SOURCE_REPORT_JSON.as_posix()}`, `{v530.SOURCE_REPORT_JSON.as_posix()}`, "
-        f"`{v510.SOURCE_REPORT_JSON.as_posix()}`, `ai/eval/reports/rag-ingestion/runs/v5_0/report.json`, "
-        "and frozen v4 basis `ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`.\n"
+        f"`{v510.SOURCE_REPORT_JSON.as_posix()}`, `reports/rag_eval/rag-ingestion/runs/v5_0/report.json`, "
+        "and frozen v4 basis `reports/rag_eval/rag-ingestion/runs/v4_7_18/report.json`.\n"
     )
     return re_sub_current_status(progress_text, replacement)
 

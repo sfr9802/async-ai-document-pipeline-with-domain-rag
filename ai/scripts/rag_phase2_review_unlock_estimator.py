@@ -38,7 +38,7 @@ DEFAULT_REVIEW_REQUIRED_CSV = (
     / "retrieval_dataset_supplementation"
     / "license_review_required_rows.csv"
 )
-DEFAULT_REPORTS_DIR = AI_WORKER_ROOT / "eval" / "reports" / "rag-ingestion"
+DEFAULT_REPORTS_DIR = AI_WORKER_ROOT.parent / "reports" / "rag_eval" / "rag-ingestion"
 DEFAULT_DOCS_DIR = REPO_ROOT / "docs"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / ".tmp" / "phase2-review-unlock"
 OFFICIAL_DENOMINATOR_REGISTRY = AI_WORKER_ROOT / "eval" / "eval_queries" / "official_denominator_registry.json"

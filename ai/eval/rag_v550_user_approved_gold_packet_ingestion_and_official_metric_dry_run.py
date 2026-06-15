@@ -22,7 +22,7 @@ CANONICAL_LONG_RUN_ID = (
 )
 STATUS = "V5_5_USER_APPROVED_GOLD_PACKET_INGESTION_AND_OFFICIAL_METRIC_DRY_RUN_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 SHORT_REPORT_PATH = RUN_ROOT / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
@@ -616,15 +616,15 @@ def _replace_current_status_block(progress_text: str, report: Mapping[str, Any])
         "`pytest ai/tests --rag-current -q` passed with 44 passed, 0 failed, 0 skipped, 1 warning, while historical "
         "focused runs remain directly checkable by explicit key. Generated report/status/official-eval artifacts remain ignored.\n\n"
         "Artifact policy:\n"
-        "- `ai/eval/reports/rag-ingestion/status.jsonl` remains local/ignored status ledger.\n"
+        "- `reports/rag_eval/rag-ingestion/status.jsonl` remains local/ignored status ledger.\n"
         f"- Current v5_5 report: `{SHORT_REPORT_PATH.as_posix()}`.\n"
         f"- Source v5_4 packet paths: `{v540.PACKET_CSV_PATH.as_posix()}`, `{v540.PACKET_JSONL_PATH.as_posix()}`, "
         f"and `{v540.PACKET_XLSX_PATH.as_posix()}`.\n"
         f"- Prior basis reports remain explicit: `{SOURCE_REPORT_JSON.as_posix()}`, `{v540.SOURCE_REPORT_JSON.as_posix()}`, "
-        "`ai/eval/reports/rag-ingestion/runs/v5_2/report.json`, "
-        "`ai/eval/reports/rag-ingestion/runs/v5_1/report.json`, "
-        "`ai/eval/reports/rag-ingestion/runs/v5_0/report.json`, and "
-        "`ai/eval/reports/rag-ingestion/runs/v4_7_18/report.json`.\n"
+        "`reports/rag_eval/rag-ingestion/runs/v5_2/report.json`, "
+        "`reports/rag_eval/rag-ingestion/runs/v5_1/report.json`, "
+        "`reports/rag_eval/rag-ingestion/runs/v5_0/report.json`, and "
+        "`reports/rag_eval/rag-ingestion/runs/v4_7_18/report.json`.\n"
     )
     return re.sub(r"## Current Status\n\n.*?(?=\n## Short History)", replacement, progress_text, count=1, flags=re.S)
 

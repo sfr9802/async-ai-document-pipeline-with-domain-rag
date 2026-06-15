@@ -17,7 +17,7 @@ CANONICAL_LONG_RUN_ID = (
 )
 STATUS = "V4_7_10_PDF_KOREAN_EVIDENCE_NORMALIZATION_AND_ANSWER_REPLAY_READINESS_NONPROD_READY"
 
-REPORT_ROOT = Path("ai/eval/reports/rag-ingestion")
+REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 SHORT_REPORT_PATH = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
 SOURCE_RUN_ID = v479.SHORT_RUN_ID
@@ -693,7 +693,7 @@ def update_eval_readme(root: Path, report: Mapping[str, Any]) -> None:
     )
     v479_marker = (
         "- v4_7_9 diagnostic replay: `v4_7_9_pdf_evidence_residual_answer_quality_replay` writes "
-        "`ai/eval/reports/rag-ingestion/runs/v4_7_9/report.json` through `ai/scripts/rag_eval.py`; "
+        "`reports/rag_eval/rag-ingestion/runs/v4_7_9/report.json` through `ai/scripts/rag_eval.py`; "
         "use explicit resolver key `v4_7_9` for this prior PDF residual report and `v4_7_8` for the "
         "prior cleanup/refactor report. official_metric=false; local LLM unavailable rows fail closed."
     )

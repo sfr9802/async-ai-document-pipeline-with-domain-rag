@@ -16,11 +16,11 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/rag_path_separation_readiness.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/rag_path_separation_readiness.json")
 DEFAULT_RETRIEVAL_REPORTS = (
-    Path("eval/reports/rag-ingestion/rag_retrieval_eval_report.json"),
-    Path("eval/reports/rag-ingestion/strict_D_hardened_xlsx_canary_vector_eval_report.json"),
-    Path("eval/reports/rag-ingestion/a5_d_vector_backend_readiness.json"),
+    Path("reports/rag_eval/rag-ingestion/rag_retrieval_eval_report.json"),
+    Path("reports/rag_eval/rag-ingestion/strict_D_hardened_xlsx_canary_vector_eval_report.json"),
+    Path("reports/rag_eval/rag-ingestion/a5_d_vector_backend_readiness.json"),
 )
 DEFAULT_DB_DSN = "host=localhost port=5433 dbname=aipipeline user=aipipeline password=aipipeline_pw"
 EXPECTED_INDEX_VERSION = "rag-ingestion-v2-candidate"

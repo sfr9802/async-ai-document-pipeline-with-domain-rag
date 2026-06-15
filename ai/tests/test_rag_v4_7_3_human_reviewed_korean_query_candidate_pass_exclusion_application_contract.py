@@ -23,7 +23,7 @@ EVENT_TYPE = "diagnostic_v4_7_3_human_reviewed_korean_query_candidate_pass_exclu
 SOURCE_RUN_ID = "official_answer_citation_agentic_loop_run_v4_7_2_source_grounded_korean_query_review_packet_hydration_nonprod"
 SOURCE_REGISTRATION_RUN_ID = "official_answer_citation_agentic_loop_run_v4_7_preofficial_external_holdout_candidate_manifest_registration_nonprod"
 
-REPORT_DIR = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "quality" / RUN_ID
+REPORT_DIR = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "quality" / RUN_ID
 REPORT_JSON = REPORT_DIR / "report.json"
 SOURCE_PACKET_CSV = (
     ROOT
@@ -35,7 +35,7 @@ SOURCE_PACKET_CSV = (
     / SOURCE_RUN_ID
     / "review_packet_ko_hydrated.csv"
 )
-STATUS_JSONL = ROOT / "ai" / "eval" / "reports" / "rag-ingestion" / "status.jsonl"
+STATUS_JSONL = ROOT / "reports" / "rag_eval" / "rag-ingestion" / "status.jsonl"
 PROGRESS_DOC = ROOT / "docs" / "rag-ingestion-progress.md"
 MEASUREMENTS_DOC = ROOT / "docs" / "rag-ingestion-measurements.md"
 TRIAGE_DOC = ROOT / "docs" / "rag-ingestion-triage.md"

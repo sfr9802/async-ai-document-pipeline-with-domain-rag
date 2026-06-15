@@ -35,8 +35,8 @@ from app.services.search_unit_indexing_loop import SearchUnitIndexingWorker  # n
 
 
 DEFAULT_GOLD = Path("eval/eval_queries/gold_queries_pdf_v0.csv")
-DEFAULT_SCOPE_REPORT = Path("eval/reports/rag-ingestion/pdf_candidate_scope_report.json")
-DEFAULT_OUTPUT = Path("eval/reports/rag-ingestion/scoped_candidate_indexing_report.json")
+DEFAULT_SCOPE_REPORT = Path("reports/rag_eval/rag-ingestion/pdf_candidate_scope_report.json")
+DEFAULT_OUTPUT = Path("reports/rag_eval/rag-ingestion/scoped_candidate_indexing_report.json")
 DEFAULT_INDEX_VERSION = "rag-ingestion-v2-pdf-candidate-v1"
 DEFAULT_SOURCE_FILE_TYPES = ("PDF",)
 DEFAULT_PARSER_VERSIONS = ("pdf-extract-v1", "pdf-extract-v2")
@@ -285,7 +285,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--artifact-dir", default=None)
     parser.add_argument(
         "--consistency-report",
-        default="eval/reports/rag-ingestion/pdf_candidate_embedding_consistency_report.json",
+        default="reports/rag_eval/rag-ingestion/pdf_candidate_embedding_consistency_report.json",
     )
     parser.add_argument("--allow-existing-artifact", action="store_true")
     parser.add_argument("--batch-size", type=int, default=200)
