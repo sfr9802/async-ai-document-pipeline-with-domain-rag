@@ -4,6 +4,7 @@ import csv
 import hashlib
 import json
 import inspect
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
@@ -306,6 +307,75 @@ def test_weaviate_route_planner_uses_query_text_only_and_reports_filters() -> No
     assert care_facility["selected_source_family_filter"] == ["XLSX"]
     assert industry_pdf["selected_route"] == "pdf_paragraph"
     assert industry_pdf["selected_source_family_filter"] == ["PDF"]
+
+    text_hint = plan_weaviate_retrieval_route(
+        "2014년 12월에 지정된 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까?",
+        source_family_hint="text",
+    )
+    pdf_hint = plan_weaviate_retrieval_route(
+        "2020년 11월 sheet cell row amount 승인 금액은?",
+        source_family_hint="pdf",
+    )
+
+    assert text_hint["selected_route"] == "text_general"
+    assert text_hint["selected_source_family_filter"] == ["TEXT"]
+    assert text_hint["source_family_hint"] == "text"
+    assert "query_evidence_source_family_hint" in text_hint["route_reasons"]
+    assert pdf_hint["selected_route"] == "pdf_paragraph"
+    assert pdf_hint["selected_source_family_filter"] == ["PDF"]
+    assert pdf_hint["route_uses_gold_fields"] is False
+
+
+def test_weaviate_route_selected_lane_filter_plan_uses_query_evidence_source_family_hint() -> None:
+    class Config:
+        namespace = "actual_rag_eval_nonprod"
+        visibility = "private"
+        index_manifest_path = ""
+
+    adapter = WeaviateSourceAtomAdapter.__new__(WeaviateSourceAtomAdapter)
+    adapter.retrieval_route_mode = "route_selected"
+    adapter.config_obj = Config()
+    adapter._route_filter_fields_available_override = {"granularity": True, "retrieval_route": True}
+    adapter._index_manifest = {}
+
+    filters, plan = adapter._lane_filter_plan(
+        "2014년 12월에 지정된 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까?",
+        source_family_hint="text",
+    )
+
+    assert filters["source_family"] == "TEXT"
+    assert filters["retrieval_route"] == "text_general"
+    assert plan["source_family_hint"] == "text"
+    assert plan["selected_source_family_filter"] == ["TEXT"]
+    assert plan["weaviate_filter_policy"]["source_family_filter_sent"] is True
+
+
+def test_weaviate_adapter_ignores_stale_query_evidence_planner_hash() -> None:
+    class Config:
+        namespace = "actual_rag_eval_nonprod"
+        visibility = "private"
+        index_manifest_path = ""
+
+    adapter = WeaviateSourceAtomAdapter.__new__(WeaviateSourceAtomAdapter)
+    adapter.retrieval_route_mode = "route_selected"
+    adapter.config_obj = Config()
+    adapter._route_filter_fields_available_override = {"granularity": True, "retrieval_route": True}
+    adapter._index_manifest = {}
+    query = "2014년 12월에 지정된 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까?"
+    stale_query = "해오름요양원의 기관별 상세주소는 무엇입니까?"
+    planner = {
+        "planner_status": "planned_validated",
+        "source_family_hint": "text",
+        "query_sha256": f"sha256:{hashlib.sha256(stale_query.encode('utf-8')).hexdigest()}",
+    }
+
+    source_family_hint = adapter._query_evidence_source_family_hint_for_query(query, planner)
+    filters, plan = adapter._lane_filter_plan(query, source_family_hint=source_family_hint)
+
+    assert source_family_hint == ""
+    assert filters["source_family"] == "XLSX"
+    assert plan["selected_source_family_filter"] == ["XLSX"]
+    assert "query_evidence_source_family_hint" not in plan["route_reasons"]
 
 
 def test_weaviate_existing_collection_schema_mismatch_fails_closed() -> None:
@@ -1129,7 +1199,7 @@ def test_xlsx_same_table_vector_expansion_is_bounded_by_source_owned_scope(tmp_p
         [
             {
                 "id": "xlsx-same-table",
-                "query": "2019년 2월 5호선 승차총승객수는 얼마야?",
+                "query": "2019년 2월 5호선 승차총승객수",
                 "answerability": "answerable",
             }
         ],
@@ -2654,6 +2724,2483 @@ def test_agentic_planner_execute_once_defers_pdf_locator_tool_without_execution_
     assert output_file_names(tmp_path / "reports" / "rag_eval" / "agentic_pdf_tool_execute_once") == ["report.json"]
 
 
+def test_agentic_planner_execute_once_runs_pdf_locator_tool_with_validated_axes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class PdfToolAdapter:
+        requested_backend = "hybrid"
+
+        def __init__(self) -> None:
+            self.query_log: list[dict[str, object]] = []
+
+        @property
+        def config(self) -> dict[str, object]:
+            return {
+                "adapter": "pdf_tool_adapter",
+                "candidate_generation_input_policy": "query_text_and_query_evidence_planner_only",
+            }
+
+        @property
+        def retrieval_backend_report(self) -> dict[str, object]:
+            return {
+                "requested": self.requested_backend,
+                "selected": "hybrid",
+                "bm25_enabled": True,
+                "vector_enabled": False,
+                "hybrid_enabled": True,
+                "embedding_model": "none",
+                "embedding_device": "none",
+                "gpu_used_for_embedding": False,
+                "vector_index_kind": "none",
+                "vector_index_type": "none",
+                "vector_dim": 0,
+                "indexed_unit_count": 1,
+                "query_count": len(self.query_log),
+                "fallback_reason": "",
+            }
+
+        def run_item(self, item: object, *, top_k: int) -> dict[str, object]:
+            query = str(getattr(item, "query", ""))
+            source_row = getattr(item, "source_row", {})
+            planner = source_row.get("query_evidence_planner") if isinstance(source_row, dict) else {}
+            self.query_log.append(
+                {
+                    "query_text": query,
+                    "top_k": top_k,
+                    "planner_status": planner.get("planner_status") if isinstance(planner, dict) else "",
+                    "expected_answer": str(getattr(item, "expected_answer", "")),
+                }
+            )
+            context = {
+                "rank": 1,
+                "doc_id": "doc-pdf-locator-axis",
+                "chunk_id": "chunk-pdf-locator-axis",
+                "source_atom_id": "src-pdf-locator-axis",
+                "evidence_bundle_id": "bundle-pdf-locator-axis",
+                "source_family": "PDF",
+                "granularity": "page_block",
+                "text": "7페이지 연결 손익계산서 영업실적 표에는 영업이익 항목이 있습니다.",
+                "pdf_locator_text": "7페이지 연결 손익계산서 영업실적 표 영업이익은 123억원입니다.",
+                "page_number": "7",
+                "section_title": "연결 손익계산서",
+                "table_caption": "영업실적 표",
+                "target_column": "영업이익",
+                "bbox": "[72,260,510,318]",
+                "locator_fingerprint": "pdf-locator-axis-page-7-block-4",
+            }
+            return {
+                "id": str(getattr(item, "id", "")),
+                "query": query,
+                "answerability": str(getattr(item, "answerability", "unknown")) or "unknown",
+                "generated_answer": "제공된 증거에서 답을 확인할 수 없습니다.",
+                "retrieved_contexts": [dict(context)],
+                "citations": [],
+                "diagnostics": {
+                    "retrieval_empty": False,
+                    "generation_empty": False,
+                    "citation_empty": True,
+                    "gold_incomplete": True,
+                },
+            }
+
+    dataset = tmp_path / "agentic_pdf_locator_axes_gold.jsonl"
+    query = "7페이지 연결 손익계산서 영업실적 표의 영업이익은 얼마입니까?"
+    write_jsonl(dataset, [{"id": "pdf_locator_axes_q", "query": query, "answerability": "unknown"}])
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "source_family_hint": "pdf",
+                "query_task": "cell_lookup",
+                "row_filters": {
+                    "page_number": "7",
+                    "section_title": "연결 손익계산서",
+                    "table_caption": "영업실적 표",
+                },
+                "target_axis": {"column": "영업이익", "value_type": "number"},
+                "evidence_contract": [
+                    "page_number",
+                    "section_title",
+                    "table_caption",
+                    "target_column",
+                    "display_value",
+                    "bbox",
+                    "locator_fingerprint",
+                ],
+                "intent_tokens": ["얼마입니까"],
+            },
+            {"raw_response_sha256": "sha256:agentic-pdf-locator-axes"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    baseline_adapter = PdfToolAdapter()
+    baseline_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_pdf_locator_axes_off",
+        top_k=1,
+        run_id="agentic_pdf_locator_axes_off",
+        output_mode="single",
+        retrieval_adapter=baseline_adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+    )
+    execute_adapter = PdfToolAdapter()
+    execute_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_pdf_locator_axes_execute_once",
+        top_k=1,
+        run_id="agentic_pdf_locator_axes_execute_once",
+        output_mode="single",
+        retrieval_adapter=execute_adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        agentic_planner_mode="execute-once",
+        llm_query_anchor_classifier=True,
+        local_llm_composer_model="gemma4-e2b-local",
+        skip_local_llm_composer_endpoint_check=True,
+    )
+
+    baseline_report = json.loads(baseline_bundle.report_path.read_text(encoding="utf-8"))
+    report = json.loads(execute_bundle.report_path.read_text(encoding="utf-8"))
+    planner = report["agentic_planner_execute_once"]
+    row = report["items"][0]
+    decision = planner["decisions"][0]
+
+    assert baseline_adapter.query_log == [
+        {
+            "query_text": query,
+            "top_k": 1,
+            "planner_status": "",
+            "expected_answer": "",
+        }
+    ]
+    assert execute_adapter.query_log == [
+        {
+            "query_text": query,
+            "top_k": 1,
+            "planner_status": "planned_validated",
+            "expected_answer": "",
+        }
+    ]
+    assert baseline_report["evidence_gate"]["allowed_answer_count"] == 0
+    assert report["evidence_gate"]["allowed_answer_count"] == 1
+    assert planner["planner_action_counts"] == {"pdf_locator_tool": 1}
+    assert planner["planner_failure_class_counts"] == {"tool_required_pdf": 1}
+    assert planner["planner_execution"] == {
+        "retrieval_executed": False,
+        "tool_call_executed": True,
+        "llm_retry_executed": False,
+        "extra_query_count_executed": 0,
+        "tool_call_count_executed": 1,
+        "llm_retry_count_executed": 0,
+    }
+    assert planner["gate_delta"]["allowed_answer_count_delta"] == 1
+    assert decision["executed"] is True
+    assert decision["proposed_action"] == "pdf_locator_tool"
+    assert decision["execution_status"] == "accepted_after_regating"
+    assert decision["tool_name"] == "pdf_locator_tool_v1"
+    assert decision["tool_call_count_executed"] == 1
+    assert decision["extra_query_count_executed"] == 0
+    assert decision["llm_retry_count_executed"] == 0
+    assert "query_id" not in decision
+    assert "expected_answer" not in decision
+    assert row["agentic_planner_tool_use"]["tool_implementation"] == "pdf_locator_tool_v1"
+    assert row["agentic_planner_tool_use"]["pdf_locator_execution_status"] == "accepted_after_regating"
+    assert row["query_evidence_planner"]["validated_required_axes"] == [
+        "page_number",
+        "section_title",
+        "table_caption",
+        "target_column",
+        "display_value",
+        "bbox",
+        "locator_fingerprint",
+    ]
+    selected = row["evidence_gate"]["selected_evidence"][0]
+    assert selected["tool_name"] == "pdf_locator_tool_v1"
+    assert selected["tool_policy"] == "source_owned_pdf_locator_only_no_raw_pdf_query_time_parsing"
+    assert selected["page_number"] == "7"
+    assert selected["target_column"] == "영업이익"
+    assert output_file_names(tmp_path / "reports" / "rag_eval" / "agentic_pdf_locator_axes_execute_once") == ["report.json"]
+
+
+def test_agentic_pdf_locator_candidate_rejects_page_summary_without_local_axis() -> None:
+    row = {
+        "query": "7페이지 연결 손익계산서 영업실적 표의 영업이익은 얼마입니까?",
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-pdf-page-summary",
+                "chunk_id": "chunk-pdf-page-summary",
+                "source_atom_id": "src-pdf-page-summary",
+                "evidence_bundle_id": "bundle-pdf-page-summary",
+                "source_family": "PDF",
+                "granularity": "page_summary",
+                "text": "7페이지 연결 손익계산서 요약입니다.",
+                "pdf_locator_text": "7페이지 연결 손익계산서 영업실적 표 영업이익은 123억원입니다.",
+                "page_number": "7",
+                "section_title": "연결 손익계산서",
+            }
+        ],
+    }
+
+    candidate, status = actual_rag_eval._agentic_planner_pdf_locator_candidate(row)
+
+    assert candidate is None
+    assert status == "skipped_missing_source_locator"
+
+
+def test_agentic_pdf_locator_candidate_rejects_low_confidence_ocr() -> None:
+    row = {
+        "query": "7페이지 연결 손익계산서 영업실적 표의 영업이익은 얼마입니까?",
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-pdf-ocr",
+                "chunk_id": "chunk-pdf-ocr",
+                "source_atom_id": "src-pdf-ocr",
+                "evidence_bundle_id": "bundle-pdf-ocr",
+                "source_family": "PDF",
+                "granularity": "page_block",
+                "text": "",
+                "ocr_text": "7페이지 연결 손익계산서 영업실적 표 영업이익은 123억원입니다.",
+                "ocr_used": True,
+                "ocr_confidence": 0.42,
+                "page_number": "7",
+                "section_title": "연결 손익계산서",
+                "table_caption": "영업실적 표",
+                "bbox": "[72,260,510,318]",
+                "locator_fingerprint": "pdf-ocr-low-confidence",
+            }
+        ],
+    }
+
+    candidate, status = actual_rag_eval._agentic_planner_pdf_locator_candidate(row)
+
+    assert candidate is None
+    assert status == "skipped_missing_source_locator"
+
+
+def test_agentic_planner_execute_once_runs_xlsx_locator_tool_after_checkpoint_c(tmp_path: Path) -> None:
+    dataset = tmp_path / "agentic_xlsx_tool_gold.jsonl"
+    context = tmp_path / "agentic_xlsx_tool_context.jsonl"
+    table_text = (
+        "sheet=일반현황 | range=A802:J851 | 장기요양기관이름 | 우편번호 | 시도코드 | "
+        "시군구코드 | 법정동코드 | 시도 시군구 법정동명 | 지정일자 | 설치신고일자 | "
+        "기관별 상세주소 12726000180 | 해오름요양원 | 42222 | 27 | 260 | 110 | "
+        "대구광역시 수성구 파동 | 2012-03-06 | 2012-03-06 | "
+        "대구광역시 수성구 파동로51길 96 (파동)"
+    )
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "agentic_xlsx_q",
+                "query": "2012년 3월에 지정된 해오름요양원의 기관별 상세주소는 무엇입니까?",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "agentic_xlsx_q",
+                "generated_answer": "대구광역시 수성구 파동로51길 96 (파동)",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-agentic-xlsx",
+                        "chunk_id": "chunk-agentic-table",
+                        "source_atom_id": "src-agentic-xlsx",
+                        "evidence_bundle_id": "bundle-agentic-xlsx",
+                        "source_family": "XLSX",
+                        "granularity": "table_range",
+                        "text": table_text,
+                        "sheet": "일반현황",
+                        "cell_range": "A802:J851",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    baseline_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_xlsx_tool_off",
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="agentic_xlsx_tool_off",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+    )
+    execute_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_xlsx_tool_execute_once",
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="agentic_xlsx_tool_execute_once",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        agentic_planner_mode="execute-once",
+    )
+
+    baseline_report = json.loads(baseline_bundle.report_path.read_text(encoding="utf-8"))
+    report = json.loads(execute_bundle.report_path.read_text(encoding="utf-8"))
+    planner = report["agentic_planner_execute_once"]
+    row = report["items"][0]
+    decision = planner["decisions"][0]
+
+    assert baseline_report["evidence_gate"]["allowed_answer_count"] == 0
+    assert report["evidence_gate"]["allowed_answer_count"] == 1
+    assert "xlsx_locator_tool_execute_once" not in report
+    assert planner["planner_action_counts"] == {"xlsx_cell_or_table_tool": 1}
+    assert planner["planner_failure_class_counts"] == {"tool_required_xlsx": 1}
+    assert planner["planner_execution"] == {
+        "retrieval_executed": False,
+        "tool_call_executed": True,
+        "llm_retry_executed": False,
+        "extra_query_count_executed": 0,
+        "tool_call_count_executed": 1,
+        "llm_retry_count_executed": 0,
+    }
+    assert planner["gate_delta"]["allowed_answer_count_delta"] == 1
+    assert decision["executed"] is True
+    assert decision["proposed_action"] == "xlsx_cell_or_table_tool"
+    assert decision["execution_status"] == "accepted_after_regating"
+    assert decision["tool_name"] == "xlsx_locator_tool_v1"
+    assert decision["tool_call_count_executed"] == 1
+    assert decision["extra_query_count_executed"] == 0
+    assert decision["llm_retry_count_executed"] == 0
+    assert "query_id" not in decision
+    assert "expected_answer" not in decision
+    assert row["xlsx_locator_tool_use"]["execution_status"] == "accepted_after_regating"
+    assert row["agentic_planner_tool_use"]["tool_implementation"] == "xlsx_locator_tool_v1"
+    selected = row["evidence_gate"]["selected_evidence"][0]
+    assert selected["tool_name"] == "xlsx_locator_tool_v1"
+    assert selected["row_label"] == "해오름요양원"
+    assert selected["target_column"] == "기관별 상세주소"
+    assert output_file_names(tmp_path / "reports" / "rag_eval" / "agentic_xlsx_tool_execute_once") == ["report.json"]
+
+
+def test_agentic_planner_execute_once_runs_xlsx_locator_with_local_llm_composer(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = tmp_path / "agentic_xlsx_local_llm_gold.jsonl"
+    context = tmp_path / "agentic_xlsx_local_llm_context.jsonl"
+    table_text = (
+        "sheet=일반현황 | range=A802:J851 | 장기요양기관이름 | 우편번호 | 시도코드 | "
+        "시군구코드 | 법정동코드 | 시도 시군구 법정동명 | 지정일자 | 설치신고일자 | "
+        "기관별 상세주소 12726000180 | 해오름요양원 | 42222 | 27 | 260 | 110 | "
+        "대구광역시 수성구 파동 | 2012-03-06 | 2012-03-06 | "
+        "대구광역시 수성구 파동로51길 96 (파동)"
+    )
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "agentic_xlsx_local_llm_q",
+                "query": "2012년 3월에 지정된 해오름요양원의 기관별 상세주소는 무엇입니까?",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "agentic_xlsx_local_llm_q",
+                "generated_answer": "대구광역시 수성구 파동로51길 96 (파동)",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-agentic-xlsx-local-llm",
+                        "chunk_id": "chunk-agentic-table-local-llm",
+                        "source_atom_id": "src-agentic-xlsx-local-llm",
+                        "evidence_bundle_id": "bundle-agentic-xlsx-local-llm",
+                        "source_family": "XLSX",
+                        "granularity": "table_range",
+                        "text": table_text,
+                        "sheet": "일반현황",
+                        "cell_range": "A802:J851",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+    captured_prompts: list[str] = []
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**kwargs: object) -> tuple[dict, dict]:
+        prompt = str(kwargs["prompt"])
+        captured_prompts.append(prompt)
+        assert "해오름요양원" in prompt
+        assert "기관별 상세주소" in prompt
+        return (
+            {
+                "answer": "대구광역시 수성구 파동로51길 96 (파동)",
+                "citation_evidence_ids": ["bundle-agentic-xlsx-local-llm"],
+            },
+            {
+                "raw_response_sha256": "sha256:agentic-xlsx-local-llm-response",
+                "strict_json": True,
+            },
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    execute_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "agentic_xlsx_local_llm_execute_once",
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="agentic_xlsx_local_llm_execute_once",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-local-llm-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        agentic_planner_mode="execute-once",
+        local_llm_composer_backend="llamacpp",
+        local_llm_composer_base_url="http://localhost:8081/v1",
+        local_llm_composer_model="gemma4-e2b-local",
+        skip_local_llm_composer_endpoint_check=True,
+    )
+
+    report = json.loads(execute_bundle.report_path.read_text(encoding="utf-8"))
+    planner = report["agentic_planner_execute_once"]
+    row = report["items"][0]
+    local_meta = row["answer_composer"]["local_llm"]
+
+    assert captured_prompts and len(captured_prompts) == 1
+    assert report["evidence_gate"]["allowed_answer_count"] == 1
+    assert report["generator_config"]["provider"] == "selected-evidence-local-llm-v1"
+    assert report["generator_config"]["local_llm_composer_generated_count"] == 1
+    assert report["generator_config"]["local_llm_prompt_payload_written"] is False
+    assert report["generator_config"]["local_llm_raw_response_payload_written"] is False
+    assert planner["planner_action_counts"] == {"xlsx_cell_or_table_tool": 1}
+    assert planner["planner_expected_llm_retry_count"] == 0
+    assert planner["planner_execution"] == {
+        "retrieval_executed": False,
+        "tool_call_executed": True,
+        "llm_retry_executed": False,
+        "extra_query_count_executed": 0,
+        "tool_call_count_executed": 1,
+        "llm_retry_count_executed": 0,
+    }
+    assert row["answer_composer"]["provider"] == "selected-evidence-local-llm-v1"
+    assert local_meta["status"] == "generated"
+    assert local_meta["model"] == "gemma4-e2b-local"
+    assert local_meta["raw_response_sha256"] == "sha256:agentic-xlsx-local-llm-response"
+    assert "prompt" not in local_meta
+    assert "raw_response" not in local_meta
+    assert row["generated_answer"] == "대구광역시 수성구 파동로51길 96 (파동)"
+    assert row["evidence_gate"]["selected_evidence"][0]["tool_name"] == "xlsx_locator_tool_v1"
+    assert row["agentic_planner_tool_use"]["xlsx_locator_execution_status"] == "accepted_after_regating"
+    assert "xlsx_locator_tool_execute_once" not in report
+    assert output_file_names(tmp_path / "reports" / "rag_eval" / "agentic_xlsx_local_llm_execute_once") == ["report.json"]
+
+
+def test_xlsx_locator_tool_execute_once_runs_source_owned_candidate_and_regates(tmp_path: Path) -> None:
+    dataset = tmp_path / "xlsx_locator_tool_gold.jsonl"
+    context = tmp_path / "xlsx_locator_tool_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_tool_execute_once"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx_locator_q",
+                "query": "2019년 2월 5호선 승차총승객수",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx_locator_q",
+                "generated_answer": "15,446,522명",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx-locator",
+                        "chunk_id": "chunk-axis-sparse",
+                        "source_atom_id": "src-xlsx-locator",
+                        "evidence_bundle_id": "bundle-xlsx-locator",
+                        "source_family": "XLSX",
+                        "granularity": "table_row",
+                        "text": "15,446,522명",
+                        "xlsx_locator_text": "2019년 2월 5호선 승차총승객수 15,446,522명",
+                        "xlsx_locator_metadata": {
+                            "sheet": "2019년 2월",
+                            "cell_range": "A7:J7",
+                            "cell": "F7",
+                            "row_index_1based": "7",
+                            "row_label": "5호선",
+                            "column_label": "승차총승객수",
+                            "target_column": "승차총승객수",
+                            "header_path": "승하차 > 승차총승객수",
+                            "table_id": "sheet-201902-main-table",
+                        },
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    baseline_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "xlsx_locator_tool_off",
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_locator_tool_off",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+    )
+    execute_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_locator_tool_execute_once",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        xlsx_locator_tool_execute_once=True,
+    )
+
+    baseline_report = json.loads(baseline_bundle.report_path.read_text(encoding="utf-8"))
+    report = json.loads(execute_bundle.report_path.read_text(encoding="utf-8"))
+    locator = report["xlsx_locator_tool_execute_once"]
+    row = report["items"][0]
+    tool_use = row["xlsx_locator_tool_use"]
+
+    assert baseline_report["evidence_gate"]["allowed_answer_count"] == 0
+    assert baseline_report["evidence_gate"]["unsupported_answer_blocked_count"] == 1
+    assert report["evidence_gate"]["allowed_answer_count"] == 1
+    assert report["evidence_gate"]["unsupported_answer_blocked_count"] == 0
+    assert "agentic_planner_execute_once" not in report
+
+    assert locator["schema_version"] == "actual_rag_eval.xlsx_locator_tool_execute_once.v1"
+    assert locator["enabled"] is True
+    assert locator["report_only_diagnostic"] is True
+    assert locator["official_metric"] is False
+    assert locator["tool_name"] == "xlsx_locator_tool_v1"
+    assert locator["eligible_failed_row_count"] == 1
+    assert locator["tool_invocation_count"] == 1
+    assert locator["accepted_candidate_count"] == 1
+    assert locator["rejected_candidate_count"] == 0
+    assert locator["tool_execution_status_counts"] == {"accepted_after_regating": 1}
+    assert locator["candidate_confidence_tier_counts"] == {"high": 1}
+    assert locator["candidate_rejection_reason_counts"] == {"accepted_for_regating": 1}
+    assert locator["candidate_source_family_counts"] == {"XLSX": 1}
+    assert locator["official_metric_input_rows"] == 0
+    assert locator["official_metric_input_rows_created"] == 0
+    assert locator["official_metric_input_rows_consumed"] == 0
+    assert locator["before_gate"]["allowed_answer_count"] == 0
+    assert locator["after_gate"]["allowed_answer_count"] == 1
+    assert locator["gate_delta"]["allowed_answer_count_delta"] == 1
+    assert locator["run_record"] == {
+        "contract": "typed_record_projection_v1",
+        "record_type": "XlsxLocatorRunRecord",
+        "serializer": "compact_report_projection",
+    }
+    assert locator["run_store"]["backend"] == "repo_local_sqlite"
+    assert locator["run_store"]["path"].endswith("run.sqlite")
+    assert set(locator["run_store"]["tables"]) >= {
+        "runs",
+        "items",
+        "retrieved_contexts",
+        "selected_evidence",
+        "tool_invocations",
+        "tool_candidates",
+        "gate_results",
+        "residuals",
+        "guardrails",
+    }
+    assert "decisions" not in locator
+    assert "candidates" not in locator
+    assert "tool_uses" not in locator
+    assert locator["guardrail_status"]["raw_xlsx_query_time_parsing_used"] is False
+    assert locator["guardrail_status"]["gold_or_qrels_or_label_or_expected_used"] is False
+    assert locator["guardrail_status"]["official_metric_input_rows"] == 0
+    assert locator["forbidden_input_fields_used"] == []
+    assert locator["raw_xlsx_query_time_parsing_used"] is False
+    assert locator["gold_or_qrels_or_label_or_expected_used"] is False
+    assert locator["residual_before"]["classification_counts"] == {
+        "selected_evidence_has_value_missing_axis": 1,
+    }
+    assert locator["residual_after"]["classification_counts"] == {}
+
+    assert tool_use["execution_status"] == "accepted_after_regating"
+    assert tool_use["candidate_count"] == 1
+    assert tool_use["accepted_candidate_count"] == 1
+    assert set(tool_use["matched_query_anchors"]) >= {"2019년", "2월", "5호선", "승차총승객수"}
+    assert tool_use["remaining_missing_query_anchors"] == []
+    assert tool_use["input_policy"] == "source_owned_locator_only_no_raw_xlsx_query_time_parsing"
+    assert tool_use["output_policy"] == "selected_evidence_candidate_must_pass_unchanged_gate"
+    selected = row["evidence_gate"]["selected_evidence"][0]
+    assert selected["tool_name"] == "xlsx_locator_tool_v1"
+    assert selected["tool_policy"] == "source_owned_locator_only_no_raw_xlsx_query_time_parsing"
+    assert selected["row_label"] == "5호선"
+    assert selected["target_column"] == "승차총승객수"
+    assert output_file_names(output_dir) == ["report.json", "run.sqlite"]
+
+    sqlite_path = output_dir / "run.sqlite"
+    with sqlite3.connect(sqlite_path) as conn:
+        conn.row_factory = sqlite3.Row
+        tables = {row["name"] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        assert set(locator["run_store"]["tables"]).issubset(tables)
+        run = conn.execute(
+            "SELECT dataset_slug, collection, schema_version, schema_versions_json, backend, tool_name, "
+            "official_metric_input_rows, guardrail_summary_json, record_json FROM runs"
+        ).fetchone()
+        assert run["dataset_slug"] == "xlsx_locator_tool_gold"
+        assert run["collection"] == "deterministic_fixture_or_precomputed_pipeline_output"
+        assert run["schema_version"] == "actual_rag_eval.xlsx_locator_tool_execute_once.v1"
+        schema_versions = json.loads(run["schema_versions_json"])
+        assert schema_versions["actual_rag_eval"] == "actual_rag_eval.v1"
+        assert schema_versions["xlsx_locator_tool_execute_once"] == "actual_rag_eval.xlsx_locator_tool_execute_once.v1"
+        assert run["backend"] == "repo_local_sqlite"
+        assert run["tool_name"] == "xlsx_locator_tool_v1"
+        assert run["official_metric_input_rows"] == 0
+        guardrail_summary = json.loads(run["guardrail_summary_json"])
+        assert guardrail_summary["official_metric_input_rows"] == 0
+        assert guardrail_summary["forbidden_input_fields_used"] == []
+        run_record = json.loads(run["record_json"])
+        assert run_record["tool_invocation_count"] == 1
+        invocation = conn.execute(
+            "SELECT execution_status, candidate_count, accepted_candidate_count FROM tool_invocations"
+        ).fetchone()
+        assert dict(invocation) == {
+            "execution_status": "accepted_after_regating",
+            "candidate_count": 1,
+            "accepted_candidate_count": 1,
+        }
+        candidate = conn.execute(
+            "SELECT row_label, target_column, locator_text_source, accepted_for_regating, rejection_reason, "
+            "input_fields_used_json "
+            "FROM tool_candidates"
+        ).fetchone()
+        assert candidate["row_label"] == "5호선"
+        assert candidate["target_column"] == "승차총승객수"
+        assert candidate["locator_text_source"] == "explicit_locator_text"
+        assert candidate["accepted_for_regating"] == 1
+        assert candidate["rejection_reason"] == ""
+        assert "xlsx_locator_text" in json.loads(candidate["input_fields_used_json"])
+        phases = {
+            (row["phase"], row["classification"])
+            for row in conn.execute("SELECT phase, classification FROM residuals ORDER BY phase")
+        }
+        assert ("before", "selected_evidence_has_value_missing_axis") in phases
+        assert ("after", "no_residual") in phases
+        gate_rows = {
+            (row["phase"], row["answer_gate_decision"])
+            for row in conn.execute("SELECT phase, answer_gate_decision FROM gate_results ORDER BY phase")
+        }
+        assert gate_rows == {("before", "block_unsupported_answer"), ("after", "allow_answer")}
+
+    with sqlite3.connect(sqlite_path) as conn:
+        conn.execute("UPDATE items SET query_task = 'gold_lookup'")
+    with pytest.raises(DatasetSchemaError, match="items.query_task invalid"):
+        actual_rag_eval.validate_xlsx_locator_run_store(
+            "xlsx_locator_tool_execute_once",
+            locator,
+            run_store_path=sqlite_path,
+        )
+
+    missing_store_locator = json.loads(json.dumps(locator))
+    missing_store_locator["run_store"]["path"] = (tmp_path / "missing-run.sqlite").as_posix()
+    with pytest.raises(DatasetSchemaError, match="RunStore missing"):
+        actual_rag_eval.validate_xlsx_locator_run_store("xlsx_locator_tool_execute_once", missing_store_locator)
+
+    corrupt_store_path = tmp_path / "corrupt-run.sqlite"
+    with sqlite3.connect(corrupt_store_path) as conn:
+        conn.execute("CREATE TABLE runs (run_id TEXT)")
+    corrupt_store_locator = json.loads(json.dumps(locator))
+    corrupt_store_locator["run_store"]["path"] = corrupt_store_path.as_posix()
+    with pytest.raises(DatasetSchemaError, match="missing table"):
+        actual_rag_eval.validate_xlsx_locator_run_store("xlsx_locator_tool_execute_once", corrupt_store_locator)
+
+
+def test_xlsx_locator_tool_runstore_output_mode_writes_sqlite_without_report_json(tmp_path: Path) -> None:
+    dataset = tmp_path / "xlsx_locator_runstore_gold.jsonl"
+    context = tmp_path / "xlsx_locator_runstore_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_runstore_only"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx_locator_runstore_q",
+                "query": "2019년 2월 5호선 승차총승객수",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx_locator_runstore_q",
+                "generated_answer": "15,446,522명",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx-runstore",
+                        "chunk_id": "chunk-axis-sparse",
+                        "source_atom_id": "src-xlsx-runstore",
+                        "evidence_bundle_id": "bundle-xlsx-runstore",
+                        "source_family": "XLSX",
+                        "granularity": "table_row",
+                        "text": "15,446,522명",
+                        "xlsx_locator_text": "2019년 2월 5호선 승차총승객수 15,446,522명",
+                        "xlsx_locator_metadata": {
+                            "sheet": "2019년 2월",
+                            "cell_range": "A7:J7",
+                            "cell": "F7",
+                            "row_index_1based": "7",
+                            "row_label": "5호선",
+                            "column_label": "승차총승객수",
+                            "target_column": "승차총승객수",
+                            "header_path": "승하차 > 승차총승객수",
+                            "table_id": "sheet-201902-main-table",
+                        },
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_locator_runstore_only",
+        output_mode="runstore",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        xlsx_locator_tool_execute_once=True,
+    )
+
+    run_store_path = output_dir / "run.sqlite"
+    assert output_file_names(output_dir) == ["run.sqlite"]
+    assert not (output_dir / "report.json").exists()
+    assert bundle.report_path is None
+    assert bundle.summary_path == run_store_path
+    assert bundle.summary["artifact_paths"]["report_json"] == ""
+    assert bundle.summary["artifact_paths"]["summary_json"] == ""
+    assert bundle.summary["artifact_paths"]["xlsx_locator_run_sqlite"] == run_store_path.as_posix()
+    assert bundle.summary["artifact_contract"]["output_mode"] == "runstore"
+    assert bundle.summary["artifact_contract"]["runstore_only"] is True
+    assert bundle.summary["artifact_contract"]["routine_run_file_policy"] == "run.sqlite_only_no_report_json"
+
+    with sqlite3.connect(run_store_path) as conn:
+        conn.row_factory = sqlite3.Row
+        run = conn.execute("SELECT run_id, backend, tool_name, enabled FROM runs").fetchone()
+        assert dict(run) == {
+            "run_id": "xlsx_locator_runstore_only",
+            "backend": "repo_local_sqlite",
+            "tool_name": "xlsx_locator_tool_v1",
+            "enabled": 1,
+        }
+        invocation = conn.execute(
+            "SELECT execution_status, candidate_count, accepted_candidate_count FROM tool_invocations"
+        ).fetchone()
+        assert dict(invocation) == {
+            "execution_status": "accepted_after_regating",
+            "candidate_count": 1,
+            "accepted_candidate_count": 1,
+        }
+        selected = conn.execute(
+            "SELECT tool_name, row_label, target_column FROM selected_evidence WHERE item_index = 0"
+        ).fetchone()
+        assert dict(selected) == {
+            "tool_name": "xlsx_locator_tool_v1",
+            "row_label": "5호선",
+            "target_column": "승차총승객수",
+        }
+
+
+def test_runstore_output_mode_requires_xlsx_locator_execute_once(tmp_path: Path) -> None:
+    dataset = tmp_path / "runstore_requires_locator_gold.jsonl"
+    context = tmp_path / "runstore_requires_locator_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "runstore_requires_locator"
+    write_jsonl(dataset, [{"id": "q1", "query": "capital?", "answerability": "answerable"}])
+    write_jsonl(context, [{"id": "q1", "generated_answer": "Seoul", "retrieved_contexts": [], "citations": []}])
+
+    with pytest.raises(DatasetSchemaError, match="output_mode=runstore requires xlsx locator tool execute-once"):
+        run_eval_from_paths(
+            dataset_path=dataset,
+            output_dir=output_dir,
+            context_jsonl_path=context,
+            top_k=1,
+            run_id="runstore_requires_locator",
+            output_mode="runstore",
+        )
+
+    assert not output_dir.exists()
+
+
+def test_xlsx_locator_tool_execute_once_reports_source_owned_support_text_inputs(tmp_path: Path) -> None:
+    dataset = tmp_path / "xlsx_locator_tool_support_text_gold.jsonl"
+    context = tmp_path / "xlsx_locator_tool_support_text_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_tool_support_text"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx_locator_support_text_q",
+                "query": "2019년 2월 5호선 승차총승객수",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx_locator_support_text_q",
+                "generated_answer": "15,446,522명",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx-locator",
+                        "chunk_id": "chunk-support-text",
+                        "source_atom_id": "src-xlsx-locator-support-text",
+                        "evidence_bundle_id": "bundle-xlsx-locator-support-text",
+                        "source_family": "XLSX",
+                        "granularity": "table_row",
+                        "title": "must-not-be-used.xlsx",
+                        "text": "2019년 2월 5호선 승차총승객수 15,446,522명",
+                        "xlsx_locator_metadata": {
+                            "sheet": "2019년 2월",
+                            "cell_range": "A7:J7",
+                            "cell": "F7",
+                            "row_index_1based": "7",
+                            "row_label": "5호선",
+                            "column_label": "승차총승객수",
+                            "target_column": "승차총승객수",
+                            "header_path": "승하차 > 승차총승객수",
+                            "table_id": "sheet-201902-main-table",
+                        },
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_locator_tool_support_text",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        xlsx_locator_tool_execute_once=True,
+    )
+
+    report = json.loads(bundle.report_path.read_text(encoding="utf-8"))
+    locator = report["xlsx_locator_tool_execute_once"]
+    row = report["items"][0]
+
+    assert report["evidence_gate"]["allowed_answer_count"] == 1
+    assert locator["accepted_candidate_count"] == 1
+    assert row["xlsx_locator_tool_use"]["execution_status"] == "accepted_after_regating"
+    with sqlite3.connect(output_dir / "run.sqlite") as conn:
+        conn.row_factory = sqlite3.Row
+        candidate = conn.execute(
+            "SELECT locator_text_source, input_fields_used_json FROM tool_candidates"
+        ).fetchone()
+        assert candidate["locator_text_source"] == "source_owned_support_text"
+        input_fields = set(json.loads(candidate["input_fields_used_json"]))
+        assert "text" in input_fields
+        assert "locator_text_source" in input_fields
+        assert "xlsx_locator_text" not in input_fields
+        assert {"sheet", "cell_range", "row_label", "target_column"}.issubset(input_fields)
+
+
+def test_xlsx_locator_tool_execute_once_derives_table_row_from_source_owned_text(tmp_path: Path) -> None:
+    dataset = tmp_path / "xlsx_locator_tool_table_text_gold.jsonl"
+    context = tmp_path / "xlsx_locator_tool_table_text_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_tool_table_text"
+    table_text = (
+        "sheet=일반현황 | range=A802:J851 | 장기요양기관이름 | 우편번호 | 시도코드 | "
+        "시군구코드 | 법정동코드 | 시도 시군구 법정동명 | 지정일자 | 설치신고일자 | "
+        "기관별 상세주소 12726000180 | 해오름요양원 | 42222 | 27 | 260 | 110 | "
+        "대구광역시 수성구 파동 | 2012-03-06 | 2012-03-06 | "
+        "대구광역시 수성구 파동로51길 96 (파동) 12726000192 | 어르신노인요양시설 | "
+        "42216 | 27 | 260 | 111 | 대구광역시 수성구 두산동 | 2012-11-30 | "
+        "2012-11-30 | 대구광역시 수성구 용학로25길 6 4층"
+    )
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx_locator_table_text_q",
+                "query": "2012년 3월에 지정된 해오름요양원의 기관별 상세주소는 무엇입니까?",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx_locator_table_text_q",
+                "generated_answer": "대구광역시 수성구 파동로51길 96 (파동)",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx-locator-table",
+                        "chunk_id": "chunk-table-range",
+                        "source_atom_id": "src-xlsx-locator-table",
+                        "evidence_bundle_id": "bundle-xlsx-locator-table",
+                        "source_family": "XLSX",
+                        "granularity": "table_range",
+                        "text": table_text,
+                        "sheet": "일반현황",
+                        "cell_range": "A802:J851",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    baseline_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=tmp_path / "reports" / "rag_eval" / "xlsx_locator_tool_table_text_off",
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_locator_tool_table_text_off",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+    )
+    execute_bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_locator_tool_table_text",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        xlsx_locator_tool_execute_once=True,
+    )
+
+    baseline_report = json.loads(baseline_bundle.report_path.read_text(encoding="utf-8"))
+    report = json.loads(execute_bundle.report_path.read_text(encoding="utf-8"))
+    locator = report["xlsx_locator_tool_execute_once"]
+    row = report["items"][0]
+
+    assert baseline_report["evidence_gate"]["allowed_answer_count"] == 0
+    assert report["evidence_gate"]["allowed_answer_count"] == 1
+    assert locator["gate_delta"]["allowed_answer_count_delta"] == 1
+    assert locator["residual_before"]["classification_counts"] == {
+        "selected_evidence_has_value_missing_axis": 1,
+    }
+    assert locator["residual_after"]["classification_counts"] == {}
+    assert row["xlsx_locator_tool_use"]["execution_status"] == "accepted_after_regating"
+    assert {"2012년", "3월", "해오름요양원", "기관별", "상세주소"}.issubset(
+        set(row["xlsx_locator_tool_use"]["matched_query_anchors"])
+    )
+    selected = row["evidence_gate"]["selected_evidence"][0]
+    assert selected["tool_name"] == "xlsx_locator_tool_v1"
+    assert selected["row_label"] == "해오름요양원"
+    assert selected["target_column"] == "기관별 상세주소"
+    assert selected["display_value"] == "대구광역시 수성구 파동로51길 96 (파동)"
+    assert selected["synthetic_table_id"].startswith("xlsx_locator_table:")
+    assert "source_date_alias=2012년 3월" in selected["text"]
+    with sqlite3.connect(output_dir / "run.sqlite") as conn:
+        conn.row_factory = sqlite3.Row
+        candidate = conn.execute(
+            "SELECT row_label, target_column, display_value, synthetic_table_id, locator_text_source, input_fields_used_json "
+            "FROM tool_candidates WHERE accepted_for_regating = 1"
+        ).fetchone()
+        assert candidate["row_label"] == "해오름요양원"
+        assert candidate["target_column"] == "기관별 상세주소"
+        assert candidate["display_value"] == "대구광역시 수성구 파동로51길 96 (파동)"
+        assert candidate["synthetic_table_id"].startswith("xlsx_locator_table:")
+        assert candidate["locator_text_source"] == "source_owned_table_row_text"
+        input_fields = set(json.loads(candidate["input_fields_used_json"]))
+        assert {"text", "sheet", "cell_range", "row_label", "target_column", "display_value", "synthetic_table_id"}.issubset(input_fields)
+
+
+def test_llm_query_anchor_classifier_keeps_structural_anchors_and_drops_intent_only(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**kwargs: object) -> tuple[dict, dict]:
+        prompt = str(kwargs["prompt"])
+        captured["prompt"] = prompt
+        captured["timeout_seconds"] = kwargs.get("timeout_seconds")
+        assert "2012년 3월에 지정된 해오름요양원의 기관별 상세주소는 무엇입니까?" in prompt
+        for forbidden in ("expected_answer", "expected_evidence", "qrels", "row_id", "baseline_topk"):
+            assert forbidden not in prompt
+        return (
+            {
+                "intent_tokens": ["무엇입니까", "지정된", "2012년"],
+                "numeric_or_date_anchors": ["2012년", "3월"],
+                "entity_anchors": ["해오름요양원"],
+                "measure_anchors": ["기관별", "상세주소"],
+            },
+            {"raw_response_sha256": "sha256:anchor-classifier-response", "strict_json": True},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    result = actual_rag_eval.classify_query_focus_anchors_with_local_llm(
+        "2012년 3월에 지정된 해오름요양원의 기관별 상세주소는 무엇입니까?",
+        backend="llamacpp",
+        base_url="http://localhost:8081/v1",
+        model="gemma4-e2b-local",
+        timeout_seconds=7,
+        skip_endpoint_check=True,
+    )
+
+    assert captured["prompt"]
+    assert captured["timeout_seconds"] == 7
+    assert result["enabled"] is True
+    assert result["status"] == "classified_validated"
+    assert result["model"] == "gemma4-e2b-local"
+    assert result["prompt_version"] == "llm_query_anchor_classifier_v1"
+    assert result["raw_payload_written"] is False
+    assert set(result["required_anchor_before"]) == {
+        "2012년",
+        "3월",
+        "기관별",
+        "무엇입니까",
+        "상세주소",
+        "지정된",
+        "해오름요양원",
+    }
+    assert set(result["required_anchor_after"]) == {
+        "2012년",
+        "3월",
+        "기관별",
+        "상세주소",
+        "해오름요양원",
+    }
+    assert result["removed_intent_tokens"] == ["무엇입니까", "지정된"]
+    assert result["protected_intent_tokens_restored"] == ["2012년"]
+
+
+def test_llm_query_anchor_classifier_malformed_payload_falls_back_to_deterministic(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return ({"intent_tokens": "not-a-list"}, {"raw_response_sha256": "sha256:bad"})
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    result = actual_rag_eval.classify_query_focus_anchors_with_local_llm(
+        "2019년 2월 5호선 승차총승객수는 얼마야?",
+        skip_endpoint_check=True,
+    )
+
+    assert result["status"] == "malformed_payload_deterministic_fallback"
+    assert result["raw_payload_written"] is False
+    assert result["required_anchor_before"] == result["required_anchor_after"]
+    assert set(result["required_anchor_after"]) == {"2019년", "2월", "5호선", "승차총승객수", "얼마야"}
+
+
+def test_llm_query_anchor_classifier_does_not_remove_entity_misclassified_as_intent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "intent_tokens": ["해오름요양원", "무엇입니까"],
+                "numeric_or_date_anchors": ["2012년", "3월"],
+                "entity_anchors": [],
+                "measure_anchors": ["기관별", "상세주소"],
+            },
+            {"raw_response_sha256": "sha256:entity-poison"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    result = actual_rag_eval.classify_query_focus_anchors_with_local_llm(
+        "2012년 3월에 지정된 해오름요양원의 기관별 상세주소는 무엇입니까?",
+        skip_endpoint_check=True,
+    )
+
+    assert result["status"] == "classified_validated"
+    assert "해오름요양원" in result["required_anchor_after"]
+    assert result["removed_intent_tokens"] == ["무엇입니까"]
+    assert result["protected_intent_tokens_restored"] == ["해오름요양원"]
+
+
+def test_query_evidence_planner_validates_structured_xlsx_axes_and_excludes_question_words(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**kwargs: object) -> tuple[dict, dict]:
+        prompt = str(kwargs["prompt"])
+        captured["prompt"] = prompt
+        assert "source_family_hint" in prompt
+        assert "query_task" in prompt
+        assert "row_filters" in prompt
+        assert "target_axis" in prompt
+        assert "2019년 5월 우이신설선의 승차총승객수는 몇 명입니까?" in prompt
+        for forbidden in ("expected_answer", "expected_evidence", "qrels", "row_id", "baseline_topk"):
+            assert forbidden not in prompt
+        return (
+            {
+                "source_family_hint": "xlsx",
+                "query_task": "date_filtered_table_lookup",
+                "row_filters": {"period": "201905", "line_name": "우이신설선"},
+                "target_axis": {"column": "승차총승객수", "value_type": "number"},
+                "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+                "intent_tokens": ["몇 명입니까"],
+            },
+            {"raw_response_sha256": "sha256:query-evidence-plan"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    result = actual_rag_eval.plan_query_evidence_with_local_llm(
+        "2019년 5월 우이신설선의 승차총승객수는 몇 명입니까?",
+        backend="llamacpp",
+        base_url="http://localhost:8081/v1",
+        model="gemma4-e2b-local",
+        timeout_seconds=7,
+        skip_endpoint_check=True,
+    )
+
+    assert captured["prompt"]
+    assert result["enabled"] is True
+    assert result["status"] == "planned_validated"
+    assert result["planner_status"] == "planned_validated"
+    assert result["prompt_version"] == "query_evidence_planner_v1"
+    assert result["input_policy"] == "query_text_only_no_eval_fields_or_baseline"
+    assert result["source_family_hint"] == "xlsx"
+    assert result["query_task"] == "date_filtered_table_lookup"
+    assert result["row_filters"] == {"line_name": "우이신설선", "period": "2019-05"}
+    assert result["target_axis"] == {"column": "승차총승객수", "value_type": "number"}
+    assert result["evidence_contract"] == ["period", "row_entity", "target_column", "display_value"]
+    assert result["validated_required_axes"] == ["period", "row_entity", "target_column", "display_value"]
+    assert result["validated_axis_values"]["period"] == ["2019-05", "2019년 5월", "201905"]
+    assert result["validated_axis_values"]["row_entity"] == ["우이신설선"]
+    assert result["validated_axis_values"]["target_column"] == ["승차총승객수"]
+    assert result["intent_tokens"] == ["몇 명입니까"]
+    assert "몇" not in result["validated_required_axes"]
+    assert "명입니까" not in result["validated_required_axes"]
+    assert result["raw_payload_written"] is False
+
+
+def test_query_evidence_planner_rejects_extra_payload_keys_fail_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "source_family_hint": "xlsx",
+                "query_task": "date_filtered_lookup",
+                "row_filters": {"period": "201905", "line_name": "우이신설선"},
+                "target_axis": {"column": "승차총승객수", "value_type": "number"},
+                "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+                "intent_tokens": ["몇 명입니까"],
+                "expected_answer": "1,234,567명",
+            },
+            {"raw_response_sha256": "sha256:query-evidence-extra-key"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    result = actual_rag_eval.plan_query_evidence_with_local_llm(
+        "2019년 5월 우이신설선의 승차총승객수는 몇 명입니까?",
+        skip_endpoint_check=True,
+    )
+
+    assert result["status"] == "malformed_payload_deterministic_fallback"
+    assert result["raw_payload_written"] is False
+    assert result["uses_expected_fields"] is False
+    assert result["validated_required_axes"] == []
+
+
+def test_query_evidence_planner_validates_pdf_locator_axes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "source_family_hint": "pdf",
+                "query_task": "cell_lookup",
+                "row_filters": {
+                    "page_number": "7",
+                    "section_title": "연결 손익계산서",
+                    "table_caption": "영업실적 표",
+                },
+                "target_axis": {"column": "영업이익", "value_type": "number"},
+                "evidence_contract": [
+                    "page_number",
+                    "section_title",
+                    "table_caption",
+                    "target_column",
+                    "display_value",
+                    "bbox",
+                ],
+                "intent_tokens": ["얼마입니까"],
+            },
+            {"raw_response_sha256": "sha256:pdf-query-evidence-plan"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    result = actual_rag_eval.plan_query_evidence_with_local_llm(
+        "7페이지 연결 손익계산서 영업실적 표의 영업이익은 얼마입니까?",
+        skip_endpoint_check=True,
+    )
+
+    assert result["status"] == "planned_validated"
+    assert result["source_family_hint"] == "pdf"
+    assert result["query_task"] == "cell_lookup"
+    assert result["row_filters"] == {
+        "page_number": "7",
+        "section_title": "연결 손익계산서",
+        "table_caption": "영업실적 표",
+    }
+    assert result["target_axis"] == {"column": "영업이익", "value_type": "number"}
+    assert result["evidence_contract"] == [
+        "page_number",
+        "section_title",
+        "table_caption",
+        "target_column",
+        "display_value",
+        "bbox",
+    ]
+    assert result["validated_required_axes"] == [
+        "page_number",
+        "section_title",
+        "table_caption",
+        "target_column",
+        "display_value",
+        "bbox",
+    ]
+    assert result["validated_axis_values"]["page_number"] == ["7", "7페이지", "page 7", "p. 7"]
+    assert result["validated_axis_values"]["section_title"] == ["연결 손익계산서"]
+    assert result["validated_axis_values"]["table_caption"] == ["영업실적 표"]
+    assert result["validated_axis_values"]["target_column"] == ["영업이익"]
+
+
+def test_query_evidence_planner_adds_task_required_display_axis(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "source_family_hint": "xlsx",
+                "query_task": "date_filtered_table_lookup",
+                "row_filters": {"period": "201905", "line_name": "우이신설선"},
+                "target_axis": {"column": "승차총승객수", "value_type": "number"},
+                "evidence_contract": ["period", "row_entity", "target_column"],
+                "intent_tokens": ["몇 명입니까"],
+            },
+            {"raw_response_sha256": "sha256:query-evidence-task-required-axis"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    result = actual_rag_eval.plan_query_evidence_with_local_llm(
+        "2019년 5월 우이신설선의 승차총승객수는 몇 명입니까?",
+        skip_endpoint_check=True,
+    )
+
+    assert result["status"] == "planned_validated"
+    assert result["query_task"] == "date_filtered_table_lookup"
+    assert result["evidence_contract"] == ["period", "row_entity", "target_column", "display_value"]
+    assert result["validated_required_axes"] == ["period", "row_entity", "target_column", "display_value"]
+
+
+def test_evidence_gate_satisfies_pdf_locator_presence_axes_from_metadata() -> None:
+    query = "7페이지 연결 손익계산서 영업실적 표의 영업이익은 얼마입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "pdf",
+            "query_task": "cell_lookup",
+            "row_filters": {
+                "page_number": "7",
+                "section_title": "연결 손익계산서",
+                "table_caption": "영업실적 표",
+            },
+            "target_axis": {"column": "영업이익", "value_type": "number"},
+            "evidence_contract": [
+                "page_number",
+                "section_title",
+                "table_caption",
+                "target_column",
+                "display_value",
+                "bbox",
+            ],
+            "intent_tokens": ["얼마입니까"],
+            "validated_required_axes": [
+                "page_number",
+                "section_title",
+                "table_caption",
+                "target_column",
+                "display_value",
+                "bbox",
+            ],
+            "validated_axis_values": {
+                "page_number": ["7"],
+                "section_title": ["연결 손익계산서"],
+                "table_caption": ["영업실적 표"],
+                "target_column": ["영업이익"],
+                "display_value": [],
+                "bbox": [],
+            },
+        },
+    )
+    row = {
+        "id": "gate_pdf_locator_presence_axes",
+        "query": query,
+        "generated_answer": "123억원",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-pdf-locator-axis",
+                "chunk_id": "chunk-pdf-locator-axis",
+                "source_atom_id": "src-pdf-locator-axis",
+                "evidence_bundle_id": "bundle-pdf-locator-axis",
+                "source_family": "PDF",
+                "granularity": "page_block",
+                "text": "연결 손익계산서 영업실적 표 영업이익은 123억원입니다.",
+                "page_number": "7",
+                "section_title": "연결 손익계산서",
+                "table_caption": "영업실적 표",
+                "bbox": "[72,260,510,318]",
+            }
+        ],
+        "citations": [],
+    }
+
+    validation = validate_evidence_package_for_gate(row)
+
+    assert validation["evidence_package_status"] == "sufficient"
+    assert validation["matched_validated_required_axes"] == [
+        "page_number",
+        "section_title",
+        "table_caption",
+        "target_column",
+        "display_value",
+        "bbox",
+    ]
+    assert validation["missing_validated_required_axes"] == []
+
+
+def test_run_eval_provides_query_evidence_planner_to_retrieval_adapter_before_run(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    dataset = tmp_path / "pre_retrieval_query_evidence_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "pre_retrieval_query_evidence"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "pre_retrieval_query_evidence_q",
+                "query": "해오름요양원의 기관별 상세주소는 무엇입니까?",
+                "answerability": "answerable",
+                "expected_answer": "대구광역시 수성구 파동로51길 96",
+            }
+        ],
+    )
+
+    class PlannerAwareAdapter:
+        requested_backend = "hybrid"
+
+        def __init__(self) -> None:
+            self.seen_planners: list[dict[str, object]] = []
+
+        @property
+        def config(self) -> dict[str, object]:
+            return {
+                "adapter": "planner_aware_adapter",
+                "candidate_generation_input_policy": "query_text_and_query_evidence_planner_only",
+            }
+
+        @property
+        def retrieval_backend_report(self) -> dict[str, object]:
+            return {
+                "requested": self.requested_backend,
+                "selected": "hybrid",
+                "bm25_enabled": True,
+                "vector_enabled": False,
+                "hybrid_enabled": True,
+                "embedding_model": "none",
+                "embedding_device": "none",
+                "gpu_used_for_embedding": False,
+                "vector_index_kind": "none",
+                "vector_index_type": "none",
+                "vector_dim": 0,
+                "indexed_unit_count": 1,
+                "query_count": len(self.seen_planners),
+                "fallback_reason": "",
+            }
+
+        def run_item(self, item: object, *, top_k: int) -> dict[str, object]:
+            source_row = getattr(item, "source_row", {})
+            planner = source_row.get("query_evidence_planner") if isinstance(source_row, dict) else {}
+            self.seen_planners.append(dict(planner) if isinstance(planner, dict) else {})
+            return {
+                "id": str(getattr(item, "id", "")),
+                "query": str(getattr(item, "query", "")),
+                "answerability": "answerable",
+                "generated_answer": "대구광역시 수성구 파동로51길 96",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-pre-retrieval-planner",
+                        "chunk_id": "chunk-pre-retrieval-planner",
+                        "source_atom_id": "src-pre-retrieval-planner",
+                        "evidence_bundle_id": "bundle-pre-retrieval-planner",
+                        "source_family": "TEXT",
+                        "granularity": "paragraph",
+                        "text": "해오름요양원의 기관별 상세주소는 대구광역시 수성구 파동로51길 96입니다.",
+                    }
+                ][:top_k],
+                "citations": [],
+                "diagnostics": {},
+            }
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "source_family_hint": "text",
+                "query_task": "entity_attribute_lookup",
+                "row_filters": {"facility_name": "해오름요양원"},
+                "target_axis": {"column": "기관별 상세주소", "value_type": "text"},
+                "evidence_contract": ["row_entity", "target_column", "display_value"],
+                "intent_tokens": ["무엇입니까"],
+            },
+            {"raw_response_sha256": "sha256:pre-retrieval-query-evidence"},
+        )
+
+    adapter = PlannerAwareAdapter()
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        retrieval_adapter=adapter,
+        top_k=1,
+        run_id="pre_retrieval_query_evidence",
+        output_mode="single",
+        evidence_gate_mode="diagnostic",
+        answer_composer="extractive-v1",
+        resolve_expected_evidence=False,
+        llm_query_anchor_classifier=True,
+        skip_local_llm_composer_endpoint_check=True,
+    )
+
+    assert adapter.seen_planners
+    assert adapter.seen_planners[0]["planner_status"] == "planned_validated"
+    assert adapter.seen_planners[0]["source_family_hint"] == "text"
+    assert adapter.seen_planners[0]["query_task"] == "entity_attribute_lookup"
+
+
+def test_xlsx_locator_uses_validated_required_axes_instead_of_question_anchor_words(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    dataset = tmp_path / "xlsx_locator_query_evidence_planner_gold.jsonl"
+    context = tmp_path / "xlsx_locator_query_evidence_planner_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_query_evidence_planner"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx_locator_query_evidence_planner_q",
+                "query": "2019년 5월 우이신설선의 승차총승객수는 몇 명입니까?",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx_locator_query_evidence_planner_q",
+                "generated_answer": "1,234,567명",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx-query-evidence-planner",
+                        "chunk_id": "chunk-query-evidence-planner",
+                        "source_atom_id": "src-xlsx-query-evidence-planner",
+                        "evidence_bundle_id": "bundle-xlsx-query-evidence-planner",
+                        "source_family": "XLSX",
+                        "granularity": "table_row",
+                        "text": "1,234,567명",
+                        "xlsx_locator_text": "2019년 5월 우이신설선 승차총승객수 1,234,567명",
+                        "xlsx_locator_metadata": {
+                            "sheet": "2019년 5월",
+                            "cell_range": "A17:J17",
+                            "cell": "F17",
+                            "row_index_1based": "17",
+                            "row_label": "우이신설선",
+                            "column_label": "승차총승객수",
+                            "target_column": "승차총승객수",
+                            "header_path": "승하차 > 승차총승객수",
+                            "table_id": "sheet-201905-main-table",
+                            "display_value": "1,234,567명",
+                        },
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "source_family_hint": "xlsx",
+                "query_task": "date_filtered_table_lookup",
+                "row_filters": {"period": "201905", "line_name": "우이신설선"},
+                "target_axis": {"column": "승차총승객수", "value_type": "number"},
+                "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+                "intent_tokens": ["몇 명입니까"],
+            },
+            {"raw_response_sha256": "sha256:query-evidence-run"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_locator_query_evidence_planner",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        xlsx_locator_tool_execute_once=True,
+        llm_query_anchor_classifier=True,
+        local_llm_composer_model="gemma4-e2b-local",
+        skip_local_llm_composer_endpoint_check=True,
+    )
+
+    report = json.loads(bundle.report_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    planner = row["query_evidence_planner"]
+    tool_use = row["xlsx_locator_tool_use"]
+
+    assert report["evidence_gate"]["allowed_answer_count"] == 1
+    assert planner["query_task"] == "date_filtered_table_lookup"
+    assert planner["source_family_hint"] == "xlsx"
+    assert planner["row_filters"] == {"line_name": "우이신설선", "period": "2019-05"}
+    assert planner["target_axis"] == {"column": "승차총승객수", "value_type": "number"}
+    assert planner["validated_required_axes"] == ["period", "row_entity", "target_column", "display_value"]
+    assert tool_use["execution_status"] == "accepted_after_regating"
+    assert tool_use["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert tool_use["remaining_missing_validated_required_axes"] == []
+    assert "몇" not in tool_use["remaining_missing_query_anchors"]
+    assert "명입니까" not in tool_use["remaining_missing_query_anchors"]
+
+    selected = row["evidence_gate"]["selected_evidence"][0]
+    assert selected["row_label"] == "우이신설선"
+    assert selected["target_column"] == "승차총승객수"
+    assert selected["display_value"] == "1,234,567명"
+
+    with sqlite3.connect(output_dir / "run.sqlite") as conn:
+        conn.row_factory = sqlite3.Row
+        item = conn.execute(
+            "SELECT source_family_hint, query_task, planner_status, row_filters_json, "
+            "target_axis_json, validated_required_axes_json FROM items"
+        ).fetchone()
+        assert item["source_family_hint"] == "xlsx"
+        assert item["query_task"] == "date_filtered_table_lookup"
+        assert item["planner_status"] == "planned_validated"
+        assert json.loads(item["row_filters_json"]) == {"line_name": "우이신설선", "period": "2019-05"}
+        assert json.loads(item["target_axis_json"]) == {"column": "승차총승객수", "value_type": "number"}
+        assert json.loads(item["validated_required_axes_json"]) == [
+            "period",
+            "row_entity",
+            "target_column",
+            "display_value",
+        ]
+        candidate = conn.execute(
+            "SELECT matched_validated_required_axes_json, missing_validated_required_axes_json "
+            "FROM tool_candidates"
+        ).fetchone()
+        assert json.loads(candidate["matched_validated_required_axes_json"]) == [
+            "period",
+            "row_entity",
+            "target_column",
+            "display_value",
+        ]
+        assert json.loads(candidate["missing_validated_required_axes_json"]) == []
+
+
+def test_evidence_gate_prefers_validated_required_axes_over_raw_date_anchor() -> None:
+    query = "201905 우이신설선 승차총승객수는 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"line_name": "우이신설선", "period": "2019-05"},
+            "target_axis": {"column": "승차총승객수", "value_type": "number"},
+            "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+            "intent_tokens": ["몇 명입니까"],
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-05", "2019년 5월", "201905"],
+                "row_entity": ["우이신설선"],
+                "target_column": ["승차총승객수"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "gate_prefers_validated_axes",
+        "query": query,
+        "generated_answer": "1,234,567명",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-xlsx-gate-axis",
+                "chunk_id": "chunk-xlsx-gate-axis",
+                "source_atom_id": "src-xlsx-gate-axis",
+                "evidence_bundle_id": "bundle-xlsx-gate-axis",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": "2019년 5월 우이신설선 승차총승객수",
+                "sheet": "2019년 5월",
+                "row_label": "우이신설선",
+                "target_column": "승차총승객수",
+                "display_value": "1,234,567명",
+            }
+        ],
+        "citations": [],
+    }
+
+    validation = actual_rag_eval.validate_evidence_package_for_gate(row)
+
+    assert validation["evidence_package_status"] == "sufficient"
+    assert validation["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert validation["missing_validated_required_axes"] == []
+    assert validation["validated_required_axes_coverage"] == 1.0
+    assert "missing_query_anchor" not in validation["validation_reasons"]
+
+
+def test_xlsx_locator_rejects_validated_axes_when_planner_routes_to_pdf() -> None:
+    query = "2019년 5월 우이신설선의 승차총승객수는 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "pdf",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"line_name": "우이신설선", "period": "2019-05"},
+            "target_axis": {"column": "승차총승객수", "value_type": "number"},
+            "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+            "intent_tokens": ["몇 명입니까"],
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-05", "2019년 5월", "201905"],
+                "row_entity": ["우이신설선"],
+                "target_column": ["승차총승객수"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx_locator_pdf_route_mismatch",
+        "query": query,
+        "generated_answer": "1,234,567명",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+    }
+    context = {
+        "doc_id": "doc-xlsx-route-mismatch",
+        "chunk_id": "chunk-xlsx-route-mismatch",
+        "source_atom_id": "src-xlsx-route-mismatch",
+        "evidence_bundle_id": "bundle-xlsx-route-mismatch",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": "2019년 5월 우이신설선 승차총승객수 1,234,567명",
+        "xlsx_locator_text": "2019년 5월 우이신설선 승차총승객수 1,234,567명",
+        "sheet": "2019년 5월",
+        "cell_range": "A17:J17",
+        "row_label": "우이신설선",
+        "target_column": "승차총승객수",
+        "display_value": "1,234,567명",
+    }
+
+    candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
+
+    assert candidate is not None
+    assert candidate["accepted_for_regating"] is False
+    assert candidate["rejection_reason"] == "source_family_hint_mismatch"
+
+
+def test_selected_evidence_composer_keeps_axis_valid_xlsx_locator_candidate() -> None:
+    query = "201905 우이신설선 승차총승객수는 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"line_name": "우이신설선", "period": "2019-05"},
+            "target_axis": {"column": "승차총승객수", "value_type": "number"},
+            "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+            "intent_tokens": ["몇 명입니까"],
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-05", "2019년 5월", "201905"],
+                "row_entity": ["우이신설선"],
+                "target_column": ["승차총승객수"],
+                "display_value": [],
+            },
+        },
+    )
+    context = {
+        "doc_id": "doc-xlsx-composer-axis",
+        "chunk_id": "chunk-xlsx-composer-axis",
+        "source_atom_id": "src-xlsx-composer-axis",
+        "evidence_bundle_id": "bundle-xlsx-composer-axis",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": "2019년 5월 우이신설선 승차총승객수 1,234,567명",
+        "xlsx_locator_tool_output": True,
+        "accepted_for_regating": True,
+        "matched_validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+        "missing_validated_required_axes": [],
+        "sheet": "2019년 5월",
+        "cell_range": "A17:J17",
+        "row_label": "우이신설선",
+        "target_column": "승차총승객수",
+        "display_value": "1,234,567명",
+    }
+
+    selected = select_composer_evidence(query, [context], query_evidence_planner=planner)
+
+    assert [row["source_atom_id"] for row in selected] == ["src-xlsx-composer-axis"]
+    assert selected[0]["composer_validated_required_axis_hits"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+
+
+def test_selected_evidence_composer_honors_text_source_family_hint() -> None:
+    query = "해오름요양원의 기관별 상세주소는 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "text",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"facility_name": "해오름요양원"},
+            "target_axis": {"column": "기관별 상세주소", "value_type": "text"},
+            "evidence_contract": ["row_entity", "target_column", "display_value"],
+            "intent_tokens": ["무엇입니까"],
+            "validated_required_axes": ["row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "row_entity": ["해오름요양원"],
+                "target_column": ["기관별 상세주소"],
+                "display_value": [],
+            },
+        },
+    )
+    xlsx_distractor = {
+        "doc_id": "doc-xlsx-text-distractor",
+        "chunk_id": "chunk-xlsx-text-distractor",
+        "source_atom_id": "src-xlsx-text-distractor",
+        "evidence_bundle_id": "bundle-xlsx-text-distractor",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": "해오름요양원 기관별 상세주소 대구광역시 수성구 파동로51길 96",
+        "sheet": "일반현황",
+        "cell_range": "A802:J802",
+        "row_label": "해오름요양원",
+        "target_column": "기관별 상세주소",
+        "display_value": "대구광역시 수성구 파동로51길 96",
+    }
+    text_context = {
+        "doc_id": "doc-text-source",
+        "chunk_id": "chunk-text-source",
+        "source_atom_id": "src-text-source",
+        "evidence_bundle_id": "bundle-text-source",
+        "source_family": "TEXT",
+        "granularity": "paragraph",
+        "text": "해오름요양원의 기관별 상세주소는 대구광역시 수성구 파동로51길 96입니다.",
+        "section_title": "기관 현황",
+    }
+
+    selected = select_composer_evidence(
+        query,
+        [xlsx_distractor, text_context],
+        max_evidence=1,
+        query_evidence_planner=planner,
+    )
+
+    assert [row["source_atom_id"] for row in selected] == ["src-text-source"]
+    assert selected[0]["composer_source_family_hint"] == "text"
+
+
+def test_evidence_gate_requires_text_display_value_beyond_query_axes() -> None:
+    query = "해오름요양원의 기관별 상세주소는 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "text",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"facility_name": "해오름요양원"},
+            "target_axis": {"column": "기관별 상세주소", "value_type": "text"},
+            "evidence_contract": ["row_entity", "target_column", "display_value"],
+            "intent_tokens": ["무엇입니까"],
+            "validated_required_axes": ["row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "row_entity": ["해오름요양원"],
+                "target_column": ["기관별 상세주소"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "gate_text_missing_display_value",
+        "query": query,
+        "generated_answer": "해오름요양원 기관별 상세주소",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-text-no-value",
+                "chunk_id": "chunk-text-no-value",
+                "source_atom_id": "src-text-no-value",
+                "evidence_bundle_id": "bundle-text-no-value",
+                "source_family": "TEXT",
+                "granularity": "paragraph",
+                "text": "해오름요양원 기관별 상세주소",
+            }
+        ],
+        "citations": [],
+    }
+
+    validation = validate_evidence_package_for_gate(row)
+
+    assert validation["evidence_package_status"] == "insufficient"
+    assert validation["matched_validated_required_axes"] == ["row_entity", "target_column"]
+    assert validation["missing_validated_required_axes"] == ["display_value"]
+    assert "missing_validated_required_axes" in validation["validation_reasons"]
+
+
+def test_evidence_gate_accepts_short_text_display_value_beyond_query_axes() -> None:
+    query = "해오름요양원의 시도는 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "text",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"facility_name": "해오름요양원"},
+            "target_axis": {"column": "시도", "value_type": "text"},
+            "evidence_contract": ["row_entity", "target_column", "display_value"],
+            "intent_tokens": ["무엇입니까"],
+            "validated_required_axes": ["row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "row_entity": ["해오름요양원"],
+                "target_column": ["시도"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "gate_text_short_display_value",
+        "query": query,
+        "generated_answer": "대구",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-text-short-value",
+                "chunk_id": "chunk-text-short-value",
+                "source_atom_id": "src-text-short-value",
+                "evidence_bundle_id": "bundle-text-short-value",
+                "source_family": "TEXT",
+                "granularity": "paragraph",
+                "text": "해오름요양원의 시도는 대구입니다.",
+            }
+        ],
+        "citations": [],
+    }
+
+    validation = validate_evidence_package_for_gate(row)
+
+    assert validation["evidence_package_status"] == "sufficient"
+    assert validation["matched_validated_required_axes"] == ["row_entity", "target_column", "display_value"]
+    assert validation["missing_validated_required_axes"] == []
+
+
+def test_evidence_gate_rejects_source_family_hint_mismatch_even_when_axes_match() -> None:
+    query = "201905 우이신설선 승차총승객수는 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "pdf",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"line_name": "우이신설선", "period": "2019-05"},
+            "target_axis": {"column": "승차총승객수", "value_type": "number"},
+            "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+            "intent_tokens": ["몇 명입니까"],
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-05", "2019년 5월", "201905"],
+                "row_entity": ["우이신설선"],
+                "target_column": ["승차총승객수"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "gate_rejects_source_family_mismatch",
+        "query": query,
+        "generated_answer": "1,234,567명",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-text-wrong-family",
+                "chunk_id": "chunk-text-wrong-family",
+                "source_atom_id": "src-text-wrong-family",
+                "evidence_bundle_id": "bundle-text-wrong-family",
+                "source_family": "TEXT",
+                "granularity": "paragraph",
+                "text": "2019년 5월 우이신설선 승차총승객수는 1,234,567명입니다.",
+                "section_title": "도시철도 통계",
+            }
+        ],
+        "citations": [],
+    }
+
+    validation = validate_evidence_package_for_gate(row)
+
+    assert validation["evidence_package_status"] == "insufficient"
+    assert validation["source_family_hint"] == "pdf"
+    assert validation["source_family_hint_matched_evidence_count"] == 0
+    assert "source_family_hint_mismatch" in validation["validation_reasons"]
+
+
+def test_evidence_gate_ignores_wrong_family_evidence_when_matching_family_is_incomplete() -> None:
+    query = "201905 우이신설선 승차총승객수는 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "pdf",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"line_name": "우이신설선", "period": "2019-05"},
+            "target_axis": {"column": "승차총승객수", "value_type": "number"},
+            "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+            "intent_tokens": ["몇 명입니까"],
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-05", "2019년 5월", "201905"],
+                "row_entity": ["우이신설선"],
+                "target_column": ["승차총승객수"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "gate_ignores_wrong_family",
+        "query": query,
+        "generated_answer": "1,234,567명",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-text-wrong-family-with-value",
+                "chunk_id": "chunk-text-wrong-family-with-value",
+                "source_atom_id": "src-text-wrong-family-with-value",
+                "evidence_bundle_id": "bundle-text-wrong-family-with-value",
+                "source_family": "TEXT",
+                "granularity": "paragraph",
+                "text": "2019년 5월 우이신설선 승차총승객수는 1,234,567명입니다.",
+                "section_title": "도시철도 통계",
+            },
+            {
+                "doc_id": "doc-pdf-matching-family-no-value",
+                "chunk_id": "chunk-pdf-matching-family-no-value",
+                "source_atom_id": "src-pdf-matching-family-no-value",
+                "evidence_bundle_id": "bundle-pdf-matching-family-no-value",
+                "source_family": "PDF",
+                "granularity": "page_block",
+                "text": "2019년 5월 승차총승객수는 1,234,567명입니다.",
+                "page_number": "3",
+                "block_index": "7",
+                "table_caption": "도시철도 월별 승하차 통계",
+            },
+        ],
+        "citations": [],
+    }
+
+    validation = validate_evidence_package_for_gate(row)
+
+    assert validation["evidence_package_status"] == "insufficient"
+    assert validation["source_family_hint"] == "pdf"
+    assert validation["source_family_hint_matched_evidence_count"] == 1
+    assert validation["missing_validated_required_axes"] == ["row_entity"]
+    assert "missing_validated_required_axes" in validation["validation_reasons"]
+
+
+def test_xlsx_locator_runstore_records_llm_anchor_classifier_summary(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    dataset = tmp_path / "xlsx_locator_anchor_classifier_gold.jsonl"
+    context = tmp_path / "xlsx_locator_anchor_classifier_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_anchor_classifier"
+    table_text = (
+        "sheet=일반현황 | range=A802:J851 | 장기요양기관이름 | 우편번호 | 시도코드 | "
+        "시군구코드 | 법정동코드 | 시도 시군구 법정동명 | 지정일자 | 설치신고일자 | "
+        "기관별 상세주소 12726000180 | 해오름요양원 | 42222 | 27 | 260 | 110 | "
+        "대구광역시 수성구 파동 | 2012-03-06 | 2012-03-06 | "
+        "대구광역시 수성구 파동로51길 96 (파동)"
+    )
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx_locator_anchor_classifier_q",
+                "query": "2012년 3월에 지정된 해오름요양원의 기관별 상세주소는 무엇입니까?",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx_locator_anchor_classifier_q",
+                "generated_answer": "대구광역시 수성구 파동로51길 96 (파동)",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx-anchor-classifier",
+                        "chunk_id": "chunk-anchor-classifier",
+                        "source_atom_id": "src-xlsx-anchor-classifier",
+                        "evidence_bundle_id": "bundle-xlsx-anchor-classifier",
+                        "source_family": "XLSX",
+                        "granularity": "table_range",
+                        "text": table_text,
+                        "sheet": "일반현황",
+                        "cell_range": "A802:J851",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**kwargs: object) -> tuple[dict, dict]:
+        prompt = str(kwargs["prompt"])
+        assert "xlsx_locator_anchor_classifier_q" not in prompt
+        assert "answerability" not in prompt
+        assert "expected_answer" not in prompt
+        assert "qrels" not in prompt
+        return (
+            {
+                "intent_tokens": ["무엇입니까", "지정된"],
+                "numeric_or_date_anchors": ["2012년", "3월"],
+                "entity_anchors": ["해오름요양원"],
+                "measure_anchors": ["기관별", "상세주소"],
+            },
+            {"raw_response_sha256": "sha256:classifier-runstore"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_locator_anchor_classifier",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        xlsx_locator_tool_execute_once=True,
+        llm_query_anchor_classifier=True,
+        local_llm_composer_model="gemma4-e2b-local",
+        local_llm_composer_timeout_seconds=7,
+        skip_local_llm_composer_endpoint_check=True,
+    )
+
+    report = json.loads(bundle.report_path.read_text(encoding="utf-8"))
+    locator = report["xlsx_locator_tool_execute_once"]
+    assert locator["anchor_classifier_model"] == "gemma4-e2b-local"
+    assert locator["anchor_classifier_prompt_version"] == "llm_query_anchor_classifier_v1"
+    assert locator["anchor_classifier_raw_payload_written"] is False
+    assert locator["required_anchor_summary"]["before"]["anchor_count"] == 7
+    assert locator["required_anchor_summary"]["after"]["anchor_count"] == 5
+    assert locator["required_anchor_summary"]["removed_intent_tokens"] == ["무엇입니까", "지정된"]
+    assert report["items"][0]["query_anchor_classifier"]["required_anchor_after"] == [
+        "2012년",
+        "3월",
+        "기관별",
+        "상세주소",
+        "해오름요양원",
+    ]
+    with sqlite3.connect(output_dir / "run.sqlite") as conn:
+        conn.row_factory = sqlite3.Row
+        run = conn.execute(
+            "SELECT anchor_classifier_model, anchor_classifier_prompt_version, "
+            "anchor_classifier_raw_payload_written, required_anchor_summary_json FROM runs"
+        ).fetchone()
+        assert run["anchor_classifier_model"] == "gemma4-e2b-local"
+        assert run["anchor_classifier_prompt_version"] == "llm_query_anchor_classifier_v1"
+        assert run["anchor_classifier_raw_payload_written"] == 0
+        summary = json.loads(run["required_anchor_summary_json"])
+        assert summary["after"]["anchors"] == ["2012년", "3월", "기관별", "상세주소", "해오름요양원"]
+
+
+def test_xlsx_locator_tool_execute_once_rejects_table_row_adjacent_date_only(tmp_path: Path) -> None:
+    dataset = tmp_path / "xlsx_locator_tool_adjacent_date_gold.jsonl"
+    context = tmp_path / "xlsx_locator_tool_adjacent_date_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_tool_adjacent_date"
+    table_text = (
+        "sheet=일반현황 | range=A802:J851 | 장기요양기관이름 | 우편번호 | 시도코드 | "
+        "시군구코드 | 법정동코드 | 시도 시군구 법정동명 | 지정일자 | 설치신고일자 | "
+        "기관별 상세주소 12726000180 | 해오름요양원 | 42222 | 27 | 260 | 110 | "
+        "대구광역시 수성구 파동 | 2010-01-01 | 2010-01-01 | "
+        "대구광역시 수성구 파동로51길 96 (파동) 12726000192 | 어르신노인요양시설 | "
+        "42216 | 27 | 260 | 111 | 대구광역시 수성구 두산동 | 2012-03-06 | "
+        "2012-03-06 | 대구광역시 수성구 용학로25길 6 4층"
+    )
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx_locator_adjacent_date_q",
+                "query": "2012년 3월에 지정된 해오름요양원의 기관별 상세주소는 무엇입니까?",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx_locator_adjacent_date_q",
+                "generated_answer": "대구광역시 수성구 파동로51길 96 (파동)",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx-locator-table",
+                        "chunk_id": "chunk-table-range",
+                        "source_atom_id": "src-xlsx-locator-table",
+                        "evidence_bundle_id": "bundle-xlsx-locator-table",
+                        "source_family": "XLSX",
+                        "granularity": "table_range",
+                        "text": table_text,
+                        "sheet": "일반현황",
+                        "cell_range": "A802:J851",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_locator_tool_adjacent_date",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        xlsx_locator_tool_execute_once=True,
+    )
+
+    report = json.loads(bundle.report_path.read_text(encoding="utf-8"))
+    locator = report["xlsx_locator_tool_execute_once"]
+
+    assert report["evidence_gate"]["allowed_answer_count"] == 0
+    assert locator["accepted_candidate_count"] == 0
+    assert locator["gate_delta"]["allowed_answer_count_delta"] == 0
+    assert report["items"][0]["xlsx_locator_tool_use"]["execution_status"] == "skipped_missing_source_locator"
+    with sqlite3.connect(output_dir / "run.sqlite") as conn:
+        conn.row_factory = sqlite3.Row
+        candidates = conn.execute(
+            "SELECT locator_text_source, accepted_for_regating, rejection_reason, missing_query_anchors_after_tool_json "
+            "FROM tool_candidates"
+        ).fetchall()
+        assert candidates
+        assert all(candidate["accepted_for_regating"] == 0 for candidate in candidates)
+        assert "source_owned_table_row_text" not in {
+            candidate["locator_text_source"]
+            for candidate in candidates
+            if candidate["accepted_for_regating"] == 1
+        }
+        missing_anchors = {
+            anchor
+            for candidate in candidates
+            for anchor in json.loads(candidate["missing_query_anchors_after_tool_json"])
+        }
+        assert {"2012년", "3월"}.issubset(missing_anchors)
+
+
+def test_xlsx_locator_tool_execute_once_rejects_forbidden_locator_shortcuts(tmp_path: Path) -> None:
+    dataset = tmp_path / "xlsx_locator_tool_poison_gold.jsonl"
+    context = tmp_path / "xlsx_locator_tool_poison_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_tool_poison"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx_locator_poison_q",
+                "query": "2019년 2월 5호선 승차총승객수는 얼마야?",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx_locator_poison_q",
+                "generated_answer": "15,446,522명",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx-locator",
+                        "chunk_id": "chunk-poison",
+                        "source_atom_id": "src-xlsx-locator",
+                        "evidence_bundle_id": "bundle-xlsx-locator",
+                        "source_family": "XLSX",
+                        "granularity": "table_row",
+                        "text": "15,446,522명",
+                        "xlsx_locator_text": (
+                            "2019년 2월 5호선 승차총승객수 15,446,522명 "
+                            "normalizedValue=15446522 formula=SUM(F7) workbook=metro.xlsx "
+                            "sourceTitle=shortcut title=shortcut sourceFileName=C:\\tmp\\metro.xlsx "
+                            "targetLocator=F7 goldLocator=F7 queryId=x caseId=y "
+                            "baselineTopK=1 expectedAnswer=15446522 "
+                            "rawPromptPayload={} rawResponsePayload={}"
+                        ),
+                        "xlsx_locator_metadata": {
+                            "sheet": "2019년 2월",
+                            "cell_range": "A7:J7",
+                            "cell": "F7",
+                            "row_index_1based": "7",
+                            "row_label": "5호선",
+                            "column_label": "승차총승객수",
+                            "target_column": "승차총승객수",
+                            "header_path": "승하차 > 승차총승객수",
+                            "table_id": "sheet-201902-main-table",
+                            "normalizedValue": "15446522",
+                            "sourceFileName": "metro.xlsx",
+                            "rawPromptPayload": {},
+                            "expectedAnswer": "15446522",
+                            "baselineTopK": 1,
+                        },
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_locator_tool_poison",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        xlsx_locator_tool_execute_once=True,
+    )
+
+    report = json.loads(bundle.report_path.read_text(encoding="utf-8"))
+    locator = report["xlsx_locator_tool_execute_once"]
+    row = report["items"][0]
+    tool_use = row["xlsx_locator_tool_use"]
+
+    assert report["evidence_gate"]["allowed_answer_count"] == 0
+    assert report["evidence_gate"]["unsupported_answer_blocked_count"] == 1
+    assert locator["eligible_failed_row_count"] == 1
+    assert locator["tool_invocation_count"] == 1
+    assert locator["accepted_candidate_count"] == 0
+    assert locator["rejected_candidate_count"] == 1
+    assert locator["tool_execution_status_counts"] == {"skipped_missing_source_locator": 1}
+    assert locator["candidate_confidence_tier_counts"] == {"high": 1}
+    assert locator["candidate_rejection_reason_counts"] == {"forbidden_input_fields_present": 1}
+    assert locator["candidate_source_family_counts"] == {"XLSX": 1}
+    assert locator["forbidden_input_fields_used"] == []
+    assert set(locator["forbidden_input_fields_rejected"]) >= {"expected_answer", "baseline_topk", "raw_prompt_payload"}
+    assert locator["raw_xlsx_query_time_parsing_used"] is False
+    assert locator["gold_or_qrels_or_label_or_expected_used"] is False
+    assert set(locator["forbidden_input_fields_seen"]) >= {
+        "case_id",
+        "baseline_topk",
+        "expected_answer",
+        "file_name",
+        "formula",
+        "gold_locator",
+        "normalized_value",
+        "query_id",
+        "raw_prompt_payload",
+        "raw_response_payload",
+        "source_file_name",
+        "source_title",
+        "target_locator",
+        "title",
+        "workbook",
+    }
+    assert tool_use["execution_status"] == "skipped_missing_source_locator"
+    assert tool_use["candidate_count"] == 1
+    assert tool_use["accepted_candidate_count"] == 0
+    assert output_file_names(output_dir) == ["report.json", "run.sqlite"]
+
+    with sqlite3.connect(output_dir / "run.sqlite") as conn:
+        conn.row_factory = sqlite3.Row
+        candidate = conn.execute(
+            "SELECT accepted_for_regating, rejection_reason, matched_query_anchors_json FROM tool_candidates"
+        ).fetchone()
+        assert candidate["accepted_for_regating"] == 0
+        assert candidate["rejection_reason"] == "forbidden_input_fields_present"
+        assert set(json.loads(candidate["matched_query_anchors_json"])) >= {
+            "2019년",
+            "2월",
+            "5호선",
+            "승차총승객수",
+        }
+        invocation = conn.execute(
+            "SELECT execution_status, candidate_count, accepted_candidate_count FROM tool_invocations"
+        ).fetchone()
+        assert dict(invocation) == {
+            "execution_status": "skipped_missing_source_locator",
+            "candidate_count": 1,
+            "accepted_candidate_count": 0,
+        }
+
+
 def test_agentic_planner_execute_once_defers_llm_retry_without_execution_gate(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -2938,6 +5485,8 @@ def test_agentic_planner_mode_parser_default_and_choices() -> None:
         parser.parse_args(["--dataset", "gold.jsonl", "--agentic-planner-mode", "execute-once"]).agentic_planner_mode
         == "execute-once"
     )
+    assert parser.parse_args(["--dataset", "gold.jsonl", "--xlsx-locator-tool-execute-once"]).xlsx_locator_tool_execute_once
+    assert parser.parse_args(["--dataset", "gold.jsonl", "--output-mode", "runstore"]).output_mode == "runstore"
     with pytest.raises(SystemExit):
         parser.parse_args(["--dataset", "gold.jsonl", "--agentic-planner-mode", "execute-twice"])
 
@@ -4488,6 +7037,7 @@ def test_xlsx_source_atom_materializes_general_table_axes_for_vector_db() -> Non
             "header": "승차총승객수",
             "header_path": "승하차 > 승차총승객수",
             "table_id": "sheet-201902-main-table",
+            "display_value": "15,446,522명",
             "locator_fingerprint": "xlsx-locator-fp",
         },
         config,
@@ -4506,6 +7056,7 @@ def test_xlsx_source_atom_materializes_general_table_axes_for_vector_db() -> Non
         "header",
         "header_path",
         "table_id",
+        "display_value",
         "locator_fingerprint",
     ):
         assert record[field]
@@ -4532,7 +7083,7 @@ def test_xlsx_source_atom_record_materializes_source_owned_tags_without_value_or
                     "Sheet=2019년 2월 | RANGE=A7:J7 | Cell=F7 | Row_Label=5호선 | "
                     "Column_Label=승차총승객수 | TARGET_COLUMN=승차총승객수 | "
                     "Header_Path=승하차 > 승차총승객수 | Table_ID=subway-201902-main | "
-                    "Value=15,446,522 | NORMALIZED_VALUE=15446522 | Formula==SUM(F7:F7) | "
+                    "Display_Value=15,446,522명 | Value=15,446,522 | NORMALIZED_VALUE=15446522 | Formula==SUM(F7:F7) | "
                     "Source_Title=서울교통공사 승하차 workbook | Workbook_ID=subway-workbook | "
                     "Workbook_Version_ID=subway-workbook-v1 | Workbook=서울교통공사.xlsx | "
                     "Source_Workbook=서울교통공사-source.xlsx | Title=서울교통공사 shortcut title | "
@@ -4555,6 +7106,7 @@ def test_xlsx_source_atom_record_materializes_source_owned_tags_without_value_or
     assert record["target_column"] == "승차총승객수"
     assert record["header_path"] == "승하차 > 승차총승객수"
     assert record["table_id"] == "subway-201902-main"
+    assert record["display_value"] == "15,446,522명"
     for forbidden in (
         "value",
         "normalized_value",
@@ -9757,6 +12309,591 @@ def test_select_composer_evidence_uses_source_derived_xlsx_metadata_without_shor
     assert evidence["composer_query_anchor_hits"] == ["2019년", "2월", "5호선", "승차총승객수"]
 
 
+def test_evidence_gate_uses_source_owned_xlsx_display_value_as_value_axis() -> None:
+    validation = validate_evidence_package_for_gate(
+        {
+            "query": "2019년 2월 5호선 승차총승객수",
+            "generated_answer": "15,446,522명",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-xlsx",
+                    "chunk_id": "chunk-display-value",
+                    "source_atom_id": "src-display-value",
+                    "evidence_bundle_id": "bundle-display-value",
+                    "source_family": "XLSX",
+                    "granularity": "table_row",
+                    "text": "2019년 2월 5호선 승차총승객수 행입니다.",
+                    "sheet": "2019년 2월",
+                    "cell_range": "A7:J7",
+                    "row_label": "5호선",
+                    "target_column": "승차총승객수",
+                    "header_path": "승하차 > 승차총승객수",
+                    "table_id": "sheet-201902-main-table",
+                    "display_value": "15,446,522명",
+                }
+            ],
+            "citations": [],
+        }
+    )
+
+    assert validation["evidence_package_status"] == "sufficient"
+    assert validation["missing_answer_anchors"] == []
+    assert "missing_numeric_or_date_anchor" not in validation["validation_reasons"]
+    selected = validation["selected_evidence"][0]
+    assert selected["display_value"] == "15,446,522명"
+    assert "display_value=15,446,522명" in actual_rag_eval.source_derived_evidence_metadata(selected)[0]
+
+
+def test_selected_evidence_answer_discipline_allows_clean_supported_core() -> None:
+    discipline = actual_rag_eval._selected_evidence_answer_discipline(
+        query="Where is Apollo HQ?",
+        answer="Apollo HQ is in Seoul.",
+        selected_evidence=[
+            {
+                "doc_id": "doc-hq",
+                "chunk_id": "chunk-hq",
+                "source_atom_id": "src-hq",
+                "evidence_bundle_id": "bundle-hq",
+                "text": "Apollo HQ is in Seoul.",
+            }
+        ],
+        cited_evidence_ids=["bundle-hq"],
+    )
+
+    assert discipline["status"] == "clean_supported"
+    assert discipline["core_answer_supported"] is True
+    assert discipline["unsupported_extra_detail"] is False
+    assert discipline["query_irrelevant_supported_detail"] is False
+    assert discipline["fallback_reason"] == ""
+    assert discipline["unsupported_extra_preview"] == ""
+    assert discipline["query_irrelevant_preview"] == ""
+    assert discipline["input_policy"] == "query_text_selected_evidence_answer_only_no_gold_qrels_labels_ids_or_baseline"
+
+
+def test_selected_evidence_answer_discipline_allows_korean_source_native_rephrasing() -> None:
+    discipline = actual_rag_eval._selected_evidence_answer_discipline(
+        query="2019년 2월 5호선 승차총승객수는 얼마야?",
+        answer="2019년 2월 5호선의 승차총승객수는 15,446,522명입니다.",
+        selected_evidence=[
+            {
+                "doc_id": "doc-xlsx",
+                "chunk_id": "chunk-row",
+                "source_atom_id": "src-xlsx",
+                "evidence_bundle_id": "bundle-xlsx",
+                "source_family": "XLSX",
+                "text": "2019년 2월 5호선 승차총승객수 행입니다.",
+                "sheet": "2019년 2월",
+                "row_label": "5호선",
+                "target_column": "승차총승객수",
+                "display_value": "15,446,522명",
+            }
+        ],
+        cited_evidence_ids=["bundle-xlsx"],
+    )
+
+    assert discipline["status"] == "clean_supported"
+    assert discipline["core_answer_supported"] is True
+    assert discipline["unsupported_extra_detail"] is False
+    assert discipline["query_irrelevant_supported_detail"] is False
+    assert discipline["fallback_reason"] == ""
+
+
+def test_selected_evidence_answer_discipline_allows_source_native_display_value_focus() -> None:
+    discipline = actual_rag_eval._selected_evidence_answer_discipline(
+        query="2012년 3월에 지정된 해오름요양원의 기관별 상세주소는 무엇입니까?",
+        answer="대구광역시 수성구 파동로51길 96 (파동)",
+        selected_evidence=[
+            {
+                "doc_id": "doc-xlsx-address",
+                "chunk_id": "chunk-address",
+                "source_atom_id": "src-address",
+                "evidence_bundle_id": "bundle-address",
+                "source_family": "XLSX",
+                "text": (
+                    "row_label=해오름요양원 | target_column=기관별 상세주소 | "
+                    "display_value=대구광역시 수성구 파동로51길 96 (파동) | source_date_alias=2012년 3월"
+                ),
+                "row_label": "해오름요양원",
+                "target_column": "기관별 상세주소",
+                "header": "기관별 상세주소",
+                "display_value": "대구광역시 수성구 파동로51길 96 (파동)",
+            }
+        ],
+        cited_evidence_ids=["bundle-address"],
+    )
+
+    assert discipline["status"] == "clean_supported"
+    assert discipline["core_answer_supported"] is True
+    assert discipline["query_irrelevant_supported_detail"] is False
+
+
+def test_selected_evidence_answer_discipline_rejects_off_focus_source_native_display_value() -> None:
+    discipline = actual_rag_eval._selected_evidence_answer_discipline(
+        query="What are Mika's age and birthday?",
+        answer="160cm",
+        selected_evidence=[
+            {
+                "doc_id": "doc-profile-xlsx",
+                "chunk_id": "chunk-profile-xlsx",
+                "source_atom_id": "src-profile-xlsx",
+                "evidence_bundle_id": "bundle-profile-xlsx",
+                "source_family": "XLSX",
+                "text": "age=17 | birthday=May 8 | height=160cm",
+                "row_label": "Mika",
+                "target_column": "height",
+                "header": "height",
+                "display_value": "160cm",
+            }
+        ],
+        cited_evidence_ids=["bundle-profile-xlsx"],
+    )
+
+    assert discipline["status"] == "true_insufficient_evidence"
+    assert discipline["core_answer_supported"] is False
+    assert discipline["query_irrelevant_supported_detail"] is False
+
+
+def test_selected_evidence_answer_discipline_flags_unsupported_extra_detail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    direct = actual_rag_eval._selected_evidence_answer_discipline(
+        query="Where is Apollo HQ?",
+        answer="Apollo HQ is in Seoul. CEO is Dana.",
+        selected_evidence=[
+            {
+                "doc_id": "doc-hq",
+                "chunk_id": "chunk-hq",
+                "source_atom_id": "src-hq",
+                "evidence_bundle_id": "bundle-hq",
+                "text": "Apollo HQ is in Seoul.",
+            }
+        ],
+        cited_evidence_ids=["bundle-hq"],
+    )
+    assert direct["status"] == "supported_core_with_unsupported_extra"
+    assert direct["core_answer_supported"] is True
+    assert direct["unsupported_extra_detail"] is True
+    assert "Dana" in direct["unsupported_extra_preview"]
+
+    dataset = tmp_path / "selected_local_llm_unsupported_extra_gold.jsonl"
+    context = tmp_path / "selected_local_llm_unsupported_extra_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_unsupported_extra"
+    write_jsonl(dataset, [{"id": "q-extra", "query": "Where is Apollo HQ?", "answerability": "answerable"}])
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-extra",
+                "generated_answer": "legacy answer must not drive discipline",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-hq",
+                        "chunk_id": "chunk-hq",
+                        "source_atom_id": "src-hq",
+                        "evidence_bundle_id": "bundle-hq",
+                        "source_family": "TEXT",
+                        "text": "Apollo HQ is in Seoul.",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+    calls: list[str] = []
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**kwargs: object) -> tuple[dict, dict]:
+        calls.append(str(kwargs["prompt"]))
+        if len(calls) == 1:
+            return (
+                {"answer": "Apollo HQ is in Seoul. CEO is Dana.", "citation_evidence_ids": ["bundle-hq"]},
+                {
+                    "raw_response_sha256": "sha256:unsupported-extra",
+                    "raw_response": "SECRET_UNSUPPORTED_EXTRA_RAW_RESPONSE",
+                    "raw_prompt_payload": {"secret": "SECRET_UNSUPPORTED_EXTRA_PROMPT"},
+                },
+            )
+        return (
+            {"answer": "Apollo HQ is in Seoul.", "citation_evidence_ids": ["bundle-hq"]},
+            {
+                "raw_response_sha256": "sha256:clean-retry",
+                "raw_response": "SECRET_RETRY_RAW_RESPONSE",
+                "raw_prompt_payload": {"secret": "SECRET_RETRY_PROMPT"},
+            },
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="selected_local_llm_unsupported_extra",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-local-llm-v1",
+        selected_evidence_citation_format="evidence-id",
+        selected_evidence_composer_retry_mode="bounded-once",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    retry = row["answer_composer"]["retry"]
+    assert len(calls) == 2
+    assert row["generated_answer"] == "Apollo HQ is in Seoul."
+    assert row["answer_gate_decision"] == "allow_answer"
+    assert row["answer_composer"]["answer_discipline"]["status"] == "clean_supported"
+    assert retry["trigger"] == "answer_discipline_supported_core_with_unsupported_extra"
+    assert retry["initial_answer_discipline_status"] == "supported_core_with_unsupported_extra"
+    assert report["generator_config"]["unsupported_extra_detail_count"] == 1
+    assert report["generator_config"]["local_llm_fallback_reason_counts"] == {
+        "answer_discipline_supported_core_with_unsupported_extra": 1
+    }
+    encoded_report = json.dumps(report, ensure_ascii=False)
+    assert "SECRET_UNSUPPORTED_EXTRA_RAW_RESPONSE" not in encoded_report
+    assert "SECRET_UNSUPPORTED_EXTRA_PROMPT" not in encoded_report
+    assert "SECRET_RETRY_RAW_RESPONSE" not in encoded_report
+    assert "SECRET_RETRY_PROMPT" not in encoded_report
+    assert '"raw_prompt_payload":' not in encoded_report
+    assert '"raw_response":' not in encoded_report
+
+
+def test_selected_evidence_answer_discipline_flags_query_irrelevant_supported_detail(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    evidence_text = (
+        "Mika profile: age 17. Birthday May 8. Height 160cm. Blood type B. "
+        "Weapon rifle. Favorite food curry."
+    )
+    direct = actual_rag_eval._selected_evidence_answer_discipline(
+        query="What are Mika's age and birthday?",
+        answer="Mika is 17, birthday May 8, height 160cm, blood type B, weapon rifle, and favorite food curry.",
+        selected_evidence=[
+            {
+                "doc_id": "doc-mika",
+                "chunk_id": "chunk-profile",
+                "source_atom_id": "src-mika",
+                "evidence_bundle_id": "bundle-mika",
+                "text": evidence_text,
+            }
+        ],
+        cited_evidence_ids=["bundle-mika"],
+    )
+    assert direct["status"] == "query_irrelevant_supported_detail"
+    assert direct["core_answer_supported"] is True
+    assert direct["query_irrelevant_supported_detail"] is True
+    assert "height" in direct["query_irrelevant_preview"].lower()
+
+    dataset = tmp_path / "selected_local_llm_query_irrelevant_gold.jsonl"
+    context = tmp_path / "selected_local_llm_query_irrelevant_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_query_irrelevant"
+    write_jsonl(
+        dataset,
+        [{"id": "q-focus", "query": "What are Mika's age and birthday?", "answerability": "answerable"}],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-focus",
+                "generated_answer": "legacy profile summary must not drive discipline",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-mika",
+                        "chunk_id": "chunk-profile",
+                        "source_atom_id": "src-mika",
+                        "evidence_bundle_id": "bundle-mika",
+                        "source_family": "TEXT",
+                        "text": evidence_text,
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+    calls: list[str] = []
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**kwargs: object) -> tuple[dict, dict]:
+        calls.append(str(kwargs["prompt"]))
+        if len(calls) == 1:
+            return (
+                {
+                    "answer": (
+                        "Mika is 17, birthday May 8, height 160cm, blood type B, "
+                        "weapon rifle, and favorite food curry."
+                    ),
+                    "citation_evidence_ids": ["bundle-mika"],
+                },
+                {"raw_response_sha256": "sha256:query-irrelevant"},
+            )
+        return (
+            {"answer": "Mika is 17 and her birthday is May 8.", "citation_evidence_ids": ["bundle-mika"]},
+            {"raw_response_sha256": "sha256:focused-retry"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="selected_local_llm_query_irrelevant",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-local-llm-v1",
+        selected_evidence_citation_format="evidence-id",
+        selected_evidence_composer_retry_mode="bounded-once",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    retry = row["answer_composer"]["retry"]
+    assert len(calls) == 2
+    assert row["generated_answer"] == "Mika is 17 and her birthday is May 8."
+    assert "height" not in row["generated_answer"].lower()
+    assert "blood type" not in row["generated_answer"].lower()
+    assert row["answer_composer"]["answer_discipline"]["status"] == "clean_supported"
+    assert retry["trigger"] == "answer_discipline_query_irrelevant_supported_detail"
+    assert retry["initial_answer_discipline_status"] == "query_irrelevant_supported_detail"
+    assert report["generator_config"]["query_irrelevant_supported_detail_count"] == 1
+
+
+def test_selected_evidence_local_llm_concise_answer_not_replaced_by_overexpanded_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = tmp_path / "selected_local_llm_concise_gold.jsonl"
+    context = tmp_path / "selected_local_llm_concise_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_concise"
+    write_jsonl(dataset, [{"id": "q-concise", "query": "Where is Apollo HQ?", "answerability": "answerable"}])
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-concise",
+                "generated_answer": "legacy profile summary",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-hq",
+                        "chunk_id": "chunk-hq",
+                        "source_atom_id": "src-hq",
+                        "evidence_bundle_id": "bundle-hq",
+                        "source_family": "TEXT",
+                        "text": "Apollo HQ is in Seoul. Apollo also has a regional office in Busan.",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+    call_count = 0
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        nonlocal call_count
+        call_count += 1
+        return (
+            {"answer": "Apollo HQ is in Seoul.", "citation_evidence_ids": ["bundle-hq"]},
+            {"raw_response_sha256": "sha256:concise"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="selected_local_llm_concise",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-local-llm-v1",
+        selected_evidence_composer_retry_mode="bounded-once",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    assert call_count == 1
+    assert row["generated_answer"] == "Apollo HQ is in Seoul."
+    assert "Busan" not in row["generated_answer"]
+    assert row["answer_composer"]["local_llm_fallback_used"] is False
+    assert row["answer_composer"]["local_llm"]["status"] == "generated"
+    assert row["answer_composer"]["retry"]["status"] == "not_triggered"
+    assert row["answer_composer"]["retry"]["reason"] == "answer_discipline_clean_supported"
+    assert report["generator_config"]["local_llm_acceptance_rate"] == 1.0
+    assert report["generator_config"]["local_llm_rejected_then_deterministic_overexpanded_count"] == 0
+
+
+def test_selected_evidence_local_llm_clean_rejected_output_audits_overexpanded_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = tmp_path / "selected_local_llm_clean_rejected_gold.jsonl"
+    context = tmp_path / "selected_local_llm_clean_rejected_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_clean_rejected"
+    evidence_text = (
+        "Mika profile: age 17. Birthday May 8. Height 160cm. Blood type B. "
+        "Weapon rifle. Favorite food curry."
+    )
+    write_jsonl(dataset, [{"id": "q-clean-rejected", "query": "What are Mika's age and birthday?", "answerability": "answerable"}])
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-clean-rejected",
+                "generated_answer": "legacy profile summary must not drive discipline",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-mika",
+                        "chunk_id": "chunk-profile",
+                        "source_atom_id": "src-mika",
+                        "evidence_bundle_id": "bundle-mika",
+                        "source_family": "TEXT",
+                        "text": evidence_text,
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {"answer": "Mika is 17 and her birthday is May 8.", "citation_evidence_ids": ["bundle-mika"]},
+            {
+                "raw_response_sha256": "sha256:clean-rejected",
+                "raw_response": "SECRET_CLEAN_REJECTED_RAW_RESPONSE",
+            },
+        )
+
+    original_gate_select = actual_rag_eval._gate_select_evidence
+
+    def reject_clean_local_answer(**kwargs: object) -> list[dict[str, object]]:
+        if kwargs.get("answer") == "Mika is 17 and her birthday is May 8.":
+            return []
+        return original_gate_select(**kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+    monkeypatch.setattr(actual_rag_eval, "_gate_select_evidence", reject_clean_local_answer)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="selected_local_llm_clean_rejected",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-local-llm-v1",
+        selected_evidence_citation_format="evidence-id",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    composer = row["answer_composer"]
+    config = report["generator_config"]
+    assert composer["local_llm"]["status"] == "unsupported_or_empty_deterministic_fallback"
+    assert composer["initial_answer_discipline"]["status"] == "clean_supported"
+    assert composer["answer_discipline"]["status"] == "local_llm_rejected_then_deterministic_overexpanded"
+    assert "height" in composer["answer_discipline"]["query_irrelevant_preview"].lower()
+    assert config["local_llm_rejected_then_deterministic_overexpanded_count"] == 1
+    assert config["answer_overexpansion_count_diagnostic"] == 1
+    assert config["local_llm_final_answer_discipline_status_counts"] == {
+        "local_llm_rejected_then_deterministic_overexpanded": 1
+    }
+    encoded_report = json.dumps(report, ensure_ascii=False)
+    assert "SECRET_CLEAN_REJECTED_RAW_RESPONSE" not in encoded_report
+    assert '"raw_response":' not in encoded_report
+
+
+def test_run_eval_selected_evidence_local_llm_answer_discipline_metrics_are_reported_without_raw_payloads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = tmp_path / "selected_local_llm_discipline_metrics_gold.jsonl"
+    context = tmp_path / "selected_local_llm_discipline_metrics_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_discipline_metrics"
+    write_jsonl(dataset, [{"id": "q-metrics", "query": "Where is Apollo HQ?", "answerability": "answerable"}])
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-metrics",
+                "generated_answer": "legacy answer",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-hq",
+                        "chunk_id": "chunk-hq",
+                        "source_atom_id": "src-hq",
+                        "evidence_bundle_id": "bundle-hq",
+                        "source_family": "TEXT",
+                        "text": "Apollo HQ is in Seoul.",
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {"answer": "Apollo HQ is in Seoul.", "citation_evidence_ids": ["bundle-hq"]},
+            {"raw_response_sha256": "sha256:metrics"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="selected_local_llm_discipline_metrics",
+        output_mode="single",
+        evidence_gate_mode="diagnostic",
+        answer_composer="selected-evidence-local-llm-v1",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    config = report["generator_config"]
+    discipline = report["items"][0]["answer_composer"]["answer_discipline"]
+    assert discipline["status"] == "clean_supported"
+    assert config["local_llm_acceptance_rate"] == 1.0
+    assert config["local_llm_fallback_reason_counts"] == {}
+    assert config["answer_overexpansion_count_diagnostic"] == 0
+    assert config["unsupported_extra_detail_count"] == 0
+    assert config["query_irrelevant_supported_detail_count"] == 0
+    assert config["local_llm_rejected_then_deterministic_overexpanded_count"] == 0
+    assert config["citation_id_mismatch_or_missing_count"] == 0
+    assert config["anchor_morphology_false_negative_count"] == 0
+    assert config["local_llm_prompt_payload_written"] is False
+    assert config["local_llm_raw_response_payload_written"] is False
+    assert report["raw_prompt_payload_written"] is False
+    assert report["raw_response_payload_written"] is False
+    encoded_report = json.dumps(report, ensure_ascii=False)
+    assert '"raw_prompt_payload":' not in encoded_report
+    assert '"raw_response_payload":' not in encoded_report
+    assert '"prompt":' not in encoded_report
+    assert '"raw_response":' not in encoded_report
+
+
 def test_run_eval_selected_evidence_local_llm_composer_unavailable_falls_back_without_raw_payloads(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -10118,7 +13255,7 @@ def test_run_eval_selected_evidence_local_llm_composer_does_not_retry_when_gate_
     assert retry["enabled"] is True
     assert retry["attempted"] is False
     assert retry["status"] == "not_triggered"
-    assert retry["reason"] == "evidence_gate_allows_answer"
+    assert retry["reason"] == "answer_discipline_clean_supported"
     assert row["answer_gate_decision"] == "allow_answer"
 
 

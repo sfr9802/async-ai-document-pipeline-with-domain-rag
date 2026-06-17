@@ -9,11 +9,12 @@ import json
 import math
 import os
 import re
+import sqlite3
 import subprocess
 import sys
 import time
 from collections import Counter
-from dataclasses import dataclass, field, replace
+from dataclasses import asdict, dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, MutableMapping, Sequence
@@ -56,6 +57,33 @@ HEURISTIC_RISK_LEDGER_SCHEMA_VERSION = "actual_rag_eval.heuristic_risk_ledger.v1
 METRIC_CONTINUITY_CHECKPOINT_SCHEMA_VERSION = "actual_rag_eval.metric_continuity_checkpoint.v1"
 AGENTIC_PLANNER_DRY_RUN_SCHEMA_VERSION = "actual_rag_eval.agentic_planner_dry_run.v1"
 AGENTIC_PLANNER_EXECUTE_ONCE_SCHEMA_VERSION = "actual_rag_eval.agentic_planner_execute_once.v1"
+LLM_QUERY_ANCHOR_CLASSIFIER_PROMPT_VERSION = "llm_query_anchor_classifier_v1"
+LLM_QUERY_ANCHOR_CLASSIFIER_INPUT_POLICY = "query_text_only_no_eval_fields_or_baseline"
+QUERY_EVIDENCE_PLANNER_PROMPT_VERSION = "query_evidence_planner_v1"
+QUERY_EVIDENCE_PLANNER_INPUT_POLICY = "query_text_only_no_eval_fields_or_baseline"
+XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION = "actual_rag_eval.xlsx_locator_tool_execute_once.v1"
+XLSX_LOCATOR_TOOL_NAME = "xlsx_locator_tool_v1"
+XLSX_LOCATOR_TOOL_POLICY = "source_owned_locator_only_no_raw_xlsx_query_time_parsing"
+XLSX_LOCATOR_TOOL_OUTPUT_POLICY = "selected_evidence_candidate_must_pass_unchanged_gate"
+PDF_LOCATOR_TOOL_NAME = "pdf_locator_tool_v1"
+PDF_LOCATOR_TOOL_POLICY = "source_owned_pdf_locator_only_no_raw_pdf_query_time_parsing"
+PDF_LOCATOR_TOOL_OUTPUT_POLICY = "selected_evidence_candidate_must_pass_unchanged_gate"
+XLSX_LOCATOR_RUN_STORE_BACKEND = "repo_local_sqlite"
+XLSX_LOCATOR_RUN_STORE_FILENAME = "run.sqlite"
+XLSX_LOCATOR_RUN_STORE_TABLES = (
+    "runs",
+    "items",
+    "retrieved_contexts",
+    "selected_evidence",
+    "tool_invocations",
+    "tool_candidates",
+    "gate_results",
+    "residuals",
+    "guardrails",
+)
+XLSX_LOCATOR_TABLE_ROW_TEXT_WINDOW_BEFORE = 180
+XLSX_LOCATOR_TABLE_ROW_TEXT_WINDOW_AFTER = 760
+XLSX_LOCATOR_SYNTHETIC_TABLE_ID_PREFIX = "xlsx_locator_table:"
 AGENTIC_LOOP_REVIEW_SCHEMA_VERSION = "actual_rag_eval.agentic_loop_review.v1"
 AGENTIC_PLANNER_MODE_CHOICES = ("off", "dry-run", "execute-once")
 AGENTIC_PLANNER_EXECUTE_ONCE_PROBE_TOP_K_INCREMENT = 1
@@ -138,6 +166,23 @@ AGENTIC_PLANNER_FORBIDDEN_DECISION_FIELDS = {
     "raw_prompt_payload",
     "raw_response_payload",
 }
+XLSX_LOCATOR_SOURCE_OWNED_FIELDS = (
+    "source_atom_id",
+    "evidence_bundle_id",
+    "doc_id",
+    "sheet",
+    "cell_range",
+    "cell",
+    "row_index_1based",
+    "row_label",
+    "column_label",
+    "target_column",
+    "header",
+    "header_path",
+    "table_id",
+    "synthetic_table_id",
+    "display_value",
+)
 XLSX_PDF_RESIDUAL_CLASSIFICATIONS = (
     "candidate_absent",
     "candidate_present_anchor_missing",
@@ -191,6 +236,36 @@ XLSX_PDF_RESIDUAL_FORBIDDEN_SHORTCUT_FIELDS = frozenset(
         "target_id",
         "target_locator",
     }
+)
+XLSX_LOCATOR_FORBIDDEN_TEXT_MARKERS = (
+    "answerability",
+    "answerability_label",
+    "baseline_topk",
+    "case_id",
+    "expected_answer",
+    "expected_evidence",
+    "file_name",
+    "formula",
+    "gold_locator",
+    "label",
+    "labels",
+    "legacy_outputs",
+    "normalized_value",
+    "prompt_payload",
+    "qrel",
+    "qrels",
+    "query_id",
+    "raw_prompt",
+    "raw_prompt_payload",
+    "raw_response",
+    "raw_response_payload",
+    "row_id",
+    "source_title",
+    "source_workbook",
+    "target_id",
+    "target_locator",
+    "title",
+    "workbook",
 )
 HEURISTIC_RISK_ALLOWED_CLASSIFICATIONS = (
     "global_normalization",
@@ -453,7 +528,8 @@ BOUNDED_EVIDENCE_ABSTENTION_ANSWER = "제공된 근거만으로는 답할 수 �
 EVIDENCE_GATE_VALIDATOR_VERSION = "bounded_evidence_gate_v1"
 EVIDENCE_GATE_MIN_QUERY_ANCHOR_COVERAGE = 0.67
 INTERNAL_PRE_GATE_ANSWER_KEY = "_generated_answer_before_evidence_gate"
-INTERNAL_REPORT_ROW_KEYS = frozenset({INTERNAL_PRE_GATE_ANSWER_KEY})
+INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY = "_xlsx_locator_source_contexts"
+INTERNAL_REPORT_ROW_KEYS = frozenset({INTERNAL_PRE_GATE_ANSWER_KEY, INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY})
 PUBLIC_REPORT_FORBIDDEN_PAYLOAD_KEYS = frozenset(
     {
         "llm_prompt",
@@ -640,6 +716,101 @@ class RagEvalBundle:
     markdown_path: Path
     summary: Mapping[str, Any]
     report_path: Path | None = None
+
+
+@dataclass(frozen=True)
+class XlsxLocatorToolUseRecord:
+    item_index: int
+    item_id: str
+    execution_status: str
+    candidate_count: int
+    accepted_candidate_count: int
+    matched_query_anchors: tuple[str, ...] = ()
+    remaining_missing_query_anchors: tuple[str, ...] = ()
+    matched_validated_required_axes: tuple[str, ...] = ()
+    remaining_missing_validated_required_axes: tuple[str, ...] = ()
+    input_policy: str = XLSX_LOCATOR_TOOL_POLICY
+    output_policy: str = XLSX_LOCATOR_TOOL_OUTPUT_POLICY
+
+
+@dataclass(frozen=True)
+class XlsxLocatorEvidenceCandidateRecord:
+    item_index: int
+    candidate_index: int
+    source_family: str
+    tool_name: str
+    tool_policy: str
+    source_atom_id: str
+    evidence_bundle_id: str
+    doc_id: str
+    sheet: str
+    cell_range: str
+    cell: str = ""
+    row_index_1based: str = ""
+    row_label: str = ""
+    column_label: str = ""
+    target_column: str = ""
+    header: str = ""
+    header_path: str = ""
+    table_id: str = ""
+    synthetic_table_id: str = ""
+    display_value: str = ""
+    locator_text_source: str = ""
+    matched_query_anchors: tuple[str, ...] = ()
+    missing_query_anchors_after_tool: tuple[str, ...] = ()
+    matched_validated_required_axes: tuple[str, ...] = ()
+    missing_validated_required_axes: tuple[str, ...] = ()
+    confidence_tier: str = "low"
+    accepted_for_regating: bool = False
+    rejection_reason: str = ""
+    input_fields_used: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class XlsxLocatorGateDeltaRecord:
+    before_gate: Mapping[str, Any] = field(default_factory=dict)
+    after_gate: Mapping[str, Any] = field(default_factory=dict)
+    gate_delta: Mapping[str, Any] = field(default_factory=dict)
+    residual_before: Mapping[str, Any] = field(default_factory=dict)
+    residual_after: Mapping[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class XlsxLocatorGuardrailRecord:
+    forbidden_input_fields_seen: tuple[str, ...] = ()
+    forbidden_input_fields_used: tuple[str, ...] = ()
+    forbidden_input_fields_rejected: tuple[str, ...] = ()
+    raw_xlsx_query_time_parsing_used: bool = False
+    gold_or_qrels_or_label_or_expected_used: bool = False
+    retrieved_context_only_citation_promoted: bool = False
+    evidence_gate_loosened: bool = False
+    report_only_diagnostic: bool = True
+    official_metric: bool = False
+    official_metric_input_rows: int = 0
+    official_metric_input_rows_created: int = 0
+    official_metric_input_rows_consumed: int = 0
+
+
+@dataclass(frozen=True)
+class XlsxLocatorRunRecord:
+    schema_version: str
+    enabled: bool
+    report_only_diagnostic: bool
+    official_metric: bool
+    tool_name: str
+    eligible_failed_row_count: int
+    tool_invocation_count: int
+    accepted_candidate_count: int
+    rejected_candidate_count: int
+    gate_delta_record: XlsxLocatorGateDeltaRecord
+    guardrail_record: XlsxLocatorGuardrailRecord
+    anchor_classifier_model: str = ""
+    anchor_classifier_prompt_version: str = ""
+    anchor_classifier_raw_payload_written: bool = False
+    required_anchor_summary: Mapping[str, Any] = field(default_factory=dict)
+    query_planner_summary: Mapping[str, Any] = field(default_factory=dict)
+    tool_uses: tuple[XlsxLocatorToolUseRecord, ...] = ()
+    candidates: tuple[XlsxLocatorEvidenceCandidateRecord, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -1108,10 +1279,624 @@ def write_jsonl(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
     )
 
 
+def _sqlite_json(value: Any) -> str:
+    return json.dumps(_jsonable(value), ensure_ascii=False, sort_keys=True)
+
+
+def _sqlite_bool(value: Any) -> int:
+    return 1 if bool(value) else 0
+
+
+def _report_item_id(row: Mapping[str, Any], item_index: int) -> str:
+    return _clean(row.get("id") or row.get("item_id") or row.get("query_id")) or str(item_index)
+
+
+class XlsxLocatorRunStore:
+    """Repo-local SQLite store for execute-once XLSX locator diagnostics."""
+
+    def __init__(self, path: Path | str) -> None:
+        self.path = Path(path)
+
+    def write_run_record(
+        self,
+        *,
+        run_id: str,
+        dataset_slug: str,
+        collection: str,
+        record: XlsxLocatorRunRecord,
+        before_rows: Sequence[Mapping[str, Any]],
+        after_rows: Sequence[Mapping[str, Any]],
+    ) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        if self.path.exists():
+            self.path.unlink()
+        conn = sqlite3.connect(self.path)
+        try:
+            self._create_schema(conn)
+            self._insert_run(
+                conn,
+                run_id=run_id,
+                dataset_slug=dataset_slug,
+                collection=collection,
+                record=record,
+            )
+            self._insert_items(conn, before_rows=before_rows, after_rows=after_rows)
+            self._insert_contexts(conn, before_rows=before_rows)
+            self._insert_selected_evidence(conn, after_rows=after_rows)
+            self._insert_tool_invocations(conn, record=record)
+            self._insert_tool_candidates(conn, record=record)
+            self._insert_gate_results(conn, before_rows=before_rows, after_rows=after_rows)
+            self._insert_residuals(conn, before_rows=before_rows, after_rows=after_rows)
+            self._insert_guardrails(conn, record=record)
+            conn.commit()
+        finally:
+            conn.close()
+
+    def _create_schema(self, conn: sqlite3.Connection) -> None:
+        conn.executescript(
+            """
+            CREATE TABLE runs (
+                run_id TEXT PRIMARY KEY,
+                dataset_slug TEXT NOT NULL,
+                collection TEXT NOT NULL,
+                schema_version TEXT NOT NULL,
+                schema_versions_json TEXT NOT NULL,
+                backend TEXT NOT NULL,
+                tool_name TEXT NOT NULL,
+                enabled INTEGER NOT NULL,
+                report_only_diagnostic INTEGER NOT NULL,
+                official_metric INTEGER NOT NULL,
+                official_metric_input_rows INTEGER NOT NULL,
+                anchor_classifier_model TEXT NOT NULL,
+                anchor_classifier_prompt_version TEXT NOT NULL,
+                anchor_classifier_raw_payload_written INTEGER NOT NULL,
+                required_anchor_summary_json TEXT NOT NULL,
+                query_planner_summary_json TEXT NOT NULL,
+                guardrail_summary_json TEXT NOT NULL,
+                record_json TEXT NOT NULL
+            );
+            CREATE TABLE items (
+                item_index INTEGER PRIMARY KEY,
+                item_id TEXT NOT NULL,
+                source_family TEXT NOT NULL,
+                source_family_hint TEXT NOT NULL,
+                query_task TEXT NOT NULL,
+                planner_status TEXT NOT NULL,
+                row_filters_json TEXT NOT NULL,
+                target_axis_json TEXT NOT NULL,
+                validated_required_axes_json TEXT NOT NULL,
+                before_gate_status TEXT NOT NULL,
+                after_gate_status TEXT NOT NULL,
+                before_residual_class TEXT NOT NULL,
+                after_residual_class TEXT NOT NULL
+            );
+            CREATE TABLE retrieved_contexts (
+                item_index INTEGER NOT NULL,
+                context_index INTEGER NOT NULL,
+                source_family TEXT NOT NULL,
+                source_atom_id TEXT NOT NULL,
+                evidence_bundle_id TEXT NOT NULL,
+                doc_id TEXT NOT NULL,
+                sheet TEXT NOT NULL,
+                cell_range TEXT NOT NULL,
+                cell TEXT NOT NULL,
+                row_index_1based TEXT NOT NULL,
+                row_label TEXT NOT NULL,
+                column_label TEXT NOT NULL,
+                target_column TEXT NOT NULL,
+                header_path TEXT NOT NULL,
+                table_id TEXT NOT NULL,
+                display_value TEXT NOT NULL,
+                rank TEXT NOT NULL,
+                text_sha256 TEXT NOT NULL,
+                locator_text_sha256 TEXT NOT NULL,
+                metadata_json TEXT NOT NULL,
+                PRIMARY KEY (item_index, context_index)
+            );
+            CREATE TABLE selected_evidence (
+                item_index INTEGER NOT NULL,
+                evidence_index INTEGER NOT NULL,
+                source_family TEXT NOT NULL,
+                source_atom_id TEXT NOT NULL,
+                evidence_bundle_id TEXT NOT NULL,
+                doc_id TEXT NOT NULL,
+                tool_name TEXT NOT NULL,
+                sheet TEXT NOT NULL,
+                cell_range TEXT NOT NULL,
+                cell TEXT NOT NULL,
+                row_index_1based TEXT NOT NULL,
+                row_label TEXT NOT NULL,
+                column_label TEXT NOT NULL,
+                target_column TEXT NOT NULL,
+                header_path TEXT NOT NULL,
+                table_id TEXT NOT NULL,
+                display_value TEXT NOT NULL,
+                matched_query_anchors_json TEXT NOT NULL,
+                citation_eligible INTEGER NOT NULL,
+                PRIMARY KEY (item_index, evidence_index)
+            );
+            CREATE TABLE tool_invocations (
+                item_index INTEGER PRIMARY KEY,
+                item_id TEXT NOT NULL,
+                tool_name TEXT NOT NULL,
+                execution_status TEXT NOT NULL,
+                candidate_count INTEGER NOT NULL,
+                accepted_candidate_count INTEGER NOT NULL,
+                matched_query_anchors_json TEXT NOT NULL,
+                remaining_missing_query_anchors_json TEXT NOT NULL,
+                matched_validated_required_axes_json TEXT NOT NULL,
+                remaining_missing_validated_required_axes_json TEXT NOT NULL,
+                input_policy TEXT NOT NULL,
+                output_policy TEXT NOT NULL
+            );
+            CREATE TABLE tool_candidates (
+                item_index INTEGER NOT NULL,
+                candidate_index INTEGER NOT NULL,
+                source_family TEXT NOT NULL,
+                tool_name TEXT NOT NULL,
+                tool_policy TEXT NOT NULL,
+                source_atom_id TEXT NOT NULL,
+                evidence_bundle_id TEXT NOT NULL,
+                doc_id TEXT NOT NULL,
+                sheet TEXT NOT NULL,
+                cell_range TEXT NOT NULL,
+                cell TEXT NOT NULL,
+                row_index_1based TEXT NOT NULL,
+                row_label TEXT NOT NULL,
+                column_label TEXT NOT NULL,
+                target_column TEXT NOT NULL,
+                header TEXT NOT NULL,
+                header_path TEXT NOT NULL,
+                table_id TEXT NOT NULL,
+                synthetic_table_id TEXT NOT NULL,
+                display_value TEXT NOT NULL,
+                locator_text_source TEXT NOT NULL,
+                matched_query_anchors_json TEXT NOT NULL,
+                missing_query_anchors_after_tool_json TEXT NOT NULL,
+                matched_validated_required_axes_json TEXT NOT NULL,
+                missing_validated_required_axes_json TEXT NOT NULL,
+                confidence_tier TEXT NOT NULL,
+                accepted_for_regating INTEGER NOT NULL,
+                rejection_reason TEXT NOT NULL,
+                input_fields_used_json TEXT NOT NULL,
+                PRIMARY KEY (item_index, candidate_index)
+            );
+            CREATE TABLE gate_results (
+                item_index INTEGER NOT NULL,
+                phase TEXT NOT NULL,
+                answer_gate_decision TEXT NOT NULL,
+                evidence_package_status TEXT NOT NULL,
+                gate_json TEXT NOT NULL,
+                PRIMARY KEY (item_index, phase)
+            );
+            CREATE TABLE residuals (
+                item_index INTEGER NOT NULL,
+                phase TEXT NOT NULL,
+                classification TEXT NOT NULL,
+                source_family TEXT NOT NULL,
+                missing_axis_fields_json TEXT NOT NULL,
+                residual_json TEXT NOT NULL,
+                PRIMARY KEY (item_index, phase)
+            );
+            CREATE TABLE guardrails (
+                key TEXT PRIMARY KEY,
+                value_json TEXT NOT NULL
+            );
+            """
+        )
+
+    def _insert_run(
+        self,
+        conn: sqlite3.Connection,
+        *,
+        run_id: str,
+        dataset_slug: str,
+        collection: str,
+        record: XlsxLocatorRunRecord,
+    ) -> None:
+        schema_versions = {
+            "actual_rag_eval": SCHEMA_VERSION,
+            "evidence_gate": EVIDENCE_GATE_VALIDATOR_VERSION,
+            "xlsx_locator_tool_execute_once": record.schema_version,
+        }
+        guardrail_summary = asdict(record.guardrail_record)
+        conn.execute(
+            """
+            INSERT INTO runs (
+                run_id,
+                dataset_slug,
+                collection,
+                schema_version,
+                schema_versions_json,
+                backend,
+                tool_name,
+                enabled,
+                report_only_diagnostic,
+                official_metric,
+                official_metric_input_rows,
+                anchor_classifier_model,
+                anchor_classifier_prompt_version,
+                anchor_classifier_raw_payload_written,
+                required_anchor_summary_json,
+                query_planner_summary_json,
+                guardrail_summary_json,
+                record_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                run_id,
+                dataset_slug,
+                collection,
+                record.schema_version,
+                _sqlite_json(schema_versions),
+                XLSX_LOCATOR_RUN_STORE_BACKEND,
+                record.tool_name,
+                _sqlite_bool(record.enabled),
+                _sqlite_bool(record.report_only_diagnostic),
+                _sqlite_bool(record.official_metric),
+                int(record.guardrail_record.official_metric_input_rows),
+                record.anchor_classifier_model,
+                record.anchor_classifier_prompt_version,
+                _sqlite_bool(record.anchor_classifier_raw_payload_written),
+                _sqlite_json(record.required_anchor_summary),
+                _sqlite_json(record.query_planner_summary),
+                _sqlite_json(guardrail_summary),
+                _sqlite_json(asdict(record)),
+            ),
+        )
+
+    def _insert_items(
+        self,
+        conn: sqlite3.Connection,
+        *,
+        before_rows: Sequence[Mapping[str, Any]],
+        after_rows: Sequence[Mapping[str, Any]],
+    ) -> None:
+        for item_index, before in enumerate(before_rows):
+            after = after_rows[item_index] if item_index < len(after_rows) else {}
+            before_residual = _classify_xlsx_pdf_residual_row(before)
+            after_residual = _classify_xlsx_pdf_residual_row(after) if isinstance(after, Mapping) else {}
+            before_gate = before.get("evidence_gate") if isinstance(before.get("evidence_gate"), Mapping) else {}
+            after_gate = after.get("evidence_gate") if isinstance(after.get("evidence_gate"), Mapping) else {}
+            planner_projection = _query_evidence_item_projection(before)
+            conn.execute(
+                """
+                INSERT INTO items (
+                    item_index,
+                    item_id,
+                    source_family,
+                    source_family_hint,
+                    query_task,
+                    planner_status,
+                    row_filters_json,
+                    target_axis_json,
+                    validated_required_axes_json,
+                    before_gate_status,
+                    after_gate_status,
+                    before_residual_class,
+                    after_residual_class
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    item_index,
+                    _report_item_id(before, item_index),
+                    _clean(before_residual.get("source_family")) or _clean(after_residual.get("source_family")),
+                    _clean(planner_projection.get("source_family_hint")),
+                    _clean(planner_projection.get("query_task")),
+                    _clean(planner_projection.get("planner_status")),
+                    _sqlite_json(planner_projection.get("row_filters") or {}),
+                    _sqlite_json(planner_projection.get("target_axis") or {}),
+                    _sqlite_json(planner_projection.get("validated_required_axes") or []),
+                    _clean(before_gate.get("answer_gate_decision")),
+                    _clean(after_gate.get("answer_gate_decision")),
+                    _clean(before_residual.get("classification")),
+                    _clean(after_residual.get("classification")),
+                ),
+            )
+
+    def _insert_contexts(self, conn: sqlite3.Connection, *, before_rows: Sequence[Mapping[str, Any]]) -> None:
+        for item_index, row in enumerate(before_rows):
+            source_contexts = _as_list(row.get(INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY)) or _as_list(
+                row.get("retrieved_contexts")
+            )
+            for context_index, context in enumerate(source_contexts):
+                if not isinstance(context, Mapping):
+                    continue
+                locator_text, _locator_text_source, _locator_text_fields_used = _xlsx_locator_candidate_text(context)
+                conn.execute(
+                    """
+                    INSERT INTO retrieved_contexts (
+                        item_index,
+                        context_index,
+                        source_family,
+                        source_atom_id,
+                        evidence_bundle_id,
+                        doc_id,
+                        sheet,
+                        cell_range,
+                        cell,
+                        row_index_1based,
+                        row_label,
+                        column_label,
+                        target_column,
+                        header_path,
+                        table_id,
+                        display_value,
+                        rank,
+                        text_sha256,
+                        locator_text_sha256,
+                        metadata_json
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        item_index,
+                        context_index,
+                        _clean(context.get("source_family")),
+                        _clean(context.get("source_atom_id")),
+                        _clean(context.get("evidence_bundle_id")),
+                        _clean(context.get("doc_id")),
+                        _xlsx_locator_source_owned_value(context, "sheet"),
+                        _xlsx_locator_source_owned_value(context, "cell_range"),
+                        _xlsx_locator_source_owned_value(context, "cell"),
+                        _xlsx_locator_source_owned_value(context, "row_index_1based"),
+                        _xlsx_locator_source_owned_value(context, "row_label"),
+                        _xlsx_locator_source_owned_value(context, "column_label"),
+                        _xlsx_locator_source_owned_value(context, "target_column"),
+                        _xlsx_locator_source_owned_value(context, "header_path"),
+                        _xlsx_locator_source_owned_value(context, "table_id"),
+                        _xlsx_locator_source_owned_value(context, "display_value"),
+                        _clean(context.get("rank")),
+                        _sha256_text(_gate_row_text(context)),
+                        _sha256_text(locator_text),
+                        _sqlite_json(
+                            {
+                                field: _xlsx_locator_source_owned_value(context, field)
+                                for field in XLSX_LOCATOR_SOURCE_OWNED_FIELDS
+                                if _xlsx_locator_source_owned_value(context, field)
+                            }
+                        ),
+                    ),
+                )
+
+    def _insert_selected_evidence(self, conn: sqlite3.Connection, *, after_rows: Sequence[Mapping[str, Any]]) -> None:
+        for item_index, row in enumerate(after_rows):
+            gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+            for evidence_index, evidence in enumerate(_as_list(gate.get("selected_evidence"))):
+                if not isinstance(evidence, Mapping):
+                    continue
+                anchors = sorted(
+                    {
+                        _clean(anchor)
+                        for anchor in _as_list(evidence.get("matched_query_anchors"))
+                        if _clean(anchor)
+                    }
+                )
+                conn.execute(
+                    """
+                    INSERT INTO selected_evidence (
+                        item_index,
+                        evidence_index,
+                        source_family,
+                        source_atom_id,
+                        evidence_bundle_id,
+                        doc_id,
+                        tool_name,
+                        sheet,
+                        cell_range,
+                        cell,
+                        row_index_1based,
+                        row_label,
+                        column_label,
+                        target_column,
+                        header_path,
+                        table_id,
+                        display_value,
+                        matched_query_anchors_json,
+                        citation_eligible
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        item_index,
+                        evidence_index,
+                        _clean(evidence.get("source_family")),
+                        _clean(evidence.get("source_atom_id")),
+                        _clean(evidence.get("evidence_bundle_id")),
+                        _clean(evidence.get("doc_id")),
+                        _clean(evidence.get("tool_name")),
+                        _clean(evidence.get("sheet")),
+                        _clean(evidence.get("cell_range")),
+                        _clean(evidence.get("cell")),
+                        _clean(evidence.get("row_index_1based")),
+                        _clean(evidence.get("row_label")),
+                        _clean(evidence.get("column_label")),
+                        _clean(evidence.get("target_column")),
+                        _clean(evidence.get("header_path")),
+                        _clean(evidence.get("table_id")),
+                        _clean(evidence.get("display_value")),
+                        _sqlite_json(anchors),
+                        _sqlite_bool(_clean(evidence.get("source_atom_id")) or _clean(evidence.get("evidence_bundle_id"))),
+                    ),
+                )
+
+    def _insert_tool_invocations(self, conn: sqlite3.Connection, *, record: XlsxLocatorRunRecord) -> None:
+        for tool_use in record.tool_uses:
+            conn.execute(
+                """
+                INSERT INTO tool_invocations (
+                    item_index,
+                    item_id,
+                    tool_name,
+                    execution_status,
+                    candidate_count,
+                    accepted_candidate_count,
+                    matched_query_anchors_json,
+                    remaining_missing_query_anchors_json,
+                    matched_validated_required_axes_json,
+                    remaining_missing_validated_required_axes_json,
+                    input_policy,
+                    output_policy
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    tool_use.item_index,
+                    tool_use.item_id,
+                    record.tool_name,
+                    tool_use.execution_status,
+                    int(tool_use.candidate_count),
+                    int(tool_use.accepted_candidate_count),
+                    _sqlite_json(tool_use.matched_query_anchors),
+                    _sqlite_json(tool_use.remaining_missing_query_anchors),
+                    _sqlite_json(tool_use.matched_validated_required_axes),
+                    _sqlite_json(tool_use.remaining_missing_validated_required_axes),
+                    tool_use.input_policy,
+                    tool_use.output_policy,
+                ),
+            )
+
+    def _insert_tool_candidates(self, conn: sqlite3.Connection, *, record: XlsxLocatorRunRecord) -> None:
+        for candidate in record.candidates:
+            conn.execute(
+                """
+                INSERT INTO tool_candidates (
+                    item_index,
+                    candidate_index,
+                    source_family,
+                    tool_name,
+                    tool_policy,
+                    source_atom_id,
+                    evidence_bundle_id,
+                    doc_id,
+                    sheet,
+                    cell_range,
+                    cell,
+                    row_index_1based,
+                    row_label,
+                    column_label,
+                    target_column,
+                    header,
+                    header_path,
+                    table_id,
+                    synthetic_table_id,
+                    display_value,
+                    locator_text_source,
+                    matched_query_anchors_json,
+                    missing_query_anchors_after_tool_json,
+                    matched_validated_required_axes_json,
+                    missing_validated_required_axes_json,
+                    confidence_tier,
+                    accepted_for_regating,
+                    rejection_reason,
+                    input_fields_used_json
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    candidate.item_index,
+                    candidate.candidate_index,
+                    candidate.source_family,
+                    candidate.tool_name,
+                    candidate.tool_policy,
+                    candidate.source_atom_id,
+                    candidate.evidence_bundle_id,
+                    candidate.doc_id,
+                    candidate.sheet,
+                    candidate.cell_range,
+                    candidate.cell,
+                    candidate.row_index_1based,
+                    candidate.row_label,
+                    candidate.column_label,
+                    candidate.target_column,
+                    candidate.header,
+                    candidate.header_path,
+                    candidate.table_id,
+                    candidate.synthetic_table_id,
+                    candidate.display_value,
+                    candidate.locator_text_source,
+                    _sqlite_json(candidate.matched_query_anchors),
+                    _sqlite_json(candidate.missing_query_anchors_after_tool),
+                    _sqlite_json(candidate.matched_validated_required_axes),
+                    _sqlite_json(candidate.missing_validated_required_axes),
+                    candidate.confidence_tier,
+                    _sqlite_bool(candidate.accepted_for_regating),
+                    candidate.rejection_reason,
+                    _sqlite_json(candidate.input_fields_used),
+                ),
+            )
+
+    def _insert_gate_results(
+        self,
+        conn: sqlite3.Connection,
+        *,
+        before_rows: Sequence[Mapping[str, Any]],
+        after_rows: Sequence[Mapping[str, Any]],
+    ) -> None:
+        for phase, rows in (("before", before_rows), ("after", after_rows)):
+            for item_index, row in enumerate(rows):
+                gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+                conn.execute(
+                    """
+                    INSERT INTO gate_results (
+                        item_index,
+                        phase,
+                        answer_gate_decision,
+                        evidence_package_status,
+                        gate_json
+                    ) VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        item_index,
+                        phase,
+                        _clean(gate.get("answer_gate_decision")),
+                        _clean(gate.get("evidence_package_status")),
+                        _sqlite_json(gate),
+                    ),
+                )
+
+    def _insert_residuals(
+        self,
+        conn: sqlite3.Connection,
+        *,
+        before_rows: Sequence[Mapping[str, Any]],
+        after_rows: Sequence[Mapping[str, Any]],
+    ) -> None:
+        for phase, rows in (("before", before_rows), ("after", after_rows)):
+            for item_index, row in enumerate(rows):
+                residual = _classify_xlsx_pdf_residual_row(row)
+                conn.execute(
+                    """
+                    INSERT INTO residuals (
+                        item_index,
+                        phase,
+                        classification,
+                        source_family,
+                        missing_axis_fields_json,
+                        residual_json
+                    ) VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        item_index,
+                        phase,
+                        _clean(residual.get("classification")),
+                        _clean(residual.get("source_family")),
+                        _sqlite_json(_as_list(residual.get("source_axis_fields_missing"))),
+                        _sqlite_json(residual),
+                    ),
+                )
+
+    def _insert_guardrails(self, conn: sqlite3.Connection, *, record: XlsxLocatorRunRecord) -> None:
+        guardrail_payload = asdict(record.guardrail_record)
+        for key, value in guardrail_payload.items():
+            conn.execute(
+                "INSERT INTO guardrails (key, value_json) VALUES (?, ?)",
+                (key, _sqlite_json(value)),
+            )
+
+
 def _is_forbidden_public_payload_key(key: Any) -> bool:
     normalized = str(key).strip().lower()
     if not normalized:
         return False
+    if normalized in INTERNAL_REPORT_ROW_KEYS:
+        return True
     canonical = re.sub(r"[^a-z0-9]", "", normalized)
     if (
         "sha256" in normalized
@@ -3003,6 +3788,9 @@ def _normalize_context(row: Mapping[str, Any], rank: int) -> dict[str, Any]:
             normalized[f"{source_key}_redacted"] = redacted
         if was_redacted:
             normalized["source_path_redacted"] = True
+    xlsx_locator_snapshot = _xlsx_locator_source_context_snapshot(row)
+    if xlsx_locator_snapshot is not None:
+        normalized[INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY] = [xlsx_locator_snapshot]
     return normalized
 
 
@@ -6314,6 +7102,9 @@ def validate_actual_rag_guardrails(summary: Mapping[str, Any]) -> None:
     agentic_execute_once = summary.get("agentic_planner_execute_once")
     if isinstance(agentic_execute_once, Mapping):
         validate_agentic_planner_execute_once(run_id, agentic_execute_once)
+    xlsx_locator_execute_once = summary.get("xlsx_locator_tool_execute_once")
+    if isinstance(xlsx_locator_execute_once, Mapping):
+        validate_xlsx_locator_tool_execute_once(run_id, xlsx_locator_execute_once)
     heuristic_risk_ledger = summary.get("heuristic_risk_ledger")
     if isinstance(heuristic_risk_ledger, Mapping):
         validate_heuristic_risk_ledger(run_id, heuristic_risk_ledger)
@@ -7071,6 +7862,1532 @@ def _agentic_planner_tool_context(row: Mapping[str, Any], *, action: str) -> dic
     return None
 
 
+def _agentic_planner_pdf_ocr_allowed(context: Mapping[str, Any]) -> bool:
+    ocr_used = _clean(context.get("ocr_used") or context.get("ocr")).lower()
+    if ocr_used not in {"true", "1", "yes", "y"}:
+        return False
+    confidence = _safe_float(context.get("ocr_confidence") or context.get("ocr_mean_confidence"), -1.0)
+    if confidence > 1.0:
+        confidence = confidence / 100.0
+    if confidence < 0.75:
+        return False
+    metadata_values = _query_evidence_metadata_values_by_axis([context])
+    return bool([value for value in metadata_values.get("bbox", ()) if _clean(value)])
+
+
+def _agentic_planner_pdf_locator_text(context: Mapping[str, Any]) -> tuple[str, str]:
+    for field in ("pdf_locator_text", "locator_text", "native_text", "page_text", "tool_text"):
+        value = _clean(context.get(field))
+        if value:
+            return value, field
+    if _agentic_planner_pdf_ocr_allowed(context):
+        value = _clean(context.get("ocr_text"))
+        if value:
+            return value, "ocr_text"
+    return "", ""
+
+
+def _agentic_planner_pdf_locator_candidate(row: Mapping[str, Any]) -> tuple[dict[str, Any] | None, str]:
+    for context in _as_list(row.get("retrieved_contexts")):
+        if not isinstance(context, Mapping):
+            continue
+        if _clean(context.get("source_family")).upper() != "PDF":
+            continue
+        if not _has_sourceatom_evidence_identity(context):
+            continue
+        if _clean(context.get("granularity")).lower() == "page_summary":
+            continue
+        metadata_text, metadata_fields = source_derived_evidence_metadata(context)
+        fields = set(metadata_fields)
+        has_page_or_section_axis = bool(
+            fields & {"page_number", "page", "physical_page_index", "section_title", "table_caption"}
+        )
+        has_local_locator_axis = bool(
+            fields & {"block_index", "bbox", "table_caption", "locator_fingerprint"}
+        )
+        if not (has_page_or_section_axis and has_local_locator_axis):
+            continue
+        ocr_used = _clean(context.get("ocr_used") or context.get("ocr")).lower()
+        if ocr_used in {"true", "1", "yes", "y"} and not _agentic_planner_pdf_ocr_allowed(context):
+            continue
+        locator_text, text_field = _agentic_planner_pdf_locator_text(context)
+        if not locator_text:
+            continue
+        tool_context = dict(context)
+        tool_context["text"] = locator_text
+        tool_context["rank"] = 1
+        tool_context["agentic_planner_tool_name"] = "pdf_locator_tool"
+        tool_context["agentic_planner_tool_output"] = True
+        tool_context["agentic_planner_pdf_locator_text_field"] = text_field
+        tool_context["agentic_planner_pdf_locator_metadata_text"] = metadata_text
+        tool_context["agentic_planner_tool_input_policy"] = PDF_LOCATOR_TOOL_POLICY
+        return tool_context, "candidate_found"
+    return None, "skipped_missing_source_locator"
+
+
+def _agentic_planner_pdf_locator_tool_output(
+    row: Mapping[str, Any],
+    *,
+    evidence_gate_mode: str,
+    citation_format: str,
+    composer_provider: str,
+    local_llm_backend: str,
+    local_llm_base_url: str,
+    local_llm_model: str,
+    local_llm_timeout_seconds: int,
+    local_llm_max_tokens: int,
+    skip_local_llm_endpoint_check: bool,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    base_row = dict(row)
+    query = _clean(row.get("query"))
+    planner = _query_evidence_planner_for_row(row)
+    base_meta: dict[str, Any] = {
+        "tool_name": "pdf_locator_tool",
+        "tool_implementation": PDF_LOCATOR_TOOL_NAME,
+        "tool_call_count": 0,
+        "input_policy": PDF_LOCATOR_TOOL_POLICY,
+        "output_policy": PDF_LOCATOR_TOOL_OUTPUT_POLICY,
+        "uses_query_id_or_row_id_or_target_id": False,
+        "uses_expected_answer_or_evidence": False,
+        "uses_qrels_or_labels": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+    }
+    if _query_evidence_source_family_hint(planner) != "pdf":
+        return base_row, {
+            **base_meta,
+            "status": "deferred_requires_explicit_execution_gate",
+            "execution_gate_required": True,
+        }
+    tool_context, candidate_status = _agentic_planner_pdf_locator_candidate(row)
+    if tool_context is None:
+        return base_row, {
+            **base_meta,
+            "status": candidate_status,
+        }
+    axis_complete, matched_axes, missing_axes = _query_evidence_context_has_complete_validated_axes(
+        query=query,
+        query_evidence_planner=planner,
+        context=tool_context,
+    )
+    candidate_count = 1
+    if not axis_complete or not _pdf_selected_evidence_has_value_and_axes(
+        query,
+        tool_context,
+        query_evidence_planner=planner,
+    ):
+        return base_row, {
+            **base_meta,
+            "status": "rejected_missing_validated_axes_after_tool",
+            "tool_call_count": 1,
+            "candidate_count": candidate_count,
+            "accepted_candidate_count": 0,
+            "matched_validated_required_axes": matched_axes,
+            "remaining_missing_validated_required_axes": missing_axes,
+        }
+    tool_context["tool_name"] = PDF_LOCATOR_TOOL_NAME
+    tool_context["tool_policy"] = PDF_LOCATOR_TOOL_POLICY
+    tool_context["tool_output_policy"] = PDF_LOCATOR_TOOL_OUTPUT_POLICY
+    tool_context["pdf_locator_tool_output"] = True
+    tool_output = dict(row)
+    original_contexts = [
+        dict(context)
+        for context in _as_list(row.get("retrieved_contexts"))
+        if isinstance(context, Mapping)
+    ]
+    tool_output["retrieved_contexts"] = [tool_context, *original_contexts]
+    tool_output["citations"] = []
+    composed_tool = apply_selected_evidence_composer_to_outputs(
+        [tool_output],
+        citation_format=citation_format,
+        composer_provider=composer_provider,
+        local_llm_backend=local_llm_backend,
+        local_llm_base_url=local_llm_base_url,
+        local_llm_model=local_llm_model,
+        local_llm_timeout_seconds=local_llm_timeout_seconds,
+        local_llm_max_tokens=local_llm_max_tokens,
+        skip_local_llm_endpoint_check=skip_local_llm_endpoint_check,
+        retry_mode="off",
+    )
+    gated_tool, _tool_gate = apply_evidence_gate_to_outputs(composed_tool, mode=evidence_gate_mode)
+    gated_row = dict(gated_tool[0])
+    status = (
+        "accepted_after_regating"
+        if _clean(gated_row.get("answer_gate_decision")) == "allow_answer"
+        else "rejected_gate_insufficient"
+    )
+    tool_use = {
+        **base_meta,
+        "status": status,
+        "execution_status": status,
+        "tool_call_count": 1,
+        "candidate_count": candidate_count,
+        "accepted_candidate_count": 1 if status == "accepted_after_regating" else 0,
+        "matched_validated_required_axes": matched_axes,
+        "remaining_missing_validated_required_axes": missing_axes,
+    }
+    gated_row["pdf_locator_tool_use"] = tool_use
+    return gated_row, tool_use
+
+
+def _xlsx_locator_metadata_sources(context: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    sources: list[Mapping[str, Any]] = [context]
+    for container_key in (
+        "metadata",
+        "raw_locator",
+        "location_json",
+        "xlsx_locator_metadata",
+        "xlsx_locator",
+        "locator_metadata",
+    ):
+        parsed = _parse_jsonish(context.get(container_key))
+        if isinstance(parsed, Mapping):
+            sources.append(parsed)
+    return sources
+
+
+def _canonical_xlsx_locator_field_name(value: Any) -> str:
+    text = _clean(value)
+    if not text:
+        return ""
+    text = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", text)
+    text = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", "_", text)
+    canonical = re.sub(r"[^A-Za-z0-9]+", "_", text).strip("_").casefold()
+    aliases = {
+        "baseline_top_k": "baseline_topk",
+        "file": "file_name",
+        "filename": "file_name",
+        "source_filename": "source_file_name",
+    }
+    return aliases.get(canonical, canonical)
+
+
+def _xlsx_locator_text_marker_aliases(marker: str) -> set[str]:
+    canonical = _canonical_xlsx_locator_field_name(marker)
+    parts = [part for part in canonical.split("_") if part]
+    camel = parts[0] + "".join(part[:1].upper() + part[1:] for part in parts[1:]) if parts else canonical
+    pascal = "".join(part[:1].upper() + part[1:] for part in parts)
+    aliases = {
+        canonical,
+        canonical.replace("_", ""),
+        canonical.replace("_", "-"),
+        camel,
+        pascal,
+    }
+    if canonical == "file_name":
+        aliases.update({"filename", "fileName", "FileName", "source_file_name", "sourceFileName", "SourceFileName"})
+    if canonical == "source_file_name":
+        aliases.update({"file_name", "fileName", "filename"})
+    if canonical == "baseline_topk":
+        aliases.update({"baseline_top_k", "baselineTopK", "BaselineTopK"})
+    return {alias for alias in aliases if alias}
+
+
+def _xlsx_locator_forbidden_text_fields(value: Any) -> set[str]:
+    text = _clean(value).casefold()
+    if not text:
+        return set()
+    seen: set[str] = set()
+    for marker in XLSX_LOCATOR_FORBIDDEN_TEXT_MARKERS:
+        for alias in _xlsx_locator_text_marker_aliases(marker):
+            normalized = alias.casefold()
+            if (
+                re.search(rf"(?<![a-z0-9_]){re.escape(normalized)}\s*[:=]", text)
+                or f'"{normalized}"' in text
+                or f"'{normalized}'" in text
+            ):
+                seen.add(_canonical_xlsx_locator_field_name(marker))
+                break
+    return seen
+
+
+def _collect_xlsx_locator_forbidden_input_fields(value: Any) -> set[str]:
+    seen: set[str] = set()
+    forbidden_keys = set(XLSX_PDF_RESIDUAL_FORBIDDEN_SHORTCUT_FIELDS)
+    forbidden_keys.update(SOURCE_DERIVED_EVIDENCE_FORBIDDEN_FIELDS)
+    forbidden_keys.update(
+        {
+            "raw_prompt",
+            "raw_response",
+            "prompt_payload",
+            "raw_prompt_payload",
+            "raw_response_payload",
+        }
+    )
+    if isinstance(value, Mapping):
+        for key, nested in value.items():
+            key_text = _canonical_xlsx_locator_field_name(key)
+            if key_text in forbidden_keys:
+                seen.add(key_text)
+            if key_text in {"forbidden_input_fields_seen", "forbidden_input_fields_used"}:
+                seen.update(
+                    canonical
+                    for canonical in (_canonical_xlsx_locator_field_name(field) for field in _as_list(nested))
+                    if canonical in forbidden_keys
+                )
+            if isinstance(nested, str):
+                seen.update(_xlsx_locator_forbidden_text_fields(nested))
+            elif isinstance(nested, (Mapping, list, tuple)):
+                seen.update(_collect_xlsx_locator_forbidden_input_fields(nested))
+    elif isinstance(value, (list, tuple)):
+        for nested in value:
+            if isinstance(nested, str):
+                seen.update(_xlsx_locator_forbidden_text_fields(nested))
+            elif isinstance(nested, (Mapping, list, tuple)):
+                seen.update(_collect_xlsx_locator_forbidden_input_fields(nested))
+    elif isinstance(value, str):
+        seen.update(_xlsx_locator_forbidden_text_fields(value))
+    return seen
+
+
+def _xlsx_locator_source_owned_value(context: Mapping[str, Any], field: str) -> str:
+    if field in SOURCE_DERIVED_EVIDENCE_FORBIDDEN_FIELDS:
+        return ""
+    for source in _xlsx_locator_metadata_sources(context):
+        value = _clean(source.get(field))
+        if value:
+            return value
+    return ""
+
+
+def _xlsx_locator_source_owned_text(context: Mapping[str, Any]) -> tuple[str, tuple[str, ...]]:
+    values: list[str] = []
+    fields: list[str] = []
+    for field in (
+        "sheet",
+        "cell_range",
+        "cell",
+        "row_index_1based",
+        "row_label",
+        "column_label",
+        "target_column",
+        "header",
+        "header_path",
+        "table_id",
+        "synthetic_table_id",
+        "display_value",
+    ):
+        value = _xlsx_locator_source_owned_value(context, field)
+        if not value:
+            continue
+        values.append(f"{field}={value}")
+        fields.append(field)
+    return " | ".join(values), tuple(fields)
+
+
+def _strip_xlsx_locator_forbidden_text_segments(text: str) -> str:
+    clean_text = _clean(text)
+    if not clean_text:
+        return ""
+    safe_parts: list[str] = []
+    for part in re.split(r"\s+\|\s+", clean_text):
+        segment = _clean(part)
+        if not segment:
+            continue
+        if _xlsx_locator_forbidden_text_fields(segment):
+            continue
+        safe_parts.append(segment)
+    return " | ".join(safe_parts)
+
+
+def _xlsx_locator_used_input_view(
+    *,
+    locator_text: str,
+    locator_text_fields_used: Sequence[str],
+    candidate: Mapping[str, Any],
+) -> dict[str, Any]:
+    used: dict[str, Any] = {
+        "locator_text": locator_text,
+        "locator_text_fields_used": list(locator_text_fields_used),
+    }
+    for field in XLSX_LOCATOR_SOURCE_OWNED_FIELDS:
+        value = _clean(candidate.get(field))
+        if value:
+            used[field] = value
+    return used
+
+
+def _xlsx_locator_candidate_text(context: Mapping[str, Any]) -> tuple[str, str, tuple[str, ...]]:
+    preserved_locator_text = _clean(context.get("xlsx_locator_text"))
+    preserved_locator_text_source = _clean(context.get("locator_text_source"))
+    if preserved_locator_text and preserved_locator_text_source:
+        fields_used = tuple(
+            _clean(field)
+            for field in _as_list(context.get("locator_text_fields_used"))
+            if _clean(field)
+        )
+        if not fields_used:
+            fields_used = ("xlsx_locator_text",)
+        return preserved_locator_text, preserved_locator_text_source, fields_used
+    for field in (
+        "xlsx_cell_or_table_text",
+        "xlsx_locator_text",
+        "cell_text",
+        "table_text",
+        "row_text",
+        "tool_text",
+    ):
+        locator_text = _clean(context.get(field))
+        if locator_text:
+            return locator_text, "explicit_locator_text", (field,)
+    source_owned_text, source_owned_fields = _xlsx_locator_source_owned_text(context)
+    row_text = _strip_xlsx_locator_forbidden_text_segments(_gate_row_text(context))
+    support_text = " | ".join(part for part in (source_owned_text, row_text) if part)
+    if support_text and source_owned_fields:
+        text_fields = [
+            field
+            for field in ("text", "citation_text", "display_text", "embedding_text", "bm25_text")
+            if _clean(context.get(field))
+        ]
+        return support_text, "source_owned_support_text", tuple([*source_owned_fields, *text_fields[:1]])
+    return "", "", ()
+
+
+def _xlsx_locator_split_header_data_segment(segment: str) -> list[str]:
+    clean_segment = _clean(segment)
+    if not clean_segment:
+        return []
+    match = re.match(r"^(.+?[A-Za-z가-힣ぁ-んァ-ン一-龯々][^|=]*?)\s+(\d{6,}.*)$", clean_segment)
+    if not match:
+        return [clean_segment]
+    left = _clean(match.group(1)).strip(" |")
+    right = _clean(match.group(2)).strip(" |")
+    if not left or not right:
+        return [clean_segment]
+    return [left, right]
+
+
+def _xlsx_locator_table_segments(text: str) -> list[str]:
+    clean_text = _strip_xlsx_locator_forbidden_text_segments(text)
+    segments: list[str] = []
+    for part in re.split(r"\s+\|\s+|\n+", clean_text):
+        for segment in _xlsx_locator_split_header_data_segment(part):
+            if segment:
+                segments.append(segment)
+    return segments
+
+
+def _xlsx_locator_table_metadata_segment(segment: str) -> bool:
+    key, separator, _value = _clean(segment).partition("=")
+    if not separator:
+        return False
+    return _canonical_xlsx_locator_field_name(key) in {
+        "sheet",
+        "range",
+        "cell_range",
+        "cell",
+        "row_label",
+        "column_label",
+        "target_column",
+        "header",
+        "header_path",
+        "table_id",
+        "synthetic_table_id",
+        "display_value",
+    }
+
+
+def _xlsx_locator_table_header_labels(text: str) -> list[str]:
+    labels: list[str] = []
+    seen: set[str] = set()
+    for segment in _xlsx_locator_table_segments(text):
+        if _xlsx_locator_table_metadata_segment(segment):
+            continue
+        if re.search(r"\d{6,}", segment):
+            break
+        label = _clean(segment).strip(" |")
+        if not label or "=" in label or re.search(r"\d", label):
+            continue
+        normalized = normalize_answer_text(label)
+        if not normalized or normalized in seen:
+            continue
+        if not re.search(r"[A-Za-z가-힣ぁ-んァ-ン一-龯々]", normalized):
+            continue
+        labels.append(label)
+        seen.add(normalized)
+    return labels
+
+
+def _xlsx_locator_table_row_records(text: str) -> list[dict[str, Any]]:
+    segments = _xlsx_locator_table_segments(text)
+    data_start = -1
+    header_segments: list[str] = []
+    for index, segment in enumerate(segments):
+        if _xlsx_locator_table_metadata_segment(segment):
+            continue
+        if re.search(r"\d{6,}", segment):
+            data_start = index
+            break
+        if "=" not in segment and not re.search(r"\d", segment):
+            header_segments.append(segment)
+    if data_start < 0 or not header_segments:
+        return []
+    headers = list(dict.fromkeys(_clean(header) for header in header_segments if _clean(header)))
+    if not headers:
+        return []
+    data_segments = [_clean(segment) for segment in segments[data_start:] if _clean(segment)]
+    first_value_is_identifier = bool(data_segments and re.fullmatch(r"\d{6,}", data_segments[0]))
+    row_headers = list(headers)
+    if first_value_is_identifier and not any("장기요양기관코드" in normalize_answer_text(header) for header in row_headers):
+        row_headers = ["장기요양기관코드", *row_headers]
+    width = len(row_headers)
+    if width <= 0:
+        return []
+    records: list[dict[str, Any]] = []
+    for offset in range(0, len(data_segments), width):
+        values = data_segments[offset : offset + width]
+        if len(values) < width:
+            break
+        mapping = {row_headers[index]: values[index] for index in range(width)}
+        row_text = " | ".join(f"{header}={mapping[header]}" for header in row_headers if _clean(mapping.get(header)))
+        records.append(
+            {
+                "headers": row_headers,
+                "mapping": mapping,
+                "text": row_text,
+            }
+        )
+    return records
+
+
+def _xlsx_locator_target_header_from_query(query: str, header_labels: Sequence[str]) -> str:
+    query_norm = normalize_answer_text(query)
+    best = ""
+    for label in header_labels:
+        label_norm = normalize_answer_text(label)
+        if not label_norm:
+            continue
+        label_tokens = [token for token in label_norm.split() if token]
+        if label_tokens and all(token in query_norm for token in label_tokens):
+            if len(label_norm) > len(normalize_answer_text(best)):
+                best = _clean(label)
+    return best
+
+
+def _xlsx_locator_source_term_for_anchor(anchor: str, text: str) -> str:
+    normalized_anchor = normalize_answer_text(anchor)
+    if not normalized_anchor:
+        return ""
+    for segment in re.split(r"\s+\|\s+|\n+", text):
+        clean_segment = _clean(segment)
+        if not clean_segment or not _anchor_in_text([normalized_anchor], clean_segment):
+            continue
+        if "=" in clean_segment:
+            clean_segment = _clean(clean_segment.rsplit("=", 1)[-1])
+        for token in re.findall(r"[A-Za-z0-9_-]{2,}|[가-힣0-9]{2,}|[ぁ-んァ-ン一-龯々0-9]{2,}", clean_segment):
+            normalized_token = normalize_answer_text(token)
+            if normalized_anchor in normalized_token or normalized_token in normalized_anchor:
+                return _clean(token)[:80]
+        return clean_segment[:80]
+    return ""
+
+
+def _xlsx_locator_row_anchor_from_query(query: str, text: str, header_labels: Sequence[str]) -> str:
+    header_norm = normalize_answer_text(" ".join(header_labels))
+    stopwords = _anchor_stopwords() | {normalize_answer_text(value) for value in EVIDENCE_GATE_QUERY_INTENT_STOPWORDS}
+    for anchor in sorted(_gate_query_focus_anchors(query), key=lambda value: (-len(value), value)):
+        normalized = normalize_answer_text(anchor)
+        if not normalized or re.search(r"\d", normalized):
+            continue
+        if _is_generic_anchor(normalized, stopwords):
+            continue
+        if normalized in header_norm:
+            continue
+        if not _anchor_in_text([normalized], text):
+            continue
+        source_term = _xlsx_locator_source_term_for_anchor(normalized, text)
+        return source_term or normalized
+    return ""
+
+
+def _xlsx_locator_anchor_position(text: str, anchor: str) -> int:
+    for candidate in (anchor, anchor.replace(" ", "")):
+        if not candidate:
+            continue
+        position = text.find(candidate)
+        if position >= 0:
+            return position
+    for match in re.finditer(r"[A-Za-z0-9_-]{2,}|[가-힣0-9]{2,}|[ぁ-んァ-ン一-龯々0-9]{2,}", text):
+        if _anchor_in_text([anchor], match.group(0)):
+            return match.start()
+    return -1
+
+
+def _xlsx_locator_date_aliases(text: str) -> list[str]:
+    aliases: list[str] = []
+    seen: set[str] = set()
+
+    def add(value: str) -> None:
+        clean_value = _clean(value)
+        if clean_value and clean_value not in seen:
+            aliases.append(clean_value)
+            seen.add(clean_value)
+
+    for match in re.finditer(r"\b(\d{4})[-./](0?[1-9]|1[0-2])(?:[-./](0?[1-9]|[12]\d|3[01]))?\b", text):
+        year = match.group(1)
+        month = str(int(match.group(2)))
+        day = str(int(match.group(3))) if match.group(3) else ""
+        add(f"{year}년 {month}월")
+        add(f"{year}년")
+        add(f"{month}월")
+        if day:
+            add(f"{day}일")
+    return aliases
+
+
+def _xlsx_locator_table_row_text(
+    *,
+    row: Mapping[str, Any],
+    context: Mapping[str, Any],
+    text: str,
+) -> tuple[str, str, str, str, str] | None:
+    clean_text = _strip_xlsx_locator_forbidden_text_segments(text)
+    query = _clean(row.get("query"))
+    if not clean_text or not query:
+        return None
+    row_records = _xlsx_locator_table_row_records(clean_text)
+    if not row_records:
+        return None
+    header_labels = list(row_records[0].get("headers") or [])
+    target_header = _xlsx_locator_target_header_from_query(query, header_labels)
+    if not target_header:
+        return None
+    query_anchors = _query_focus_anchors_for_row(row)
+    numeric_query_anchors = _numeric_or_date_anchors(query_anchors)
+    matching_rows: list[tuple[str, str, str]] = []
+    for record in row_records:
+        row_text = _clean(record.get("text"))
+        if not row_text:
+            continue
+        row_anchor = _xlsx_locator_row_anchor_from_query(query, row_text, header_labels)
+        if not row_anchor:
+            continue
+        date_alias_parts = [f"source_date_alias={alias}" for alias in _xlsx_locator_date_aliases(row_text)]
+        support_text = " | ".join(part for part in (row_text, *date_alias_parts) if part)
+        matched = _gate_anchor_hits(query_anchors, [support_text])
+        if any(anchor not in matched for anchor in numeric_query_anchors):
+            continue
+        target_value = _clean((record.get("mapping") or {}).get(target_header))
+        if not target_value:
+            continue
+        matching_rows.append((support_text, row_anchor, target_value))
+    if len(matching_rows) != 1:
+        return None
+    support_text, row_anchor, target_value = matching_rows[0]
+    sheet = _xlsx_locator_source_owned_value(context, "sheet")
+    cell_range = _xlsx_locator_source_owned_value(context, "cell_range")
+    support_text = " | ".join(
+        part
+        for part in (
+            f"sheet={sheet}" if sheet else "",
+            f"cell_range={cell_range}" if cell_range else "",
+            f"row_label={row_anchor}",
+            f"target_column={target_header}",
+            f"display_value={target_value}",
+            support_text,
+        )
+        if part
+    )
+    synthetic_seed = "|".join(
+        [
+            _xlsx_locator_source_owned_value(context, "doc_id"),
+            sheet,
+            cell_range,
+            row_anchor,
+            target_header,
+        ]
+    )
+    synthetic_table_id = f"{XLSX_LOCATOR_SYNTHETIC_TABLE_ID_PREFIX}{_sha256_text(synthetic_seed)[:16]}"
+    return support_text, row_anchor, target_header, target_value, synthetic_table_id
+
+
+def _apply_xlsx_locator_table_row_overlay(
+    *,
+    row: Mapping[str, Any],
+    context: Mapping[str, Any],
+    candidate: MutableMapping[str, Any],
+    locator_text: str,
+    locator_text_source: str,
+    locator_text_fields_used: Sequence[str],
+) -> tuple[str, str, tuple[str, ...]]:
+    if _xlsx_locator_confidence_tier(candidate) == "high":
+        return locator_text, locator_text_source, tuple(locator_text_fields_used)
+    if locator_text_source not in {"source_owned_support_text", "explicit_locator_text"}:
+        return locator_text, locator_text_source, tuple(locator_text_fields_used)
+    table_row = _xlsx_locator_table_row_text(row=row, context=context, text=_gate_row_text(context))
+    if table_row is None:
+        return locator_text, locator_text_source, tuple(locator_text_fields_used)
+    support_text, row_label, target_header, display_value, synthetic_table_id = table_row
+    candidate.update(
+        {
+            "text": support_text,
+            "row_label": row_label,
+            "column_label": target_header,
+            "target_column": target_header,
+            "header": target_header,
+            "header_path": target_header,
+            "display_value": display_value,
+            "synthetic_table_id": synthetic_table_id,
+            "granularity": "xlsx_locator_table_row",
+            "locator_text_source": "source_owned_table_row_text",
+        }
+    )
+    fields = tuple(
+        dict.fromkeys(
+            [
+                *locator_text_fields_used,
+                "row_label",
+                "column_label",
+                "target_column",
+                "header",
+                "header_path",
+                "display_value",
+                "synthetic_table_id",
+            ]
+        )
+    )
+    return support_text, "source_owned_table_row_text", fields
+
+
+def _xlsx_locator_axis_fields_used(candidate: Mapping[str, Any]) -> list[str]:
+    return [
+        field
+        for field in XLSX_LOCATOR_SOURCE_OWNED_FIELDS
+        if field not in {"source_atom_id", "evidence_bundle_id", "doc_id", "display_value"}
+        and _clean(candidate.get(field))
+    ]
+
+
+def _xlsx_locator_confidence_tier(candidate: Mapping[str, Any]) -> str:
+    fields = set(_xlsx_locator_axis_fields_used(candidate))
+    has_scope = bool(fields & {"sheet", "cell", "cell_range", "table_id", "synthetic_table_id"})
+    has_cell_axis = bool(fields & {"cell", "row_index_1based"})
+    has_semantic_axis = bool(
+        fields
+        & {
+            "row_label",
+            "column_label",
+            "target_column",
+            "header",
+            "header_path",
+            "table_id",
+            "synthetic_table_id",
+        }
+    )
+    if has_scope and has_semantic_axis:
+        return "high"
+    if has_scope or has_cell_axis or has_semantic_axis:
+        return "medium"
+    return "low"
+
+
+def _axis_value_hits_text(values: Sequence[str], texts: Sequence[str]) -> bool:
+    clean_values = [_clean(value) for value in values if _clean(value)]
+    if not clean_values:
+        return False
+    clean_texts = [_clean(text) for text in texts if _clean(text)]
+    return any(_anchor_in_text([value], text) for value in clean_values for text in clean_texts)
+
+
+def _xlsx_locator_validated_required_axis_hits(
+    *,
+    row: Mapping[str, Any],
+    candidate: Mapping[str, Any],
+) -> tuple[list[str], list[str]]:
+    planner = _query_evidence_planner_for_row(row)
+    required_axes = [
+        _clean(axis)
+        for axis in _as_list(planner.get("validated_required_axes"))
+        if _clean(axis)
+    ]
+    if not required_axes:
+        return [], []
+    support_text = _gate_support_text(candidate)
+    metadata_values = _query_evidence_metadata_values_by_axis([candidate])
+    field_texts = {
+        axis: [support_text, *metadata_values.get(axis, [])]
+        for axis in QUERY_EVIDENCE_AXIS_ORDER
+    }
+    field_texts["period"] = [
+        *field_texts.get("period", []),
+        *_xlsx_locator_date_aliases(support_text),
+    ]
+    matched: list[str] = []
+    missing: list[str] = []
+    for axis in required_axes:
+        if axis == "display_value":
+            axis_ok = bool(_clean(candidate.get("display_value")))
+        else:
+            axis_ok = _query_evidence_axis_hit(
+                axis=axis,
+                planner=planner,
+                field_texts=field_texts,
+                metadata_values=metadata_values,
+            )
+        if axis_ok:
+            matched.append(axis)
+        else:
+            missing.append(axis)
+    return matched, missing
+
+
+def _xlsx_locator_candidate_from_context(
+    row: Mapping[str, Any],
+    context: Mapping[str, Any],
+) -> dict[str, Any] | None:
+    source_family = _clean(context.get("source_family")).upper()
+    if source_family not in {"XLSX", "XLS", "SPREADSHEET"}:
+        return None
+    locator_text, locator_text_source, locator_text_fields_used = _xlsx_locator_candidate_text(context)
+    if not locator_text:
+        return None
+    candidate: dict[str, Any] = {
+        "source_family": "XLSX",
+        "granularity": _clean(context.get("granularity")) or "xlsx_locator_tool_candidate",
+        "text": locator_text,
+        "rank": 1,
+        "tool_name": XLSX_LOCATOR_TOOL_NAME,
+        "tool_policy": XLSX_LOCATOR_TOOL_POLICY,
+        "agentic_planner_tool_name": "xlsx_cell_or_table_tool",
+        "agentic_planner_tool_output": True,
+        "agentic_planner_tool_input_policy": XLSX_LOCATOR_TOOL_POLICY,
+        "xlsx_locator_tool_output": True,
+        "locator_text_source": locator_text_source,
+    }
+    for field in XLSX_LOCATOR_SOURCE_OWNED_FIELDS:
+        value = _xlsx_locator_source_owned_value(context, field)
+        if value:
+            candidate[field] = value
+    if _clean(context.get("chunk_id")):
+        candidate["chunk_id"] = _clean(context.get("chunk_id"))
+    locator_text, locator_text_source, locator_text_fields_used = _apply_xlsx_locator_table_row_overlay(
+        row=row,
+        context=context,
+        candidate=candidate,
+        locator_text=locator_text,
+        locator_text_source=locator_text_source,
+        locator_text_fields_used=locator_text_fields_used,
+    )
+    query = _clean(row.get("query"))
+    query_anchors = _query_focus_anchors_for_row(row)
+    support_text = _gate_support_text(candidate)
+    matched = sorted(_gate_anchor_hits(query_anchors, [support_text]))
+    missing = sorted(query_anchors - set(matched))
+    query_anchor_coverage = _gate_coverage(query_anchors, set(matched))
+    matched_required_axes, missing_required_axes = _xlsx_locator_validated_required_axis_hits(
+        row=row,
+        candidate=candidate,
+    )
+    required_axes_available = bool(matched_required_axes or missing_required_axes)
+    planner = _query_evidence_planner_for_row(row)
+    source_family_hint = _clean(planner.get("source_family_hint")).lower() if planner else ""
+    source_family_hint_allows_xlsx = source_family_hint in {"", "unknown", "xlsx"}
+    forbidden_input_fields_seen = sorted(_collect_xlsx_locator_forbidden_input_fields(context))
+    forbidden_input_fields = sorted(
+        _collect_xlsx_locator_forbidden_input_fields(
+            _xlsx_locator_used_input_view(
+                locator_text=locator_text,
+                locator_text_fields_used=locator_text_fields_used,
+                candidate=candidate,
+            )
+        )
+    )
+    input_fields_used = sorted(
+        {
+            *locator_text_fields_used,
+            *(
+                field
+                for field in XLSX_LOCATOR_SOURCE_OWNED_FIELDS
+                if _clean(context.get(field))
+                or _clean(candidate.get(field))
+                or any(_clean(source.get(field)) for source in _xlsx_locator_metadata_sources(context))
+            ),
+            "locator_text_source",
+        }
+    )
+    confidence_tier = _xlsx_locator_confidence_tier(candidate)
+    query_anchor_sufficient = not query_anchors or query_anchor_coverage >= EVIDENCE_GATE_MIN_QUERY_ANCHOR_COVERAGE
+    required_axes_sufficient = required_axes_available and not missing_required_axes
+    accepted = bool(
+        not forbidden_input_fields
+        and _has_sourceatom_evidence_identity(candidate)
+        and _clean(candidate.get("doc_id"))
+        and _clean(candidate.get("text"))
+        and source_family_hint_allows_xlsx
+        and (required_axes_sufficient if required_axes_available else bool(matched and query_anchor_sufficient))
+        and confidence_tier == "high"
+    )
+    if accepted:
+        rejection_reason = ""
+    elif forbidden_input_fields:
+        rejection_reason = "forbidden_input_fields_present"
+    elif not source_family_hint_allows_xlsx:
+        rejection_reason = "source_family_hint_mismatch"
+    elif required_axes_available and missing_required_axes:
+        rejection_reason = "missing_validated_required_axes_after_tool"
+    elif not matched or not query_anchor_sufficient:
+        rejection_reason = "missing_query_anchor_after_tool"
+    elif confidence_tier != "high":
+        rejection_reason = "missing_required_locator_axes"
+    else:
+        rejection_reason = "missing_source_identity_doc_id_text_or_locator_axes"
+    candidate.update(
+        {
+            "matched_query_anchors": matched,
+            "missing_query_anchors_after_tool": missing,
+            "matched_validated_required_axes": matched_required_axes,
+            "missing_validated_required_axes": missing_required_axes,
+            "confidence_tier": confidence_tier,
+            "query_anchor_coverage": query_anchor_coverage,
+            "validated_required_axes_coverage": _gate_coverage(matched_required_axes + missing_required_axes, matched_required_axes),
+            "source_family_hint": source_family_hint,
+            "source_family_hint_matches_candidate": source_family_hint_allows_xlsx,
+            "accepted_for_regating": accepted,
+            "rejection_reason": rejection_reason,
+            "input_fields_used": input_fields_used,
+            "forbidden_input_fields_seen": forbidden_input_fields_seen,
+            "forbidden_input_fields_used_for_candidate": forbidden_input_fields,
+        }
+    )
+    return candidate
+
+
+def _xlsx_locator_tool_candidates(row: Mapping[str, Any]) -> list[dict[str, Any]]:
+    candidates: list[tuple[tuple[float, ...], dict[str, Any]]] = []
+    seen: set[str] = set()
+    source_contexts = _as_list(row.get(INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY)) or _as_list(
+        row.get("retrieved_contexts")
+    )
+    tier_scores = {"high": 3.0, "medium": 2.0, "low": 1.0}
+    for source_index, context in enumerate(source_contexts):
+        if not isinstance(context, Mapping):
+            continue
+        candidate = _xlsx_locator_candidate_from_context(row, context)
+        if candidate is None:
+            continue
+        identity = _context_identity(candidate)
+        text_hash = _sha256_text(_gate_row_text(candidate))
+        dedupe_key = f"{identity}:{text_hash}"
+        if dedupe_key in seen:
+            continue
+        seen.add(dedupe_key)
+        accepted_score = 1.0 if candidate.get("accepted_for_regating") is True else 0.0
+        coverage_score = _safe_float(candidate.get("query_anchor_coverage"))
+        tier_score = tier_scores.get(_clean(candidate.get("confidence_tier")), 0.0)
+        matched_count = float(len(_as_list(candidate.get("matched_query_anchors"))))
+        missing_count = float(len(_as_list(candidate.get("missing_query_anchors_after_tool"))))
+        sort_key = (-accepted_score, -coverage_score, -tier_score, -matched_count, missing_count, float(source_index))
+        candidates.append((sort_key, candidate))
+    candidates.sort(key=lambda item: item[0])
+    return [candidate for _sort_key, candidate in candidates[:3]]
+
+
+def _xlsx_locator_source_context_snapshot(context: Mapping[str, Any]) -> dict[str, Any] | None:
+    if _clean(context.get("source_family")).upper() not in {"XLSX", "XLS", "SPREADSHEET"}:
+        return None
+    locator_text, locator_text_source, locator_text_fields_used = _xlsx_locator_candidate_text(context)
+    if not locator_text:
+        return None
+    snapshot: dict[str, Any] = {
+        "source_family": _clean(context.get("source_family")) or "XLSX",
+        "text": _clean(context.get("text")),
+        "xlsx_locator_text": locator_text,
+        "locator_text_source": locator_text_source,
+        "locator_text_fields_used": list(locator_text_fields_used),
+    }
+    for key in (
+        "chunk_id",
+        "source_atom_id",
+        "evidence_bundle_id",
+        "doc_id",
+        "granularity",
+        "rank",
+    ):
+        value = context.get(key)
+        if _source_value_present(value):
+            snapshot[key] = value
+    for field in XLSX_LOCATOR_SOURCE_OWNED_FIELDS:
+        value = _xlsx_locator_source_owned_value(context, field)
+        if value:
+            snapshot[field] = value
+    forbidden_seen = sorted(_collect_xlsx_locator_forbidden_input_fields(context))
+    if forbidden_seen:
+        snapshot["forbidden_input_fields_seen"] = forbidden_seen
+    return snapshot
+
+
+def preserve_xlsx_locator_source_contexts(raw_outputs: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+    preserved: list[dict[str, Any]] = []
+    for row in raw_outputs:
+        output = dict(row)
+        snapshots: list[dict[str, Any]] = []
+        for context in _as_list(row.get("retrieved_contexts")):
+            if not isinstance(context, Mapping):
+                continue
+            nested_snapshots = [
+                dict(snapshot)
+                for snapshot in _as_list(context.get(INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY))
+                if isinstance(snapshot, Mapping)
+            ]
+            if nested_snapshots:
+                snapshots.extend(nested_snapshots)
+                continue
+            snapshot = _xlsx_locator_source_context_snapshot(context)
+            if snapshot is not None:
+                snapshots.append(snapshot)
+        if snapshots:
+            output[INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY] = snapshots
+        preserved.append(output)
+    return preserved
+
+
+def _xlsx_locator_residual_snapshot(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    breakdown = build_xlsx_pdf_residual_breakdown(items=[], rows=rows)
+    return {
+        "schema_version": breakdown["schema_version"],
+        "residual_row_count": breakdown["residual_row_count"],
+        "classification_counts": dict(breakdown["classification_counts"]),
+        "excluded_classification_counts": dict(breakdown["excluded_classification_counts"]),
+        "forbidden_shortcut_fields_seen": list(breakdown["forbidden_shortcut_fields_seen"]),
+        "forbidden_shortcut_fields_used": list(breakdown["forbidden_shortcut_fields_used"]),
+    }
+
+
+def _xlsx_locator_tool_use_meta(
+    *,
+    status: str,
+    candidates: Sequence[Mapping[str, Any]],
+    gated_row: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    accepted_candidates = [candidate for candidate in candidates if candidate.get("accepted_for_regating") is True]
+    gate = gated_row.get("evidence_gate") if isinstance(gated_row, Mapping) and isinstance(gated_row.get("evidence_gate"), Mapping) else {}
+    remaining_missing = [
+        _clean(anchor)
+        for anchor in _as_list(gate.get("missing_query_anchors"))
+        if _clean(anchor)
+    ]
+    matched = sorted(
+        {
+            _clean(anchor)
+            for candidate in candidates
+            for anchor in _as_list(candidate.get("matched_query_anchors"))
+            if _clean(anchor)
+        }
+    )
+    matched_required_axes = sorted(
+        {
+            _clean(axis)
+            for candidate in candidates
+            for axis in _as_list(candidate.get("matched_validated_required_axes"))
+            if _clean(axis)
+        },
+        key=lambda axis: QUERY_EVIDENCE_AXIS_ORDER.index(axis) if axis in QUERY_EVIDENCE_AXIS_ORDER else len(QUERY_EVIDENCE_AXIS_ORDER),
+    )
+    remaining_required_axes = sorted(
+        {
+            _clean(axis)
+            for candidate in candidates
+            for axis in _as_list(candidate.get("missing_validated_required_axes"))
+            if _clean(axis) and _clean(axis) not in set(matched_required_axes)
+        },
+        key=lambda axis: QUERY_EVIDENCE_AXIS_ORDER.index(axis) if axis in QUERY_EVIDENCE_AXIS_ORDER else len(QUERY_EVIDENCE_AXIS_ORDER),
+    )
+    return {
+        "tool_name": XLSX_LOCATOR_TOOL_NAME,
+        "execution_status": status,
+        "candidate_count": len(candidates),
+        "accepted_candidate_count": len(accepted_candidates),
+        "matched_query_anchors": matched,
+        "remaining_missing_query_anchors": remaining_missing,
+        "matched_validated_required_axes": matched_required_axes,
+        "remaining_missing_validated_required_axes": remaining_required_axes,
+        "input_policy": XLSX_LOCATOR_TOOL_POLICY,
+        "output_policy": XLSX_LOCATOR_TOOL_OUTPUT_POLICY,
+    }
+
+
+def _xlsx_locator_tool_use_record(
+    *,
+    item_index: int,
+    item_id: str,
+    meta: Mapping[str, Any],
+) -> XlsxLocatorToolUseRecord:
+    return XlsxLocatorToolUseRecord(
+        item_index=item_index,
+        item_id=item_id,
+        execution_status=_clean(meta.get("execution_status")),
+        candidate_count=int(meta.get("candidate_count") or 0),
+        accepted_candidate_count=int(meta.get("accepted_candidate_count") or 0),
+        matched_query_anchors=tuple(_clean(anchor) for anchor in _as_list(meta.get("matched_query_anchors")) if _clean(anchor)),
+        remaining_missing_query_anchors=tuple(
+            _clean(anchor) for anchor in _as_list(meta.get("remaining_missing_query_anchors")) if _clean(anchor)
+        ),
+        matched_validated_required_axes=tuple(
+            _clean(axis) for axis in _as_list(meta.get("matched_validated_required_axes")) if _clean(axis)
+        ),
+        remaining_missing_validated_required_axes=tuple(
+            _clean(axis) for axis in _as_list(meta.get("remaining_missing_validated_required_axes")) if _clean(axis)
+        ),
+        input_policy=_clean(meta.get("input_policy")) or XLSX_LOCATOR_TOOL_POLICY,
+        output_policy=_clean(meta.get("output_policy")) or XLSX_LOCATOR_TOOL_OUTPUT_POLICY,
+    )
+
+
+def _xlsx_locator_candidate_record(
+    *,
+    item_index: int,
+    candidate_index: int,
+    candidate: Mapping[str, Any],
+) -> XlsxLocatorEvidenceCandidateRecord:
+    return XlsxLocatorEvidenceCandidateRecord(
+        item_index=item_index,
+        candidate_index=candidate_index,
+        source_family=_clean(candidate.get("source_family")),
+        tool_name=_clean(candidate.get("tool_name")) or XLSX_LOCATOR_TOOL_NAME,
+        tool_policy=_clean(candidate.get("tool_policy")) or XLSX_LOCATOR_TOOL_POLICY,
+        source_atom_id=_clean(candidate.get("source_atom_id")),
+        evidence_bundle_id=_clean(candidate.get("evidence_bundle_id")),
+        doc_id=_clean(candidate.get("doc_id")),
+        sheet=_clean(candidate.get("sheet")),
+        cell_range=_clean(candidate.get("cell_range")),
+        cell=_clean(candidate.get("cell")),
+        row_index_1based=_clean(candidate.get("row_index_1based")),
+        row_label=_clean(candidate.get("row_label")),
+        column_label=_clean(candidate.get("column_label")),
+        target_column=_clean(candidate.get("target_column")),
+        header=_clean(candidate.get("header")),
+        header_path=_clean(candidate.get("header_path")),
+        table_id=_clean(candidate.get("table_id")),
+        synthetic_table_id=_clean(candidate.get("synthetic_table_id")),
+        display_value=_clean(candidate.get("display_value")),
+        locator_text_source=_clean(candidate.get("locator_text_source")),
+        matched_query_anchors=tuple(
+            _clean(anchor) for anchor in _as_list(candidate.get("matched_query_anchors")) if _clean(anchor)
+        ),
+        missing_query_anchors_after_tool=tuple(
+            _clean(anchor)
+            for anchor in _as_list(candidate.get("missing_query_anchors_after_tool"))
+            if _clean(anchor)
+        ),
+        matched_validated_required_axes=tuple(
+            _clean(axis)
+            for axis in _as_list(candidate.get("matched_validated_required_axes"))
+            if _clean(axis)
+        ),
+        missing_validated_required_axes=tuple(
+            _clean(axis)
+            for axis in _as_list(candidate.get("missing_validated_required_axes"))
+            if _clean(axis)
+        ),
+        confidence_tier=_clean(candidate.get("confidence_tier")) or "low",
+        accepted_for_regating=candidate.get("accepted_for_regating") is True,
+        rejection_reason=_clean(candidate.get("rejection_reason")),
+        input_fields_used=tuple(_clean(field) for field in _as_list(candidate.get("input_fields_used")) if _clean(field)),
+    )
+
+
+def _anchor_classifier_rows(rows: Sequence[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
+    return [
+        row.get("query_anchor_classifier")
+        for row in rows
+        if isinstance(row.get("query_anchor_classifier"), Mapping)
+    ]
+
+
+def _anchor_classifier_required_summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    classifiers = _anchor_classifier_rows(rows)
+    before = sorted(
+        {
+            _clean(anchor)
+            for classifier in classifiers
+            for anchor in _as_list(classifier.get("required_anchor_before"))
+            if _clean(anchor)
+        }
+    )
+    after = sorted(
+        {
+            _clean(anchor)
+            for classifier in classifiers
+            for anchor in _as_list(classifier.get("required_anchor_after"))
+            if _clean(anchor)
+        }
+    )
+    removed = sorted(
+        {
+            _clean(anchor)
+            for classifier in classifiers
+            for anchor in _as_list(classifier.get("removed_intent_tokens"))
+            if _clean(anchor)
+        }
+    )
+    restored = sorted(
+        {
+            _clean(anchor)
+            for classifier in classifiers
+            for anchor in _as_list(classifier.get("protected_intent_tokens_restored"))
+            if _clean(anchor)
+        }
+    )
+    status_counts = Counter(_clean(classifier.get("status")) or "unknown" for classifier in classifiers)
+    return {
+        "enabled": bool(classifiers),
+        "row_count": len(classifiers),
+        "before": {"anchor_count": len(before), "anchors": before},
+        "after": {"anchor_count": len(after), "anchors": after},
+        "removed_intent_tokens": removed,
+        "protected_intent_tokens_restored": restored,
+        "status_counts": dict(sorted(status_counts.items())),
+    }
+
+
+def _anchor_classifier_first_value(rows: Sequence[Mapping[str, Any]], key: str) -> str:
+    for classifier in _anchor_classifier_rows(rows):
+        value = _clean(classifier.get(key))
+        if value:
+            return value
+    return ""
+
+
+def _query_evidence_planner_rows(rows: Sequence[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
+    return [
+        row.get("query_evidence_planner")
+        for row in rows
+        if isinstance(row.get("query_evidence_planner"), Mapping)
+    ]
+
+
+def _query_evidence_planner_required_summary(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    planners = _query_evidence_planner_rows(rows)
+    status_counts = Counter(_clean(planner.get("planner_status")) or "unknown" for planner in planners)
+    source_family_counts = Counter(_clean(planner.get("source_family_hint")) or "unknown" for planner in planners)
+    query_task_counts = Counter(_clean(planner.get("query_task")) or "unknown" for planner in planners)
+    axes = _ordered_query_evidence_axes(
+        axis
+        for planner in planners
+        for axis in _as_list(planner.get("validated_required_axes"))
+        if _clean(axis)
+    )
+    return {
+        "enabled": bool(planners),
+        "row_count": len(planners),
+        "status_counts": dict(sorted(status_counts.items())),
+        "source_family_hint_counts": dict(sorted(source_family_counts.items())),
+        "query_task_counts": dict(sorted(query_task_counts.items())),
+        "validated_required_axes": axes,
+    }
+
+
+def _build_xlsx_locator_run_record(
+    *,
+    before_rows: Sequence[Mapping[str, Any]],
+    after_rows: Sequence[Mapping[str, Any]],
+    gate_before: Mapping[str, Any],
+    gate_after: Mapping[str, Any],
+    decisions: Sequence[Mapping[str, Any]],
+) -> XlsxLocatorRunRecord:
+    xlsx_decisions = [
+        decision
+        for decision in decisions
+        if _clean(decision.get("proposed_action")) == "xlsx_cell_or_table_tool"
+    ]
+    forbidden_seen = sorted(
+        {
+            _clean(field)
+            for decision in xlsx_decisions
+            for field in _as_list(decision.get("forbidden_input_fields_seen"))
+            if _clean(field)
+        }
+    )
+    forbidden_used = sorted(
+        {
+            _clean(field)
+            for decision in xlsx_decisions
+            for field in _as_list(decision.get("forbidden_input_fields_used"))
+            if _clean(field)
+        }
+    )
+    forbidden_rejected = sorted(
+        {
+            _clean(field)
+            for decision in xlsx_decisions
+            for candidate in _as_list(decision.get("candidates"))
+            if isinstance(candidate, Mapping)
+            and _clean(candidate.get("rejection_reason")) == "forbidden_input_fields_present"
+            for field in _as_list(candidate.get("forbidden_input_fields_seen"))
+            if _clean(field)
+        }
+    )
+    tool_uses: list[XlsxLocatorToolUseRecord] = []
+    candidates: list[XlsxLocatorEvidenceCandidateRecord] = []
+    for decision in xlsx_decisions:
+        item_index = int(decision.get("item_index") or 0)
+        item_id = _clean(decision.get("item_id")) or _report_item_id(
+            before_rows[item_index] if item_index < len(before_rows) else {},
+            item_index,
+        )
+        meta = decision.get("tool_use") if isinstance(decision.get("tool_use"), Mapping) else {}
+        tool_uses.append(_xlsx_locator_tool_use_record(item_index=item_index, item_id=item_id, meta=meta))
+        for candidate_index, candidate in enumerate(_as_list(decision.get("candidates"))):
+            if isinstance(candidate, Mapping):
+                candidates.append(
+                    _xlsx_locator_candidate_record(
+                        item_index=item_index,
+                        candidate_index=candidate_index,
+                        candidate=candidate,
+                    )
+                )
+    accepted_candidate_count = sum(int(decision.get("accepted_candidate_count") or 0) for decision in xlsx_decisions)
+    candidate_count = sum(int(decision.get("candidate_count") or 0) for decision in xlsx_decisions)
+    tool_invocation_count = sum(int(decision.get("tool_call_count_executed") or 0) for decision in xlsx_decisions)
+    anchor_summary = _anchor_classifier_required_summary(before_rows)
+    query_planner_summary = _query_evidence_planner_required_summary(before_rows)
+    return XlsxLocatorRunRecord(
+        schema_version=XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION,
+        enabled=True,
+        report_only_diagnostic=True,
+        official_metric=False,
+        tool_name=XLSX_LOCATOR_TOOL_NAME,
+        eligible_failed_row_count=len(xlsx_decisions),
+        tool_invocation_count=tool_invocation_count,
+        accepted_candidate_count=accepted_candidate_count,
+        rejected_candidate_count=max(0, candidate_count - accepted_candidate_count),
+        gate_delta_record=XlsxLocatorGateDeltaRecord(
+            before_gate=dict(gate_before),
+            after_gate=dict(gate_after),
+            gate_delta=_agentic_planner_gate_delta(gate_before, gate_after),
+            residual_before=_xlsx_locator_residual_snapshot(before_rows),
+            residual_after=_xlsx_locator_residual_snapshot(after_rows),
+        ),
+        guardrail_record=XlsxLocatorGuardrailRecord(
+            forbidden_input_fields_seen=tuple(forbidden_seen),
+            forbidden_input_fields_used=tuple(forbidden_used),
+            forbidden_input_fields_rejected=tuple(forbidden_rejected),
+        ),
+        anchor_classifier_model=_anchor_classifier_first_value(before_rows, "model"),
+        anchor_classifier_prompt_version=_anchor_classifier_first_value(before_rows, "prompt_version"),
+        anchor_classifier_raw_payload_written=any(
+            bool(classifier.get("raw_payload_written")) for classifier in _anchor_classifier_rows(before_rows)
+        ),
+        required_anchor_summary=anchor_summary,
+        query_planner_summary=query_planner_summary,
+        tool_uses=tuple(tool_uses),
+        candidates=tuple(candidates),
+    )
+
+
+def project_xlsx_locator_run_record(
+    record: XlsxLocatorRunRecord,
+    *,
+    run_store_path: Path | str | None = None,
+) -> dict[str, Any]:
+    guardrails = asdict(record.guardrail_record)
+    tool_status_counts = Counter(tool_use.execution_status for tool_use in record.tool_uses)
+    candidate_confidence_counts = Counter(candidate.confidence_tier for candidate in record.candidates)
+    candidate_rejection_counts = Counter(
+        candidate.rejection_reason or "accepted_for_regating"
+        for candidate in record.candidates
+    )
+    candidate_source_family_counts = Counter(candidate.source_family for candidate in record.candidates)
+    projection = {
+        "schema_version": record.schema_version,
+        "enabled": record.enabled,
+        "report_only_diagnostic": record.report_only_diagnostic,
+        "official_metric": record.official_metric,
+        "official_metric_input_rows": record.guardrail_record.official_metric_input_rows,
+        "official_metric_input_rows_created": record.guardrail_record.official_metric_input_rows_created,
+        "official_metric_input_rows_consumed": record.guardrail_record.official_metric_input_rows_consumed,
+        "tool_name": record.tool_name,
+        "eligible_failed_row_count": record.eligible_failed_row_count,
+        "tool_invocation_count": record.tool_invocation_count,
+        "accepted_candidate_count": record.accepted_candidate_count,
+        "rejected_candidate_count": record.rejected_candidate_count,
+        "anchor_classifier_model": record.anchor_classifier_model,
+        "anchor_classifier_prompt_version": record.anchor_classifier_prompt_version,
+        "anchor_classifier_raw_payload_written": record.anchor_classifier_raw_payload_written,
+        "required_anchor_summary": dict(record.required_anchor_summary),
+        "query_planner_summary": dict(record.query_planner_summary),
+        "tool_execution_status_counts": dict(sorted(tool_status_counts.items())),
+        "candidate_confidence_tier_counts": dict(sorted(candidate_confidence_counts.items())),
+        "candidate_rejection_reason_counts": dict(sorted(candidate_rejection_counts.items())),
+        "candidate_source_family_counts": dict(sorted(candidate_source_family_counts.items())),
+        "before_gate": dict(record.gate_delta_record.before_gate),
+        "after_gate": dict(record.gate_delta_record.after_gate),
+        "gate_delta": dict(record.gate_delta_record.gate_delta),
+        "residual_before": dict(record.gate_delta_record.residual_before),
+        "residual_after": dict(record.gate_delta_record.residual_after),
+        "guardrail_status": {
+            "raw_xlsx_query_time_parsing_used": record.guardrail_record.raw_xlsx_query_time_parsing_used,
+            "gold_or_qrels_or_label_or_expected_used": record.guardrail_record.gold_or_qrels_or_label_or_expected_used,
+            "retrieved_context_only_citation_promoted": record.guardrail_record.retrieved_context_only_citation_promoted,
+            "evidence_gate_loosened": record.guardrail_record.evidence_gate_loosened,
+            "report_only_diagnostic": record.guardrail_record.report_only_diagnostic,
+            "official_metric": record.guardrail_record.official_metric,
+            "official_metric_input_rows": record.guardrail_record.official_metric_input_rows,
+            "official_metric_input_rows_created": record.guardrail_record.official_metric_input_rows_created,
+            "official_metric_input_rows_consumed": record.guardrail_record.official_metric_input_rows_consumed,
+        },
+        "forbidden_input_fields_seen": list(record.guardrail_record.forbidden_input_fields_seen),
+        "forbidden_input_fields_used": list(record.guardrail_record.forbidden_input_fields_used),
+        "forbidden_input_fields_rejected": list(record.guardrail_record.forbidden_input_fields_rejected),
+        "raw_xlsx_query_time_parsing_used": record.guardrail_record.raw_xlsx_query_time_parsing_used,
+        "gold_or_qrels_or_label_or_expected_used": record.guardrail_record.gold_or_qrels_or_label_or_expected_used,
+        "run_record": {
+            "record_type": "XlsxLocatorRunRecord",
+            "contract": "typed_record_projection_v1",
+            "serializer": "compact_report_projection",
+        },
+        "guardrails": guardrails,
+    }
+    if run_store_path is not None:
+        projection["run_store"] = {
+            "backend": XLSX_LOCATOR_RUN_STORE_BACKEND,
+            "path": _report_path_value(run_store_path),
+            "tables": list(XLSX_LOCATOR_RUN_STORE_TABLES),
+        }
+    return projection
+
+
+def apply_xlsx_locator_tool_execute_once_to_outputs(
+    raw_outputs: Sequence[Mapping[str, Any]],
+    *,
+    evidence_gate_mode: str,
+    citation_format: str,
+    composer_provider: str = "selected-evidence-deterministic-v1",
+    local_llm_backend: str = "",
+    local_llm_base_url: str = "",
+    local_llm_model: str = "",
+    local_llm_timeout_seconds: int = 60,
+    local_llm_max_tokens: int = 360,
+    skip_local_llm_endpoint_check: bool = False,
+) -> tuple[list[dict[str, Any]], XlsxLocatorRunRecord]:
+    before_rows = [dict(row) for row in raw_outputs]
+    before_gate_summary = build_evidence_gate_summary(before_rows, mode=evidence_gate_mode)
+    gate_before = _portfolio_gate_summary({"evidence_gate": before_gate_summary})
+    updated_rows = [dict(row) for row in before_rows]
+    decisions: list[dict[str, Any]] = []
+
+    for item_index, row in enumerate(before_rows):
+        if _clean(row.get("answer_gate_decision")) == "allow_answer":
+            continue
+        residual = _classify_xlsx_pdf_residual_row(row)
+        if residual.get("source_family") != "XLSX":
+            continue
+        if residual.get("classification") not in {
+            "selected_evidence_has_value_missing_axis",
+            "selected_evidence_absent",
+            "candidate_present_anchor_missing",
+        }:
+            continue
+        query = _clean(row.get("query"))
+        candidates = _xlsx_locator_tool_candidates(row)
+        accepted_candidates = [candidate for candidate in candidates if candidate.get("accepted_for_regating") is True]
+        forbidden_seen = sorted(
+            {
+                _clean(field)
+                for candidate in candidates
+                for field in _as_list(candidate.get("forbidden_input_fields_seen"))
+                if _clean(field)
+            }
+        )
+        decision: dict[str, Any] = {
+            "item_index": item_index,
+            "item_id": _report_item_id(row, item_index),
+            "query_sha256": f"sha256:{_sha256_text(query)}" if query else "",
+            "query_preview": _bounded_text_preview(query, 160),
+            "failure_class": "tool_required_xlsx",
+            "proposed_action": "xlsx_cell_or_table_tool",
+            "expected_extra_query_count": 0,
+            "expected_tool_call_count": 1,
+            "expected_llm_retry_count": 0,
+            "expected_memory_lookup_count": 0,
+            "executed": True,
+            "extra_query_count_executed": 0,
+            "tool_call_count_executed": 1,
+            "llm_retry_count_executed": 0,
+            "memory_lookup_count_executed": 0,
+            "candidate_count": len(candidates),
+            "accepted_candidate_count": len(accepted_candidates),
+            "forbidden_input_fields_seen": forbidden_seen,
+            "forbidden_input_fields_used": [],
+            "tool_name": "xlsx_cell_or_table_tool",
+            "tool_input_policy": XLSX_LOCATOR_TOOL_POLICY,
+            "input_policy": (
+                "query_text_public_gate_diagnostics_and_source_owned_locator_metadata_only_no_ids_expected_qrels_labels_baseline"
+            ),
+            "candidates": candidates,
+        }
+        if not accepted_candidates:
+            status = "skipped_missing_source_locator"
+            output_row = dict(row)
+            tool_use = _xlsx_locator_tool_use_meta(
+                status=status,
+                candidates=candidates,
+                gated_row=row,
+            )
+            output_row["xlsx_locator_tool_use"] = tool_use
+            updated_rows[item_index] = output_row
+            decision["execution_status"] = status
+            decision["tool_use"] = tool_use
+            decisions.append(decision)
+            continue
+
+        original_contexts = [
+            dict(context)
+            for context in _as_list(row.get("retrieved_contexts"))
+            if isinstance(context, Mapping)
+        ]
+        tool_output = dict(row)
+        tool_output["retrieved_contexts"] = [*accepted_candidates, *original_contexts]
+        tool_output["citations"] = []
+        composed_tool = apply_selected_evidence_composer_to_outputs(
+            [tool_output],
+            citation_format=citation_format,
+            composer_provider=composer_provider,
+            local_llm_backend=local_llm_backend,
+            local_llm_base_url=local_llm_base_url,
+            local_llm_model=local_llm_model,
+            local_llm_timeout_seconds=local_llm_timeout_seconds,
+            local_llm_max_tokens=local_llm_max_tokens,
+            skip_local_llm_endpoint_check=skip_local_llm_endpoint_check,
+            retry_mode="off",
+        )
+        gated_tool, _tool_gate = apply_evidence_gate_to_outputs(composed_tool, mode=evidence_gate_mode)
+        gated_row = gated_tool[0]
+        if _clean(gated_row.get("answer_gate_decision")) == "allow_answer":
+            status = "accepted_after_regating"
+            tool_use = _xlsx_locator_tool_use_meta(
+                status=status,
+                candidates=candidates,
+                gated_row=gated_row,
+            )
+            gated_row["xlsx_locator_tool_use"] = tool_use
+            updated_rows[item_index] = gated_row
+        else:
+            status = "rejected_gate_insufficient"
+            output_row = dict(row)
+            tool_use = _xlsx_locator_tool_use_meta(
+                status=status,
+                candidates=candidates,
+                gated_row=gated_row,
+            )
+            output_row["xlsx_locator_tool_use"] = tool_use
+            updated_rows[item_index] = output_row
+        decision["execution_status"] = status
+        decision["tool_use"] = tool_use
+        decisions.append(decision)
+
+    after_gate_summary = build_evidence_gate_summary(updated_rows, mode=evidence_gate_mode)
+    gate_after = _portfolio_gate_summary({"evidence_gate": after_gate_summary})
+    run_record = _build_xlsx_locator_run_record(
+        before_rows=before_rows,
+        after_rows=updated_rows,
+        gate_before=gate_before,
+        gate_after=gate_after,
+        decisions=decisions,
+    )
+    return updated_rows, run_record
+
+
 def _agentic_planner_run_local_memory_bank(rows: Sequence[Any]) -> list[dict[str, Any]]:
     memory: list[dict[str, Any]] = []
     seen: set[str] = set()
@@ -7124,7 +9441,7 @@ def _agentic_planner_run_local_memory_match(
     if not query:
         return None
     existing_ids = {_context_identity(context) for context in _contexts_from_row(row)}
-    query_anchors = _gate_query_focus_anchors(query)
+    query_anchors = _query_focus_anchors_for_row(row)
     best: tuple[float, int, dict[str, Any]] | None = None
     for index, memory in enumerate(memory_bank):
         context = memory.get("context") if isinstance(memory.get("context"), Mapping) else {}
@@ -7172,6 +9489,9 @@ def _agentic_planner_selected_evidence_for_llm_retry(row: Mapping[str, Any]) -> 
         _clean(row.get("query")),
         _contexts_from_row(row),
         max_evidence=3,
+        query_evidence_planner=(
+            row.get("query_evidence_planner") if isinstance(row.get("query_evidence_planner"), Mapping) else None
+        ),
     )
 
 
@@ -7346,6 +9666,7 @@ def apply_agentic_planner_execute_once_to_outputs(
     top_k: int,
     evidence_gate_mode: str,
     citation_format: str,
+    composer_provider: str = "selected-evidence-deterministic-v1",
     local_llm_backend: str = "",
     local_llm_base_url: str = "",
     local_llm_model: str = "",
@@ -7390,7 +9711,12 @@ def apply_agentic_planner_execute_once_to_outputs(
                 "query_text_and_public_gate_diagnostics_only_no_ids_expected_qrels_labels_baseline_or_legacy_outputs"
             ),
         }
-        if action not in {"query_text_only_reformulation", "route_selected_probe"}:
+        if action not in {
+            "query_text_only_reformulation",
+            "route_selected_probe",
+            "pdf_locator_tool",
+            "xlsx_cell_or_table_tool",
+        }:
             decision.update(
                 {
                     "extra_query_count_executed": 0,
@@ -7420,7 +9746,14 @@ def apply_agentic_planner_execute_once_to_outputs(
             composed_probe = apply_selected_evidence_composer_to_outputs(
                 [probe_output],
                 citation_format=citation_format,
-                composer_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+                composer_provider=composer_provider,
+                local_llm_backend=local_llm_backend,
+                local_llm_base_url=local_llm_base_url,
+                local_llm_model=local_llm_model,
+                local_llm_timeout_seconds=local_llm_timeout_seconds,
+                local_llm_max_tokens=local_llm_max_tokens,
+                skip_local_llm_endpoint_check=skip_local_llm_endpoint_check,
+                retry_mode="off",
             )
             gated_probe, _probe_gate = apply_evidence_gate_to_outputs(composed_probe, mode=evidence_gate_mode)
             updated_rows[item_index] = gated_probe[0]
@@ -7435,53 +9768,98 @@ def apply_agentic_planner_execute_once_to_outputs(
                     "probe_top_k": probe_top_k,
                 }
             )
-        elif action in {"pdf_locator_tool", "xlsx_cell_or_table_tool"}:
-            tool_context = _agentic_planner_tool_context(row, action=action)
-            if tool_context is not None:
-                tool_output = dict(row)
-                original_contexts = [
-                    dict(context)
-                    for context in _as_list(row.get("retrieved_contexts"))
-                    if isinstance(context, Mapping)
-                ]
-                tool_output["retrieved_contexts"] = [tool_context, *original_contexts]
-                tool_output["citations"] = []
-                tool_output["agentic_planner_tool_use"] = {
+        elif action == "pdf_locator_tool":
+            gated_row, tool_use = _agentic_planner_pdf_locator_tool_output(
+                row,
+                evidence_gate_mode=evidence_gate_mode,
+                citation_format=citation_format,
+                composer_provider=composer_provider,
+                local_llm_backend=local_llm_backend,
+                local_llm_base_url=local_llm_base_url,
+                local_llm_model=local_llm_model,
+                local_llm_timeout_seconds=local_llm_timeout_seconds,
+                local_llm_max_tokens=local_llm_max_tokens,
+                skip_local_llm_endpoint_check=skip_local_llm_endpoint_check,
+            )
+            tool_call_count = int(tool_use.get("tool_call_count") or 0)
+            tool_status = _clean(tool_use.get("execution_status") or tool_use.get("status")) or "skipped_missing_source_locator"
+            if tool_status == "accepted_after_regating":
+                gated_row["agentic_planner_tool_use"] = {
                     "tool_name": action,
-                    "tool_call_count": 1,
-                    "input_policy": "source_derived_locator_fields_only_no_eval_row_fields",
+                    "tool_implementation": PDF_LOCATOR_TOOL_NAME,
+                    "tool_call_count": tool_call_count,
+                    "input_policy": PDF_LOCATOR_TOOL_POLICY,
+                    "output_policy": PDF_LOCATOR_TOOL_OUTPUT_POLICY,
+                    "pdf_locator_execution_status": tool_status,
                     "uses_query_id_or_row_id_or_target_id": False,
                     "uses_expected_answer_or_evidence": False,
                     "uses_qrels_or_labels": False,
                     "raw_prompt_payload_written": False,
                     "raw_response_payload_written": False,
                 }
-                composed_tool = apply_selected_evidence_composer_to_outputs(
-                    [tool_output],
-                    citation_format=citation_format,
-                    composer_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
-                )
-                gated_tool, _tool_gate = apply_evidence_gate_to_outputs(composed_tool, mode=evidence_gate_mode)
-                gated_row = gated_tool[0]
-                gated_row["agentic_planner_tool_use"] = dict(tool_output["agentic_planner_tool_use"])
                 updated_rows[item_index] = gated_row
-                executed_tool_call_count += 1
-                decision.update(
-                    {
-                        "executed": True,
-                        "execution_status": "executed",
-                        "extra_query_count_executed": 0,
-                        "tool_call_count_executed": 1,
-                        "llm_retry_count_executed": 0,
-                        "tool_name": action,
-                        "tool_input_policy": "source_derived_locator_fields_only_no_eval_row_fields",
-                    }
-                )
-            else:
-                decision["extra_query_count_executed"] = 0
-                decision["tool_call_count_executed"] = 0
-                decision["llm_retry_count_executed"] = 0
-                decision["execution_status"] = "skipped_missing_source_locator"
+            executed_tool_call_count += tool_call_count
+            decision_update = {
+                "executed": tool_status == "accepted_after_regating",
+                "execution_status": tool_status,
+                "extra_query_count_executed": 0,
+                "tool_call_count_executed": tool_call_count,
+                "llm_retry_count_executed": 0,
+                "tool_name": PDF_LOCATOR_TOOL_NAME,
+                "tool_input_policy": PDF_LOCATOR_TOOL_POLICY,
+                "tool_output_policy": PDF_LOCATOR_TOOL_OUTPUT_POLICY,
+                "pdf_locator_candidate_count": int(tool_use.get("candidate_count") or 0),
+                "pdf_locator_accepted_candidate_count": int(tool_use.get("accepted_candidate_count") or 0),
+            }
+            if tool_use.get("execution_gate_required") is True:
+                decision_update["execution_gate_required"] = True
+            decision.update(decision_update)
+        elif action == "xlsx_cell_or_table_tool":
+            tool_rows, tool_record = apply_xlsx_locator_tool_execute_once_to_outputs(
+                [row],
+                evidence_gate_mode=evidence_gate_mode,
+                citation_format=citation_format,
+                composer_provider=composer_provider,
+                local_llm_backend=local_llm_backend,
+                local_llm_base_url=local_llm_base_url,
+                local_llm_model=local_llm_model,
+                local_llm_timeout_seconds=local_llm_timeout_seconds,
+                local_llm_max_tokens=local_llm_max_tokens,
+                skip_local_llm_endpoint_check=skip_local_llm_endpoint_check,
+            )
+            gated_row = dict(tool_rows[0])
+            tool_use = gated_row.get("xlsx_locator_tool_use") if isinstance(gated_row.get("xlsx_locator_tool_use"), Mapping) else {}
+            tool_call_count = int(tool_record.tool_invocation_count)
+            tool_status = _clean(tool_use.get("execution_status")) or "skipped_missing_source_locator"
+            gated_row["agentic_planner_tool_use"] = {
+                "tool_name": action,
+                "tool_implementation": XLSX_LOCATOR_TOOL_NAME,
+                "tool_call_count": tool_call_count,
+                "input_policy": XLSX_LOCATOR_TOOL_POLICY,
+                "output_policy": XLSX_LOCATOR_TOOL_OUTPUT_POLICY,
+                "xlsx_locator_execution_status": tool_status,
+                "uses_query_id_or_row_id_or_target_id": False,
+                "uses_expected_answer_or_evidence": False,
+                "uses_qrels_or_labels": False,
+                "raw_prompt_payload_written": False,
+                "raw_response_payload_written": False,
+            }
+            updated_rows[item_index] = gated_row
+            executed_tool_call_count += tool_call_count
+            decision.update(
+                {
+                    "executed": tool_call_count > 0,
+                    "execution_status": tool_status,
+                    "extra_query_count_executed": 0,
+                    "tool_call_count_executed": tool_call_count,
+                    "llm_retry_count_executed": 0,
+                    "tool_name": XLSX_LOCATOR_TOOL_NAME,
+                    "tool_input_policy": XLSX_LOCATOR_TOOL_POLICY,
+                    "tool_output_policy": XLSX_LOCATOR_TOOL_OUTPUT_POLICY,
+                    "xlsx_locator_candidate_count": int(tool_record.accepted_candidate_count + tool_record.rejected_candidate_count),
+                    "xlsx_locator_accepted_candidate_count": int(tool_record.accepted_candidate_count),
+                }
+            )
         elif action == "run_local_memory_reuse":
             if memory_match is not None:
                 memory_context = dict(memory_match["context"])
@@ -7512,7 +9890,14 @@ def apply_agentic_planner_execute_once_to_outputs(
                 composed_memory = apply_selected_evidence_composer_to_outputs(
                     [memory_output],
                     citation_format=citation_format,
-                    composer_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+                    composer_provider=composer_provider,
+                    local_llm_backend=local_llm_backend,
+                    local_llm_base_url=local_llm_base_url,
+                    local_llm_model=local_llm_model,
+                    local_llm_timeout_seconds=local_llm_timeout_seconds,
+                    local_llm_max_tokens=local_llm_max_tokens,
+                    skip_local_llm_endpoint_check=skip_local_llm_endpoint_check,
+                    retry_mode="off",
                 )
                 gated_memory, _memory_gate = apply_evidence_gate_to_outputs(composed_memory, mode=evidence_gate_mode)
                 gated_row = gated_memory[0]
@@ -7877,10 +10262,298 @@ def validate_agentic_planner_execute_once(run_id: str, planner: Mapping[str, Any
         if decision.get("executed") is True and action not in {
             "query_text_only_reformulation",
             "route_selected_probe",
+            "pdf_locator_tool",
+            "xlsx_cell_or_table_tool",
         }:
             raise DatasetSchemaError(
                 f"{run_id}: agentic_planner_execute_once unsupported executed action for this checkpoint"
             )
+
+
+def validate_xlsx_locator_tool_execute_once(run_id: str, locator: Mapping[str, Any]) -> None:
+    if locator.get("schema_version") != XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION:
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.schema_version unsupported")
+    if locator.get("enabled") is not True:
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.enabled must be True")
+    if locator.get("report_only_diagnostic") is not True:
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.report_only_diagnostic must be True")
+    if locator.get("official_metric") is not False:
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.official_metric must be False")
+    for key in (
+        "official_metric_input_rows",
+        "official_metric_input_rows_created",
+        "official_metric_input_rows_consumed",
+    ):
+        if int(locator.get(key) or 0) != 0:
+            raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.{key} must be 0")
+    if locator.get("tool_name") != XLSX_LOCATOR_TOOL_NAME:
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.tool_name unsupported")
+    for key in ("decisions", "tool_uses", "candidates"):
+        if key in locator:
+            raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.{key} must stay in RunStore")
+    record_meta = locator.get("run_record")
+    if not isinstance(record_meta, Mapping) or record_meta.get("record_type") != "XlsxLocatorRunRecord":
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.run_record must identify XlsxLocatorRunRecord")
+    if record_meta.get("serializer") != "compact_report_projection":
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once must be a compact report projection")
+    run_store = locator.get("run_store")
+    if not isinstance(run_store, Mapping):
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.run_store must be present")
+    if run_store.get("backend") != XLSX_LOCATOR_RUN_STORE_BACKEND:
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.run_store.backend unsupported")
+    if not _clean(run_store.get("path")).endswith(XLSX_LOCATOR_RUN_STORE_FILENAME):
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.run_store.path must end with run.sqlite")
+    missing_tables = sorted(set(XLSX_LOCATOR_RUN_STORE_TABLES) - set(_as_list(run_store.get("tables"))))
+    if missing_tables:
+        raise DatasetSchemaError(
+            f"{run_id}: xlsx_locator_tool_execute_once.run_store missing table {missing_tables[0]}"
+        )
+    guardrail_status = locator.get("guardrail_status")
+    if not isinstance(guardrail_status, Mapping):
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.guardrail_status must be present")
+    for key in (
+        "raw_xlsx_query_time_parsing_used",
+        "gold_or_qrels_or_label_or_expected_used",
+        "retrieved_context_only_citation_promoted",
+        "evidence_gate_loosened",
+        "official_metric",
+    ):
+        if guardrail_status.get(key) is not False:
+            raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.guardrail_status.{key} must be False")
+    if guardrail_status.get("report_only_diagnostic") is not True:
+        raise DatasetSchemaError(
+            f"{run_id}: xlsx_locator_tool_execute_once.guardrail_status.report_only_diagnostic must be True"
+        )
+    for key in (
+        "official_metric_input_rows",
+        "official_metric_input_rows_created",
+        "official_metric_input_rows_consumed",
+    ):
+        if int(guardrail_status.get(key) or 0) != 0:
+            raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.guardrail_status.{key} must be 0")
+    if _as_list(locator.get("forbidden_input_fields_used")):
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.forbidden_input_fields_used must be empty")
+    if locator.get("raw_xlsx_query_time_parsing_used") is not False:
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.raw_xlsx_query_time_parsing_used must be False")
+    if locator.get("gold_or_qrels_or_label_or_expected_used") is not False:
+        raise DatasetSchemaError(
+            f"{run_id}: xlsx_locator_tool_execute_once.gold_or_qrels_or_label_or_expected_used must be False"
+        )
+    eligible_failed = int(locator.get("eligible_failed_row_count") or 0)
+    tool_invocations = int(locator.get("tool_invocation_count") or 0)
+    accepted = int(locator.get("accepted_candidate_count") or 0)
+    rejected = int(locator.get("rejected_candidate_count") or 0)
+    if min(eligible_failed, tool_invocations, accepted, rejected) < 0:
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once counts must be non-negative")
+    if tool_invocations != eligible_failed:
+        raise DatasetSchemaError(
+            f"{run_id}: xlsx_locator_tool_execute_once must execute one tool call per eligible failed row"
+        )
+    before_gate = locator.get("before_gate") if isinstance(locator.get("before_gate"), Mapping) else {}
+    after_gate = locator.get("after_gate") if isinstance(locator.get("after_gate"), Mapping) else {}
+    gate_delta = locator.get("gate_delta") if isinstance(locator.get("gate_delta"), Mapping) else {}
+    expected_allowed_delta = int(after_gate.get("allowed_answer_count") or 0) - int(
+        before_gate.get("allowed_answer_count") or 0
+    )
+    if int(gate_delta.get("allowed_answer_count_delta") or 0) != expected_allowed_delta:
+        raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.gate_delta mismatch")
+
+
+def _resolve_xlsx_locator_run_store_path(path: Any) -> Path:
+    path_text = _clean(path)
+    if not path_text:
+        return Path()
+    path_obj = Path(path_text)
+    if path_obj.is_absolute():
+        return path_obj
+    return ROOT / path_obj
+
+
+def validate_xlsx_locator_run_store(
+    run_id: str,
+    locator: Mapping[str, Any],
+    *,
+    run_store_path: Path | str | None = None,
+) -> None:
+    run_store = locator.get("run_store") if isinstance(locator.get("run_store"), Mapping) else {}
+    path = Path(run_store_path) if run_store_path is not None else _resolve_xlsx_locator_run_store_path(run_store.get("path"))
+    if not path.exists():
+        raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore missing: {_report_path_value(path)}")
+    required_columns = {
+        "runs": {
+            "run_id",
+            "dataset_slug",
+            "collection",
+            "schema_version",
+            "schema_versions_json",
+            "backend",
+            "tool_name",
+            "enabled",
+            "report_only_diagnostic",
+            "official_metric",
+            "official_metric_input_rows",
+            "anchor_classifier_model",
+            "anchor_classifier_prompt_version",
+            "anchor_classifier_raw_payload_written",
+            "required_anchor_summary_json",
+            "query_planner_summary_json",
+            "guardrail_summary_json",
+            "record_json",
+        },
+        "items": {
+            "source_family_hint",
+            "query_task",
+            "planner_status",
+            "row_filters_json",
+            "target_axis_json",
+            "validated_required_axes_json",
+        },
+        "selected_evidence": {
+            "cell",
+            "row_index_1based",
+            "row_label",
+            "column_label",
+            "target_column",
+            "header_path",
+            "table_id",
+            "display_value",
+        },
+        "tool_invocations": {
+            "matched_validated_required_axes_json",
+            "remaining_missing_validated_required_axes_json",
+        },
+        "tool_candidates": {
+            "locator_text_source",
+            "input_fields_used_json",
+            "matched_validated_required_axes_json",
+            "missing_validated_required_axes_json",
+            "accepted_for_regating",
+            "rejection_reason",
+        },
+    }
+    uri = f"file:{path.as_posix()}?mode=ro"
+    conn = sqlite3.connect(uri, uri=True)
+    try:
+        conn.row_factory = sqlite3.Row
+        tables = {row["name"] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        missing_tables = sorted(set(XLSX_LOCATOR_RUN_STORE_TABLES) - tables)
+        if missing_tables:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore missing table {missing_tables[0]}")
+        for table, columns in required_columns.items():
+            present = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
+            missing_columns = sorted(columns - present)
+            if missing_columns:
+                raise DatasetSchemaError(
+                    f"{run_id}: xlsx locator RunStore {table} missing column {missing_columns[0]}"
+                )
+        counts = {table: conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] for table in XLSX_LOCATOR_RUN_STORE_TABLES}
+        if counts["runs"] != 1:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore must contain one runs row")
+        item_count = counts["items"]
+        if counts["gate_results"] != item_count * 2:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore gate_results count mismatch")
+        if counts["residuals"] != item_count * 2:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore residuals count mismatch")
+        tool_invocation_count = int(locator.get("tool_invocation_count") or 0)
+        if counts["tool_invocations"] != tool_invocation_count:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore tool_invocations count mismatch")
+        candidate_count = int(locator.get("accepted_candidate_count") or 0) + int(
+            locator.get("rejected_candidate_count") or 0
+        )
+        if counts["tool_candidates"] != candidate_count:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore tool_candidates count mismatch")
+        allowed_planner_statuses = {
+            "",
+            "skipped_no_query",
+            "unavailable_deterministic_fallback",
+            "error_deterministic_fallback",
+            "malformed_payload_deterministic_fallback",
+            "empty_after_validation_deterministic_fallback",
+            "planned_validated",
+        }
+        allowed_axes = set(QUERY_EVIDENCE_AXIS_ORDER)
+        for item in conn.execute(
+            "SELECT item_index, source_family_hint, query_task, planner_status, row_filters_json, "
+            "target_axis_json, validated_required_axes_json FROM items"
+        ):
+            item_index = int(item["item_index"] or 0)
+            source_family_hint = _clean(item["source_family_hint"]).lower()
+            if source_family_hint and source_family_hint not in QUERY_EVIDENCE_SOURCE_FAMILY_HINTS:
+                raise DatasetSchemaError(
+                    f"{run_id}: xlsx locator RunStore items.source_family_hint invalid at item {item_index}"
+                )
+            query_task = _clean(item["query_task"]).lower()
+            if query_task and query_task not in QUERY_EVIDENCE_TASKS:
+                raise DatasetSchemaError(
+                    f"{run_id}: xlsx locator RunStore items.query_task invalid at item {item_index}"
+                )
+            planner_status = _clean(item["planner_status"])
+            if planner_status not in allowed_planner_statuses:
+                raise DatasetSchemaError(
+                    f"{run_id}: xlsx locator RunStore items.planner_status invalid at item {item_index}"
+                )
+            row_filters = _parse_jsonish(item["row_filters_json"])
+            if not isinstance(row_filters, Mapping):
+                raise DatasetSchemaError(
+                    f"{run_id}: xlsx locator RunStore items.row_filters_json invalid at item {item_index}"
+                )
+            target_axis = _parse_jsonish(item["target_axis_json"])
+            if not isinstance(target_axis, Mapping):
+                raise DatasetSchemaError(
+                    f"{run_id}: xlsx locator RunStore items.target_axis_json invalid at item {item_index}"
+                )
+            value_type = _clean(target_axis.get("value_type")).lower() if target_axis else ""
+            if value_type and value_type not in QUERY_EVIDENCE_VALUE_TYPES:
+                raise DatasetSchemaError(
+                    f"{run_id}: xlsx locator RunStore items.target_axis.value_type invalid at item {item_index}"
+                )
+            validated_axes = _parse_jsonish(item["validated_required_axes_json"])
+            if not isinstance(validated_axes, Sequence) or isinstance(validated_axes, (str, bytes, bytearray)):
+                raise DatasetSchemaError(
+                    f"{run_id}: xlsx locator RunStore items.validated_required_axes_json invalid at item {item_index}"
+                )
+            for axis in validated_axes:
+                if _clean(axis) not in allowed_axes:
+                    raise DatasetSchemaError(
+                        f"{run_id}: xlsx locator RunStore items.validated_required_axes invalid at item {item_index}"
+                    )
+            if planner_status == "planned_validated" and not validated_axes:
+                raise DatasetSchemaError(
+                    f"{run_id}: xlsx locator RunStore items.validated_required_axes empty at item {item_index}"
+                )
+        run = conn.execute(
+            "SELECT run_id, schema_version, backend, tool_name, official_metric, official_metric_input_rows, "
+            "anchor_classifier_raw_payload_written, required_anchor_summary_json, query_planner_summary_json, record_json "
+            "FROM runs"
+        ).fetchone()
+        if not run:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore runs row missing")
+        if run["run_id"] != run_id:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore run_id mismatch")
+        if run["schema_version"] != XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore schema_version mismatch")
+        if run["backend"] != XLSX_LOCATOR_RUN_STORE_BACKEND:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore backend mismatch")
+        if run["tool_name"] != XLSX_LOCATOR_TOOL_NAME:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore tool_name mismatch")
+        if int(run["official_metric"] or 0) != 0 or int(run["official_metric_input_rows"] or 0) != 0:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore official metric fields must stay closed")
+        if int(run["anchor_classifier_raw_payload_written"] or 0) != 0:
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore anchor classifier raw payload must stay closed")
+        required_anchor_summary = _parse_jsonish(run["required_anchor_summary_json"])
+        if not isinstance(required_anchor_summary, Mapping):
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore required_anchor_summary_json invalid")
+        query_planner_summary = _parse_jsonish(run["query_planner_summary_json"])
+        if not isinstance(query_planner_summary, Mapping):
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore query_planner_summary_json invalid")
+        record_json = _parse_jsonish(run["record_json"])
+        if not isinstance(record_json, Mapping):
+            raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore record_json invalid")
+        for key in ("tool_invocation_count", "accepted_candidate_count", "rejected_candidate_count"):
+            if int(record_json.get(key) or 0) != int(locator.get(key) or 0):
+                raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore record_json {key} mismatch")
+    finally:
+        conn.close()
 
 
 def _heuristic_risk_entry(
@@ -11200,12 +13873,17 @@ def _artifact_contract(
         "output_mode": output_mode,
         "primary_report_json": report_path.as_posix() if output_mode in {"single", "both"} else "",
         "single_artifact_default": output_mode == "single",
+        "runstore_only": output_mode == "runstore",
         "legacy_sidecars_written": bool(legacy_written),
         "human_review_packet_exception": bool(human_review_packet_path),
         "human_review_packet_path": human_review_packet_path.as_posix() if human_review_packet_path else "",
         "reviewed_mapping_patch_exception": bool(reviewed_mapping_patch_path),
         "reviewed_mapping_patch_path": reviewed_mapping_patch_path.as_posix() if reviewed_mapping_patch_path else "",
-        "routine_run_file_policy": "report.json_only_unless_legacy_human_review_packet_or_reviewed_mapping_input_requested",
+        "routine_run_file_policy": (
+            "run.sqlite_only_no_report_json"
+            if output_mode == "runstore"
+            else "report.json_only_unless_legacy_human_review_packet_or_reviewed_mapping_input_requested"
+        ),
         "legacy_artifacts_allowed_only_by_output_mode": True,
     }
 
@@ -11522,7 +14200,9 @@ SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROMPT_VERSION = "selected_evidence_local_l
 SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROMPT_TEMPLATE = """You are a non-production selected-evidence answer composer.
 Return exactly one JSON object with keys: answer (string) and citation_evidence_ids (array of strings).
 Use only the selected SourceAtom/EvidenceBundle evidence in the payload. Do not use outside knowledge.
-The answer string must be a natural, query-context sentence or two in the query language.
+The answer string must be one short natural, query-context sentence in the query language unless the query asks for a list or table.
+Answer only the requested facet. Do not add background profile facts, related attributes, surrounding facts, entity summaries, or unsupported details.
+If selected evidence supports extra facts that the question did not ask for, omit them.
 Do not return only a terse fragment unless the query explicitly asks for a bare value.
 Do not include audit headers, citation blocks, markdown sections, or source dumps in the answer string.
 If the selected evidence is insufficient, return an empty answer and an empty citation_evidence_ids array.
@@ -11530,6 +14210,21 @@ If the selected evidence is insufficient, return an empty answer and an empty ci
 Payload:
 {payload}
 """
+SELECTED_EVIDENCE_ANSWER_DISCIPLINE_INPUT_POLICY = (
+    "query_text_selected_evidence_answer_only_no_gold_qrels_labels_ids_or_baseline"
+)
+SELECTED_EVIDENCE_ANSWER_DISCIPLINE_STATUSES = frozenset(
+    {
+        "clean_supported",
+        "supported_core_with_unsupported_extra",
+        "query_irrelevant_supported_detail",
+        "local_llm_rejected_then_deterministic_overexpanded",
+        "citation_id_mismatch_or_missing",
+        "anchor_morphology_false_negative",
+        "unsupported_or_empty",
+        "true_insufficient_evidence",
+    }
+)
 SELECTED_EVIDENCE_COMPOSER_RETRY_MODES = frozenset({"off", "bounded-once"})
 SELECTED_EVIDENCE_COMPOSER_RETRY_INPUT_POLICY = (
     "query_text_selected_evidence_missing_query_focus_anchors_previous_bounded_answer_preview_only_no_gold_qrels_labels_ids_or_baseline"
@@ -11539,7 +14234,8 @@ SELECTED_EVIDENCE_LOCAL_LLM_RETRY_PROMPT_TEMPLATE = """You are a non-production 
 Return exactly one JSON object with keys: answer (string) and citation_evidence_ids (array of strings).
 Use only the query, selected SourceAtom/EvidenceBundle evidence, missing query-focus anchors, and previous bounded answer preview in the payload.
 Do not use outside knowledge. Do not use any hidden gold, labels, qrels, row ids, target ids, baseline top-k, or legacy outputs.
-The answer string must be a natural, query-context sentence or two in the query language.
+The answer string must be one short natural, query-context sentence in the query language unless the query asks for a list or table.
+Answer only the requested facet. Remove unsupported details and omit selected-evidence facts that the question did not ask for.
 Do not return only a terse fragment unless the query explicitly asks for a bare value.
 Do not include audit headers, citation blocks, markdown sections, or source dumps in the answer string.
 If the selected evidence is insufficient, return an empty answer and an empty citation_evidence_ids array.
@@ -11661,6 +14357,7 @@ SOURCE_DERIVED_EVIDENCE_METADATA_FIELDS = (
     "header_path",
     "header",
     "table_id",
+    "display_value",
     "page_number",
     "page",
     "physical_page_index",
@@ -11783,6 +14480,1171 @@ def _gate_query_focus_anchors(query: str) -> set[str]:
     return anchors
 
 
+QUERY_EVIDENCE_SOURCE_FAMILY_HINTS = {"xlsx", "pdf", "text", "unknown"}
+QUERY_EVIDENCE_TASKS = {
+    "table_lookup",
+    "cell_lookup",
+    "date_filtered_lookup",
+    "date_filtered_table_lookup",
+    "entity_attribute_lookup",
+    "count_lookup",
+}
+QUERY_EVIDENCE_VALUE_TYPES = {"number", "text", "date", "unknown"}
+QUERY_EVIDENCE_COMMON_AXES = ("period", "row_entity", "target_column", "display_value")
+QUERY_EVIDENCE_XLSX_LOCATOR_AXES = ("sheet", "table_id", "cell", "cell_range", "row_index")
+QUERY_EVIDENCE_PDF_LOCATOR_AXES = (
+    "page_number",
+    "section_title",
+    "table_caption",
+    "block_index",
+    "bbox",
+    "locator_fingerprint",
+)
+QUERY_EVIDENCE_AXIS_ORDER = (
+    "period",
+    "page_number",
+    "section_title",
+    "table_caption",
+    "sheet",
+    "table_id",
+    "row_entity",
+    "target_column",
+    "display_value",
+    "cell",
+    "cell_range",
+    "row_index",
+    "block_index",
+    "bbox",
+    "locator_fingerprint",
+)
+QUERY_EVIDENCE_LOCATOR_PRESENCE_AXES = set(QUERY_EVIDENCE_XLSX_LOCATOR_AXES) | set(QUERY_EVIDENCE_PDF_LOCATOR_AXES)
+QUERY_EVIDENCE_VALUE_REQUIRED_AXES = {"period", "row_entity", "target_column"}
+QUERY_EVIDENCE_AXIS_METADATA_FIELDS = {
+    "period": ("sheet", "date", "period"),
+    "row_entity": ("row_label", "line_name", "entity", "entity_name"),
+    "target_column": ("target_column", "column_label", "header", "header_path"),
+    "display_value": ("display_value",),
+    "sheet": ("sheet",),
+    "table_id": ("table_id", "synthetic_table_id"),
+    "cell": ("cell",),
+    "cell_range": ("cell_range", "range"),
+    "row_index": ("row_index", "row_index_1based"),
+    "page_number": ("page_number", "page", "physical_page_index"),
+    "section_title": ("section_title",),
+    "table_caption": ("table_caption",),
+    "block_index": ("block_index",),
+    "bbox": ("bbox", "bounding_box"),
+    "locator_fingerprint": ("locator_fingerprint",),
+}
+
+
+def _query_evidence_planner_prompt(query: str) -> str:
+    payload = {"query": _clean(query)}
+    schema = {
+        "source_family_hint": "xlsx|pdf|text|unknown",
+        "query_task": "table_lookup|cell_lookup|date_filtered_lookup|date_filtered_table_lookup|entity_attribute_lookup|count_lookup",
+        "row_filters": {"period": "YYYY-MM when present", "line_name": "row/entity text when present"},
+        "target_axis": {"column": "target column or attribute", "value_type": "number|text|date|unknown"},
+        "evidence_contract": [
+            "period",
+            "row_entity",
+            "target_column",
+            "display_value",
+            "sheet",
+            "cell",
+            "cell_range",
+            "table_id",
+            "page_number",
+            "section_title",
+            "table_caption",
+            "block_index",
+            "bbox",
+        ],
+        "intent_tokens": ["question wording only"],
+    }
+    return (
+        "Plan evidence requirements for this non-production diagnostic query.\n"
+        "Use only the query string in the JSON payload.\n"
+        "Return exactly one JSON object with the schema shown below.\n"
+        "Do not turn question wording such as how many, what, when, or Korean question endings into evidence axes.\n\n"
+        f"Schema:\n{json.dumps(schema, ensure_ascii=False, sort_keys=True)}\n\n"
+        f"Payload:\n{json.dumps(payload, ensure_ascii=False, sort_keys=True)}\n"
+    )
+
+
+def _query_evidence_list(value: Any) -> list[str] | None:
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes, bytearray)):
+        return None
+    values: list[str] = []
+    seen: set[str] = set()
+    for item in value:
+        clean_item = _clean(item)
+        normalized = normalize_answer_text(clean_item)
+        if clean_item and normalized and normalized not in seen:
+            values.append(clean_item)
+            seen.add(normalized)
+    return values
+
+
+def _query_evidence_mapping(value: Any) -> dict[str, str] | None:
+    if not isinstance(value, Mapping):
+        return None
+    mapped: dict[str, str] = {}
+    for key, item in value.items():
+        clean_key = _clean(key)
+        clean_item = _clean(item)
+        if clean_key and clean_item:
+            mapped[clean_key] = clean_item
+    return mapped
+
+
+def _strip_korean_particle(value: str) -> str:
+    clean_value = _clean(value)
+    for suffix in ("입니다", "입니까", "인가요", "인가", "에는", "에서", "으로", "로", "의", "은", "는", "이", "가", "을", "를", "와", "과", "에"):
+        if clean_value.endswith(suffix) and len(clean_value) > len(suffix) + 1:
+            return clean_value[: -len(suffix)]
+    return clean_value
+
+
+def _query_evidence_period_aliases(year: str, month: str) -> list[str]:
+    month_int = int(month)
+    return [
+        f"{year}-{month_int:02d}",
+        f"{year}년 {month_int}월",
+        f"{year}{month_int:02d}",
+    ]
+
+
+def _query_evidence_period_aliases_from_text(text: str) -> dict[str, list[str]]:
+    aliases: dict[str, list[str]] = {}
+    for match in re.finditer(r"\b(\d{4})[-./](0?[1-9]|1[0-2])\b", text):
+        period_aliases = _query_evidence_period_aliases(match.group(1), match.group(2))
+        aliases[period_aliases[0]] = period_aliases
+    for match in re.finditer(r"(\d{4})\s*년\s*(0?[1-9]|1[0-2])\s*월", text):
+        period_aliases = _query_evidence_period_aliases(match.group(1), match.group(2))
+        aliases[period_aliases[0]] = period_aliases
+    for match in re.finditer(r"\b(\d{4})(0[1-9]|1[0-2])\b", text):
+        period_aliases = _query_evidence_period_aliases(match.group(1), match.group(2))
+        aliases[period_aliases[0]] = period_aliases
+    return aliases
+
+
+def _normalize_query_evidence_period(value: str, query: str) -> tuple[str, list[str]]:
+    clean_value = _clean(value)
+    value_aliases = _query_evidence_period_aliases_from_text(clean_value)
+    query_aliases = _query_evidence_period_aliases_from_text(query)
+    for canonical, aliases in value_aliases.items():
+        if canonical in query_aliases:
+            return canonical, aliases
+    if clean_value in query_aliases:
+        return clean_value, query_aliases[clean_value]
+    return "", []
+
+
+def _query_value_grounded_in_text(value: str, query: str) -> bool:
+    clean_value = _strip_korean_particle(value)
+    if not clean_value:
+        return False
+    value_norm = normalize_answer_text(clean_value).replace(" ", "")
+    query_norm = normalize_answer_text(query).replace(" ", "")
+    return bool(value_norm and value_norm in query_norm)
+
+
+def _normalize_query_evidence_axis(axis: str) -> str:
+    normalized = normalize_answer_text(axis).replace(" ", "_")
+    aliases = {
+        "date": "period",
+        "month": "period",
+        "기간": "period",
+        "날짜": "period",
+        "row": "row_entity",
+        "entity": "row_entity",
+        "row_filter": "row_entity",
+        "row_label": "row_entity",
+        "line_name": "row_entity",
+        "column": "target_column",
+        "measure": "target_column",
+        "target_axis": "target_column",
+        "target": "target_column",
+        "value": "display_value",
+        "answer_value": "display_value",
+        "worksheet": "sheet",
+        "sheet_name": "sheet",
+        "range": "cell_range",
+        "cell_range": "cell_range",
+        "row_number": "row_index",
+        "row_index_1based": "row_index",
+        "page": "page_number",
+        "physical_page": "page_number",
+        "physical_page_index": "page_number",
+        "페이지": "page_number",
+        "section": "section_title",
+        "section_heading": "section_title",
+        "heading": "section_title",
+        "caption": "table_caption",
+        "table_title": "table_caption",
+        "bounding_box": "bbox",
+        "box": "bbox",
+        "locator": "locator_fingerprint",
+        "fingerprint": "locator_fingerprint",
+    }
+    return aliases.get(normalized, normalized)
+
+
+def _ordered_query_evidence_axes(axes: Iterable[str]) -> list[str]:
+    normalized = {_normalize_query_evidence_axis(axis) for axis in axes}
+    return [axis for axis in QUERY_EVIDENCE_AXIS_ORDER if axis in normalized]
+
+
+def _query_evidence_axis_allowed_for_source(axis: str, source_family_hint: str) -> bool:
+    if axis in QUERY_EVIDENCE_COMMON_AXES:
+        return True
+    if axis in QUERY_EVIDENCE_XLSX_LOCATOR_AXES:
+        return source_family_hint == "xlsx"
+    if axis in QUERY_EVIDENCE_PDF_LOCATOR_AXES:
+        return source_family_hint == "pdf"
+    return False
+
+
+def _query_evidence_page_aliases(page_number: str) -> list[str]:
+    clean_page = _clean(page_number)
+    if not clean_page:
+        return []
+    return [
+        clean_page,
+        f"{clean_page}페이지",
+        f"page {clean_page}",
+        f"p. {clean_page}",
+    ]
+
+
+def _normalize_query_evidence_page_number(value: str, query: str) -> tuple[str, list[str]]:
+    clean_value = _clean(value)
+    match = re.search(r"\d+", clean_value)
+    if not match:
+        return "", []
+    page_number = str(int(match.group(0)))
+    aliases = _query_evidence_page_aliases(page_number)
+    query_norm = normalize_answer_text(query).replace(" ", "")
+    if any(normalize_answer_text(alias).replace(" ", "") in query_norm for alias in aliases):
+        return page_number, aliases
+    return "", []
+
+
+def _query_evidence_record_locator_filter(
+    *,
+    axis: str,
+    value: str,
+    query: str,
+    row_filters: dict[str, str],
+    validated_axis_values: dict[str, list[str]],
+) -> bool:
+    if axis == "page_number":
+        page_number, aliases = _normalize_query_evidence_page_number(value, query)
+        if not page_number:
+            return False
+        row_filters[axis] = page_number
+        validated_axis_values[axis] = aliases
+        return True
+    if _query_value_grounded_in_text(value, query):
+        row_filters[axis] = _strip_korean_particle(value)
+        validated_axis_values[axis] = [row_filters[axis]]
+        return True
+    return False
+
+
+def _query_evidence_task_required_axes(
+    *,
+    query_task: str,
+    row_filters: Mapping[str, str],
+    row_entities: Sequence[str],
+    target_axis: Mapping[str, str],
+) -> list[str]:
+    axes: list[str] = []
+    if query_task in {"date_filtered_lookup", "date_filtered_table_lookup"} and _clean(row_filters.get("period")):
+        axes.append("period")
+    if row_entities:
+        axes.append("row_entity")
+    if _clean(target_axis.get("column")):
+        axes.append("target_column")
+    if query_task in QUERY_EVIDENCE_TASKS and (
+        query_task == "count_lookup"
+        or _clean(target_axis.get("column"))
+        or bool(row_filters)
+    ):
+        axes.append("display_value")
+    return _ordered_query_evidence_axes(axes)
+
+
+def _validate_query_evidence_payload(
+    *,
+    query: str,
+    payload: Mapping[str, Any],
+) -> dict[str, Any]:
+    source_family_hint = _clean(payload.get("source_family_hint")).lower() or "unknown"
+    if source_family_hint not in QUERY_EVIDENCE_SOURCE_FAMILY_HINTS:
+        source_family_hint = "unknown"
+    query_task = _clean(payload.get("query_task")).lower()
+    if query_task not in QUERY_EVIDENCE_TASKS:
+        query_task = "table_lookup"
+    raw_row_filters = _query_evidence_mapping(payload.get("row_filters")) or {}
+    raw_target_axis = _query_evidence_mapping(payload.get("target_axis")) or {}
+    raw_contract = _query_evidence_list(payload.get("evidence_contract")) or []
+    intent_tokens = _query_evidence_list(payload.get("intent_tokens")) or []
+
+    row_filters: dict[str, str] = {}
+    validated_axis_values: dict[str, list[str]] = {}
+    period_aliases_by_query = _query_evidence_period_aliases_from_text(query)
+    for key, value in raw_row_filters.items():
+        clean_key = _clean(key)
+        normalized_key = _normalize_query_evidence_axis(clean_key)
+        if normalized_key in {"period", "date", "month", "year_month", "yyyymm"}:
+            canonical, aliases = _normalize_query_evidence_period(value, query)
+            if canonical:
+                row_filters["period"] = canonical
+                validated_axis_values["period"] = aliases
+            continue
+        if normalized_key in (set(QUERY_EVIDENCE_XLSX_LOCATOR_AXES) | set(QUERY_EVIDENCE_PDF_LOCATOR_AXES)):
+            if _query_evidence_axis_allowed_for_source(normalized_key, source_family_hint):
+                _query_evidence_record_locator_filter(
+                    axis=normalized_key,
+                    value=value,
+                    query=query,
+                    row_filters=row_filters,
+                    validated_axis_values=validated_axis_values,
+                )
+            continue
+        if _query_value_grounded_in_text(value, query):
+            row_filters[clean_key] = _strip_korean_particle(value)
+    if "period" not in row_filters and period_aliases_by_query:
+        canonical = sorted(period_aliases_by_query)[0]
+        row_filters["period"] = canonical
+        validated_axis_values["period"] = period_aliases_by_query[canonical]
+
+    target_axis: dict[str, str] = {}
+    target_column = _strip_korean_particle(raw_target_axis.get("column") or raw_target_axis.get("target_column") or "")
+    if target_column and _query_value_grounded_in_text(target_column, query):
+        target_axis["column"] = target_column
+    value_type = _clean(raw_target_axis.get("value_type")).lower() or "unknown"
+    target_axis["value_type"] = value_type if value_type in QUERY_EVIDENCE_VALUE_TYPES else "unknown"
+
+    locator_filter_axes = set(QUERY_EVIDENCE_XLSX_LOCATOR_AXES) | set(QUERY_EVIDENCE_PDF_LOCATOR_AXES)
+    row_entities = [
+        value
+        for key, value in row_filters.items()
+        if key != "period" and key not in locator_filter_axes and _clean(value)
+    ]
+    if row_entities:
+        validated_axis_values["row_entity"] = list(dict.fromkeys(row_entities))
+    if _clean(target_axis.get("column")):
+        validated_axis_values["target_column"] = [_clean(target_axis.get("column"))]
+    validated_axis_values.setdefault("display_value", [])
+
+    raw_contract_axes = [
+        axis
+        for axis in _ordered_query_evidence_axes(raw_contract)
+        if _query_evidence_axis_allowed_for_source(axis, source_family_hint)
+    ]
+    task_required_axes = _query_evidence_task_required_axes(
+        query_task=query_task,
+        row_filters=row_filters,
+        row_entities=row_entities,
+        target_axis=target_axis,
+    )
+    if raw_contract_axes:
+        contract_axes = _ordered_query_evidence_axes([*raw_contract_axes, *task_required_axes])
+    else:
+        inferred_axes: list[str] = []
+        if "period" in row_filters:
+            inferred_axes.append("period")
+        for axis in QUERY_EVIDENCE_AXIS_ORDER:
+            if axis in locator_filter_axes and axis in row_filters:
+                inferred_axes.append(axis)
+        if row_entities:
+            inferred_axes.append("row_entity")
+        if _clean(target_axis.get("column")):
+            inferred_axes.extend(["target_column", "display_value"])
+        contract_axes = [
+            axis
+            for axis in _ordered_query_evidence_axes(inferred_axes)
+            if _query_evidence_axis_allowed_for_source(axis, source_family_hint)
+        ]
+        contract_axes = _ordered_query_evidence_axes([*contract_axes, *task_required_axes])
+    validated_required_axes = [
+        axis
+        for axis in contract_axes
+        if axis == "display_value"
+        or axis in QUERY_EVIDENCE_LOCATOR_PRESENCE_AXES
+        or _as_list(validated_axis_values.get(axis))
+    ]
+    if "display_value" in contract_axes and "target_column" in validated_required_axes and "display_value" not in validated_required_axes:
+        validated_required_axes.append("display_value")
+    validated_required_axes = _ordered_query_evidence_axes(validated_required_axes)
+
+    return {
+        "source_family_hint": source_family_hint,
+        "query_task": query_task,
+        "row_filters": dict(sorted(row_filters.items())),
+        "target_axis": target_axis,
+        "evidence_contract": contract_axes,
+        "intent_tokens": intent_tokens,
+        "validated_required_axes": validated_required_axes,
+        "validated_axis_values": {
+            axis: list(values)
+            for axis, values in validated_axis_values.items()
+            if axis in QUERY_EVIDENCE_AXIS_ORDER
+        },
+    }
+
+
+def _query_evidence_planner_summary(
+    *,
+    query: str,
+    status: str,
+    config: Mapping[str, Any],
+    plan: Mapping[str, Any] | None = None,
+    raw_response_sha256: str = "",
+    blockers: Sequence[str] = (),
+    error: str = "",
+) -> dict[str, Any]:
+    plan = plan or {}
+    result = {
+        "enabled": True,
+        "status": status,
+        "planner_status": status,
+        "model": _clean(config.get("model")),
+        "backend": _clean(config.get("backend")),
+        "base_url": _clean(config.get("base_url")),
+        "prompt_version": QUERY_EVIDENCE_PLANNER_PROMPT_VERSION,
+        "input_policy": QUERY_EVIDENCE_PLANNER_INPUT_POLICY,
+        "query_sha256": f"sha256:{_sha256_text(query)}" if _clean(query) else "",
+        "source_family_hint": _clean(plan.get("source_family_hint")) or "unknown",
+        "query_task": _clean(plan.get("query_task")),
+        "row_filters": dict(plan.get("row_filters") or {}),
+        "target_axis": dict(plan.get("target_axis") or {}),
+        "evidence_contract": list(plan.get("evidence_contract") or []),
+        "intent_tokens": list(plan.get("intent_tokens") or []),
+        "validated_required_axes": list(plan.get("validated_required_axes") or []),
+        "validated_axis_values": dict(plan.get("validated_axis_values") or {}),
+        "raw_payload_written": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "uses_query_text_only": True,
+        "uses_gold_fields": False,
+        "uses_expected_fields": False,
+        "uses_qrels": False,
+        "uses_labels": False,
+        "uses_query_or_row_or_target_ids": False,
+        "uses_baseline_topk_or_legacy_outputs": False,
+    }
+    if raw_response_sha256:
+        result["raw_response_sha256"] = raw_response_sha256
+    if blockers:
+        result["blockers"] = list(blockers)
+    if error:
+        result["error"] = error
+    return result
+
+
+def plan_query_evidence_with_local_llm(
+    query: str,
+    *,
+    backend: str = "",
+    base_url: str = "",
+    model: str = "",
+    timeout_seconds: int = 60,
+    max_tokens: int = 260,
+    skip_endpoint_check: bool = False,
+) -> dict[str, Any]:
+    clean_query = _clean(query)
+    config = _local_llm_composer_config(
+        backend=backend,
+        base_url=base_url,
+        model=model,
+        timeout_seconds=timeout_seconds,
+        max_tokens=max_tokens,
+        check_endpoint=not skip_endpoint_check,
+    )
+    if not clean_query:
+        return _query_evidence_planner_summary(
+            query=clean_query,
+            status="skipped_no_query",
+            config=config,
+        )
+    if not config.get("available"):
+        return _query_evidence_planner_summary(
+            query=clean_query,
+            status="unavailable_deterministic_fallback",
+            config=config,
+            blockers=[_clean(value) for value in _as_list(config.get("blockers")) if _clean(value)],
+        )
+    prompt = _query_evidence_planner_prompt(clean_query)
+    try:
+        parsed, meta = LOCAL_LLM_HELPER.call_local_llm_strict_json(
+            backend=_clean(config.get("backend")),
+            base_url=_clean(config.get("base_url")),
+            model=_clean(config.get("model")),
+            prompt=prompt,
+            temperature=0.0,
+            max_tokens=int(config.get("max_tokens") or max_tokens),
+            timeout_seconds=int(config.get("timeout_seconds") or timeout_seconds),
+        )
+    except Exception as exc:
+        return _query_evidence_planner_summary(
+            query=clean_query,
+            status="error_deterministic_fallback",
+            config=config,
+            error=f"QUERY_EVIDENCE_PLANNER_ERROR: {type(exc).__name__}: {exc}",
+        )
+    if not isinstance(parsed, Mapping):
+        return _query_evidence_planner_summary(
+            query=clean_query,
+            status="malformed_payload_deterministic_fallback",
+            config=config,
+            raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+        )
+    required_keys = {
+        "source_family_hint",
+        "query_task",
+        "row_filters",
+        "target_axis",
+        "evidence_contract",
+        "intent_tokens",
+    }
+    if set(parsed) != required_keys:
+        return _query_evidence_planner_summary(
+            query=clean_query,
+            status="malformed_payload_deterministic_fallback",
+            config=config,
+            raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+        )
+    if _query_evidence_mapping(parsed.get("row_filters")) is None or _query_evidence_mapping(parsed.get("target_axis")) is None:
+        return _query_evidence_planner_summary(
+            query=clean_query,
+            status="malformed_payload_deterministic_fallback",
+            config=config,
+            raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+        )
+    if _query_evidence_list(parsed.get("evidence_contract")) is None or _query_evidence_list(parsed.get("intent_tokens")) is None:
+        return _query_evidence_planner_summary(
+            query=clean_query,
+            status="malformed_payload_deterministic_fallback",
+            config=config,
+            raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+        )
+    plan = _validate_query_evidence_payload(query=clean_query, payload=parsed)
+    if not _as_list(plan.get("validated_required_axes")):
+        return _query_evidence_planner_summary(
+            query=clean_query,
+            status="empty_after_validation_deterministic_fallback",
+            config=config,
+            plan=plan,
+            raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+        )
+    return _query_evidence_planner_summary(
+        query=clean_query,
+        status="planned_validated",
+        config=config,
+        plan=plan,
+        raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+    )
+
+
+def _llm_query_anchor_classifier_prompt(query: str) -> str:
+    payload = {"query": _clean(query)}
+    return (
+        "Classify focus anchors for this non-production diagnostic query.\n"
+        "Use only the query string in the JSON payload.\n"
+        "Return exactly one JSON object with keys: intent_tokens, numeric_or_date_anchors, entity_anchors, measure_anchors.\n"
+        "Each value must be an array of strings. intent_tokens are words that describe the question act, not the answer target.\n\n"
+        f"Payload:\n{json.dumps(payload, ensure_ascii=False, sort_keys=True)}\n"
+    )
+
+
+def _normalized_anchor_lookup(anchors: Iterable[str]) -> dict[str, str]:
+    lookup: dict[str, str] = {}
+    for anchor in anchors:
+        clean_anchor = _clean(anchor)
+        normalized = normalize_answer_text(clean_anchor)
+        if clean_anchor and normalized and normalized not in lookup:
+            lookup[normalized] = clean_anchor
+    return lookup
+
+
+def _llm_anchor_list(value: Any) -> list[str] | None:
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes, bytearray)):
+        return None
+    anchors: list[str] = []
+    seen: set[str] = set()
+    for item in value:
+        clean_item = _clean(item)
+        normalized = normalize_answer_text(clean_item)
+        if clean_item and normalized and normalized not in seen:
+            anchors.append(clean_item)
+            seen.add(normalized)
+    return anchors
+
+
+def _looks_like_measure_anchor(anchor: str) -> bool:
+    normalized = normalize_answer_text(anchor)
+    if not normalized:
+        return False
+    measure_markers = (
+        "amount",
+        "count",
+        "date",
+        "address",
+        "code",
+        "total",
+        "rate",
+        "price",
+        "value",
+        "금액",
+        "승객수",
+        "총승객수",
+        "주소",
+        "상세주소",
+        "지정일자",
+        "설치신고일자",
+        "코드",
+        "합계",
+        "평균",
+        "비율",
+        "수",
+    )
+    return any(marker in normalized for marker in measure_markers)
+
+
+def _can_remove_llm_intent_anchor(anchor: str) -> bool:
+    normalized = normalize_answer_text(anchor)
+    if not normalized:
+        return False
+    stopwords = _anchor_stopwords() | {
+        normalize_answer_text(value) for value in EVIDENCE_GATE_QUERY_INTENT_STOPWORDS
+    }
+    if _is_generic_anchor(normalized, stopwords):
+        return True
+    question_markers = ("무엇", "뭐", "얼마", "어디", "언제", "누구", "어떤")
+    if any(marker in normalized for marker in question_markers):
+        return True
+    action_tokens = {
+        "기록된",
+        "기재된",
+        "나오는",
+        "나온",
+        "알려줘",
+        "말해줘",
+        "설명",
+        "지정된",
+    }
+    return normalized in action_tokens
+
+
+def _query_anchor_classifier_summary(
+    *,
+    query: str,
+    status: str,
+    config: Mapping[str, Any],
+    required_before: Sequence[str],
+    required_after: Sequence[str] | None = None,
+    removed_intent_tokens: Sequence[str] = (),
+    protected_intent_tokens_restored: Sequence[str] = (),
+    raw_response_sha256: str = "",
+    blockers: Sequence[str] = (),
+    error: str = "",
+) -> dict[str, Any]:
+    after = list(required_after) if required_after is not None else list(required_before)
+    result = {
+        "enabled": True,
+        "status": status,
+        "model": _clean(config.get("model")),
+        "backend": _clean(config.get("backend")),
+        "base_url": _clean(config.get("base_url")),
+        "prompt_version": LLM_QUERY_ANCHOR_CLASSIFIER_PROMPT_VERSION,
+        "input_policy": LLM_QUERY_ANCHOR_CLASSIFIER_INPUT_POLICY,
+        "query_sha256": f"sha256:{_sha256_text(query)}" if _clean(query) else "",
+        "required_anchor_before": list(required_before),
+        "required_anchor_after": after,
+        "removed_intent_tokens": list(removed_intent_tokens),
+        "protected_intent_tokens_restored": list(protected_intent_tokens_restored),
+        "raw_payload_written": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "uses_query_text_only": True,
+        "uses_gold_fields": False,
+        "uses_expected_fields": False,
+        "uses_qrels": False,
+        "uses_labels": False,
+        "uses_query_or_row_or_target_ids": False,
+        "uses_baseline_topk_or_legacy_outputs": False,
+    }
+    if raw_response_sha256:
+        result["raw_response_sha256"] = raw_response_sha256
+    if blockers:
+        result["blockers"] = list(blockers)
+    if error:
+        result["error"] = error
+    return result
+
+
+def classify_query_focus_anchors_with_local_llm(
+    query: str,
+    *,
+    backend: str = "",
+    base_url: str = "",
+    model: str = "",
+    timeout_seconds: int = 60,
+    max_tokens: int = 180,
+    skip_endpoint_check: bool = False,
+) -> dict[str, Any]:
+    clean_query = _clean(query)
+    required_before = sorted(_gate_query_focus_anchors(clean_query))
+    config = _local_llm_composer_config(
+        backend=backend,
+        base_url=base_url,
+        model=model,
+        timeout_seconds=timeout_seconds,
+        max_tokens=max_tokens,
+        check_endpoint=not skip_endpoint_check,
+    )
+    if not clean_query or not required_before:
+        return _query_anchor_classifier_summary(
+            query=clean_query,
+            status="skipped_no_query_anchors",
+            config=config,
+            required_before=required_before,
+        )
+    if not config.get("available"):
+        return _query_anchor_classifier_summary(
+            query=clean_query,
+            status="unavailable_deterministic_fallback",
+            config=config,
+            required_before=required_before,
+            blockers=[_clean(value) for value in _as_list(config.get("blockers")) if _clean(value)],
+        )
+    prompt = _llm_query_anchor_classifier_prompt(clean_query)
+    try:
+        parsed, meta = LOCAL_LLM_HELPER.call_local_llm_strict_json(
+            backend=_clean(config.get("backend")),
+            base_url=_clean(config.get("base_url")),
+            model=_clean(config.get("model")),
+            prompt=prompt,
+            temperature=0.0,
+            max_tokens=int(config.get("max_tokens") or max_tokens),
+            timeout_seconds=int(config.get("timeout_seconds") or timeout_seconds),
+        )
+    except Exception as exc:
+        return _query_anchor_classifier_summary(
+            query=clean_query,
+            status="error_deterministic_fallback",
+            config=config,
+            required_before=required_before,
+            error=f"LLM_QUERY_ANCHOR_CLASSIFIER_ERROR: {type(exc).__name__}: {exc}",
+        )
+    intent_tokens = _llm_anchor_list(parsed.get("intent_tokens") if isinstance(parsed, Mapping) else None)
+    numeric_or_date = _llm_anchor_list(parsed.get("numeric_or_date_anchors") if isinstance(parsed, Mapping) else None)
+    entity = _llm_anchor_list(parsed.get("entity_anchors") if isinstance(parsed, Mapping) else None)
+    measure = _llm_anchor_list(parsed.get("measure_anchors") if isinstance(parsed, Mapping) else None)
+    if intent_tokens is None or numeric_or_date is None or entity is None or measure is None:
+        return _query_anchor_classifier_summary(
+            query=clean_query,
+            status="malformed_payload_deterministic_fallback",
+            config=config,
+            required_before=required_before,
+            raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+        )
+    before_lookup = _normalized_anchor_lookup(required_before)
+    deterministic_numeric = _numeric_or_date_anchors(required_before)
+    protected_norms = set(_normalized_anchor_lookup(deterministic_numeric))
+    for structural_anchor in [*numeric_or_date, *entity, *measure]:
+        normalized = normalize_answer_text(structural_anchor)
+        if normalized in before_lookup:
+            protected_norms.add(normalized)
+    for anchor in required_before:
+        if _looks_like_measure_anchor(anchor):
+            protected_norms.add(normalize_answer_text(anchor))
+    intent_norms = {normalize_answer_text(token) for token in intent_tokens if normalize_answer_text(token)}
+    removed: list[str] = []
+    protected_restored: list[str] = []
+    for normalized in sorted(intent_norms):
+        anchor = before_lookup.get(normalized)
+        if not anchor:
+            continue
+        if normalized in protected_norms or not _can_remove_llm_intent_anchor(anchor):
+            protected_restored.append(anchor)
+        else:
+            removed.append(anchor)
+    required_after = sorted(anchor for anchor in required_before if anchor not in set(removed))
+    if required_before and not required_after:
+        return _query_anchor_classifier_summary(
+            query=clean_query,
+            status="empty_after_validation_deterministic_fallback",
+            config=config,
+            required_before=required_before,
+            raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+        )
+    return _query_anchor_classifier_summary(
+        query=clean_query,
+        status="classified_validated",
+        config=config,
+        required_before=required_before,
+        required_after=required_after,
+        removed_intent_tokens=sorted(removed),
+        protected_intent_tokens_restored=sorted(protected_restored),
+        raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+    )
+
+
+def _query_focus_anchors_for_row(row: Mapping[str, Any]) -> set[str]:
+    query = _clean(row.get("query"))
+    deterministic = _gate_query_focus_anchors(query)
+    classifier = row.get("query_anchor_classifier") if isinstance(row.get("query_anchor_classifier"), Mapping) else {}
+    if not classifier:
+        return deterministic
+    if _clean(classifier.get("query_sha256")) and _clean(classifier.get("query_sha256")) != f"sha256:{_sha256_text(query)}":
+        return deterministic
+    anchors = {
+        normalize_answer_text(_clean(anchor))
+        for anchor in _as_list(classifier.get("required_anchor_after"))
+        if normalize_answer_text(_clean(anchor))
+    }
+    if deterministic and not anchors:
+        return deterministic
+    return anchors
+
+
+def _query_evidence_planner_for_row(row: Mapping[str, Any]) -> Mapping[str, Any]:
+    query = _clean(row.get("query"))
+    planner = row.get("query_evidence_planner") if isinstance(row.get("query_evidence_planner"), Mapping) else {}
+    if not planner:
+        return {}
+    query_sha = _clean(planner.get("query_sha256"))
+    if query_sha and query_sha != f"sha256:{_sha256_text(query)}":
+        return {}
+    if _clean(planner.get("planner_status")) != "planned_validated":
+        return {}
+    return planner
+
+
+def _query_evidence_planner_for_query(query: str, planner: Mapping[str, Any] | None) -> Mapping[str, Any]:
+    if not isinstance(planner, Mapping):
+        return {}
+    row = {
+        "query": _clean(query),
+        "query_evidence_planner": planner,
+    }
+    return _query_evidence_planner_for_row(row)
+
+
+def _query_evidence_source_family_hint(planner: Mapping[str, Any] | None) -> str:
+    if not isinstance(planner, Mapping):
+        return ""
+    hint = _clean(planner.get("source_family_hint")).lower()
+    return hint if hint in {"xlsx", "pdf", "text"} else ""
+
+
+def _query_evidence_context_source_family(context: Mapping[str, Any]) -> str:
+    source_family = _clean(context.get("source_family")).upper()
+    if source_family in {"XLSX", "XLS", "SPREADSHEET"}:
+        return "xlsx"
+    if source_family == "PDF":
+        return "pdf"
+    if source_family == "TEXT":
+        return "text"
+    return source_family.lower()
+
+
+def _query_evidence_source_family_matches_context(source_family_hint: str, context: Mapping[str, Any]) -> bool:
+    hint = _clean(source_family_hint).lower()
+    if not hint or hint == "unknown":
+        return True
+    return _query_evidence_context_source_family(context) == hint
+
+
+def _query_evidence_item_projection(row: Mapping[str, Any]) -> dict[str, Any]:
+    planner = _query_evidence_planner_for_row(row)
+    return {
+        "source_family_hint": _clean(planner.get("source_family_hint")),
+        "query_task": _clean(planner.get("query_task")),
+        "planner_status": _clean(planner.get("planner_status")),
+        "row_filters": dict(planner.get("row_filters") or {}) if isinstance(planner.get("row_filters"), Mapping) else {},
+        "target_axis": dict(planner.get("target_axis") or {}) if isinstance(planner.get("target_axis"), Mapping) else {},
+        "validated_required_axes": [
+            _clean(axis)
+            for axis in _as_list(planner.get("validated_required_axes"))
+            if _clean(axis)
+        ],
+    }
+
+
+def _query_evidence_axis_values(planner: Mapping[str, Any], axis: str) -> list[str]:
+    values = planner.get("validated_axis_values") if isinstance(planner.get("validated_axis_values"), Mapping) else {}
+    return [_clean(value) for value in _as_list(values.get(axis)) if _clean(value)]
+
+
+def _query_evidence_metadata_values_by_axis(rows: Sequence[Mapping[str, Any]]) -> dict[str, list[str]]:
+    metadata_values: dict[str, list[str]] = {axis: [] for axis in QUERY_EVIDENCE_AXIS_ORDER}
+    for row in rows:
+        for source in _source_derived_metadata_sources(row):
+            for axis, fields in QUERY_EVIDENCE_AXIS_METADATA_FIELDS.items():
+                for field in fields:
+                    value = _clean(source.get(field))
+                    if value:
+                        metadata_values.setdefault(axis, []).append(value)
+    return metadata_values
+
+
+def _query_evidence_axis_hit(
+    *,
+    axis: str,
+    planner: Mapping[str, Any],
+    field_texts: Mapping[str, Sequence[str]],
+    metadata_values: Mapping[str, Sequence[str]],
+) -> bool:
+    axis_values = _query_evidence_axis_values(planner, axis)
+    if axis_values:
+        return _axis_value_hits_text(axis_values, field_texts.get(axis, ()))
+    if axis in QUERY_EVIDENCE_LOCATOR_PRESENCE_AXES:
+        return bool([value for value in metadata_values.get(axis, ()) if _clean(value)])
+    return False
+
+
+def _query_evidence_non_value_anchor_set(query: str, planner: Mapping[str, Any]) -> set[str]:
+    anchors = set(_candidate_anchors(query))
+    axis_values: list[str] = []
+    for axis in QUERY_EVIDENCE_AXIS_ORDER:
+        if axis == "display_value":
+            continue
+        axis_values.extend(_query_evidence_axis_values(planner, axis))
+    anchors.update(_candidate_anchors(*axis_values))
+    return anchors
+
+
+def _query_evidence_short_text_display_value_hit(
+    *,
+    query: str,
+    planner: Mapping[str, Any],
+    answer: str,
+    support_texts: Sequence[str],
+) -> bool:
+    normalized_answer = normalize_answer_text(answer).strip()
+    if not normalized_answer or re.search(r"\s", normalized_answer):
+        return False
+    if len(normalized_answer) < 2 or len(normalized_answer) > 8:
+        return False
+    if _anchor_in_text([normalized_answer], query):
+        return False
+    axis_values: list[str] = []
+    for axis in QUERY_EVIDENCE_AXIS_ORDER:
+        if axis == "display_value":
+            continue
+        axis_values.extend(_query_evidence_axis_values(planner, axis))
+    if axis_values and _anchor_in_text([normalized_answer], " ".join(axis_values)):
+        return False
+    return any(_anchor_in_text([normalized_answer], text) for text in support_texts)
+
+
+def _query_evidence_display_value_hit(
+    *,
+    query: str,
+    planner: Mapping[str, Any],
+    answer: str,
+    support_texts: Sequence[str],
+    field_texts: Mapping[str, Sequence[str]],
+    metadata_values: Mapping[str, Sequence[str]],
+) -> bool:
+    if metadata_values.get("display_value"):
+        return True
+    answer_anchors = _candidate_anchors(answer)
+    display_hits = _gate_anchor_hits(answer_anchors, field_texts.get("display_value", ()))
+    if display_hits:
+        non_value_anchors = _query_evidence_non_value_anchor_set(query, planner)
+        if any(anchor and anchor not in non_value_anchors for anchor in display_hits):
+            return True
+    if _query_evidence_short_text_display_value_hit(
+        query=query,
+        planner=planner,
+        answer=answer,
+        support_texts=support_texts,
+    ):
+        return True
+    if _query_requires_numeric_or_date_answer(query) and support_texts:
+        return any(_text_has_answer_value_anchor_beyond_query(query, text) for text in support_texts)
+    return False
+
+
+def _query_evidence_gate_validated_required_axis_hits(
+    *,
+    row: Mapping[str, Any],
+    selected_evidence: Sequence[Mapping[str, Any]],
+    answer: str,
+) -> tuple[list[str], list[str]]:
+    planner = _query_evidence_planner_for_row(row)
+    required_axes = [
+        _clean(axis)
+        for axis in _as_list(planner.get("validated_required_axes"))
+        if _clean(axis)
+    ]
+    if not required_axes:
+        return [], []
+    query = _clean(row.get("query"))
+    support_texts = [
+        _gate_support_text(evidence)
+        for evidence in selected_evidence
+        if _gate_support_text(evidence)
+    ]
+    metadata_values = _query_evidence_metadata_values_by_axis(selected_evidence)
+    field_texts = {
+        axis: [*support_texts, *metadata_values.get(axis, [])]
+        for axis in QUERY_EVIDENCE_AXIS_ORDER
+    }
+    field_texts["period"] = [
+        *field_texts.get("period", []),
+        *[alias for text in support_texts for alias in _xlsx_locator_date_aliases(text)],
+    ]
+    matched: list[str] = []
+    missing: list[str] = []
+    for axis in required_axes:
+        if axis == "display_value":
+            axis_ok = _query_evidence_display_value_hit(
+                query=query,
+                planner=planner,
+                answer=answer,
+                support_texts=support_texts,
+                field_texts=field_texts,
+                metadata_values=metadata_values,
+            )
+        else:
+            axis_ok = _query_evidence_axis_hit(
+                axis=axis,
+                planner=planner,
+                field_texts=field_texts,
+                metadata_values=metadata_values,
+            )
+        if axis_ok:
+            matched.append(axis)
+        else:
+            missing.append(axis)
+    return matched, missing
+
+
+def _query_evidence_context_validated_required_axis_hits(
+    *,
+    query: str,
+    query_evidence_planner: Mapping[str, Any] | None,
+    context: Mapping[str, Any],
+) -> tuple[list[str], list[str]]:
+    if not isinstance(query_evidence_planner, Mapping):
+        return [], []
+    row = {
+        "query": _clean(query),
+        "query_evidence_planner": query_evidence_planner,
+    }
+    return _query_evidence_gate_validated_required_axis_hits(
+        row=row,
+        selected_evidence=[context],
+        answer=_clean(context.get("display_value")) or _gate_row_text(context),
+    )
+
+
+def _query_evidence_context_has_complete_validated_axes(
+    *,
+    query: str,
+    query_evidence_planner: Mapping[str, Any] | None,
+    context: Mapping[str, Any],
+) -> tuple[bool, list[str], list[str]]:
+    matched, missing = _query_evidence_context_validated_required_axis_hits(
+        query=query,
+        query_evidence_planner=query_evidence_planner,
+        context=context,
+    )
+    return bool(matched or missing) and not missing, matched, missing
+
+
+def _query_anchor_matches_planner_axis(anchor: str, planner: Mapping[str, Any]) -> bool:
+    normalized_anchor = normalize_answer_text(anchor).replace(" ", "")
+    if not normalized_anchor:
+        return False
+    for axis in QUERY_EVIDENCE_AXIS_ORDER:
+        if axis == "display_value":
+            continue
+        for value in _query_evidence_axis_values(planner, axis):
+            normalized_value = normalize_answer_text(value).replace(" ", "")
+            if normalized_anchor and normalized_value and (
+                normalized_anchor in normalized_value or normalized_value in normalized_anchor
+            ):
+                return True
+    return False
+
+
+def _query_anchor_classifier_from_planner(query: str, planner: Mapping[str, Any]) -> dict[str, Any]:
+    required_before = sorted(_gate_query_focus_anchors(query))
+    required_after = sorted(
+        anchor
+        for anchor in required_before
+        if _query_anchor_matches_planner_axis(anchor, planner)
+    )
+    removed = sorted(anchor for anchor in required_before if anchor not in set(required_after))
+    config = {
+        "model": _clean(planner.get("model")),
+        "backend": _clean(planner.get("backend")),
+        "base_url": _clean(planner.get("base_url")),
+    }
+    return _query_anchor_classifier_summary(
+        query=query,
+        status="classified_validated",
+        config=config,
+        required_before=required_before,
+        required_after=required_after,
+        removed_intent_tokens=removed,
+        raw_response_sha256=_clean(planner.get("raw_response_sha256")),
+    )
+
+
+def apply_llm_query_anchor_classifier_to_outputs(
+    raw_outputs: Sequence[Mapping[str, Any]],
+    *,
+    backend: str = "",
+    base_url: str = "",
+    model: str = "",
+    timeout_seconds: int = 60,
+    max_tokens: int = 180,
+    skip_endpoint_check: bool = False,
+    precomputed_query_evidence_planners: Mapping[str, Mapping[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    outputs: list[dict[str, Any]] = []
+    planners_by_item_id = precomputed_query_evidence_planners or {}
+    for row in raw_outputs:
+        output = dict(row)
+        query = _clean(row.get("query"))
+        planner = planners_by_item_id.get(_query_id(row))
+        if not isinstance(planner, Mapping):
+            planner = plan_query_evidence_with_local_llm(
+                query,
+                backend=backend,
+                base_url=base_url,
+                model=model,
+                timeout_seconds=timeout_seconds,
+                max_tokens=max_tokens,
+                skip_endpoint_check=skip_endpoint_check,
+            )
+        output["query_evidence_planner"] = planner
+        if _clean(planner.get("planner_status")) == "planned_validated":
+            output["query_anchor_classifier"] = _query_anchor_classifier_from_planner(query, planner)
+        else:
+            output["query_anchor_classifier"] = classify_query_focus_anchors_with_local_llm(
+                query,
+                backend=backend,
+                base_url=base_url,
+                model=model,
+                timeout_seconds=timeout_seconds,
+                max_tokens=max_tokens,
+                skip_endpoint_check=skip_endpoint_check,
+            )
+        outputs.append(output)
+    return outputs
+
+
 def _gate_answer_anchors(query: str, answer: str) -> dict[str, Any]:
     answer_anchors = _candidate_anchors(answer)
     query_anchors = _candidate_anchors(query)
@@ -11872,6 +15734,37 @@ def _gate_select_evidence(
     return selected
 
 
+def _gate_select_axis_complete_evidence(
+    *,
+    query: str,
+    answer: str,
+    contexts: Sequence[Mapping[str, Any]],
+    planner: Mapping[str, Any],
+    source_family_hint: str,
+) -> list[dict[str, Any]]:
+    selected: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    row = {
+        "query": query,
+        "query_evidence_planner": planner,
+    }
+    for context in contexts:
+        if not _query_evidence_source_family_matches_context(source_family_hint, context):
+            continue
+        matched_axes, missing_axes = _query_evidence_gate_validated_required_axis_hits(
+            row=row,
+            selected_evidence=[context],
+            answer=answer,
+        )
+        if not matched_axes or missing_axes:
+            continue
+        identity = _context_identity(context)
+        if identity and identity not in seen:
+            selected.append(dict(context))
+            seen.add(identity)
+    return selected
+
+
 def _has_sourceatom_evidence_identity(row: Mapping[str, Any]) -> bool:
     return bool(_clean(row.get("source_atom_id")) or _clean(row.get("evidence_bundle_id")))
 
@@ -11923,10 +15816,15 @@ def _text_has_answer_value_anchor_beyond_query(query: str, text: str) -> bool:
     return any(anchor and anchor not in query_value_anchors for anchor in evidence_value_anchors)
 
 
-def _xlsx_selected_evidence_has_value_and_axes(query: str, context: Mapping[str, Any]) -> bool:
+def _xlsx_selected_evidence_has_value_and_axes(
+    query: str,
+    context: Mapping[str, Any],
+    *,
+    query_evidence_planner: Mapping[str, Any] | None = None,
+) -> bool:
     if _clean(context.get("source_family")).upper() != "XLSX":
         return True
-    if not _text_has_answer_value_anchor_beyond_query(query, _gate_row_text(context)):
+    if not _text_has_answer_value_anchor_beyond_query(query, _gate_support_text(context)):
         return False
     metadata_text, metadata_fields = source_derived_evidence_metadata(context)
     fields = set(metadata_fields)
@@ -11936,13 +15834,25 @@ def _xlsx_selected_evidence_has_value_and_axes(query: str, context: Mapping[str,
     )
     if not (has_scope_axis and has_row_or_column_axis):
         return False
+    axis_complete, _matched_axes, _missing_axes = _query_evidence_context_has_complete_validated_axes(
+        query=query,
+        query_evidence_planner=query_evidence_planner,
+        context=context,
+    )
+    if axis_complete:
+        return True
     query_anchors = _gate_query_focus_anchors(query)
     if not query_anchors:
         return True
     return bool(_gate_anchor_hits(query_anchors, [metadata_text])) or _token_overlap_ratio(query, metadata_text) >= 0.2
 
 
-def _pdf_selected_evidence_has_value_and_axes(query: str, context: Mapping[str, Any]) -> bool:
+def _pdf_selected_evidence_has_value_and_axes(
+    query: str,
+    context: Mapping[str, Any],
+    *,
+    query_evidence_planner: Mapping[str, Any] | None = None,
+) -> bool:
     if _clean(context.get("source_family")).upper() != "PDF":
         return True
     if not _text_has_answer_value_anchor_beyond_query(query, _gate_row_text(context)):
@@ -11957,6 +15867,13 @@ def _pdf_selected_evidence_has_value_and_axes(query: str, context: Mapping[str, 
     )
     if not (has_page_or_section_axis and has_table_or_block_axis):
         return False
+    axis_complete, _matched_axes, _missing_axes = _query_evidence_context_has_complete_validated_axes(
+        query=query,
+        query_evidence_planner=query_evidence_planner,
+        context=context,
+    )
+    if axis_complete:
+        return True
     query_anchors = _gate_query_focus_anchors(query)
     if not query_anchors:
         return True
@@ -11968,31 +15885,49 @@ def select_composer_evidence(
     contexts: Sequence[Mapping[str, Any]],
     *,
     max_evidence: int = 3,
+    query_evidence_planner: Mapping[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
+    planner = _query_evidence_planner_for_query(query, query_evidence_planner)
+    source_family_hint = _query_evidence_source_family_hint(planner)
     query_anchors = _gate_query_focus_anchors(query)
     selected: list[tuple[float, int, dict[str, Any]]] = []
     seen: set[str] = set()
     for index, context in enumerate(contexts, start=1):
         if not _has_sourceatom_evidence_identity(context):
             continue
+        if not _query_evidence_source_family_matches_context(source_family_hint, context):
+            continue
         text = _gate_support_text(context)
         if not text:
             continue
-        if not _xlsx_selected_evidence_has_value_and_axes(query, context):
+        if not _xlsx_selected_evidence_has_value_and_axes(
+            query,
+            context,
+            query_evidence_planner=planner,
+        ):
             continue
-        if not _pdf_selected_evidence_has_value_and_axes(query, context):
+        if not _pdf_selected_evidence_has_value_and_axes(
+            query,
+            context,
+            query_evidence_planner=planner,
+        ):
             continue
         identity = _context_identity(context)
         if not identity or identity in seen:
             continue
+        axis_complete, matched_validated_axes, missing_validated_axes = _query_evidence_context_has_complete_validated_axes(
+            query=query,
+            query_evidence_planner=planner,
+            context=context,
+        )
         anchor_hits = _gate_anchor_hits(query_anchors, [text])
         query_overlap = _token_overlap_ratio(query, text)
         if query_anchors:
-            if not anchor_hits and query_overlap < 0.2:
+            if not axis_complete and not anchor_hits and query_overlap < 0.2:
                 continue
-        elif query_overlap < 0.2:
+        elif not axis_complete and query_overlap < 0.2:
             continue
-        score = (len(anchor_hits) * 10.0) + query_overlap + _safe_float(
+        score = (100.0 if axis_complete else 0.0) + (len(anchor_hits) * 10.0) + query_overlap + _safe_float(
             context.get("score") or context.get("fusion_score")
         )
         row = dict(context)
@@ -12002,6 +15937,16 @@ def select_composer_evidence(
             row["composer_source_derived_metadata_fields"] = metadata_fields
         row["composer_query_anchor_hits"] = sorted(anchor_hits)
         row["composer_query_overlap"] = round(query_overlap, 6)
+        if source_family_hint:
+            row["composer_source_family_hint"] = source_family_hint
+            row["composer_source_family_hint_matched"] = True
+        if matched_validated_axes or missing_validated_axes:
+            row["composer_validated_required_axis_hits"] = matched_validated_axes
+            row["composer_missing_validated_required_axes"] = missing_validated_axes
+            row["composer_validated_required_axes_coverage"] = _gate_coverage(
+                matched_validated_axes + missing_validated_axes,
+                matched_validated_axes,
+            )
         selected.append((score, index, row))
         seen.add(identity)
     selected.sort(key=lambda item: (-item[0], item[1]))
@@ -12251,6 +16196,8 @@ def _selected_evidence_local_llm_retry_prompt(
     selected_evidence: Sequence[Mapping[str, Any]],
     missing_query_focus_anchors: Sequence[str],
     previous_answer_preview: str,
+    answer_discipline_status: str = "",
+    answer_discipline_issue_preview: str = "",
 ) -> str:
     evidence_payload: list[dict[str, Any]] = []
     for evidence in selected_evidence:
@@ -12276,6 +16223,8 @@ def _selected_evidence_local_llm_retry_prompt(
         "selected_evidence": evidence_payload,
         "missing_query_focus_anchors": [_clean(anchor) for anchor in missing_query_focus_anchors if _clean(anchor)],
         "previous_answer_preview": _bounded_text_preview(previous_answer_preview),
+        "answer_discipline_status": _clean(answer_discipline_status),
+        "answer_discipline_issue_preview": _bounded_text_preview(answer_discipline_issue_preview),
         "citation_policy": "citation_evidence_ids must be selected evidence_id, evidence_bundle_id, or source_atom_id values only",
         "max_retry_count": 1,
     }
@@ -12322,6 +16271,270 @@ def _selected_evidence_matching_ids(
     return matched
 
 
+def _selected_evidence_answer_units(answer: str) -> list[str]:
+    text = _gate_answer_surface(_clean(answer))
+    if not text:
+        return []
+    text = re.sub(r"\s+", " ", text.replace("\r", "\n")).strip()
+    units = [
+        _clean(part)
+        for part in re.split(r"\s*(?:[.!?。！？;；]|\n+|,(?!\d)\s*)\s*", text)
+        if _clean(part)
+    ]
+    if not units and text:
+        units = [text]
+    return units
+
+
+def _selected_evidence_valid_citation_ids(selected_evidence: Sequence[Mapping[str, Any]]) -> set[str]:
+    ids: set[str] = set()
+    for evidence in selected_evidence:
+        for value in (
+            evidence.get("evidence_bundle_id"),
+            evidence.get("source_atom_id"),
+            _context_identity(evidence),
+        ):
+            cleaned = _clean(value)
+            if cleaned:
+                ids.add(cleaned)
+    return ids
+
+
+def _selected_evidence_unit_supported(unit: str, selected_evidence: Sequence[Mapping[str, Any]]) -> bool:
+    support_text = " ".join(_gate_support_text(evidence) for evidence in selected_evidence if _gate_support_text(evidence))
+    if not support_text:
+        return False
+    unit_norm = normalize_answer_text(unit)
+    support_norm = normalize_answer_text(support_text)
+    if unit_norm and unit_norm in support_norm:
+        return True
+    anchors = _candidate_anchors(unit)
+    if anchors and _anchor_requirements_satisfied(anchors, support_text):
+        return True
+    if _token_overlap_ratio(unit, support_text) >= 0.55:
+        return True
+    unit_numbers = set(re.findall(r"\d[\d,./:-]*", unit_norm))
+    support_numbers = set(re.findall(r"\d[\d,./:-]*", support_norm))
+    unit_words = {word for word in re.findall(r"[a-z가-힣]{2,}", unit_norm) if word not in _anchor_stopwords()}
+    support_words = {word for word in re.findall(r"[a-z가-힣]{2,}", support_norm)}
+    return bool(unit_numbers and unit_numbers <= support_numbers and unit_words & support_words)
+
+
+def _source_derived_values(row: Mapping[str, Any], fields: Sequence[str]) -> list[str]:
+    values: list[str] = []
+    for source in _source_derived_metadata_sources(row):
+        for field in fields:
+            value = _clean(source.get(field))
+            if value and value not in values:
+                values.append(value)
+    return values
+
+
+def _selected_evidence_source_value_query_relevant(
+    query: str,
+    unit: str,
+    selected_evidence: Sequence[Mapping[str, Any]],
+) -> bool:
+    unit_norm = normalize_answer_text(unit)
+    query_norm = normalize_answer_text(query)
+    if not unit_norm or not query_norm:
+        return False
+    focus_fields = ("target_column", "column_label", "header", "header_path", "section_title", "table_caption")
+    value_fields = ("display_value",)
+    location_terms = {"where", "location", "headquarters", "hq", "address", "주소", "위치", "소재지"}
+    birthday_terms = {"birthday", "birthdate", "생일", "생년월일", "출생일"}
+    age_terms = {"age", "aged", "나이", "연령"}
+    count_terms = {"how many", "count", "number", "total", "몇", "얼마", "수", "총"}
+    for evidence in selected_evidence:
+        if not isinstance(evidence, Mapping):
+            continue
+        value_matches = False
+        for value in _source_derived_values(evidence, value_fields):
+            value_norm = normalize_answer_text(value)
+            if value_norm and (unit_norm in value_norm or value_norm in unit_norm):
+                value_matches = True
+                break
+        if not value_matches:
+            continue
+        focus_values = _source_derived_values(evidence, focus_fields)
+        focus_text = " ".join(focus_values)
+        focus_norm = normalize_answer_text(focus_text)
+        if not focus_norm:
+            continue
+        focus_anchors = _candidate_anchors(*focus_values)
+        if _gate_anchor_hits(focus_anchors, [query]):
+            return True
+        if any(term in query_norm for term in location_terms) and any(term in focus_norm for term in location_terms):
+            return True
+        if any(term in query_norm for term in birthday_terms) and any(term in focus_norm for term in birthday_terms):
+            return True
+        if any(term in query_norm for term in age_terms) and any(term in focus_norm for term in age_terms):
+            return True
+        if any(term in query_norm for term in count_terms) and any(term in focus_norm for term in count_terms):
+            return True
+    return False
+
+
+def _selected_evidence_unit_query_relevant(
+    query: str,
+    unit: str,
+    selected_evidence: Sequence[Mapping[str, Any]],
+) -> bool:
+    query_norm = normalize_answer_text(query)
+    unit_norm = normalize_answer_text(unit)
+    query_anchors = _gate_query_focus_anchors(query)
+    if not query_anchors:
+        return True
+    hits = _gate_anchor_hits(query_anchors, [unit])
+    if _gate_coverage(query_anchors, hits) >= EVIDENCE_GATE_MIN_QUERY_ANCHOR_COVERAGE:
+        return True
+    if _selected_evidence_source_value_query_relevant(query, unit, selected_evidence):
+        return True
+    age_terms = {"age", "aged", "나이", "연령"}
+    birthday_terms = {"birthday", "birthdate", "생일", "생년월일", "출생일"}
+    location_terms = {"where", "location", "headquarters", "hq", "주소", "위치", "소재지"}
+    count_terms = {"how many", "count", "number", "몇", "얼마", "수", "총"}
+    if any(term in query_norm for term in age_terms) and re.search(r"\d", unit_norm) and (
+        hits or any(term in unit_norm for term in age_terms)
+    ):
+        return True
+    birthday_like = bool(
+        re.search(r"\d{1,4}\s*(?:년|월|일)|\d{1,2}/\d{1,2}", unit_norm)
+        or any(
+            month in unit_norm
+            for month in (
+                "january",
+                "february",
+                "march",
+                "april",
+                "may",
+                "june",
+                "july",
+                "august",
+                "september",
+                "october",
+                "november",
+                "december",
+            )
+        )
+    )
+    if any(term in query_norm for term in birthday_terms) and (
+        hits or any(term in unit_norm for term in birthday_terms) or birthday_like
+    ):
+        return True
+    if any(term in query_norm for term in location_terms) and hits:
+        return True
+    if any(term in query_norm for term in count_terms) and re.search(r"\d", unit_norm) and hits:
+        return True
+    return False
+
+
+def _selected_evidence_answer_discipline_fallback_reason(discipline: Mapping[str, Any]) -> str:
+    status = _clean(discipline.get("status")) or "unsupported_or_empty"
+    if status == "clean_supported":
+        return ""
+    return f"answer_discipline_{status}"
+
+
+def _selected_evidence_answer_discipline(
+    *,
+    query: str,
+    answer: str,
+    selected_evidence: list[dict[str, object]] | Sequence[Mapping[str, Any]],
+    cited_evidence_ids: list[str] | Sequence[str] | None = None,
+) -> dict[str, object]:
+    selected = [dict(evidence) for evidence in selected_evidence if isinstance(evidence, Mapping)]
+    answer_text = _gate_answer_surface(_clean(answer))
+    units = _selected_evidence_answer_units(answer_text)
+    wanted_ids = [_clean(value) for value in (cited_evidence_ids or []) if _clean(value)]
+    valid_ids = _selected_evidence_valid_citation_ids(selected)
+    unresolved_ids = sorted({value for value in wanted_ids if value not in valid_ids})
+    supported_units: list[str] = []
+    unsupported_units: list[str] = []
+    relevant_supported_units: list[str] = []
+    irrelevant_supported_units: list[str] = []
+    for unit in units:
+        supported = _selected_evidence_unit_supported(unit, selected)
+        relevant = _selected_evidence_unit_query_relevant(query, unit, selected)
+        if supported:
+            supported_units.append(unit)
+            if relevant:
+                relevant_supported_units.append(unit)
+            else:
+                irrelevant_supported_units.append(unit)
+        else:
+            unsupported_units.append(unit)
+
+    core_supported = bool(relevant_supported_units)
+    morphology_false_negative = bool(
+        unsupported_units
+        and selected
+        and any(
+            _token_overlap_ratio(unit, " ".join(_gate_support_text(evidence) for evidence in selected)) >= 0.45
+            for unit in unsupported_units
+        )
+    )
+    if not answer_text or not units:
+        status = "unsupported_or_empty"
+    elif not selected:
+        status = "true_insufficient_evidence"
+    elif unresolved_ids:
+        status = "citation_id_mismatch_or_missing"
+    elif core_supported and unsupported_units:
+        status = "supported_core_with_unsupported_extra"
+    elif core_supported and irrelevant_supported_units:
+        status = "query_irrelevant_supported_detail"
+    elif unsupported_units and morphology_false_negative:
+        status = "anchor_morphology_false_negative"
+    elif unsupported_units:
+        status = "unsupported_or_empty"
+    elif not core_supported:
+        status = "true_insufficient_evidence"
+    else:
+        status = "clean_supported"
+
+    if status not in SELECTED_EVIDENCE_ANSWER_DISCIPLINE_STATUSES:
+        status = "unsupported_or_empty"
+    fallback_reason = "" if status == "clean_supported" else f"answer_discipline_{status}"
+    return {
+        "status": status,
+        "core_answer_supported": bool(core_supported and status != "citation_id_mismatch_or_missing"),
+        "unsupported_extra_detail": status == "supported_core_with_unsupported_extra",
+        "query_irrelevant_supported_detail": status == "query_irrelevant_supported_detail",
+        "local_llm_accepted_without_fallback": status == "clean_supported",
+        "fallback_reason": fallback_reason,
+        "unsupported_extra_preview": _bounded_text_preview(unsupported_units[0], 160) if unsupported_units else "",
+        "query_irrelevant_preview": _bounded_text_preview(irrelevant_supported_units[0], 160) if irrelevant_supported_units else "",
+        "citation_id_mismatch_or_missing": bool(unresolved_ids),
+        "unresolved_citation_ids": unresolved_ids[:5],
+        "assertion_unit_count": len(units),
+        "supported_assertion_unit_count": len(supported_units),
+        "input_policy": SELECTED_EVIDENCE_ANSWER_DISCIPLINE_INPUT_POLICY,
+    }
+
+
+def _selected_evidence_deterministic_fallback_answer_discipline(
+    *,
+    query: str,
+    answer: str,
+    selected_evidence: list[dict[str, object]] | Sequence[Mapping[str, Any]],
+    cited_evidence_ids: list[str] | Sequence[str] | None = None,
+) -> dict[str, object]:
+    discipline = _selected_evidence_answer_discipline(
+        query=query,
+        answer=answer,
+        selected_evidence=selected_evidence,
+        cited_evidence_ids=cited_evidence_ids,
+    )
+    if _clean(discipline.get("status")) in {
+        "supported_core_with_unsupported_extra",
+        "query_irrelevant_supported_detail",
+    }:
+        discipline["status"] = "local_llm_rejected_then_deterministic_overexpanded"
+        discipline["fallback_reason"] = "answer_discipline_local_llm_rejected_then_deterministic_overexpanded"
+    return discipline
+
+
 def _local_llm_meta(
     *,
     config: Mapping[str, Any],
@@ -12331,6 +16544,7 @@ def _local_llm_meta(
     answer_preview: str = "",
     blockers: Sequence[str] = (),
     fallback_provider: str = "",
+    fallback_reason: str = "",
 ) -> dict[str, Any]:
     meta = {
         "status": status,
@@ -12356,6 +16570,8 @@ def _local_llm_meta(
         meta["blockers"] = list(config.get("blockers") or [])
     if fallback_provider:
         meta["fallback_provider"] = fallback_provider
+    if fallback_reason:
+        meta["fallback_reason"] = fallback_reason
     return meta
 
 
@@ -12397,9 +16613,21 @@ def _selected_evidence_local_llm_output_from_answer(
     prompt_sha256: str,
     raw_response_sha256: str,
     retry_meta: Mapping[str, Any] | None = None,
+    answer_discipline: Mapping[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     cited_selected = _selected_evidence_matching_ids(query_selected, citation_ids)
     candidate_selected = cited_selected or query_selected
+    discipline = dict(
+        answer_discipline
+        or _selected_evidence_answer_discipline(
+            query=query,
+            answer=answer,
+            selected_evidence=[dict(evidence) for evidence in query_selected],
+            cited_evidence_ids=list(citation_ids),
+        )
+    )
+    if _clean(discipline.get("status")) != "clean_supported":
+        return None
     final_selected = _gate_select_evidence(
         query=query,
         answer=_gate_answer_surface(answer),
@@ -12445,6 +16673,7 @@ def _selected_evidence_local_llm_output_from_answer(
         "raw_prompt_payload_written": False,
         "raw_response_payload_written": False,
         "local_llm_fallback_used": False,
+        "answer_discipline": discipline,
         "local_llm": _local_llm_meta(
             config=config,
             status="generated",
@@ -12476,7 +16705,13 @@ def _maybe_retry_selected_evidence_local_llm_output(
     decision, reason = _evidence_gate_decision(validation, answer=_gate_answer_surface(_clean(output.get("generated_answer"))))
     trigger = _selected_evidence_retry_trigger(validation, decision)
     if not trigger:
-        composer["retry"] = _selected_evidence_retry_not_triggered_meta("evidence_gate_allows_answer")
+        discipline = composer.get("answer_discipline") if isinstance(composer.get("answer_discipline"), Mapping) else {}
+        reason = (
+            "answer_discipline_clean_supported"
+            if _clean(discipline.get("status")) == "clean_supported"
+            else "evidence_gate_allows_answer"
+        )
+        composer["retry"] = _selected_evidence_retry_not_triggered_meta(reason)
         output["answer_composer"] = composer
         return output
 
@@ -12489,6 +16724,13 @@ def _maybe_retry_selected_evidence_local_llm_output(
         selected_evidence=query_selected,
         missing_query_focus_anchors=missing_query_focus_anchors,
         previous_answer_preview=previous_answer_preview,
+        answer_discipline_status=_clean(
+            (composer.get("answer_discipline") if isinstance(composer.get("answer_discipline"), Mapping) else {}).get("status")
+        ),
+        answer_discipline_issue_preview=_clean(
+            (composer.get("answer_discipline") if isinstance(composer.get("answer_discipline"), Mapping) else {}).get("unsupported_extra_preview")
+            or (composer.get("answer_discipline") if isinstance(composer.get("answer_discipline"), Mapping) else {}).get("query_irrelevant_preview")
+        ),
     )
     prompt_sha256 = f"sha256:{_sha256_text(prompt)}"
     retry_base = {
@@ -12531,6 +16773,12 @@ def _maybe_retry_selected_evidence_local_llm_output(
         parsed.get("citation_evidence_ids") or parsed.get("citations") or parsed.get("evidence_ids")
     )
     retry_raw_sha = _clean((meta or {}).get("raw_response_sha256"))
+    retry_discipline = _selected_evidence_answer_discipline(
+        query=query,
+        answer=retry_answer,
+        selected_evidence=[dict(evidence) for evidence in query_selected],
+        cited_evidence_ids=retry_citation_ids,
+    )
     retry_output = _selected_evidence_local_llm_output_from_answer(
         row=original_row,
         query=query,
@@ -12544,9 +16792,11 @@ def _maybe_retry_selected_evidence_local_llm_output(
         retry_meta={
             **retry_base,
             "status": "accepted",
+            "retry_answer_discipline_status": _clean(retry_discipline.get("status")),
             "retry_raw_response_sha256": retry_raw_sha,
             "retry_answer_preview": _bounded_text_preview(retry_answer),
         },
+        answer_discipline=retry_discipline,
     )
     if retry_output is None:
         composer["retry"] = {
@@ -12624,7 +16874,16 @@ def apply_selected_evidence_composer_to_outputs(
         output = dict(row)
         contexts = _contexts_from_row(output)
         query = _clean(output.get("query"))
-        query_selected = select_composer_evidence(query, contexts, max_evidence=max_evidence)
+        query_selected = select_composer_evidence(
+            query,
+            contexts,
+            max_evidence=max_evidence,
+            query_evidence_planner=(
+                output.get("query_evidence_planner")
+                if isinstance(output.get("query_evidence_planner"), Mapping)
+                else None
+            ),
+        )
         abstention_reason = _selected_evidence_abstention_reason(query, query_selected)
         final_selected: list[dict[str, Any]] = []
         if not abstention_reason:
@@ -12722,7 +16981,14 @@ def _apply_selected_evidence_local_llm_composer_to_outputs(
         deterministic_composer["local_llm_fallback_used"] = True
         query = _clean(row.get("query"))
         contexts = _contexts_from_row(row)
-        query_selected = select_composer_evidence(query, contexts, max_evidence=max_evidence)
+        query_selected = select_composer_evidence(
+            query,
+            contexts,
+            max_evidence=max_evidence,
+            query_evidence_planner=(
+                row.get("query_evidence_planner") if isinstance(row.get("query_evidence_planner"), Mapping) else None
+            ),
+        )
 
         if deterministic_composer.get("abstained"):
             if normalized_retry_mode == "bounded-once":
@@ -12786,6 +17052,146 @@ def _apply_selected_evidence_local_llm_composer_to_outputs(
         citation_ids = _ids_from_local_llm_citation_field(
             parsed.get("citation_evidence_ids") or parsed.get("citations") or parsed.get("evidence_ids")
         )
+        answer_discipline = _selected_evidence_answer_discipline(
+            query=query,
+            answer=answer,
+            selected_evidence=[dict(evidence) for evidence in query_selected],
+            cited_evidence_ids=citation_ids,
+        )
+        answer_discipline_status = _clean(answer_discipline.get("status"))
+        answer_discipline_fallback_reason = _selected_evidence_answer_discipline_fallback_reason(answer_discipline)
+        if answer_discipline_status != "clean_supported":
+            retry_error = ""
+            retry_rejected_meta: dict[str, Any] | None = None
+            if normalized_retry_mode == "bounded-once":
+                previous_answer_preview = _bounded_text_preview(_gate_answer_surface(answer))
+                retry_prompt = _selected_evidence_local_llm_retry_prompt(
+                    query=query,
+                    selected_evidence=query_selected,
+                    missing_query_focus_anchors=[],
+                    previous_answer_preview=previous_answer_preview,
+                    answer_discipline_status=answer_discipline_status,
+                    answer_discipline_issue_preview=_clean(
+                        answer_discipline.get("unsupported_extra_preview")
+                        or answer_discipline.get("query_irrelevant_preview")
+                    ),
+                )
+                retry_prompt_sha256 = f"sha256:{_sha256_text(retry_prompt)}"
+                retry_base = {
+                    "enabled": True,
+                    "attempted": True,
+                    "attempt_count": 1,
+                    "max_retry_count": 1,
+                    "mode": "bounded-once",
+                    "input_policy": SELECTED_EVIDENCE_COMPOSER_RETRY_INPUT_POLICY,
+                    "trigger": answer_discipline_fallback_reason,
+                    "initial_answer_discipline_status": answer_discipline_status,
+                    "initial_answer_preview": previous_answer_preview,
+                    "initial_answer_preview_sha256": f"sha256:{_sha256_text(previous_answer_preview)}",
+                    "initial_raw_response_sha256": _clean((meta or {}).get("raw_response_sha256")),
+                    "retry_prompt_sha256": retry_prompt_sha256,
+                }
+                try:
+                    retry_parsed, retry_meta_raw = LOCAL_LLM_HELPER.call_local_llm_strict_json(
+                        backend=_clean(config.get("backend")),
+                        base_url=_clean(config.get("base_url")),
+                        model=_clean(config.get("model")),
+                        prompt=retry_prompt,
+                        temperature=0.0,
+                        max_tokens=int(config.get("max_tokens") or local_llm_max_tokens),
+                        timeout_seconds=int(config.get("timeout_seconds") or local_llm_timeout_seconds),
+                    )
+                    retry_answer = _clean(retry_parsed.get("answer") or retry_parsed.get("short_answer"))
+                    retry_citation_ids = _ids_from_local_llm_citation_field(
+                        retry_parsed.get("citation_evidence_ids")
+                        or retry_parsed.get("citations")
+                        or retry_parsed.get("evidence_ids")
+                    )
+                    retry_raw_sha = _clean((retry_meta_raw or {}).get("raw_response_sha256"))
+                    retry_discipline = _selected_evidence_answer_discipline(
+                        query=query,
+                        answer=retry_answer,
+                        selected_evidence=[dict(evidence) for evidence in query_selected],
+                        cited_evidence_ids=retry_citation_ids,
+                    )
+                    retry_output = _selected_evidence_local_llm_output_from_answer(
+                        row=row,
+                        query=query,
+                        query_selected=query_selected,
+                        answer=retry_answer,
+                        citation_ids=retry_citation_ids,
+                        normalized_citation_format=normalized_citation_format,
+                        config=config,
+                        prompt_sha256=retry_prompt_sha256,
+                        raw_response_sha256=retry_raw_sha,
+                        retry_meta={
+                            **retry_base,
+                            "status": "accepted",
+                            "retry_answer_discipline_status": _clean(retry_discipline.get("status")),
+                            "retry_raw_response_sha256": retry_raw_sha,
+                            "retry_answer_preview": _bounded_text_preview(retry_answer),
+                        },
+                        answer_discipline=retry_discipline,
+                    )
+                    if retry_output is not None:
+                        retry_validation = validate_evidence_package_for_gate(retry_output)
+                        retry_decision, retry_reason = _evidence_gate_decision(
+                            retry_validation,
+                            answer=_gate_answer_surface(_clean(retry_output.get("generated_answer"))),
+                        )
+                        if retry_decision == "allow_answer":
+                            retry_composer = dict(retry_output.get("answer_composer") or {})
+                            retry_meta = dict(retry_composer.get("retry") or {})
+                            retry_meta.update(
+                                {
+                                    "retry_evidence_package_status": _clean(
+                                        retry_validation.get("evidence_package_status")
+                                    ),
+                                    "retry_answer_gate_decision": retry_decision,
+                                    "retry_abstention_reason": retry_reason,
+                                }
+                            )
+                            retry_composer["retry"] = retry_meta
+                            retry_composer["initial_answer_discipline"] = answer_discipline
+                            retry_output["answer_composer"] = retry_composer
+                            composed_rows.append(retry_output)
+                            continue
+                    retry_rejected_meta = {
+                        **retry_base,
+                        "status": "rejected_gate_insufficient",
+                        "retry_answer_discipline_status": _clean(retry_discipline.get("status")),
+                        "retry_raw_response_sha256": retry_raw_sha,
+                        "retry_answer_preview": _bounded_text_preview(retry_answer),
+                    }
+                except Exception as exc:
+                    retry_error = f"LOCAL_LLM_RETRY_ERROR: {type(exc).__name__}: {exc}"
+                    retry_rejected_meta = {**retry_base, "status": "error", "error": retry_error}
+            elif normalized_retry_mode == "bounded-once":
+                retry_rejected_meta = _selected_evidence_retry_not_triggered_meta(answer_discipline_fallback_reason)
+
+            deterministic_discipline = _selected_evidence_deterministic_fallback_answer_discipline(
+                query=query,
+                answer=_gate_answer_surface(_clean(deterministic.get("generated_answer"))),
+                selected_evidence=[dict(evidence) for evidence in query_selected],
+                cited_evidence_ids=_selected_evidence_ids(query_selected),
+            )
+            deterministic_composer["initial_answer_discipline"] = answer_discipline
+            deterministic_composer["answer_discipline"] = deterministic_discipline
+            if retry_rejected_meta is not None:
+                deterministic_composer["retry"] = retry_rejected_meta
+            deterministic_composer["local_llm"] = _local_llm_meta(
+                config=config,
+                status="answer_discipline_deterministic_fallback",
+                prompt_sha256=prompt_sha256,
+                raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+                answer_preview=answer,
+                blockers=[answer_discipline_fallback_reason, retry_error] if retry_error else [answer_discipline_fallback_reason],
+                fallback_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+                fallback_reason=answer_discipline_fallback_reason,
+            )
+            deterministic["answer_composer"] = deterministic_composer
+            composed_rows.append(deterministic)
+            continue
         output = _selected_evidence_local_llm_output_from_answer(
             row=row,
             query=query,
@@ -12796,8 +17202,15 @@ def _apply_selected_evidence_local_llm_composer_to_outputs(
             config=config,
             prompt_sha256=prompt_sha256,
             raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+            answer_discipline=answer_discipline,
         )
         if output is None:
+            deterministic_discipline = _selected_evidence_deterministic_fallback_answer_discipline(
+                query=query,
+                answer=_gate_answer_surface(_clean(deterministic.get("generated_answer"))),
+                selected_evidence=[dict(evidence) for evidence in query_selected],
+                cited_evidence_ids=_selected_evidence_ids(query_selected),
+            )
             if normalized_retry_mode == "bounded-once":
                 deterministic_composer["retry"] = _selected_evidence_retry_not_triggered_meta(
                     "initial_local_llm_answer_unsupported_or_empty"
@@ -12809,7 +17222,10 @@ def _apply_selected_evidence_local_llm_composer_to_outputs(
                 raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
                 answer_preview=answer,
                 fallback_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+                fallback_reason="initial_local_llm_answer_unsupported_or_empty",
             )
+            deterministic_composer["initial_answer_discipline"] = answer_discipline
+            deterministic_composer["answer_discipline"] = deterministic_discipline
             deterministic["answer_composer"] = deterministic_composer
             composed_rows.append(deterministic)
             continue
@@ -12892,17 +17308,45 @@ def validate_evidence_package_for_gate(row: Mapping[str, Any]) -> dict[str, Any]
     contexts = _contexts_from_row(row)
     citations = _citations_from_row(row)
     selected = _gate_select_evidence(query=query, answer=answer, contexts=contexts, citations=citations)
-    selected_texts = [_gate_support_text(context) for context in selected if _gate_support_text(context)]
+    planner = _query_evidence_planner_for_row(row)
+    source_family_hint = _query_evidence_source_family_hint(planner)
+    if not selected and planner:
+        selected = _gate_select_axis_complete_evidence(
+            query=query,
+            answer=answer,
+            contexts=contexts,
+            planner=planner,
+            source_family_hint=source_family_hint,
+        )
+    source_family_matched_selected = [
+        context
+        for context in selected
+        if _query_evidence_source_family_matches_context(source_family_hint, context)
+    ]
+    source_family_hint_blocks_gate = bool(source_family_hint and selected and not source_family_matched_selected)
+    selected_for_gate = source_family_matched_selected if source_family_hint else selected
+    selected_texts = [_gate_support_text(context) for context in selected_for_gate if _gate_support_text(context)]
     anchors = _gate_answer_anchors(query, answer)
     answer_anchors = set(anchors["answer"])
     numeric_anchors = set(anchors["numeric_or_date"])
     entity_anchors = set(anchors["entity"])
-    query_focus_anchors = _gate_query_focus_anchors(query)
+    query_focus_anchors = _query_focus_anchors_for_row(row)
     query_focus_texts = [answer, *selected_texts]
     answer_hits = _gate_anchor_hits(answer_anchors, selected_texts)
     numeric_hits = _gate_anchor_hits(numeric_anchors, selected_texts)
     entity_hits = _gate_anchor_hits(entity_anchors, selected_texts)
     query_focus_hits = _gate_anchor_hits(query_focus_anchors, query_focus_texts)
+    matched_validated_required_axes, missing_validated_required_axes = _query_evidence_gate_validated_required_axis_hits(
+        row=row,
+        selected_evidence=selected_for_gate,
+        answer=answer,
+    )
+    validated_required_axes = matched_validated_required_axes + missing_validated_required_axes
+    validated_required_axes_available = bool(validated_required_axes)
+    validated_required_axes_coverage = _gate_coverage(
+        validated_required_axes,
+        matched_validated_required_axes,
+    )
     missing_answer_anchors = sorted(answer_anchors - answer_hits)
     missing_numeric = sorted(numeric_anchors - numeric_hits)
     missing_entity = sorted(entity_anchors - entity_hits)
@@ -12918,13 +17362,19 @@ def validate_evidence_package_for_gate(row: Mapping[str, Any]) -> dict[str, Any]
             )
         )
     )
-    unsupported_answer_anchors = sorted(set(missing_numeric) | set(missing_entity) | (set(missing_query_focus) if missing_required_query_focus else set()))
+    query_focus_blocks_gate = bool(missing_required_query_focus and not validated_required_axes_available)
+    validated_axes_block_gate = bool(validated_required_axes_available and missing_validated_required_axes)
+    unsupported_answer_anchors = sorted(
+        set(missing_numeric)
+        | set(missing_entity)
+        | (set(missing_query_focus) if query_focus_blocks_gate else set())
+    )
     citation_validations = [
         _gate_citation_validation(
             citation=citation,
             citation_index=index,
             retrieved_contexts=contexts,
-            selected_evidence=selected,
+            selected_evidence=selected_for_gate,
         )
         for index, citation in enumerate(citations, start=1)
     ]
@@ -12938,14 +17388,18 @@ def validate_evidence_package_for_gate(row: Mapping[str, Any]) -> dict[str, Any]
         validation_reasons.append("missing_generated_answer")
     if not contexts:
         validation_reasons.append("no_retrieved_evidence_candidates")
-    if not selected:
+    if not selected_for_gate:
         validation_reasons.append("no_selected_evidence")
     if missing_numeric:
         validation_reasons.append("missing_numeric_or_date_anchor")
     if missing_entity:
         validation_reasons.append("missing_entity_anchor")
-    if missing_required_query_focus:
+    if query_focus_blocks_gate:
         validation_reasons.append("missing_query_anchor")
+    if validated_axes_block_gate:
+        validation_reasons.append("missing_validated_required_axes")
+    if source_family_hint_blocks_gate:
+        validation_reasons.append("source_family_hint_mismatch")
     if citations and not supported_citations:
         validation_reasons.append("citation_unsupported")
     selected_norm = " ".join(normalize_answer_text(text) for text in selected_texts)
@@ -12960,9 +17414,17 @@ def validate_evidence_package_for_gate(row: Mapping[str, Any]) -> dict[str, Any]
         status = "insufficient"
     elif conflicting_reasons:
         status = "conflicting"
-    elif not selected or missing_numeric or missing_entity or missing_required_query_focus or citation_below_threshold:
+    elif (
+        not selected_for_gate
+        or missing_numeric
+        or missing_entity
+        or query_focus_blocks_gate
+        or validated_axes_block_gate
+        or source_family_hint_blocks_gate
+        or citation_below_threshold
+    ):
         status = "insufficient"
-    elif not answer_anchors and answer and selected:
+    elif not answer_anchors and answer and selected_for_gate:
         status = "sufficient"
     elif _gate_coverage(answer_anchors, answer_hits) >= 0.65:
         status = "sufficient"
@@ -12976,18 +17438,25 @@ def validate_evidence_package_for_gate(row: Mapping[str, Any]) -> dict[str, Any]
         "evidence_support_score": _gate_coverage(answer_anchors, answer_hits),
         "answer_anchor_coverage": _gate_coverage(answer_anchors, answer_hits),
         "query_anchor_coverage": query_anchor_coverage,
+        "validated_required_axes_coverage": validated_required_axes_coverage,
         "numeric_or_date_anchor_coverage": _gate_coverage(numeric_anchors, numeric_hits),
         "entity_anchor_coverage": _gate_coverage(entity_anchors, entity_hits),
-        "selected_evidence_count": len(selected),
-        "rejected_evidence_count": max(0, len(contexts) - len(selected)),
+        "source_family_hint": source_family_hint,
+        "source_family_hint_matched_evidence_count": len(source_family_matched_selected),
+        "source_family_hint_rejected_evidence_count": max(0, len(selected) - len(source_family_matched_selected)) if source_family_hint else 0,
+        "selected_evidence_count": len(selected_for_gate),
+        "rejected_evidence_count": max(0, len(contexts) - len(selected_for_gate)),
         "missing_answer_anchors": missing_answer_anchors,
         "missing_query_anchors": missing_query_focus,
+        "validated_required_axes": validated_required_axes,
+        "matched_validated_required_axes": matched_validated_required_axes,
+        "missing_validated_required_axes": missing_validated_required_axes,
         "unsupported_answer_anchors": unsupported_answer_anchors,
         "conflicting_evidence_reasons": conflicting_reasons,
         "validation_reasons": sorted(set(validation_reasons)),
         "validator_version": EVIDENCE_GATE_VALIDATOR_VERSION,
         "retrieved_evidence_candidates": [dict(context) for context in contexts],
-        "selected_evidence": selected,
+        "selected_evidence": selected_for_gate,
         "citation_targets": [dict(citation) for citation in citations],
         "evidence_text_hashes": _text_hashes([*contexts, *citations]),
         "citation_validations": citation_validations,
@@ -15636,11 +20105,13 @@ def run_eval_from_paths(
     corpus_coverage_audit_index_checkpoint_path: Path | str | None = None,
     corpus_coverage_audit_index_manifest_path: Path | str | None = None,
     agentic_planner_mode: str = "off",
+    xlsx_locator_tool_execute_once: bool = False,
+    llm_query_anchor_classifier: bool = False,
 ) -> RagEvalBundle:
     dataset = Path(dataset_path)
     output = Path(output_dir)
     normalized_output_mode = _clean(output_mode).lower() or "single"
-    if normalized_output_mode not in {"single", "legacy", "both"}:
+    if normalized_output_mode not in {"single", "legacy", "both", "runstore"}:
         raise DatasetSchemaError(f"unsupported output mode: {output_mode}")
     normalized_retrieval_backend = _clean(retrieval_backend).lower() or "auto"
     if normalized_retrieval_backend not in set(RAG_RETRIEVAL_BACKEND_CHOICES):
@@ -15658,6 +20129,9 @@ def run_eval_from_paths(
     normalized_answer_composer = _clean(answer_composer).replace("_", "-").lower() or "extractive-v1"
     if normalized_answer_composer not in ANSWER_COMPOSER_PROVIDERS:
         raise DatasetSchemaError(f"unsupported answer composer: {answer_composer}")
+    normalized_selected_evidence_composer_retry_mode = _normalize_selected_evidence_composer_retry_mode(
+        selected_evidence_composer_retry_mode
+    )
     if normalized_agentic_planner_mode in {"dry-run", "execute-once"}:
         if normalized_evidence_gate_mode == "off":
             raise DatasetSchemaError("agentic planner requires evidence_gate_mode diagnostic or enforce")
@@ -15666,13 +20140,39 @@ def run_eval_from_paths(
             SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROVIDER,
         }:
             raise DatasetSchemaError("agentic planner requires a selected-evidence answer composer")
-    if normalized_agentic_planner_mode == "execute-once" and normalized_answer_composer != SELECTED_EVIDENCE_COMPOSER_PROVIDER:
-        raise DatasetSchemaError("agentic planner execute-once currently requires deterministic selected-evidence composer")
+    if normalized_agentic_planner_mode == "execute-once" and normalized_selected_evidence_composer_retry_mode != "off":
+        raise DatasetSchemaError("agentic planner execute-once does not allow selected-evidence LLM retry")
+    if xlsx_locator_tool_execute_once:
+        if normalized_agentic_planner_mode != "off":
+            raise DatasetSchemaError("xlsx locator tool execute-once must not be combined with agentic planner modes")
+        if normalized_evidence_gate_mode == "off":
+            raise DatasetSchemaError("xlsx locator tool execute-once requires evidence_gate_mode diagnostic or enforce")
+        if normalized_answer_composer not in {
+            SELECTED_EVIDENCE_COMPOSER_PROVIDER,
+            SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROVIDER,
+        }:
+            raise DatasetSchemaError(
+                "xlsx locator tool execute-once requires a selected-evidence answer composer"
+            )
+        if normalized_selected_evidence_composer_retry_mode != "off":
+            raise DatasetSchemaError("xlsx locator tool execute-once does not allow selected-evidence LLM retry")
+    if normalized_output_mode == "runstore":
+        if not xlsx_locator_tool_execute_once:
+            raise DatasetSchemaError("output_mode=runstore requires xlsx locator tool execute-once")
+        if append_registry or write_latest:
+            raise DatasetSchemaError("output_mode=runstore cannot append registry or write latest pointers")
+        if write_evidence_mapping_packet or write_human_review_packet:
+            raise DatasetSchemaError("output_mode=runstore cannot write review packet sidecars")
+        if reviewed_evidence_mapping_csv is not None:
+            raise DatasetSchemaError("output_mode=runstore cannot write reviewed mapping patch artifacts")
+        if _clean(quality_gate_baseline_path):
+            raise DatasetSchemaError("output_mode=runstore cannot write quality gate sidecars")
+        if _parse_weaviate_route_ab_modes(weaviate_route_ab_mode):
+            raise DatasetSchemaError("output_mode=runstore cannot write Weaviate route A/B sidecars")
+        if portfolio_comparison_reports or write_portfolio_experiment_summary:
+            raise DatasetSchemaError("output_mode=runstore cannot write portfolio comparison artifacts")
     normalized_selected_evidence_citation_format = _normalize_selected_evidence_citation_format(
         selected_evidence_citation_format
-    )
-    normalized_selected_evidence_composer_retry_mode = _normalize_selected_evidence_composer_retry_mode(
-        selected_evidence_composer_retry_mode
     )
     if normalized_retrieval_surface == "searchunit-searchview" and not legacy_surface_comparison:
         raise DatasetSchemaError(
@@ -15760,8 +20260,26 @@ def run_eval_from_paths(
     )
     started = time.perf_counter()
 
+    query_evidence_planners_by_item_id: dict[str, Mapping[str, Any]] = {}
+    retrieval_items: list[EvalItem] = list(items)
+    if llm_query_anchor_classifier:
+        retrieval_items = []
+        for item in items:
+            planner = plan_query_evidence_with_local_llm(
+                item.query,
+                backend=local_llm_composer_backend,
+                base_url=local_llm_composer_base_url,
+                model=local_llm_composer_model,
+                timeout_seconds=local_llm_composer_timeout_seconds,
+                skip_endpoint_check=skip_local_llm_composer_endpoint_check,
+            )
+            query_evidence_planners_by_item_id[item.id] = planner
+            source_row = dict(item.source_row) if isinstance(item.source_row, Mapping) else {}
+            source_row["query_evidence_planner"] = planner
+            retrieval_items.append(replace(item, source_row=source_row))
+
     raw_outputs: list[dict[str, Any]] = []
-    for item in items:
+    for item in retrieval_items:
         try:
             raw_outputs.append(adapter.run_item(item, top_k=top_k))
         except Exception as exc:  # keep row-level pipeline failures inspectable
@@ -15771,6 +20289,18 @@ def run_eval_from_paths(
                     close_adapter()
                 raise
             raw_outputs.append(_pipeline_error_output(item, f"{type(exc).__name__}: {exc}"))
+    if llm_query_anchor_classifier:
+        raw_outputs = apply_llm_query_anchor_classifier_to_outputs(
+            raw_outputs,
+            backend=local_llm_composer_backend,
+            base_url=local_llm_composer_base_url,
+            model=local_llm_composer_model,
+            timeout_seconds=local_llm_composer_timeout_seconds,
+            skip_endpoint_check=skip_local_llm_composer_endpoint_check,
+            precomputed_query_evidence_planners=query_evidence_planners_by_item_id,
+        )
+    if xlsx_locator_tool_execute_once:
+        raw_outputs = preserve_xlsx_locator_source_contexts(raw_outputs)
     composer_applied = normalized_answer_composer in {
         SELECTED_EVIDENCE_COMPOSER_PROVIDER,
         SELECTED_EVIDENCE_LOCAL_LLM_COMPOSER_PROVIDER,
@@ -15792,6 +20322,25 @@ def run_eval_from_paths(
         raw_outputs,
         mode=normalized_evidence_gate_mode,
     )
+    xlsx_locator_run_record: XlsxLocatorRunRecord | None = None
+    xlsx_locator_before_rows: list[dict[str, Any]] | None = None
+    xlsx_locator_after_rows: list[dict[str, Any]] | None = None
+    if xlsx_locator_tool_execute_once:
+        xlsx_locator_before_rows = [dict(row) for row in raw_outputs]
+        raw_outputs, xlsx_locator_run_record = apply_xlsx_locator_tool_execute_once_to_outputs(
+            raw_outputs,
+            evidence_gate_mode=normalized_evidence_gate_mode,
+            citation_format=normalized_selected_evidence_citation_format,
+            composer_provider=normalized_answer_composer,
+            local_llm_backend=local_llm_composer_backend,
+            local_llm_base_url=local_llm_composer_base_url,
+            local_llm_model=local_llm_composer_model,
+            local_llm_timeout_seconds=local_llm_composer_timeout_seconds,
+            local_llm_max_tokens=local_llm_composer_max_tokens,
+            skip_local_llm_endpoint_check=skip_local_llm_composer_endpoint_check,
+        )
+        xlsx_locator_after_rows = [dict(row) for row in raw_outputs]
+        evidence_gate_summary = build_evidence_gate_summary(raw_outputs, mode=normalized_evidence_gate_mode)
     agentic_planner_execute_once_report: dict[str, Any] | None = None
     if normalized_agentic_planner_mode == "execute-once":
         raw_outputs, agentic_planner_execute_once_report = apply_agentic_planner_execute_once_to_outputs(
@@ -15800,6 +20349,7 @@ def run_eval_from_paths(
             top_k=top_k,
             evidence_gate_mode=normalized_evidence_gate_mode,
             citation_format=normalized_selected_evidence_citation_format,
+            composer_provider=normalized_answer_composer,
             local_llm_backend=local_llm_composer_backend,
             local_llm_base_url=local_llm_composer_base_url,
             local_llm_model=local_llm_composer_model,
@@ -15989,8 +20539,37 @@ def run_eval_from_paths(
         for row in composer_rows
         if isinstance(row.get("retry"), Mapping)
     ]
+    final_answer_discipline_rows = [
+        row.get("answer_discipline") if isinstance(row.get("answer_discipline"), Mapping) else {}
+        for row in composer_rows
+        if isinstance(row.get("answer_discipline"), Mapping)
+    ]
+    primary_answer_discipline_rows: list[Mapping[str, Any]] = []
+    for row in composer_rows:
+        initial = row.get("initial_answer_discipline") if isinstance(row.get("initial_answer_discipline"), Mapping) else {}
+        final = row.get("answer_discipline") if isinstance(row.get("answer_discipline"), Mapping) else {}
+        if initial:
+            primary_answer_discipline_rows.append(initial)
+        elif final:
+            primary_answer_discipline_rows.append(final)
     local_llm_status_counts = Counter(_clean(row.get("status")) or "unknown" for row in local_llm_rows)
     retry_status_counts = Counter(_clean(row.get("status")) or "unknown" for row in retry_rows)
+    answer_discipline_status_counts = Counter(
+        _clean(row.get("status")) or "unknown" for row in primary_answer_discipline_rows
+    )
+    final_answer_discipline_status_counts = Counter(
+        _clean(row.get("status")) or "unknown" for row in final_answer_discipline_rows
+    )
+    local_llm_fallback_reason_counts = Counter(
+        _clean(row.get("trigger"))
+        for row in retry_rows
+        if _clean(row.get("trigger")).startswith("answer_discipline_")
+    )
+    local_llm_fallback_reason_counts.update(
+        _clean(row.get("fallback_reason"))
+        for row in local_llm_rows
+        if _clean(row.get("fallback_reason")).startswith("answer_discipline_")
+    )
     local_llm_blockers = sorted(
         {
             _clean(blocker)
@@ -16000,6 +20579,30 @@ def run_eval_from_paths(
         }
     )
     local_llm_generated_count = local_llm_status_counts.get("generated", 0)
+    local_llm_answer_discipline_denominator = len(primary_answer_discipline_rows)
+    local_llm_accepted_clean_count = sum(
+        1
+        for composer in composer_rows
+        if _clean(
+            (composer.get("answer_discipline") if isinstance(composer.get("answer_discipline"), Mapping) else {}).get(
+                "status"
+            )
+        )
+        == "clean_supported"
+        and not bool(composer.get("local_llm_fallback_used"))
+        and _clean(
+            (composer.get("local_llm") if isinstance(composer.get("local_llm"), Mapping) else {}).get("status")
+        )
+        == "generated"
+    )
+    unsupported_extra_detail_count = answer_discipline_status_counts.get("supported_core_with_unsupported_extra", 0)
+    query_irrelevant_supported_detail_count = answer_discipline_status_counts.get(
+        "query_irrelevant_supported_detail", 0
+    )
+    local_llm_rejected_then_deterministic_overexpanded_count = max(
+        answer_discipline_status_counts.get("local_llm_rejected_then_deterministic_overexpanded", 0),
+        final_answer_discipline_status_counts.get("local_llm_rejected_then_deterministic_overexpanded", 0),
+    )
     local_llm_fallback_used = local_llm_requested and (
         any(bool(row.get("local_llm_fallback_used")) for row in composer_rows)
         or any(_clean(row.get("status")) != "generated" for row in local_llm_rows)
@@ -16052,6 +20655,34 @@ def run_eval_from_paths(
         "local_llm_composer_generated_count": int(local_llm_generated_count),
         "local_llm_status_counts": dict(local_llm_status_counts),
         "local_llm_blockers": local_llm_blockers,
+        "local_llm_acceptance_rate": (
+            None
+            if not local_llm_requested or local_llm_answer_discipline_denominator == 0
+            else round(local_llm_accepted_clean_count / local_llm_answer_discipline_denominator, 6)
+        ),
+        "local_llm_accepted_clean_count": int(local_llm_accepted_clean_count),
+        "local_llm_answer_discipline_status_counts": dict(answer_discipline_status_counts),
+        "local_llm_final_answer_discipline_status_counts": dict(final_answer_discipline_status_counts),
+        "local_llm_fallback_reason_counts": dict(local_llm_fallback_reason_counts),
+        "answer_overexpansion_count_diagnostic": int(
+            unsupported_extra_detail_count
+            + query_irrelevant_supported_detail_count
+            + local_llm_rejected_then_deterministic_overexpanded_count
+        ),
+        "unsupported_extra_detail_count": int(unsupported_extra_detail_count),
+        "query_irrelevant_supported_detail_count": int(query_irrelevant_supported_detail_count),
+        "local_llm_rejected_then_deterministic_overexpanded_count": int(
+            local_llm_rejected_then_deterministic_overexpanded_count
+        ),
+        "citation_id_mismatch_or_missing_count": int(
+            answer_discipline_status_counts.get("citation_id_mismatch_or_missing", 0)
+        ),
+        "anchor_morphology_false_negative_count": int(
+            answer_discipline_status_counts.get("anchor_morphology_false_negative", 0)
+        ),
+        "answer_discipline_input_policy": (
+            SELECTED_EVIDENCE_ANSWER_DISCIPLINE_INPUT_POLICY if local_llm_requested else ""
+        ),
         "local_llm_prompt_payload_written": False,
         "local_llm_raw_response_payload_written": False,
         "external_api_calls": False,
@@ -16246,6 +20877,7 @@ def run_eval_from_paths(
     )
 
     report_path = output / "report.json"
+    xlsx_locator_run_store_path = output / XLSX_LOCATOR_RUN_STORE_FILENAME
     reviewed_mapping_patch_path = (
         output / "reviewed_evidence_mapping_patch.json"
         if reviewed_mapping.get("enabled")
@@ -16256,15 +20888,23 @@ def run_eval_from_paths(
     legacy_markdown_path = output / "rag_eval_report.md"
     single_mode = normalized_output_mode in {"single", "both"}
     legacy_mode = normalized_output_mode in {"legacy", "both"}
+    runstore_mode = normalized_output_mode == "runstore"
     legacy_mapping_packet_requested = bool(write_evidence_mapping_packet and legacy_mode and not write_human_review_packet)
     human_packet_requested = bool(write_human_review_packet or (write_evidence_mapping_packet and not legacy_mapping_packet_requested))
     summary["artifact_paths"] = {
         "report_json": report_path.as_posix() if single_mode else "",
         "items_jsonl": legacy_items_path.as_posix() if legacy_mode else "",
-        "summary_json": report_path.as_posix() if single_mode else legacy_summary_path.as_posix(),
+        "summary_json": (
+            report_path.as_posix()
+            if single_mode
+            else legacy_summary_path.as_posix()
+            if legacy_mode
+            else ""
+        ),
         "markdown_report": legacy_markdown_path.as_posix() if legacy_mode else "",
         "legacy_real_rag_quality_gate_report_json": "",
         "legacy_real_rag_quality_gate_items_jsonl": "",
+        "xlsx_locator_run_sqlite": xlsx_locator_run_store_path.as_posix() if xlsx_locator_run_record is not None else "",
         "evidence_resolution_candidates_jsonl": (output / "evidence_resolution_candidates.jsonl").as_posix() if legacy_mode else "",
         "evidence_resolution_review_md": (output / "evidence_resolution_review.md").as_posix() if legacy_mode else "",
         "evidence_mapping_review_packet_csv": (output / "evidence_mapping_review_packet.csv").as_posix()
@@ -16449,6 +21089,11 @@ def run_eval_from_paths(
         )
     if agentic_planner_execute_once_report is not None:
         summary["agentic_planner_execute_once"] = agentic_planner_execute_once_report
+    if xlsx_locator_run_record is not None:
+        summary["xlsx_locator_tool_execute_once"] = project_xlsx_locator_run_record(
+            xlsx_locator_run_record,
+            run_store_path=xlsx_locator_run_store_path,
+        )
     summary["heuristic_risk_ledger"] = build_heuristic_risk_ledger(summary)
     summary["metric_continuity_checkpoint"] = build_metric_continuity_checkpoint(summary)
     summary["agentic_loop_review"] = build_agentic_loop_review(summary)
@@ -16475,6 +21120,29 @@ def run_eval_from_paths(
             artifact_contract["portfolio_experiment_sidecar_path"] = portfolio_experiment_summary_path.as_posix()
     validate_actual_rag_guardrails(summary)
     output.mkdir(parents=True, exist_ok=True)
+    if xlsx_locator_run_record is not None:
+        if xlsx_locator_before_rows is None or xlsx_locator_after_rows is None:
+            raise DatasetSchemaError("xlsx locator run record missing before/after rows")
+        index_config = summary.get("index_retrieval_config") if isinstance(summary.get("index_retrieval_config"), Mapping) else {}
+        run_store_collection = _clean(
+            summary.get("collection")
+            or summary.get("weaviate_collection_name")
+            or index_config.get("collection")
+            or index_config.get("retrieval_source")
+            or "unavailable"
+        )
+        XlsxLocatorRunStore(xlsx_locator_run_store_path).write_run_record(
+            run_id=run_id,
+            dataset_slug=dataset_slug_for_path(dataset),
+            collection=run_store_collection,
+            record=xlsx_locator_run_record,
+            before_rows=xlsx_locator_before_rows,
+            after_rows=xlsx_locator_after_rows,
+        )
+        locator_projection = summary.get("xlsx_locator_tool_execute_once")
+        if not isinstance(locator_projection, Mapping):
+            raise DatasetSchemaError("xlsx locator projection missing after RunStore write")
+        validate_xlsx_locator_run_store(run_id, locator_projection, run_store_path=xlsx_locator_run_store_path)
     if portfolio_experiment_summary_path is not None:
         comparison = summary.get("portfolio_experiment_comparison")
         if isinstance(comparison, Mapping):
@@ -16514,9 +21182,9 @@ def run_eval_from_paths(
     close_adapter = getattr(adapter, "close", None)
     if callable(close_adapter):
         close_adapter()
-    summary_path = report_path if single_mode else legacy_summary_path
-    items_path = report_path if single_mode else legacy_items_path
-    markdown_path = report_path if single_mode else legacy_markdown_path
+    summary_path = report_path if single_mode else legacy_summary_path if legacy_mode else xlsx_locator_run_store_path
+    items_path = report_path if single_mode else legacy_items_path if legacy_mode else xlsx_locator_run_store_path
+    markdown_path = report_path if single_mode else legacy_markdown_path if legacy_mode else xlsx_locator_run_store_path
     return RagEvalBundle(
         output_dir=output,
         items_path=items_path,
@@ -16936,7 +21604,7 @@ def build_parser() -> argparse.ArgumentParser:
         default="",
         help="Optional deterministic per-item RAG output/context JSONL for smoke tests or precomputed runs",
     )
-    parser.add_argument("--output-mode", default="single", choices=["single", "legacy", "both"])
+    parser.add_argument("--output-mode", default="single", choices=["single", "legacy", "both", "runstore"])
     parser.add_argument("--retrieval-backend", default="auto", choices=list(RAG_RETRIEVAL_BACKEND_CHOICES))
     parser.add_argument(
         "--retrieval-surface",
@@ -17068,6 +21736,19 @@ def build_parser() -> argparse.ArgumentParser:
             "Non-production planner checkpoint; dry-run records one proposed post-gate action per failed row "
             "without executing retrieval, tools, or LLM retry."
         ),
+    )
+    parser.add_argument(
+        "--xlsx-locator-tool-execute-once",
+        action="store_true",
+        help=(
+            "Explicit non-production XLSX locator checkpoint; executes one source-owned locator tool call per eligible "
+            "post-gate XLSX residual and writes typed diagnostics to run.sqlite."
+        ),
+    )
+    parser.add_argument(
+        "--llm-query-anchor-classifier",
+        action="store_true",
+        help="Optional non-production query-text-only local LLM classifier that can remove intent anchors only.",
     )
     parser.add_argument(
         "--answer-composer",
@@ -17267,6 +21948,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             quality_gate_baseline_path=args.quality_gate_baseline,
             evidence_gate_mode=args.evidence_gate_mode,
             agentic_planner_mode=args.agentic_planner_mode,
+            xlsx_locator_tool_execute_once=args.xlsx_locator_tool_execute_once,
+            llm_query_anchor_classifier=args.llm_query_anchor_classifier,
             answer_composer=args.answer_composer,
             selected_evidence_citation_format=args.selected_evidence_citation_format,
             selected_evidence_composer_retry_mode=args.selected_evidence_composer_retry_mode,
@@ -17295,9 +21978,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 "status": "completed",
                 "run_id": run_id,
                 "report_json": _artifact_path(bundle.summary, "report_json"),
-                "summary_json": bundle.summary_path.as_posix(),
+                "summary_json": _artifact_path(bundle.summary, "summary_json"),
                 "items_jsonl": _artifact_path(bundle.summary, "items_jsonl"),
                 "markdown_report": _artifact_path(bundle.summary, "markdown_report"),
+                "xlsx_locator_run_sqlite": _artifact_path(bundle.summary, "xlsx_locator_run_sqlite"),
                 "human_review_packet_csv": _artifact_path(bundle.summary, "human_review_packet_csv"),
                 "evidence_mapping_review_packet_csv": _artifact_path(bundle.summary, "evidence_mapping_review_packet_csv"),
                 "evidence_mapping_review_packet_jsonl": _artifact_path(bundle.summary, "evidence_mapping_review_packet_jsonl"),

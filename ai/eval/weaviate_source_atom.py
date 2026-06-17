@@ -72,6 +72,7 @@ WEAVIATE_SOURCE_ATOM_V2_EXTRA_PROPERTIES = (
     "header",
     "header_path",
     "table_id",
+    "display_value",
     "page_number",
     "physical_page_index",
     "block_index",
@@ -105,6 +106,7 @@ WEAVIATE_FILTERABLE_PROPERTIES = frozenset(
         "header",
         "header_path",
         "table_id",
+        "display_value",
         "page_number",
         "physical_page_index",
         "block_index",
@@ -299,6 +301,7 @@ WEAVIATE_SOURCE_OWNED_TEXT_TAG_FIELD_ALIASES: Mapping[str, tuple[str, ...]] = {
     "header": ("header",),
     "header_path": ("header_path", "column_header_path"),
     "table_id": ("table_id",),
+    "display_value": ("display_value",),
     "page_number": ("page_number", "page"),
     "physical_page_index": ("physical_page_index",),
     "block_index": ("block_index",),
@@ -1025,7 +1028,40 @@ def _route_plan(
     }
 
 
-def plan_weaviate_retrieval_route(query_text: str) -> dict[str, Any]:
+def _source_family_hint_route_plan(source_family_hint: str) -> dict[str, Any] | None:
+    hint = _clean(source_family_hint).lower()
+    if hint == "text":
+        return _route_plan(
+            selected_route="text_general",
+            source_families=["TEXT"],
+            granularities=["paragraph", "heading_context_block", "caption"],
+            reasons=["query_evidence_source_family_hint"],
+            confidence=0.9,
+        )
+    if hint == "pdf":
+        return _route_plan(
+            selected_route="pdf_paragraph",
+            source_families=["PDF"],
+            granularities=["paragraph", "heading_context_block", "page_block", "caption"],
+            reasons=["query_evidence_source_family_hint"],
+            confidence=0.9,
+        )
+    if hint == "xlsx":
+        return _route_plan(
+            selected_route="xlsx_table",
+            source_families=["XLSX"],
+            granularities=["table_summary", "table_row", "cell"],
+            reasons=["query_evidence_source_family_hint"],
+            confidence=0.9,
+        )
+    return None
+
+
+def plan_weaviate_retrieval_route(query_text: str, *, source_family_hint: str = "") -> dict[str, Any]:
+    hinted = _source_family_hint_route_plan(source_family_hint)
+    if hinted is not None:
+        hinted["source_family_hint"] = _clean(source_family_hint).lower()
+        return hinted
     query = _clean(query_text).casefold()
     if not query:
         return _route_plan(
@@ -1398,6 +1434,7 @@ def source_atom_record_from_mapping(row: Mapping[str, Any], config: WeaviateSour
             "header",
             "header_path",
             "table_id",
+            "display_value",
             "page_number",
             "physical_page_index",
             "block_index",
@@ -1582,6 +1619,7 @@ def _context_from_record(record: Mapping[str, Any], *, rank: int, score: float, 
         "header": _clean(record.get("header")),
         "header_path": _clean(record.get("header_path")),
         "table_id": _clean(record.get("table_id")),
+        "display_value": _clean(record.get("display_value")),
         "page_number": _clean(record.get("page_number")),
         "physical_page_index": _clean(record.get("physical_page_index")),
         "block_index": _clean(record.get("block_index")),
@@ -3014,9 +3052,9 @@ class WeaviateSourceAtomAdapter:
             "visibility": self.config_obj.visibility,
         }
 
-    def _lane_filter_plan(self, query: str) -> tuple[dict[str, Any], dict[str, Any]]:
+    def _lane_filter_plan(self, query: str, *, source_family_hint: str = "") -> tuple[dict[str, Any], dict[str, Any]]:
         plan = (
-            plan_weaviate_retrieval_route(query)
+            plan_weaviate_retrieval_route(query, source_family_hint=source_family_hint)
             if self.retrieval_route_mode == "route_selected"
             else _route_plan(
                 selected_route=self.retrieval_route_mode,
@@ -3085,6 +3123,19 @@ class WeaviateSourceAtomAdapter:
             "schema_index_v2_rebuild_required": route_filter_missing,
         }
         return filters, {**plan, "weaviate_filter_policy": policy}
+
+    @staticmethod
+    def _query_evidence_source_family_hint_for_query(query: str, planner: Mapping[str, Any]) -> str:
+        if not isinstance(planner, Mapping):
+            return ""
+        if _clean(planner.get("planner_status")) != "planned_validated":
+            return ""
+        clean_query = _clean(query)
+        expected_query_sha256 = f"sha256:{_sha256_text(clean_query)}" if clean_query else ""
+        if not expected_query_sha256 or _clean(planner.get("query_sha256")) != expected_query_sha256:
+            return ""
+        hint = _clean(planner.get("source_family_hint")).lower()
+        return hint if hint in {"text", "pdf", "xlsx"} else ""
 
     def _context_matches_filter(self, context: Mapping[str, Any], filters: Mapping[str, Any]) -> bool:
         for key in ("source_family", "granularity", "retrieval_route"):
@@ -4118,7 +4169,10 @@ class WeaviateSourceAtomAdapter:
         if not self._validated:
             self.validate_ready_for_run()
         query = _clean(getattr(item, "query", ""))
-        filters, route_plan = self._lane_filter_plan(query)
+        source_row = getattr(item, "source_row", {})
+        planner = source_row.get("query_evidence_planner") if isinstance(source_row, Mapping) else {}
+        source_family_hint = self._query_evidence_source_family_hint_for_query(query, planner)
+        filters, route_plan = self._lane_filter_plan(query, source_family_hint=source_family_hint)
         self._last_filter_policy = dict(route_plan.get("weaviate_filter_policy") or {})
         query_variant_plan = self._query_variant_plan(query)
         query_variant_count = int(query_variant_plan.get("query_variant_count") or 0)

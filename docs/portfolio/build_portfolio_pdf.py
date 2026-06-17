@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 import shutil
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Callable, Sequence
 
 from reportlab.lib.colors import HexColor
 from reportlab.pdfbase import pdfmetrics
@@ -24,6 +24,7 @@ OUT_DIR = ROOT / "docs" / "portfolio"
 PDF_PATH = OUT_DIR / "choi_byungchan_evidence_grounded_ai_document_qa_backend_portfolio.pdf"
 LEGACY_PDF_PATH = OUT_DIR / "choi_byungchan_ai_document_qa_backend_portfolio.pdf"
 VERSION_PDF_PATH = OUT_DIR / "choi_byungchan_ai_document_qa_backend_portfolio_result_first_v2.pdf"
+BACKEND_PLATFORM_PDF_PATH = OUT_DIR / "choi_byungchan_spring_fastapi_worker_ai_service_platform_backend_portfolio.pdf"
 PROJECT_TITLE = "근거 검증형 AI 백엔드"
 PROJECT_SUBTITLE = "LLM/RAG 문서 QA를 위한 검색·근거·응답 제어 시스템"
 PROJECT_LABEL = "AI 백엔드 엔지니어 포트폴리오 · 에이전트형 AI 시스템 기반"
@@ -31,6 +32,7 @@ PROJECT_SECTION = "AI 백엔드 엔지니어 포트폴리오"
 ACTIVE_TITLE = PROJECT_TITLE
 ACTIVE_SUBTITLE = PROJECT_SUBTITLE
 ACTIVE_LABEL = PROJECT_LABEL
+ACTIVE_COVER_TITLE: str | None = None
 TITLE_VARIANTS = [
     (
         OUT_DIR / "choi_byungchan_portfolio_evidence_grounded_document_qa_backend.pdf",
@@ -79,8 +81,10 @@ REPO_URL = "https://github.com/sfr9802/async-ai-document-pipeline-with-domain-ra
 EVAL_README_URL = "https://github.com/sfr9802/async-ai-document-pipeline-with-domain-rag/blob/main/ai/eval/README.md"
 EVAL_README_NOTE = "추가 질의 예시(PDF/XLSX/TEXT) 및 평가 관련 문서는 GitHub README에서 확인할 수 있습니다."
 TOTAL_PAGES = 10
+ACTIVE_TOTAL_PAGES = TOTAL_PAGES
 CARD_TEXT_X = 24
 CARD_RIGHT_PAD = 24
+Slide = Callable[[canvas.Canvas], None]
 
 
 def register_fonts() -> None:
@@ -176,7 +180,7 @@ def draw_footer(c: canvas.Canvas, page_num: int, section: str = "") -> None:
         c.setFont(FONT_REGULAR, 10)
         c.drawRightString(PAGE_W - MARGIN_X, PAGE_H - 25, section)
     c.setFont(FONT_REGULAR, 9)
-    c.drawRightString(PAGE_W - MARGIN_X, 13, f"{page_num:02d} / {TOTAL_PAGES:02d}")
+    c.drawRightString(PAGE_W - MARGIN_X, 13, f"{page_num:02d} / {ACTIVE_TOTAL_PAGES:02d}")
 
 
 def draw_page_title(
@@ -524,9 +528,20 @@ def cover(c: canvas.Canvas) -> None:
     draw_footer(c, 1, PROJECT_SECTION)
     c.setFillColor(ACCENT)
     c.rect(0, PAGE_H - 7, PAGE_W, 7, fill=1, stroke=0)
-    c.setFillColor(INK)
-    c.setFont(FONT_BOLD, 38)
-    c.drawString(MARGIN_X, 368, ACTIVE_TITLE)
+    headline = ACTIVE_COVER_TITLE or ACTIVE_TITLE
+    headline_size = 31 if len(headline) > 24 else 38
+    draw_wrapped(
+        c,
+        headline,
+        MARGIN_X,
+        368,
+        840,
+        font=FONT_BOLD,
+        size=headline_size,
+        leading=headline_size + 7,
+        color=INK,
+        max_lines=2,
+    )
     c.setFillColor(TEAL)
     c.setFont(FONT_BOLD, 16)
     draw_wrapped(c, ACTIVE_SUBTITLE, MARGIN_X, 322, 820, font=FONT_BOLD, size=16, leading=22, color=TEAL)
@@ -686,10 +701,10 @@ def document_example_page(
     draw_eval_readme_note(c, y=50)
 
 
-def xlsx_example(c: canvas.Canvas) -> None:
+def xlsx_example(c: canvas.Canvas, *, page_num: int = 2) -> None:
     document_example_page(
         c,
-        page_num=2,
+        page_num=page_num,
         title="XLSX 셀 단위 근거 추적 예시",
         source_family="XLSX",
         query="2019년 2월 5호선의 승차총승객수는 몇 명입니까?",
@@ -718,10 +733,10 @@ def xlsx_example(c: canvas.Canvas) -> None:
     )
 
 
-def pdf_example(c: canvas.Canvas) -> None:
+def pdf_example(c: canvas.Canvas, *, page_num: int = 3) -> None:
     document_example_page(
         c,
-        page_num=3,
+        page_num=page_num,
         title="PDF 표 근거 인용 예시",
         source_family="PDF",
         query="2020년 한국 원달러 기말 환율은 얼마인가요?",
@@ -750,10 +765,10 @@ def pdf_example(c: canvas.Canvas) -> None:
     )
 
 
-def text_example(c: canvas.Canvas) -> None:
+def text_example(c: canvas.Canvas, *, page_num: int = 4) -> None:
     document_example_page(
         c,
-        page_num=4,
+        page_num=page_num,
         title="TEXT 문서 근거 인용 예시",
         source_family="TEXT",
         query="유우야키의 나이와 생일은 어떻게 적혀 있어",
@@ -782,10 +797,10 @@ def text_example(c: canvas.Canvas) -> None:
     )
 
 
-def actual_response_smoke(c: canvas.Canvas) -> None:
+def actual_response_smoke(c: canvas.Canvas, *, page_num: int = 8) -> None:
     y = draw_page_title(
         c,
-        8,
+        page_num,
         "응답/중단 정책 검증",
         section="응답 정책",
         subtitle="29개 검증 질의에서 답변/중단 정책과 인용 검증(citation verification)을 확인했습니다.",
@@ -845,9 +860,14 @@ def actual_response_smoke(c: canvas.Canvas) -> None:
     )
 
 
-def system_structure(c: canvas.Canvas) -> None:
-    y = draw_page_title(c, 6, "비동기 문서 처리 구조", section="구조")
-    intro = "요청 · 작업 · 워커 · 검색 · 근거 · 결과 추적"
+def system_structure(
+    c: canvas.Canvas,
+    *,
+    page_num: int = 6,
+    title: str = "비동기 문서 처리 구조",
+    intro: str = "요청 · 작업 · 워커 · 검색 · 근거 · 결과 추적",
+) -> None:
+    y = draw_page_title(c, page_num, title, section="구조")
     draw_wrapped(c, intro, MARGIN_X, y + 4, 840, size=15, leading=22, color=MUTED)
     flow_y = y - 52
     flow = [
@@ -927,10 +947,146 @@ def system_structure(c: canvas.Canvas) -> None:
     )
 
 
-def evidence_split(c: canvas.Canvas) -> None:
+def backend_system_structure(c: canvas.Canvas) -> None:
+    system_structure(
+        c,
+        page_num=2,
+        title="Spring Boot API + FastAPI Worker 구조",
+        intro="Spring Boot API가 REST 요청, Job/RDB 상태, artifact 계약을 소유하고 FastAPI Worker가 문서 파싱·검색·응답 작업을 수행합니다.",
+    )
+
+
+def rest_api_endpoints(c: canvas.Canvas) -> None:
     y = draw_page_title(
         c,
-        7,
+        3,
+        "REST API 엔드포인트 예시",
+        section="REST API",
+        subtitle="외부 Client API, 내부 Worker API, FastAPI 진단/preview route를 분리했습니다.",
+    )
+    draw_table(
+        c,
+        MARGIN_X,
+        y - 10,
+        [118, 238, 484],
+        [
+            ["경계", "Endpoint", "역할"],
+            ["Client", "POST /api/v1/jobs", "JSON text job 또는 multipart file job 생성, 202 Accepted 반환"],
+            ["Client", "GET /api/v1/jobs/{jobId}", "PENDING/QUEUED/RUNNING/SUCCEEDED/FAILED 상태 조회"],
+            ["Client", "GET /api/v1/jobs/{jobId}/result", "Job 결과와 OUTPUT artifact 목록 조회"],
+            ["Artifact", "GET /api/v1/artifacts/{id}/content", "저장된 artifact stream 다운로드"],
+            ["Worker", "POST /api/internal/jobs/claim", "claim_token lease로 QUEUED -> RUNNING 전환"],
+            ["Worker", "POST /api/internal/artifacts", "결과 bytes 업로드, DB row는 callback에서 확정"],
+            ["Worker", "POST /api/internal/jobs/callback", "SUCCEEDED/FAILED 및 output artifact refs 반영"],
+        ],
+        font_size=9.4,
+        header_size=10.5,
+        leading=12.4,
+        pad_y=6,
+    )
+
+    bottom_y = 166
+    draw_code_panel(
+        c,
+        MARGIN_X,
+        bottom_y,
+        410,
+        104,
+        "Client request",
+        [
+            "POST /api/v1/jobs",
+            "{",
+            '  "capability": "RAG",',
+            '  "text": "문서 질문 또는 프롬프트"',
+            "}",
+            "-> 202 Accepted: jobId + inputArtifacts",
+        ],
+        font_size=8.8,
+        leading=11.3,
+        accent=GREEN,
+    )
+    draw_code_panel(
+        c,
+        MARGIN_X + 432,
+        bottom_y,
+        408,
+        104,
+        "Worker / FastAPI routes",
+        [
+            "POST /internal/tasks/ocr-extract",
+            "POST /api/rag/query",
+            "POST /internal/rag/diagnostic/query",
+            "GET  /internal/rag/diagnostic/readiness",
+            "diagnostic/preview routes are default-gated",
+        ],
+        font_size=8.8,
+        leading=11.3,
+        accent=TEAL,
+    )
+
+
+def rdb_state_management(c: canvas.Canvas) -> None:
+    y = draw_page_title(
+        c,
+        4,
+        "RDB 상태 관리와 테이블 구조",
+        section="RDB",
+        subtitle="PostgreSQL/Flyway/JPA 기준으로 Job 상태를 source of truth로 두고 Redis는 dispatch signal로 제한했습니다.",
+    )
+
+    flow_y = y - 22
+    flow = [
+        ("job", 94),
+        ("artifact", 104),
+        ("document_version", 148),
+        ("parsed_artifact", 140),
+        ("search_unit", 118),
+        ("citation/index", 128),
+    ]
+    x = MARGIN_X
+    for idx, (label, w) in enumerate(flow):
+        draw_flow_box(c, x, flow_y, w, 38, label, fill=WHITE, title_size=8.7)
+        if idx < len(flow) - 1:
+            draw_arrow(c, x + w + 2, flow_y - 19, x + w + 17, flow_y - 19, color=ACCENT)
+        x += w + 19
+
+    draw_table(
+        c,
+        MARGIN_X,
+        flow_y - 58,
+        [152, 290, 398],
+        [
+            ["테이블", "핵심 컬럼", "운영 의미"],
+            ["job", "status, attempt_no, claim_token, claim_expires_at, last_callback_id", "PENDING -> QUEUED -> RUNNING -> SUCCEEDED/FAILED 상태 기준점"],
+            ["artifact", "job_id, role, type, storage_uri, checksum", "INPUT/OUTPUT bytes는 storage_uri로 참조하고 Job callback에서 확정"],
+            ["document / document_version", "latest_version_id, parse_status, acl_tags, storage_uri, checksum", "문서 원본과 버전, parser provenance의 기준"],
+            ["parsed_artifact", "parser_name, parser_version, artifact_json, warnings_json", "PDF/XLSX/TEXT 파싱 결과와 품질/경고 기록"],
+            ["search_unit", "location_json, embedding_text, bm25_text, citation_text, index_version", "검색 후보와 citation 표면을 분리해 인덱싱"],
+            ["table/cell/pdf metadata", "header_path, cell_address, page_no, ocr_used", "XLSX 셀/표와 PDF page citation 단위 보존"],
+            ["embedding_record / index_build / citation", "embedding_model, vector_id, is_active, location_json", "인덱스 버전, promotion/rollback, citation 위치 추적"],
+        ],
+        font_size=8.8,
+        header_size=10.3,
+        leading=11.5,
+        pad_y=5.4,
+    )
+    draw_wrapped(
+        c,
+        "상태 전이와 callback idempotency는 Spring Boot application service에서 검증하고, Worker는 claim 후 artifact를 업로드한 뒤 callback으로 결과를 반영합니다.",
+        MARGIN_X,
+        60,
+        840,
+        font=FONT_BOLD,
+        size=10.6,
+        leading=15,
+        color=TEAL,
+    )
+
+
+def evidence_split(c: canvas.Canvas, *, page_num: int = 7) -> None:
+    y = draw_page_title(
+        c,
+        page_num,
         "검색 후보·원문 근거·응답 제어 분리",
         section="문제 및 해결방안",
         subtitle="SearchView 후보와 SourceAtom/EvidenceBundle 근거 분리",
@@ -1039,10 +1195,10 @@ def trace_layer(c: canvas.Canvas) -> None:
     )
 
 
-def verified_scope(c: canvas.Canvas) -> None:
+def verified_scope(c: canvas.Canvas, *, page_num: int = 5) -> None:
     y = draw_page_title(
         c,
-        5,
+        page_num,
         "검색 방식 비교 및 후보 가용성 진단",
         section="검색",
         subtitle="문서 유형별 검색 후보 300개에 대한 후보 반환 가능성 진단",
@@ -1115,10 +1271,10 @@ def verified_scope(c: canvas.Canvas) -> None:
     )
 
 
-def retrieval_design_notes(c: canvas.Canvas) -> None:
+def retrieval_design_notes(c: canvas.Canvas, *, page_num: int = 9) -> None:
     y = draw_page_title(
         c,
-        9,
+        page_num,
         "설계 선택과 경계 관리",
         section="설계 선택",
         subtitle="AI 백엔드/에이전트형 시스템 관점에서 후보, 근거, 응답 정책, trace sidecar를 분리했습니다.",
@@ -1196,8 +1352,8 @@ def retrieval_design_notes(c: canvas.Canvas) -> None:
     )
 
 
-def closing(c: canvas.Canvas) -> None:
-    y = draw_page_title(c, 10, "배운 점과 한계", section="회고")
+def closing(c: canvas.Canvas, *, page_num: int = 10) -> None:
+    y = draw_page_title(c, page_num, "배운 점과 한계", section="회고")
     intro = "프로젝트를 진행하며 배운 점"
     draw_wrapped(c, intro, MARGIN_X, y + 4, 840, size=15, leading=22, color=MUTED)
 
@@ -1287,6 +1443,21 @@ SLIDES = [
     closing,
 ]
 
+BACKEND_PLATFORM_SLIDES: Sequence[Slide] = [
+    cover,
+    backend_system_structure,
+    rest_api_endpoints,
+    rdb_state_management,
+    lambda c: xlsx_example(c, page_num=5),
+    lambda c: pdf_example(c, page_num=6),
+    lambda c: text_example(c, page_num=7),
+    lambda c: verified_scope(c, page_num=8),
+    lambda c: evidence_split(c, page_num=9),
+    lambda c: actual_response_smoke(c, page_num=10),
+    lambda c: retrieval_design_notes(c, page_num=11),
+    lambda c: closing(c, page_num=12),
+]
+
 
 def build_pdf(
     path: Path = PDF_PATH,
@@ -1294,23 +1465,31 @@ def build_pdf(
     title: str | None = None,
     subtitle: str | None = None,
     label: str | None = None,
+    cover_title: str | None = None,
+    slides: Sequence[Slide] | None = None,
+    total_pages: int | None = None,
 ) -> Path:
-    global ACTIVE_LABEL, ACTIVE_SUBTITLE, ACTIVE_TITLE
+    global ACTIVE_COVER_TITLE, ACTIVE_LABEL, ACTIVE_SUBTITLE, ACTIVE_TITLE, ACTIVE_TOTAL_PAGES
 
     register_fonts()
+    slides_to_render = tuple(slides or SLIDES)
     previous_title = ACTIVE_TITLE
     previous_subtitle = ACTIVE_SUBTITLE
     previous_label = ACTIVE_LABEL
+    previous_cover_title = ACTIVE_COVER_TITLE
+    previous_total_pages = ACTIVE_TOTAL_PAGES
     ACTIVE_TITLE = title or PROJECT_TITLE
     ACTIVE_SUBTITLE = subtitle or PROJECT_SUBTITLE
     ACTIVE_LABEL = label or PROJECT_LABEL
+    ACTIVE_COVER_TITLE = cover_title
+    ACTIVE_TOTAL_PAGES = total_pages or len(slides_to_render)
     path.parent.mkdir(parents=True, exist_ok=True)
     c = canvas.Canvas(str(path), pagesize=(PAGE_W, PAGE_H), pageCompression=1)
     c.setTitle(ACTIVE_TITLE)
     c.setAuthor("Choi Byungchan")
     c.setSubject(ACTIVE_LABEL)
     try:
-        for slide in SLIDES:
+        for slide in slides_to_render:
             slide(c)
             c.showPage()
         c.save()
@@ -1318,7 +1497,20 @@ def build_pdf(
         ACTIVE_TITLE = previous_title
         ACTIVE_SUBTITLE = previous_subtitle
         ACTIVE_LABEL = previous_label
+        ACTIVE_COVER_TITLE = previous_cover_title
+        ACTIVE_TOTAL_PAGES = previous_total_pages
     return path
+
+
+def build_backend_platform_pdf(path: Path = BACKEND_PLATFORM_PDF_PATH) -> Path:
+    return build_pdf(
+        path,
+        title="AI 서비스 플랫폼 백엔드",
+        subtitle="REST API와 RDB 상태 관리를 포함한 문서 RAG / AI Worker 백엔드",
+        label="백엔드 겸용 포트폴리오 · REST API · RDB 상태 관리 · AI Worker",
+        cover_title="Spring Boot API + FastAPI Worker 기반 AI 서비스 플랫폼",
+        slides=BACKEND_PLATFORM_SLIDES,
+    )
 
 
 if __name__ == "__main__":
@@ -1334,8 +1526,10 @@ if __name__ == "__main__":
         variant_paths.append(
             build_pdf(variant_path, title=title, subtitle=subtitle, label=label)
         )
+    backend_platform = build_backend_platform_pdf()
     print(built)
     print(LEGACY_PDF_PATH)
     print(VERSION_PDF_PATH)
     for variant_path in variant_paths:
         print(variant_path)
+    print(backend_platform)

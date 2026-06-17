@@ -1140,6 +1140,10 @@ def test_portfolio_pdf_copy_tracks_opaque_agentops_trace_contract() -> None:
     assert "응답/중단 정책 검증" in source
     assert "정답률이나 answer quality score가 아니라 response policy smoke" in source
     assert "XLSX 전체 성공률 claim 없음" in source
+    assert "choi_byungchan_spring_fastapi_worker_ai_service_platform_backend_portfolio.pdf" in source
+    assert "Spring Boot API + FastAPI Worker 기반 AI 서비스 플랫폼" in source
+    assert "REST API 엔드포인트 예시" in source
+    assert "RDB 상태 관리와 테이블 구조" in source
 
 
 def test_portfolio_and_resume_pdf_builders_render_artifact_text_contract(tmp_path: Path) -> None:
@@ -1147,16 +1151,21 @@ def test_portfolio_and_resume_pdf_builders_render_artifact_text_contract(tmp_pat
     from docs.portfolio import build_portfolio_pdf, build_resume_pdf
 
     portfolio_path = build_portfolio_pdf.build_pdf(tmp_path / "portfolio.pdf")
+    backend_platform_path = build_portfolio_pdf.build_backend_platform_pdf(tmp_path / "backend-platform.pdf")
     resume_path = build_resume_pdf.build_pdf(tmp_path / "resume.pdf")
 
     portfolio_doc = fitz.open(portfolio_path)
+    backend_platform_doc = fitz.open(backend_platform_path)
     resume_doc = fitz.open(resume_path)
     portfolio_page_texts = [page.get_text() for page in portfolio_doc]
+    backend_platform_page_texts = [page.get_text() for page in backend_platform_doc]
     portfolio_text = "\n".join(portfolio_page_texts)
+    backend_platform_text = "\n".join(backend_platform_page_texts)
     resume_text = "\n".join(page.get_text() for page in resume_doc)
-    combined_text = f"{portfolio_text}\n{resume_text}"
+    combined_text = f"{portfolio_text}\n{backend_platform_text}\n{resume_text}"
 
     assert portfolio_doc.page_count == 10
+    assert backend_platform_doc.page_count == 12
     assert resume_doc.page_count == 2
     assert "근거 검증형 AI 백엔드" in portfolio_text
     assert "LLM/RAG 문서 QA를 위한 검색·근거·응답 제어 시스템" in portfolio_text
@@ -1189,6 +1198,16 @@ def test_portfolio_and_resume_pdf_builders_render_artifact_text_contract(tmp_pat
     assert "PDF/XLSX는 일반 텍스트 검색과 다르다" in portfolio_page_texts[9]
     assert "근거 부족 시 답변 중단 정책이 중요하다" in portfolio_page_texts[9]
     assert "이번 프로젝트에서는 검색 후보, 근거 검증, 응답 중단 정책을 분리해 설계하는 과정의 중요성을 체감했습니다." in portfolio_page_texts[9]
+    assert "Spring Boot API + FastAPI Worker 기반 AI 서비스 플랫폼" in backend_platform_page_texts[0]
+    assert "Spring Boot API + FastAPI Worker 구조" in backend_platform_page_texts[1]
+    assert "REST API 엔드포인트 예시" in backend_platform_page_texts[2]
+    assert "POST /api/v1/jobs" in backend_platform_page_texts[2]
+    assert "POST /api/internal/jobs/claim" in backend_platform_page_texts[2]
+    assert "RDB 상태 관리와 테이블 구조" in backend_platform_page_texts[3]
+    assert "PENDING -> QUEUED -> RUNNING -> SUCCEEDED/FAILED" in backend_platform_page_texts[3]
+    assert "XLSX 셀 단위 근거 추적 예시" in backend_platform_page_texts[4]
+    assert "PDF 표 근거 인용 예시" in backend_platform_page_texts[5]
+    assert "TEXT 문서 근거 인용 예시" in backend_platform_page_texts[6]
     assert "AI 백엔드 엔지니어" in resume_text
     assert "AI Backend Engineer · Evidence-Grounded RAG · Agent Systems" in resume_text
     assert "Trace/Guard는 플랫폼 과장 대신 redacted ref 중심 sidecar" in resume_text
