@@ -11729,6 +11729,97 @@ def test_selected_evidence_composer_markdown_portfolio_format_is_reader_facing()
     assert summary["citation_retrieved_context_only_diagnostic_count"] == 0
 
 
+def test_selected_evidence_sentence_keeps_question_facet_out_of_broad_profile() -> None:
+    selected = [
+        {
+            "doc_id": "doc-yuyaki",
+            "chunk_id": "chunk-yuyaki",
+            "source_atom_id": "src-yuyaki",
+            "evidence_bundle_id": "bundle-yuyaki",
+            "source_family": "TEXT",
+            "text": (
+                "夕焼(ユウヤキ) 나이 16세 생일 9월 29일 신장 164cm "
+                "가슴사이즈 F컵 쓰리사이즈 B90-W57-H90 혈액형 O형 "
+                "사용 손 양손 무기 및 전투 스타일 태도 두 자루/참격 좋아하는 음식 발효식품"
+            ),
+        }
+    ]
+
+    answer = actual_rag_eval._selected_evidence_sentence("유우야키의 나이와 생일은 어떻게 적혀 있어", selected)
+
+    assert "나이 16세" in answer
+    assert "생일 9월 29일" in answer
+    assert "신장" not in answer
+    assert "혈액형" not in answer
+    assert "무기" not in answer
+
+
+def test_selected_evidence_sentence_omits_interleaved_profile_facets() -> None:
+    selected = [
+        {
+            "doc_id": "doc-mika",
+            "chunk_id": "chunk-profile",
+            "source_atom_id": "src-mika",
+            "evidence_bundle_id": "bundle-mika",
+            "source_family": "TEXT",
+            "text": "Mika profile: age 17. Height 160cm. Birthday May 8. Blood type B. Weapon rifle.",
+        }
+    ]
+
+    answer = actual_rag_eval._selected_evidence_sentence("What are Mika's age and birthday?", selected)
+
+    assert "age 17" in answer
+    assert "Birthday May 8" in answer
+    assert "Height" not in answer
+    assert "Blood type" not in answer
+    assert "Weapon" not in answer
+
+
+def test_selected_evidence_sentence_does_not_match_profile_facet_substrings() -> None:
+    selected = [
+        {
+            "doc_id": "doc-keyword",
+            "chunk_id": "chunk-keyword",
+            "source_atom_id": "src-keyword",
+            "evidence_bundle_id": "bundle-keyword",
+            "source_family": "TEXT",
+            "text": "문서 키워드는 나침반이다. 실제 답은 서울 본부이다.",
+        }
+    ]
+
+    answer = actual_rag_eval._selected_evidence_sentence("본부는 어디야?", selected)
+
+    assert "서울 본부" in answer
+    assert answer != "키워드는 나침반이다."
+
+
+def test_selected_evidence_sentence_prefers_profile_context_with_query_entity() -> None:
+    selected = [
+        {
+            "doc_id": "doc-wrong",
+            "chunk_id": "chunk-wrong",
+            "source_atom_id": "src-wrong",
+            "evidence_bundle_id": "bundle-wrong",
+            "source_family": "TEXT",
+            "text": "시로의 나이와 생일은 공식적으로 밝혀지지 않았다.",
+        },
+        {
+            "doc_id": "doc-yuyaki",
+            "chunk_id": "chunk-yuyaki",
+            "source_atom_id": "src-yuyaki",
+            "evidence_bundle_id": "bundle-yuyaki",
+            "source_family": "TEXT",
+            "text": "夕焼(ユウヤキ) 나이 16세 생일 9월 29일 신장 164cm 유우야키 항목 참조.",
+        },
+    ]
+
+    answer = actual_rag_eval._selected_evidence_sentence("유우야키의 나이와 생일은 어떻게 적혀 있어", selected)
+
+    assert "나이 16세" in answer
+    assert "생일 9월 29일" in answer
+    assert "신장" not in answer
+
+
 def test_run_eval_selected_evidence_composer_is_explicit_and_report_only(tmp_path: Path) -> None:
     dataset = tmp_path / "selected_composer_gold.jsonl"
     context = tmp_path / "selected_composer_context.jsonl"
@@ -12735,7 +12826,7 @@ def test_selected_evidence_local_llm_concise_answer_not_replaced_by_overexpanded
     assert report["generator_config"]["local_llm_rejected_then_deterministic_overexpanded_count"] == 0
 
 
-def test_selected_evidence_local_llm_clean_rejected_output_audits_overexpanded_fallback(
+def test_selected_evidence_local_llm_clean_rejected_output_uses_focused_fallback(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     dataset = tmp_path / "selected_local_llm_clean_rejected_gold.jsonl"
@@ -12745,7 +12836,21 @@ def test_selected_evidence_local_llm_clean_rejected_output_audits_overexpanded_f
         "Mika profile: age 17. Birthday May 8. Height 160cm. Blood type B. "
         "Weapon rifle. Favorite food curry."
     )
-    write_jsonl(dataset, [{"id": "q-clean-rejected", "query": "What are Mika's age and birthday?", "answerability": "answerable"}])
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "q-clean-rejected",
+                "query": "What are Mika's age and birthday?",
+                "answerability": "answerable",
+                "expected_answer": "SECRET_GOLD_ANSWER_NEVER_GENERATE",
+                "expected_evidence": [{"text": "SECRET_GOLD_EVIDENCE_NEVER_GENERATE"}],
+                "qrels": {"SECRET_QREL_DOC_NEVER_GENERATE": 1},
+                "labels": ["SECRET_LABEL_NEVER_GENERATE"],
+            }
+        ],
+    )
+    prompts: list[str] = []
     write_jsonl(
         context,
         [
@@ -12770,11 +12875,13 @@ def test_selected_evidence_local_llm_clean_rejected_output_audits_overexpanded_f
     def fake_blockers(**_kwargs: object) -> list[str]:
         return []
 
-    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+    def fake_call(**kwargs: object) -> tuple[dict, dict]:
+        prompts.append(str(kwargs.get("prompt")))
         return (
             {"answer": "Mika is 17 and her birthday is May 8.", "citation_evidence_ids": ["bundle-mika"]},
             {
                 "raw_response_sha256": "sha256:clean-rejected",
+                "raw_prompt_payload": {"secret": "SECRET_CLEAN_REJECTED_PROMPT"},
                 "raw_response": "SECRET_CLEAN_REJECTED_RAW_RESPONSE",
             },
         )
@@ -12808,15 +12915,44 @@ def test_selected_evidence_local_llm_clean_rejected_output_audits_overexpanded_f
     config = report["generator_config"]
     assert composer["local_llm"]["status"] == "unsupported_or_empty_deterministic_fallback"
     assert composer["initial_answer_discipline"]["status"] == "clean_supported"
-    assert composer["answer_discipline"]["status"] == "local_llm_rejected_then_deterministic_overexpanded"
-    assert "height" in composer["answer_discipline"]["query_irrelevant_preview"].lower()
-    assert config["local_llm_rejected_then_deterministic_overexpanded_count"] == 1
-    assert config["answer_overexpansion_count_diagnostic"] == 1
-    assert config["local_llm_final_answer_discipline_status_counts"] == {
-        "local_llm_rejected_then_deterministic_overexpanded": 1
-    }
+    assert composer["answer_discipline"]["status"] == "clean_supported"
+    assert "age 17" in row["generated_answer"]
+    assert "Birthday May 8" in row["generated_answer"]
+    assert "height" not in row["generated_answer"].lower()
+    assert "blood type" not in row["generated_answer"].lower()
+    assert config["local_llm_rejected_then_deterministic_overexpanded_count"] == 0
+    assert config["query_irrelevant_supported_detail_count"] == 0
+    assert config["answer_overexpansion_count_diagnostic"] == 0
+    assert config["local_llm_clean_answer_output_rejected_count"] == 1
+    assert config["local_llm_final_answer_discipline_status_counts"] == {"clean_supported": 1}
+    assert config["expected_answer_used_for_generation"] is False
+    assert config["expected_evidence_used_for_generation"] is False
+    assert config["local_llm_prompt_payload_written"] is False
+    assert config["local_llm_raw_response_payload_written"] is False
+    assert composer["uses_expected_answer"] is False
+    assert composer["uses_expected_evidence"] is False
+    assert composer["uses_gold_fields"] is False
+    assert composer["uses_qrels"] is False
+    assert composer["uses_labels"] is False
+    assert report["raw_prompt_payload_written"] is False
+    assert report["raw_response_payload_written"] is False
+    prompt_text = "\n".join(prompts)
+    assert "SECRET_GOLD_ANSWER_NEVER_GENERATE" not in prompt_text
+    assert "SECRET_GOLD_EVIDENCE_NEVER_GENERATE" not in prompt_text
+    assert "SECRET_QREL_DOC_NEVER_GENERATE" not in prompt_text
+    assert "SECRET_LABEL_NEVER_GENERATE" not in prompt_text
+    generated_and_composer = json.dumps(
+        {"generated_answer": row["generated_answer"], "answer_composer": composer},
+        ensure_ascii=False,
+    )
+    assert "SECRET_GOLD_ANSWER_NEVER_GENERATE" not in generated_and_composer
+    assert "SECRET_GOLD_EVIDENCE_NEVER_GENERATE" not in generated_and_composer
+    assert "SECRET_QREL_DOC_NEVER_GENERATE" not in generated_and_composer
+    assert "SECRET_LABEL_NEVER_GENERATE" not in generated_and_composer
     encoded_report = json.dumps(report, ensure_ascii=False)
+    assert "SECRET_CLEAN_REJECTED_PROMPT" not in encoded_report
     assert "SECRET_CLEAN_REJECTED_RAW_RESPONSE" not in encoded_report
+    assert '"raw_prompt_payload":' not in encoded_report
     assert '"raw_response":' not in encoded_report
 
 
@@ -14353,6 +14489,193 @@ def test_evidence_resolution_artifacts_summary_registry_status_and_markdown(tmp_
     assert registry_row["evidence_resolution"]["expected_evidence_id_resolved_candidate_count"] == 1
     assert latest["evidence_resolution"]["expected_evidence_id_resolved_candidate_count"] == 1
     assert status["evidence_id_resolved_candidate_count"] == 1
+
+
+def test_report_separates_selected_evidence_supported_and_gold_correct_citations(tmp_path: Path) -> None:
+    dataset = tmp_path / "citation_terms_gold.jsonl"
+    context = tmp_path / "citation_terms_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "citation_terms"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "q-citation-terms",
+                "query": "Where is Apollo HQ?",
+                "answerability": "answerable",
+                "expected_answer": "Seoul",
+                "expected_evidence": [{"text": "Apollo headquarters is in Seoul.", "required": True}],
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-citation-terms",
+                "generated_answer": "Apollo HQ is in Seoul.",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-selected",
+                        "chunk_id": "chunk-selected",
+                        "source_atom_id": "src-selected",
+                        "evidence_bundle_id": "bundle-selected",
+                        "text": "Apollo HQ is in Seoul.",
+                    }
+                ],
+                "citations": [
+                    {
+                        "doc_id": "doc-selected",
+                        "chunk_id": "chunk-selected",
+                        "source_atom_id": "src-selected",
+                        "evidence_bundle_id": "bundle-selected",
+                        "text": "Apollo HQ is in Seoul.",
+                    }
+                ],
+            }
+        ],
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="citation_terms",
+        output_mode="single",
+        evidence_gate_mode="diagnostic",
+        resolve_expected_evidence=False,
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    gate = report["evidence_gate"]
+    diagnostics = report["diagnostic_metrics"]
+    assert gate["citation_supported_count"] == 1
+    assert gate["citation_selected_evidence_supported_count"] == 1
+    assert gate["citation_supported_definition"] == "citation_target_selected_and_text_supported_by_selected_evidence"
+    assert diagnostics["citation_gold_correct_checked_count_diagnostic"] == 1
+    assert diagnostics["citation_gold_correct_pass_count_diagnostic"] == 0
+    assert diagnostics["citation_gold_correct_rate_diagnostic"] == 0.0
+    assert diagnostics["citation_gold_correct_definition"] == (
+        "citation_matches_expected_evidence_when_gold_fields_available_diagnostic_only"
+    )
+
+
+def test_citation_gold_correct_diagnostic_passes_when_expected_evidence_matches(tmp_path: Path) -> None:
+    dataset = tmp_path / "citation_gold_correct_pass_gold.jsonl"
+    context = tmp_path / "citation_gold_correct_pass_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "citation_gold_correct_pass"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "q-citation-pass",
+                "query": "Where is Apollo HQ?",
+                "answerability": "answerable",
+                "expected_answer": "Seoul",
+                "expected_evidence": [{"text": "Apollo HQ is in Seoul.", "required": True}],
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-citation-pass",
+                "generated_answer": "Apollo HQ is in Seoul.",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-selected",
+                        "chunk_id": "chunk-selected",
+                        "source_atom_id": "src-selected",
+                        "evidence_bundle_id": "bundle-selected",
+                        "text": "Apollo HQ is in Seoul.",
+                    }
+                ],
+                "citations": [
+                    {
+                        "doc_id": "doc-selected",
+                        "chunk_id": "chunk-selected",
+                        "source_atom_id": "src-selected",
+                        "evidence_bundle_id": "bundle-selected",
+                        "text": "Apollo HQ is in Seoul.",
+                    }
+                ],
+            }
+        ],
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="citation_gold_correct_pass",
+        output_mode="single",
+        evidence_gate_mode="diagnostic",
+        resolve_expected_evidence=False,
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    diagnostics = report["diagnostic_metrics"]
+    assert report["evidence_gate"]["citation_selected_evidence_supported_count"] == 1
+    assert diagnostics["citation_gold_correct_checked_count_diagnostic"] == 1
+    assert diagnostics["citation_gold_correct_pass_count_diagnostic"] == 1
+    assert diagnostics["citation_gold_correct_rate_diagnostic"] == 1.0
+
+
+def test_citation_gold_correct_diagnostic_rate_is_none_without_gold_fields(tmp_path: Path) -> None:
+    dataset = tmp_path / "citation_no_gold.jsonl"
+    context = tmp_path / "citation_no_gold_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "citation_no_gold"
+    write_jsonl(
+        dataset,
+        [{"id": "q-citation-no-gold", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "q-citation-no-gold",
+                "generated_answer": "Apollo HQ is in Seoul.",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-selected",
+                        "chunk_id": "chunk-selected",
+                        "source_atom_id": "src-selected",
+                        "evidence_bundle_id": "bundle-selected",
+                        "text": "Apollo HQ is in Seoul.",
+                    }
+                ],
+                "citations": [
+                    {
+                        "doc_id": "doc-selected",
+                        "chunk_id": "chunk-selected",
+                        "source_atom_id": "src-selected",
+                        "evidence_bundle_id": "bundle-selected",
+                        "text": "Apollo HQ is in Seoul.",
+                    }
+                ],
+            }
+        ],
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="citation_no_gold",
+        output_mode="single",
+        evidence_gate_mode="diagnostic",
+        resolve_expected_evidence=False,
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    diagnostics = report["diagnostic_metrics"]
+    assert report["evidence_gate"]["citation_selected_evidence_supported_count"] == 1
+    assert diagnostics["citation_gold_correct_checked_count_diagnostic"] == 0
+    assert diagnostics["citation_gold_correct_pass_count_diagnostic"] == 0
+    assert diagnostics["citation_gold_correct_rate_diagnostic"] is None
 
 
 def test_evidence_mapping_packet_files_human_fields_and_summary_counts(tmp_path: Path) -> None:

@@ -4802,3 +4802,18 @@ test-backed forensic contract requires them.
 - Text-golden backend comparison: bm25/vector/hybrid empty rates `0.5/0.0/0.0`; candidate averages `2.166667/10.0/10.0`; BM25-vector overlap avg `0.5`; p50 latency ms BM25/vector/hybrid `4.528/8.5211/13.1208`; embedding_build_latency_ms `12049.0907`; index_load_or_build_latency_ms `0.3386`; gpu_used_for_embedding_count `6`.
 - External VectorDB: not configured/invoked; local FAISS is non-production local vector index proof, not production VectorDB parity.
 <!-- actual_rag_eval_single_artifact_vector_hybrid_nonprod:measurement-entry:end -->
+
+<!-- selected_evidence_local_llm_answer_discipline_nonprod_20260617_v4:measurement-entry:start -->
+## selected-evidence local LLM answer discipline - 2026-06-17
+
+- Report: `reports/rag_eval/actual_rag_eval_selected_evidence_local_llm_answer_discipline_nonprod_20260617_v4/report.json`.
+- Policy: non-production diagnostic actual-RAG eval only; `official_metric=false`, `official_metric_input_rows=0`, no gold/qrels/labels/answerability/expected/denominator/source-registry/current/latest mutation, and no raw prompt or raw response payloads.
+- Active boundary: source-native Weaviate hybrid over SourceAtom/EvidenceBundle; SearchUnit/SearchView remains legacy comparison/debug only.
+- Retrieval availability stayed non-empty: BM25 and hybrid retrieval empty rates were both `0.0`; weak evidence match recall@10 stayed `4/6 = 0.666667`; resolved expected evidence remained `0/6`.
+- Evidence gate remained fail-closed: allowed/abstained `3/3`, sufficient/insufficient evidence packages `3/3`, unsupported before/after gate `0.5 -> 0.0`, selected-evidence citation support `6`, retrieved-context-only diagnostic citations `0`.
+- New terminology split: `citation_selected_evidence_supported_count=6`, while `citation_gold_correct_checked_count_diagnostic=6`, `citation_gold_correct_pass_count_diagnostic=0`, and `citation_gold_correct_rate_diagnostic=0.0`; selected-evidence citation support must not be read as gold-correct citation quality.
+- Local LLM diagnostics: status counts `{"answer_discipline_deterministic_fallback":2,"generated":2,"unsupported_or_empty_deterministic_fallback":2}`, accepted clean count `2`, acceptance rate `0.333333`, final answer-discipline counts `{"clean_supported":3,"true_insufficient_evidence":3}`.
+- Overexpansion diagnostics improved versus the prior same-day selected-evidence local LLM report: `answer_overexpansion_count_diagnostic 2 -> 0`, `local_llm_rejected_then_deterministic_overexpanded_count 2 -> 0`; two clean local LLM drafts are still rejected before final output and two clean generated drafts are still blocked by the unchanged evidence gate.
+- Provisional judged answer correctness stayed `2/6 = 0.333333`; provisional E2E in this diagnostic report is `0/6`. The same report also records gold-correct citation diagnostics at `0/6` and expected evidence IDs unresolved at `6/6`. This is not an official metric or promotion signal.
+- Residual interpretation: the next bottleneck is selected-evidence/gate alignment for clean Korean local LLM drafts and broad paragraph evidence focus, not retrieval-empty repair or gate loosening.
+<!-- selected_evidence_local_llm_answer_discipline_nonprod_20260617_v4:measurement-entry:end -->

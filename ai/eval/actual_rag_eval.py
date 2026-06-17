@@ -3561,6 +3561,32 @@ def score_rag_eval_items(
     )
     diagnostics["canonical_failure_category_counts"] = dict(sorted(canonical_failure_counts.items()))
     diagnostics["canonical_failure_labels"] = sorted(CANONICAL_FAILURE_LABELS)
+    citation_gold_correct_checked_count = sum(
+        1
+        for row in scored_rows
+        if (row.get("metric_results") if isinstance(row.get("metric_results"), Mapping) else {}).get(
+            "citation_check_pass"
+        )
+        is not None
+    )
+    citation_gold_correct_pass_count = sum(
+        1
+        for row in scored_rows
+        if (row.get("metric_results") if isinstance(row.get("metric_results"), Mapping) else {}).get(
+            "citation_check_pass"
+        )
+        is True
+    )
+    diagnostics["citation_gold_correct_definition"] = (
+        "citation_matches_expected_evidence_when_gold_fields_available_diagnostic_only"
+    )
+    diagnostics["citation_gold_correct_checked_count_diagnostic"] = int(citation_gold_correct_checked_count)
+    diagnostics["citation_gold_correct_pass_count_diagnostic"] = int(citation_gold_correct_pass_count)
+    diagnostics["citation_gold_correct_rate_diagnostic"] = (
+        None
+        if citation_gold_correct_checked_count == 0
+        else round(citation_gold_correct_pass_count / citation_gold_correct_checked_count, 6)
+    )
 
     strict_metrics = {
         "exact_or_alias_answer_correctness": _finish_metric(answer_metric),
@@ -15953,6 +15979,82 @@ def select_composer_evidence(
     return [row for _, _, row in selected[: max(1, int(max_evidence))]]
 
 
+NUMERIC_OR_DATE_VALUE_PATTERN = re.compile(
+    r"\d{1,4}(?:년|월|일|세|cm|kg|%)?"
+    r"|\b(?:january|february|march|april|may|june|july|august|september|october|november|december)\b",
+    flags=re.IGNORECASE,
+)
+
+
+def _query_anchor_pattern(anchor: str) -> str:
+    escaped = r"\s+".join(re.escape(part) for part in _clean(anchor).split())
+    if re.fullmatch(r"[A-Za-z][A-Za-z0-9_\s-]*", anchor):
+        return rf"(?<![A-Za-z0-9_]){escaped}(?![A-Za-z0-9_])"
+    if re.fullmatch(r"[가-힣]+", anchor):
+        suffixes = "|".join(re.escape(suffix) for suffix in KOREAN_GENERIC_SUFFIXES)
+        return rf"(?<![가-힣]){escaped}(?:{suffixes})?(?![가-힣])"
+    return escaped
+
+
+def _value_span_end_after_anchor(text: str, anchor_end: int) -> int:
+    first = NUMERIC_OR_DATE_VALUE_PATTERN.search(text, anchor_end)
+    if first is None:
+        return -1
+    if re.search(r"[A-Za-z가-힣ぁ-んァ-ン一-龯々]", text[anchor_end : first.start()]):
+        return -1
+    end = first.end()
+    for match in NUMERIC_OR_DATE_VALUE_PATTERN.finditer(text, end):
+        gap = text[end : match.start()]
+        if re.search(r"[A-Za-z가-힣ぁ-んァ-ン一-龯々]", gap):
+            break
+        if len(gap) > 12:
+            break
+        end = match.end()
+    return end
+
+
+def _numeric_focus_query_anchors(query: str) -> set[str]:
+    stopwords = _anchor_stopwords() | {
+        normalize_answer_text(value) for value in EVIDENCE_GATE_QUERY_INTENT_STOPWORDS
+    }
+    anchors = set(_gate_query_focus_anchors(query))
+    for token in re.findall(r"[A-Za-z][A-Za-z0-9_-]{1,}|[가-힣]{2,}", query or ""):
+        normalized = normalize_answer_text(token)
+        if not normalized or _is_generic_anchor(normalized, stopwords):
+            continue
+        anchors.add(normalized)
+    return anchors
+
+
+def _selected_evidence_numeric_date_focus_span(query: str, text: str) -> str:
+    if not _clean(text):
+        return ""
+    spans: list[tuple[int, int]] = []
+    for anchor in sorted(_numeric_focus_query_anchors(query), key=len, reverse=True):
+        if not anchor or re.search(r"\d", anchor):
+            continue
+        for match in re.finditer(_query_anchor_pattern(anchor), text, flags=re.IGNORECASE):
+            end = _value_span_end_after_anchor(text, match.end())
+            if end < 0:
+                continue
+            spans.append((match.start(), end))
+            break
+    if not spans:
+        return ""
+    spans.sort()
+    pieces: list[str] = []
+    last_end = -1
+    for start, end in spans:
+        if start < last_end:
+            continue
+        piece = _clean(text[start:end].strip(" ,;:："))
+        if piece and piece not in pieces:
+            pieces.append(piece)
+            last_end = end
+    separator = ". " if re.search(r"[A-Za-z]", " ".join(pieces)) else " "
+    return _clean(separator.join(pieces))
+
+
 def _selected_evidence_sentence(query: str, selected_evidence: Sequence[Mapping[str, Any]]) -> str:
     query_anchors = _gate_query_focus_anchors(query)
     best_sentence = ""
@@ -15961,12 +16063,17 @@ def _selected_evidence_sentence(query: str, selected_evidence: Sequence[Mapping[
         text = _gate_support_text(context)
         if not text:
             continue
-        sentences = [part.strip() for part in re.split(r"(?<=[.!?。！？])\s+|\n+", text) if part.strip()]
-        if not sentences:
-            sentences = [text.strip()]
-        candidates = [text.strip(), *sentences] if len(sentences) > 1 else sentences
-        for sentence in candidates:
-            anchor_hits = _gate_anchor_hits(query_anchors, [sentence])
+        facet_span = _selected_evidence_numeric_date_focus_span(query, text)
+        if facet_span:
+            sentences = [facet_span]
+        else:
+            sentences = [part.strip() for part in re.split(r"(?<=[.!?。！？])\s+|\n+", text) if part.strip()]
+            if not sentences:
+                sentences = [text.strip()]
+            candidates = [text.strip(), *sentences] if len(sentences) > 1 else sentences
+            sentences = candidates
+        for sentence in sentences:
+            anchor_hits = _gate_anchor_hits(query_anchors, [sentence, text])
             score = (len(anchor_hits) * 10.0) + _token_overlap_ratio(query, sentence)
             if score > best_score:
                 best_score = score
@@ -16020,7 +16127,8 @@ def _selected_evidence_answer(
             )
             if part
         )
-        excerpt = _gate_row_text(evidence).replace("\n", " ").strip()
+        excerpt = _selected_evidence_sentence(query, [evidence]) or _gate_row_text(evidence)
+        excerpt = excerpt.replace("\n", " ").strip()
         if len(excerpt) > 220:
             excerpt = excerpt[:217] + "..."
         lines.append(f"{index}. [{locator}] {excerpt}")
@@ -17461,6 +17569,8 @@ def validate_evidence_package_for_gate(row: Mapping[str, Any]) -> dict[str, Any]
         "evidence_text_hashes": _text_hashes([*contexts, *citations]),
         "citation_validations": citation_validations,
         "citation_supported_count": len(supported_citations),
+        "citation_selected_evidence_supported_count": len(supported_citations),
+        "citation_supported_definition": "citation_target_selected_and_text_supported_by_selected_evidence",
         "citation_retrieved_context_only_diagnostic_count": len(retrieved_context_only_citations),
         "citation_wrong_target_count": sum(1 for row in citation_validations if row["citation_support_status"] == "wrong_target"),
         "citation_missing_target_count": sum(1 for row in citation_validations if row["citation_support_status"] == "missing_target"),
@@ -17609,6 +17719,11 @@ def build_evidence_gate_summary(rows: Sequence[Mapping[str, Any]], *, mode: str)
         "would_abstain_count": would_block_count if normalized_mode == "diagnostic" else 0,
         "would_block_unsupported_answer_count": would_block_count if normalized_mode == "diagnostic" else 0,
         "citation_supported_count": sum(int(gate.get("citation_supported_count") or 0) for gate in gates),
+        "citation_selected_evidence_supported_count": sum(
+            int(gate.get("citation_selected_evidence_supported_count") or gate.get("citation_supported_count") or 0)
+            for gate in gates
+        ),
+        "citation_supported_definition": "citation_target_selected_and_text_supported_by_selected_evidence",
         "citation_retrieved_context_only_diagnostic_count": sum(
             int(gate.get("citation_retrieved_context_only_diagnostic_count") or 0) for gate in gates
         ),
@@ -20595,13 +20710,73 @@ def run_eval_from_paths(
         )
         == "generated"
     )
-    unsupported_extra_detail_count = answer_discipline_status_counts.get("supported_core_with_unsupported_extra", 0)
-    query_irrelevant_supported_detail_count = answer_discipline_status_counts.get(
-        "query_irrelevant_supported_detail", 0
+    def _discipline_maps_for_composer(row: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+        maps: list[Mapping[str, Any]] = []
+        for key in ("initial_answer_discipline", "answer_discipline"):
+            value = row.get(key)
+            if isinstance(value, Mapping):
+                maps.append(value)
+        return maps
+
+    unsupported_extra_detail_count = sum(
+        1
+        for row in composer_rows
+        if any(
+            bool(discipline.get("unsupported_extra_detail"))
+            or _clean(discipline.get("status")) == "supported_core_with_unsupported_extra"
+            for discipline in _discipline_maps_for_composer(row)
+        )
+    )
+    query_irrelevant_supported_detail_count = sum(
+        1
+        for row in composer_rows
+        if any(
+            bool(discipline.get("query_irrelevant_supported_detail"))
+            or _clean(discipline.get("status")) == "query_irrelevant_supported_detail"
+            for discipline in _discipline_maps_for_composer(row)
+        )
     )
     local_llm_rejected_then_deterministic_overexpanded_count = max(
         answer_discipline_status_counts.get("local_llm_rejected_then_deterministic_overexpanded", 0),
         final_answer_discipline_status_counts.get("local_llm_rejected_then_deterministic_overexpanded", 0),
+    )
+    answer_overexpansion_count_diagnostic = sum(
+        1
+        for row in composer_rows
+        if any(
+            bool(discipline.get("unsupported_extra_detail"))
+            or bool(discipline.get("query_irrelevant_supported_detail"))
+            or _clean(discipline.get("status"))
+            in {
+                "supported_core_with_unsupported_extra",
+                "query_irrelevant_supported_detail",
+                "local_llm_rejected_then_deterministic_overexpanded",
+            }
+            for discipline in _discipline_maps_for_composer(row)
+        )
+    )
+    local_llm_clean_answer_output_rejected_count = sum(
+        1
+        for row in composer_rows
+        if _clean(
+            (row.get("initial_answer_discipline") if isinstance(row.get("initial_answer_discipline"), Mapping) else {}).get(
+                "status"
+            )
+        )
+        == "clean_supported"
+        and _clean((row.get("local_llm") if isinstance(row.get("local_llm"), Mapping) else {}).get("status"))
+        == "unsupported_or_empty_deterministic_fallback"
+        and bool(row.get("local_llm_fallback_used"))
+    )
+    local_llm_clean_answer_gate_blocked_count = sum(
+        1
+        for output, row in zip(raw_outputs, composer_rows)
+        if _clean((row.get("local_llm") if isinstance(row.get("local_llm"), Mapping) else {}).get("status"))
+        == "generated"
+        and _clean((row.get("answer_discipline") if isinstance(row.get("answer_discipline"), Mapping) else {}).get("status"))
+        == "clean_supported"
+        and _clean((output.get("evidence_gate") if isinstance(output.get("evidence_gate"), Mapping) else {}).get("answer_gate_decision"))
+        == "block_unsupported_answer"
     )
     local_llm_fallback_used = local_llm_requested and (
         any(bool(row.get("local_llm_fallback_used")) for row in composer_rows)
@@ -20664,16 +20839,14 @@ def run_eval_from_paths(
         "local_llm_answer_discipline_status_counts": dict(answer_discipline_status_counts),
         "local_llm_final_answer_discipline_status_counts": dict(final_answer_discipline_status_counts),
         "local_llm_fallback_reason_counts": dict(local_llm_fallback_reason_counts),
-        "answer_overexpansion_count_diagnostic": int(
-            unsupported_extra_detail_count
-            + query_irrelevant_supported_detail_count
-            + local_llm_rejected_then_deterministic_overexpanded_count
-        ),
+        "answer_overexpansion_count_diagnostic": int(answer_overexpansion_count_diagnostic),
         "unsupported_extra_detail_count": int(unsupported_extra_detail_count),
         "query_irrelevant_supported_detail_count": int(query_irrelevant_supported_detail_count),
         "local_llm_rejected_then_deterministic_overexpanded_count": int(
             local_llm_rejected_then_deterministic_overexpanded_count
         ),
+        "local_llm_clean_answer_output_rejected_count": int(local_llm_clean_answer_output_rejected_count),
+        "local_llm_clean_answer_gate_blocked_count": int(local_llm_clean_answer_gate_blocked_count),
         "citation_id_mismatch_or_missing_count": int(
             answer_discipline_status_counts.get("citation_id_mismatch_or_missing", 0)
         ),
