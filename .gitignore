@@ -179,6 +179,8 @@ ai/eval/datasets/samples/
 !frontend/app/tsconfig.node.json
 !ai/eval/configs/weaviate_route_selected_nonprod_default.json
 !ai/eval/configs/weaviate_full_index_nonprod_rollback.json
+!ai/eval/configs/weaviate_route_selected_candidate_surface_v1.json
+!ai/eval/configs/weaviate_route_selected_candidate_surface_v2.json
 !docs/agentops_trace_schema.json
 !reports/
 /reports/*

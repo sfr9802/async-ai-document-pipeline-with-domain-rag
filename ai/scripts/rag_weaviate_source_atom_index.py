@@ -25,6 +25,7 @@ from ai.eval.actual_rag_eval import (  # noqa: E402
 from ai.eval.report_paths import ACTUAL_RAG_REPORT_ROOT  # noqa: E402
 from ai.eval.weaviate_source_atom import (  # noqa: E402
     BgeM3EmbeddingBuilder,
+    WEAVIATE_CANDIDATE_SURFACE_COMPLETE_MANIFEST_SCHEMA_VERSION,
     WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V1,
     WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V2,
     WEAVIATE_STREAMING_BGE_M3_VECTOR_SOURCE,
@@ -106,6 +107,15 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Delete the non-production checkpoint before indexing, then write a fresh streaming checkpoint.",
     )
+    parser.add_argument(
+        "--synthesize-xlsx-row-value-bundles",
+        action="store_true",
+        help=(
+            "Candidate-surface-only materialization: synthesize source-owned XLSX row/value table_row "
+            "records from manifest snapshots so axes and answer values can be retrieved together. "
+            "Does not read raw XLSX files, mutate source registry, or change default indexing."
+        ),
+    )
     return parser
 
 
@@ -139,6 +149,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     loader = SourceNativeCorpusLoader(
         search_view_manifest_path=Path(args.source_native_index_dir) / "search_view_manifest.jsonl",
         source_atom_registry_path=Path(args.source_atom_registry_path),
+        synthesize_xlsx_row_value_bundles=bool(args.synthesize_xlsx_row_value_bundles),
     )
     try:
         def progress(event: dict) -> None:
@@ -175,6 +186,32 @@ def main(argv: Sequence[str] | None = None) -> int:
         manifest["manifest_path"] = manifest_path.as_posix()
         manifest["checkpoint_path"] = checkpoint_path.as_posix() if checkpoint_path is not None else ""
         manifest["checkpoint_resume_enabled"] = checkpoint_path is not None
+        manifest["synthesize_xlsx_row_value_bundles"] = bool(args.synthesize_xlsx_row_value_bundles)
+        candidate_surface_collection = "CandidateSurface" in config.collection_name
+        candidate_surface_recreate_v2 = config.collection_name.endswith("CandidateSurfaceV2")
+        candidate_surface_complete = bool(
+            candidate_surface_collection
+            and candidate_surface_recreate_v2
+            and args.synthesize_xlsx_row_value_bundles
+            and not bool(manifest.get("checkpoint_resumed"))
+            and int(manifest.get("failed_count") or 0) == 0
+        )
+        manifest["candidate_surface_complete_manifest"] = candidate_surface_complete
+        manifest["candidate_surface_complete_manifest_schema_version"] = (
+            WEAVIATE_CANDIDATE_SURFACE_COMPLETE_MANIFEST_SCHEMA_VERSION if candidate_surface_complete else ""
+        )
+        manifest["candidate_surface_metric_blocked_until_complete_manifest"] = (
+            candidate_surface_collection and not candidate_surface_complete
+        )
+        manifest["candidate_surface_restart_policy"] = (
+            "recreate_collection_with_fresh_manifest_v2"
+            if candidate_surface_recreate_v2
+            else ("dirty_partial_reindex_required" if candidate_surface_collection else "")
+        )
+        manifest["source_registry_mutated"] = False
+        manifest["latest_current_mutated"] = False
+        manifest["official_metric_input_rows"] = 0
+        manifest["source_native_loader"] = loader.describe()
         manifest["valid"] = True
         manifest["python_local_corpus_scan_used_for_candidate_generation"] = False
         manifest["source_native_layered_retrieval_used_for_candidate_generation"] = False
@@ -198,6 +235,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             "index_vector_source": getattr(args, "vector_source", WEAVIATE_STREAMING_BGE_M3_VECTOR_SOURCE),
             "checkpoint_path": checkpoint_path.as_posix() if checkpoint_path is not None else "",
             "checkpoint_resume_enabled": checkpoint_path is not None,
+            "synthesize_xlsx_row_value_bundles": bool(getattr(args, "synthesize_xlsx_row_value_bundles", False)),
+            "candidate_surface_complete_manifest": False,
+            "candidate_surface_complete_manifest_schema_version": "",
+            "candidate_surface_metric_blocked_until_complete_manifest": "CandidateSurface" in config.collection_name,
+            "candidate_surface_restart_policy": (
+                "recreate_collection_with_fresh_manifest_v2"
+                if config.collection_name.endswith("CandidateSurfaceV2")
+                else ("dirty_partial_reindex_required" if "CandidateSurface" in config.collection_name else "")
+            ),
+            "source_registry_mutated": False,
+            "latest_current_mutated": False,
+            "official_metric_input_rows": 0,
             "python_local_corpus_scan_used_for_candidate_generation": False,
             "source_native_layered_retrieval_used_for_candidate_generation": False,
             "diagnostic_hash_vector_used": False,

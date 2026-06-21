@@ -1,0 +1,57 @@
+{
+  "selection": "route_selected_candidate_surface_v2_recreate",
+  "vector_db": "weaviate",
+  "url": "http://localhost:8080",
+  "grpc_port": 50051,
+  "collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+  "namespace": "actual_rag_eval_nonprod",
+  "visibility": "nonprod",
+  "schema_version_source_atom": "weaviate_source_atom_v2",
+  "index_manifest_path": "reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_route_selected_candidate_surface_v2/index_manifest.json",
+  "retrieval_route_mode": "route_selected",
+  "route_planner_version": "weaviate_route_planner_v1",
+  "embedding_model": "BAAI/bge-m3",
+  "embedding_device": "auto",
+  "hybrid_alpha": 0.5,
+  "use_local_docker": true,
+  "fallback_used": false,
+  "fail_closed_on_unavailable": true,
+  "candidate_surface_rebuild": {
+    "schema_version": "actual_rag_eval.candidate_surface_rebuild.v1",
+    "report_only_diagnostic": true,
+    "surface_status": "awaiting_complete_manifest",
+    "metric_blocked_until_complete_manifest": true,
+    "complete_manifest_required": true,
+    "metrics_blocked_reason": "checkpoint_b_complete_manifest_required_before_metric_lanes",
+    "official_metric": false,
+    "official_metric_input_rows": 0,
+    "candidate_collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+    "source_collection": "SourceAtomNonprodRouteSelectedV2",
+    "xlsx_row_value_bundle_materialization": true,
+    "production_namespace": false,
+    "source_registry_mutated": false,
+    "latest_current_mutated": false,
+    "external_archive_profiled": false,
+    "external_archive_indexed": false,
+    "source_intake_approval_required": false,
+    "restart_policy": {
+      "policy": "recreate_collection_with_fresh_manifest_v2",
+      "metric_lanes_blocked_until_complete_manifest": [
+        "gold29_report_only",
+        "runstore_only_locator",
+        "silver500",
+        "docs_reviewer"
+      ],
+      "completion_manifest_schema_version": "candidate_surface_complete_manifest.v1",
+      "fresh_collection_required": true
+    }
+  },
+  "rollback": {
+    "rollback_key": "weaviate_full_index_nonprod_rollback",
+    "config_path": "ai/eval/configs/weaviate_full_index_nonprod_rollback.json",
+    "retrieval_route_mode": "full_index",
+    "collection": "SourceAtomNonprod",
+    "schema_version_source_atom": "weaviate_source_atom_v1",
+    "index_manifest_path": "reports/rag_eval/weaviate_source_atom_index_manifest_nonprod/index_manifest.json"
+  }
+}

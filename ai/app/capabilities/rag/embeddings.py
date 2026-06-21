@@ -200,6 +200,7 @@ class SentenceTransformerEmbedder(EmbeddingProvider):
         show_progress_bar: bool = False,
         cuda_alloc_conf: Optional[str] = None,
         oom_fallback_batch_size: Optional[int] = None,
+        local_files_only: bool = False,
     ) -> None:
         self._model_name = model_name
         self._query_prefix = query_prefix
@@ -208,6 +209,7 @@ class SentenceTransformerEmbedder(EmbeddingProvider):
         self._batch_size = int(batch_size)
         self._show_progress_bar = bool(show_progress_bar)
         self._cuda_alloc_conf = cuda_alloc_conf
+        self._local_files_only = bool(local_files_only)
         # Default OOM fallback halves the batch_size once. Caller can
         # set to None to disable the retry, or to an explicit smaller
         # value to control where the fallback lands.
@@ -257,7 +259,26 @@ class SentenceTransformerEmbedder(EmbeddingProvider):
         log.info("Loading sentence-transformers model: %s", self._model_name)
         from sentence_transformers import SentenceTransformer
 
-        self._model = SentenceTransformer(self._model_name)
+        offline_env_keys = ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE", "HF_DATASETS_OFFLINE")
+        previous_offline_env = {key: os.environ.get(key) for key in offline_env_keys}
+        if self._local_files_only:
+            for key in offline_env_keys:
+                os.environ[key] = "1"
+        load_kwargs = {"local_files_only": True} if self._local_files_only else {}
+        try:
+            try:
+                self._model = SentenceTransformer(self._model_name, **load_kwargs)
+            except TypeError as exc:
+                if not self._local_files_only or "local_files_only" not in str(exc):
+                    raise
+                self._model = SentenceTransformer(self._model_name)
+        finally:
+            if self._local_files_only:
+                for key, value in previous_offline_env.items():
+                    if value is None:
+                        os.environ.pop(key, None)
+                    else:
+                        os.environ[key] = value
         # Cap the model's input window when the caller asked for it.
         # Default (None) preserves the model's own max_seq_length, which
         # for bge-m3 is 8192 — fine for short passages, but pathologically

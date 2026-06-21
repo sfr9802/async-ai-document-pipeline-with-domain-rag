@@ -53,6 +53,8 @@ PORTFOLIO_COMPARISON_SCHEMA_VERSION = "actual_rag_eval.portfolio_experiment_comp
 CORPUS_COVERAGE_AUDIT_SCHEMA_VERSION = "actual_rag_eval.corpus_coverage_audit.v1"
 RESPONSE_QUALITY_INPUT_SUMMARY_SCHEMA_VERSION = "actual_rag_eval.response_quality_input_summary.v1"
 XLSX_PDF_RESIDUAL_BREAKDOWN_SCHEMA_VERSION = "actual_rag_eval.xlsx_pdf_residual_breakdown.v1"
+RESIDUAL_ANCHOR_MATRIX_SCHEMA_VERSION = "actual_rag_eval.residual_anchor_matrix.v1"
+SOURCE_NATIVE_AXIS_PROVENANCE_SCHEMA_VERSION = "actual_rag_eval.source_native_axis_provenance.v1"
 HEURISTIC_RISK_LEDGER_SCHEMA_VERSION = "actual_rag_eval.heuristic_risk_ledger.v1"
 METRIC_CONTINUITY_CHECKPOINT_SCHEMA_VERSION = "actual_rag_eval.metric_continuity_checkpoint.v1"
 AGENTIC_PLANNER_DRY_RUN_SCHEMA_VERSION = "actual_rag_eval.agentic_planner_dry_run.v1"
@@ -65,6 +67,12 @@ XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION = "actual_rag_eval.xlsx_locator_to
 XLSX_LOCATOR_TOOL_NAME = "xlsx_locator_tool_v1"
 XLSX_LOCATOR_TOOL_POLICY = "source_owned_locator_only_no_raw_xlsx_query_time_parsing"
 XLSX_LOCATOR_TOOL_OUTPUT_POLICY = "selected_evidence_candidate_must_pass_unchanged_gate"
+XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET = 5
+XLSX_LOCATOR_SOURCE_OWNED_DIVERSIFICATION_POLICY = "source_owned_sheet_table_range_axis_budget_v1"
+XLSX_LOCATOR_SIBLING_ROW_COMPOSITE_SOURCE = "source_owned_sibling_row_context"
+XLSX_LOCATOR_SOURCE_ROW_CONTEXT_FAIL_CLOSED_POLICY = (
+    "requires_same_doc_sheet_range_row_index_for_sibling_row_context"
+)
 PDF_LOCATOR_TOOL_NAME = "pdf_locator_tool_v1"
 PDF_LOCATOR_TOOL_POLICY = "source_owned_pdf_locator_only_no_raw_pdf_query_time_parsing"
 PDF_LOCATOR_TOOL_OUTPUT_POLICY = "selected_evidence_candidate_must_pass_unchanged_gate"
@@ -183,6 +191,15 @@ XLSX_LOCATOR_SOURCE_OWNED_FIELDS = (
     "synthetic_table_id",
     "display_value",
 )
+XLSX_LOCATOR_DIAGNOSTIC_ONLY_FORBIDDEN_SEEN_FIELDS = {
+    "file_name",
+    "source_file_name",
+    "source_title",
+    "title",
+    "workbook",
+    "workbook_id",
+    "workbook_version_id",
+}
 XLSX_PDF_RESIDUAL_CLASSIFICATIONS = (
     "candidate_absent",
     "candidate_present_anchor_missing",
@@ -259,13 +276,18 @@ XLSX_LOCATOR_FORBIDDEN_TEXT_MARKERS = (
     "raw_prompt_payload",
     "raw_response",
     "raw_response_payload",
+    "raw_tool_payload",
     "row_id",
+    "source_path",
     "source_title",
     "source_workbook",
     "target_id",
     "target_locator",
     "title",
+    "tool_payload",
     "workbook",
+    "workbook_id",
+    "workbook_version_id",
 )
 HEURISTIC_RISK_ALLOWED_CLASSIFICATIONS = (
     "global_normalization",
@@ -288,14 +310,6 @@ REPORT_ROOT = ACTUAL_RAG_REPORT_ROOT
 STATUS_JSONL_PATH = LEGACY_RAG_INGESTION_STATUS_JSONL
 SOURCE_NATIVE_DIAGNOSTIC_INDEX_DIR = AI_DIR / "eval" / "indexes" / "rag-data-all-source-citable-nonprod-v1"
 SOURCE_NATIVE_BGE_M3_INDEX_DIR = AI_DIR / "eval" / "indexes" / "rag-data-all-source-citable-nonprod-bge-m3-v1"
-TEXT_NAMU_V2_0014_ADVERSARY_AUDIT_ANCHORS = (
-    "Adversary",
-    "Alison Sealy-Smith",
-    "애드버서리",
-    "앨리슨 실리스미스",
-)
-
-
 def _source_native_index_has_bge_m3_artifacts(index_dir: Path) -> bool:
     build_path = index_dir / "build.json"
     index_path = index_dir / "faiss.index"
@@ -544,6 +558,8 @@ PUBLIC_REPORT_FORBIDDEN_PAYLOAD_KEYS = frozenset(
         "raw_response_text",
         "response_payload",
         "response_text",
+        "raw_tool_payload",
+        "tool_payload",
     }
 )
 PUBLIC_REPORT_FORBIDDEN_PAYLOAD_CANONICAL_KEYS = frozenset(
@@ -725,6 +741,13 @@ class XlsxLocatorToolUseRecord:
     execution_status: str
     candidate_count: int
     accepted_candidate_count: int
+    candidate_pool_count_before_budget: int = 0
+    complete_validated_axis_candidate_count: int = 0
+    validated_axis_split_across_candidates: bool = False
+    source_row_context_candidate_count: int = 0
+    source_row_context_doc_identity_mismatch_candidate_count: int = 0
+    source_row_context_blocked_by_doc_identity_mismatch: bool = False
+    best_candidate_missing_validated_required_axes: tuple[str, ...] = ()
     matched_query_anchors: tuple[str, ...] = ()
     remaining_missing_query_anchors: tuple[str, ...] = ()
     matched_validated_required_axes: tuple[str, ...] = ()
@@ -755,6 +778,9 @@ class XlsxLocatorEvidenceCandidateRecord:
     table_id: str = ""
     synthetic_table_id: str = ""
     display_value: str = ""
+    source_row_context_source_atom_id: str = ""
+    source_row_context_doc_id: str = ""
+    source_date_aliases: tuple[str, ...] = ()
     locator_text_source: str = ""
     matched_query_anchors: tuple[str, ...] = ()
     missing_query_anchors_after_tool: tuple[str, ...] = ()
@@ -1043,7 +1069,8 @@ class ExpectedEvidenceResolver:
         rank: int,
     ) -> dict[str, Any] | None:
         reasons: list[str] = []
-        text = _clean(row.get("text"))
+        safe_row = _runtime_safe_evidence_context(row)
+        text = _clean(safe_row.get("text"))
         text_norm = normalize_answer_text(text)
         expected_text = _clean(evidence.text)
         expected_text_norm = normalize_answer_text(expected_text)
@@ -1219,7 +1246,7 @@ def _redact_pathish_metadata(value: Any) -> tuple[str, bool]:
     return text, False
 
 
-_ABSOLUTE_LOCAL_PATH_RE = re.compile(r"(?P<path>(?:[A-Za-z]:[\\/]|\\\\)[^\s`\"']+)")
+_ABSOLUTE_LOCAL_PATH_RE = re.compile(r"(?<![A-Za-z0-9])(?P<path>(?:[A-Za-z]:[\\/]|\\\\)[^\s`\"']+)")
 
 
 def _redact_absolute_local_paths(value: Any) -> str:
@@ -1411,6 +1438,8 @@ class XlsxLocatorRunStore:
                 header_path TEXT NOT NULL,
                 table_id TEXT NOT NULL,
                 display_value TEXT NOT NULL,
+                source_row_context_source_atom_id TEXT NOT NULL,
+                source_row_context_doc_id TEXT NOT NULL,
                 matched_query_anchors_json TEXT NOT NULL,
                 citation_eligible INTEGER NOT NULL,
                 PRIMARY KEY (item_index, evidence_index)
@@ -1422,6 +1451,12 @@ class XlsxLocatorRunStore:
                 execution_status TEXT NOT NULL,
                 candidate_count INTEGER NOT NULL,
                 accepted_candidate_count INTEGER NOT NULL,
+                complete_validated_axis_candidate_count INTEGER NOT NULL,
+                validated_axis_split_across_candidates INTEGER NOT NULL,
+                source_row_context_candidate_count INTEGER NOT NULL,
+                source_row_context_doc_identity_mismatch_candidate_count INTEGER NOT NULL,
+                source_row_context_blocked_by_doc_identity_mismatch INTEGER NOT NULL,
+                best_candidate_missing_validated_required_axes_json TEXT NOT NULL,
                 matched_query_anchors_json TEXT NOT NULL,
                 remaining_missing_query_anchors_json TEXT NOT NULL,
                 matched_validated_required_axes_json TEXT NOT NULL,
@@ -1450,6 +1485,9 @@ class XlsxLocatorRunStore:
                 table_id TEXT NOT NULL,
                 synthetic_table_id TEXT NOT NULL,
                 display_value TEXT NOT NULL,
+                source_row_context_source_atom_id TEXT NOT NULL,
+                source_row_context_doc_id TEXT NOT NULL,
+                source_date_aliases_json TEXT NOT NULL,
                 locator_text_source TEXT NOT NULL,
                 matched_query_anchors_json TEXT NOT NULL,
                 missing_query_anchors_after_tool_json TEXT NOT NULL,
@@ -1691,9 +1729,11 @@ class XlsxLocatorRunStore:
                         header_path,
                         table_id,
                         display_value,
+                        source_row_context_source_atom_id,
+                        source_row_context_doc_id,
                         matched_query_anchors_json,
                         citation_eligible
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         item_index,
@@ -1713,6 +1753,8 @@ class XlsxLocatorRunStore:
                         _clean(evidence.get("header_path")),
                         _clean(evidence.get("table_id")),
                         _clean(evidence.get("display_value")),
+                        _clean(evidence.get("source_row_context_source_atom_id")),
+                        _clean(evidence.get("source_row_context_doc_id")),
                         _sqlite_json(anchors),
                         _sqlite_bool(_clean(evidence.get("source_atom_id")) or _clean(evidence.get("evidence_bundle_id"))),
                     ),
@@ -1729,13 +1771,19 @@ class XlsxLocatorRunStore:
                     execution_status,
                     candidate_count,
                     accepted_candidate_count,
+                    complete_validated_axis_candidate_count,
+                    validated_axis_split_across_candidates,
+                    source_row_context_candidate_count,
+                    source_row_context_doc_identity_mismatch_candidate_count,
+                    source_row_context_blocked_by_doc_identity_mismatch,
+                    best_candidate_missing_validated_required_axes_json,
                     matched_query_anchors_json,
                     remaining_missing_query_anchors_json,
                     matched_validated_required_axes_json,
                     remaining_missing_validated_required_axes_json,
                     input_policy,
                     output_policy
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     tool_use.item_index,
@@ -1744,6 +1792,12 @@ class XlsxLocatorRunStore:
                     tool_use.execution_status,
                     int(tool_use.candidate_count),
                     int(tool_use.accepted_candidate_count),
+                    int(tool_use.complete_validated_axis_candidate_count),
+                    _sqlite_bool(tool_use.validated_axis_split_across_candidates),
+                    int(tool_use.source_row_context_candidate_count),
+                    int(tool_use.source_row_context_doc_identity_mismatch_candidate_count),
+                    _sqlite_bool(tool_use.source_row_context_blocked_by_doc_identity_mismatch),
+                    _sqlite_json(tool_use.best_candidate_missing_validated_required_axes),
                     _sqlite_json(tool_use.matched_query_anchors),
                     _sqlite_json(tool_use.remaining_missing_query_anchors),
                     _sqlite_json(tool_use.matched_validated_required_axes),
@@ -1778,7 +1832,10 @@ class XlsxLocatorRunStore:
                     table_id,
                     synthetic_table_id,
                     display_value,
-                    locator_text_source,
+                        source_row_context_source_atom_id,
+                        source_row_context_doc_id,
+                        source_date_aliases_json,
+                        locator_text_source,
                     matched_query_anchors_json,
                     missing_query_anchors_after_tool_json,
                     matched_validated_required_axes_json,
@@ -1787,7 +1844,7 @@ class XlsxLocatorRunStore:
                     accepted_for_regating,
                     rejection_reason,
                     input_fields_used_json
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     candidate.item_index,
@@ -1810,6 +1867,9 @@ class XlsxLocatorRunStore:
                     candidate.table_id,
                     candidate.synthetic_table_id,
                     candidate.display_value,
+                    candidate.source_row_context_source_atom_id,
+                    candidate.source_row_context_doc_id,
+                    _sqlite_json(candidate.source_date_aliases),
                     candidate.locator_text_source,
                     _sqlite_json(candidate.matched_query_anchors),
                     _sqlite_json(candidate.missing_query_anchors_after_tool),
@@ -1910,28 +1970,58 @@ def _is_forbidden_public_payload_key(key: Any) -> bool:
     if normalized in PUBLIC_REPORT_FORBIDDEN_PAYLOAD_KEYS or canonical in PUBLIC_REPORT_FORBIDDEN_PAYLOAD_CANONICAL_KEYS:
         return True
     if ("payload" in normalized or "payload" in canonical) and (
-        "prompt" in normalized or "response" in normalized or "prompt" in canonical or "response" in canonical
+        "prompt" in normalized
+        or "response" in normalized
+        or "tool" in normalized
+        or "prompt" in canonical
+        or "response" in canonical
+        or "tool" in canonical
     ):
         return True
     if (normalized.startswith("raw_") or canonical.startswith("raw")) and (
-        "prompt" in normalized or "response" in normalized or "prompt" in canonical or "response" in canonical
+        "prompt" in normalized
+        or "response" in normalized
+        or "tool" in normalized
+        or "prompt" in canonical
+        or "response" in canonical
+        or "tool" in canonical
     ):
         return True
     return False
 
 
-def _sanitize_public_report_value(value: Any) -> Any:
+def _sanitize_public_report_value(value: Any, *, source_native_context: bool = False) -> Any:
     if isinstance(value, Mapping):
+        active_source_native_context = source_native_context or _source_native_context_requires_runtime_text_sanitization(value)
         sanitized: dict[str, Any] = {}
         for key, nested_value in value.items():
             if _is_forbidden_public_payload_key(key):
                 continue
-            sanitized[str(key)] = _sanitize_public_report_value(nested_value)
+            if active_source_native_context and _source_native_runtime_forbidden_key(key):
+                continue
+            canonical_key = _canonical_xlsx_locator_field_name(key)
+            if active_source_native_context and canonical_key in SOURCE_NATIVE_RUNTIME_TEXT_FIELDS:
+                sanitized[str(key)] = _strip_source_native_runtime_forbidden_text_segments(_clean(nested_value))
+                continue
+            if active_source_native_context and _source_native_runtime_forbidden_scalar(nested_value):
+                continue
+            sanitized[str(key)] = _sanitize_public_report_value(
+                nested_value,
+                source_native_context=active_source_native_context,
+            )
         return sanitized
     if isinstance(value, list):
-        return [_sanitize_public_report_value(item) for item in value]
+        return [
+            _sanitize_public_report_value(item, source_native_context=source_native_context)
+            for item in value
+        ]
     if isinstance(value, tuple):
-        return [_sanitize_public_report_value(item) for item in value]
+        return [
+            _sanitize_public_report_value(item, source_native_context=source_native_context)
+            for item in value
+        ]
+    if source_native_context and _source_native_runtime_forbidden_scalar(value):
+        return ""
     return value
 
 
@@ -2988,8 +3078,16 @@ def score_rag_eval_items(
 
     for item in items:
         output = dict(outputs_by_id.get(item.id) or _pipeline_error_output(item, "missing_pipeline_output"))
-        contexts = [dict(row) for row in _as_list(output.get("retrieved_contexts")) if isinstance(row, Mapping)]
-        citations = [dict(row) for row in _as_list(output.get("citations")) if isinstance(row, Mapping)]
+        contexts = [
+            _runtime_safe_evidence_context(row)
+            for row in _as_list(output.get("retrieved_contexts"))
+            if isinstance(row, Mapping)
+        ]
+        citations = [
+            _runtime_safe_evidence_context(row)
+            for row in _as_list(output.get("citations"))
+            if isinstance(row, Mapping)
+        ]
         generated_answer = _clean(output.get("generated_answer"))
         pre_gate_generated_answer = _clean(output.get(INTERNAL_PRE_GATE_ANSWER_KEY)) or generated_answer
         answerability = item.answerability
@@ -3502,6 +3600,8 @@ def score_rag_eval_items(
         )
 
         scored = dict(output)
+        scored["retrieved_contexts"] = contexts
+        scored["citations"] = citations
         scored["answerability"] = item.answerability
         scored["expected_answer"] = item.expected_answer
         scored["expected_answer_aliases"] = list(item.expected_answer_aliases)
@@ -4537,6 +4637,7 @@ class RepoCurrentHybridAdapter(RepoCurrentBm25Adapter):
                     ),
                     batch_size=int(os.environ.get("ACTUAL_RAG_EVAL_BGE_M3_BATCH_SIZE", "32")),
                     show_progress_bar=False,
+                    local_files_only=True,
                 )
             embed_started = time.perf_counter()
             vectors = embedder.embed_passages(texts)
@@ -4851,9 +4952,11 @@ class SourceNativeCorpusLoader:
         *,
         search_view_manifest_path: Path | str = SOURCE_NATIVE_SEARCH_VIEW_MANIFEST_PATH,
         source_atom_registry_path: Path | str = SOURCE_NATIVE_SOURCE_REGISTRY_PATH,
+        synthesize_xlsx_row_value_bundles: bool = False,
     ) -> None:
         self.search_view_manifest_path = Path(search_view_manifest_path)
         self.source_atom_registry_path = Path(source_atom_registry_path)
+        self.synthesize_xlsx_row_value_bundles = bool(synthesize_xlsx_row_value_bundles)
         self._source_atom_registry_structural_metadata: dict[str, dict[str, str]] | None = None
 
     @property
@@ -4873,6 +4976,10 @@ class SourceNativeCorpusLoader:
             "search_view_manifest_path_hash": f"sha256:{_sha256_text(self.search_view_manifest_path.as_posix())}",
             "source_atom_registry_path_hash": f"sha256:{_sha256_text(self.source_atom_registry_path.as_posix())}",
             "source_atom_registry_available": self.source_atom_registry_path.exists(),
+            "synthesize_xlsx_row_value_bundles": self.synthesize_xlsx_row_value_bundles,
+            "xlsx_row_value_bundle_policy": "source_owned_manifest_snapshot_no_gold_qrels_labels_or_normalized_fields_v1"
+            if self.synthesize_xlsx_row_value_bundles
+            else "",
             "read_only": True,
             "raw_local_paths_exposed": False,
         }
@@ -4880,6 +4987,7 @@ class SourceNativeCorpusLoader:
     def iter_units(self) -> Iterable[dict[str, Any]]:
         if not self.search_view_manifest_path.exists():
             return
+        units: list[dict[str, Any]] = []
         with self.search_view_manifest_path.open("r", encoding="utf-8") as handle:
             for line in handle:
                 if not line.strip():
@@ -4888,7 +4996,11 @@ class SourceNativeCorpusLoader:
                 if isinstance(row, Mapping):
                     unit = self._unit_from_row(row)
                     if unit.get("text"):
+                        if self.synthesize_xlsx_row_value_bundles:
+                            units.append(unit)
                         yield unit
+        if self.synthesize_xlsx_row_value_bundles:
+            yield from self._synthesize_xlsx_row_value_bundle_units(units)
 
     def load_units(self, *, limit: int | None = None) -> list[dict[str, Any]]:
         units: list[dict[str, Any]] = []
@@ -5063,6 +5175,62 @@ class SourceNativeCorpusLoader:
         }
         return {key: value for key, value in structural.items() if value}
 
+    def _source_owned_display_value_from_text(self, row: Mapping[str, Any], target_column: str) -> str:
+        target = _clean(target_column)
+        if not target:
+            return ""
+        forbidden_display_value_axes = {
+            *XLSX_PDF_RESIDUAL_FORBIDDEN_SHORTCUT_FIELDS,
+            *SOURCE_DERIVED_EVIDENCE_FORBIDDEN_FIELDS,
+            "raw_prompt",
+            "raw_response",
+            "prompt_payload",
+            "response_payload",
+            "raw_prompt_payload",
+            "raw_response_payload",
+            "raw_tool_payload",
+            "tool_payload",
+        }
+
+        def forbidden_axis_name(value: str) -> bool:
+            text = _clean(value)
+            canonical = _canonical_candidate_field_name(text) or _canonical_xlsx_locator_field_name(text)
+            names = {text.casefold(), canonical.casefold() if canonical else ""}
+            return bool(
+                names & {field.casefold() for field in forbidden_display_value_axes}
+                or _xlsx_locator_forbidden_text_fields(f"{text}=x")
+            )
+
+        if forbidden_axis_name(target):
+            return ""
+        display_text = _clean(row.get("display_text") or row.get("bm25_text") or row.get("embedding_text"))
+        if not display_text:
+            return ""
+
+        def same_key(left: str, right: str) -> bool:
+            left_text = " ".join(_clean(left).casefold().split())
+            right_text = " ".join(_clean(right).casefold().split())
+            if left_text and left_text == right_text:
+                return True
+            left_canonical = _canonical_candidate_field_name(left)
+            right_canonical = _canonical_candidate_field_name(right)
+            return bool(left_canonical and right_canonical and left_canonical == right_canonical)
+
+        for segment in re.split(r"\s+\|\s+|\r?\n+", display_text):
+            key, separator, value = _clean(segment).partition("=")
+            if not separator or not same_key(key, target):
+                continue
+            if forbidden_axis_name(key):
+                continue
+            candidate = _clean(value).strip("|;,")
+            lowered = candidate.casefold()
+            if not candidate:
+                continue
+            if any(marker in lowered for marker in ("normalized_value", "formula", "source_path", "workbook=")):
+                continue
+            return candidate
+        return ""
+
     def _structural_metadata_from_row(self, row: Mapping[str, Any]) -> dict[str, str]:
         source_identity = _clean(row.get("source_identity") or row.get("sourceIdentity"))
         display_text = _clean(row.get("display_text") or row.get("bm25_text") or row.get("embedding_text"))
@@ -5102,6 +5270,12 @@ class SourceNativeCorpusLoader:
             regex(r"\bcell=[A-Z]{1,3}(\d+)\b", display_text),
             regex(r":[A-Z]{1,3}(\d+)$", source_identity),
         )
+        target_column = first(row.get("target_column"), regex(r"\btarget_column=([^|]+)", display_text))
+        display_value = first(
+            row.get("display_value"),
+            row.get("displayValue"),
+            self._source_owned_display_value_from_text(row, target_column),
+        )
         structural = {
             "workbook_id": first(row.get("workbook_id"), row.get("workbookId")),
             "workbook_version_id": first(row.get("workbook_version_id"), row.get("workbookVersionId")),
@@ -5111,7 +5285,8 @@ class SourceNativeCorpusLoader:
             "row_index_1based": row_index_1based,
             "row_label": first(row.get("row_label"), regex(r"\brow_label=([^|]+)", display_text)),
             "column_label": first(row.get("column_label"), regex(r"\bcolumn_label=([^|]+)", display_text)),
-            "target_column": first(row.get("target_column"), regex(r"\btarget_column=([^|]+)", display_text)),
+            "target_column": target_column,
+            "display_value": display_value,
             "header": first(row.get("header"), regex(r"\bheader=([^|]+)", display_text)),
             "header_path": first(row.get("header_path"), regex(r"\bheader_path=([^|]+)", display_text)),
             "table_id": first(row.get("table_id"), regex(r"\btable_id=([^|]+)", display_text)),
@@ -5126,6 +5301,109 @@ class SourceNativeCorpusLoader:
             "parent_source_unit_id": first(row.get("parent_source_unit_id"), row.get("parent_search_unit_id")),
         }
         return {key: value for key, value in structural.items() if value}
+
+    def _synthesize_xlsx_row_value_bundle_units(self, units: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
+        bundles: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for unit in units:
+            if _clean(unit.get("source_family")).upper() != "XLSX":
+                continue
+            metadata = dict(unit.get("metadata") if isinstance(unit.get("metadata"), Mapping) else {})
+            target_column = _clean(metadata.get("target_column"))
+            display_value = _clean(metadata.get("display_value"))
+            row_label = _clean(metadata.get("row_label"))
+            row_index = _clean(metadata.get("row_index_1based"))
+            sheet = _clean(metadata.get("sheet"))
+            cell_range = _clean(metadata.get("cell_range"))
+            doc_id = _clean(unit.get("doc_id"))
+            source_atom_id = _clean(unit.get("source_atom_id"))
+            if not (doc_id and source_atom_id and target_column and display_value and (row_label or row_index)):
+                continue
+            basis = json.dumps(
+                {
+                    "doc_id": doc_id,
+                    "sheet": sheet,
+                    "cell_range": cell_range,
+                    "row_index_1based": row_index,
+                    "row_label": row_label,
+                    "target_column": target_column,
+                    "display_value": display_value,
+                    "source_atom_id": source_atom_id,
+                },
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+            digest = _sha256_text(basis)[:24]
+            if digest in seen:
+                continue
+            seen.add(digest)
+            bundle_id = f"srcatom_xlsx_row_value_bundle_{digest}"
+            text_parts = [
+                f"{key}={value}"
+                for key, value in (
+                    ("sheet", sheet),
+                    ("range", cell_range),
+                    ("row_index_1based", row_index),
+                    ("row_label", row_label),
+                    ("column_label", _clean(metadata.get("column_label"))),
+                    ("target_column", target_column),
+                    ("display_value", display_value),
+                    ("header_path", _clean(metadata.get("header_path"))),
+                    ("table_id", _clean(metadata.get("table_id"))),
+                )
+                if value
+            ]
+            bundle_metadata = {
+                key: value
+                for key, value in metadata.items()
+                if key
+                in {
+                    "sheet",
+                    "cell_range",
+                    "cell",
+                    "row_index_1based",
+                    "row_label",
+                    "column_label",
+                    "target_column",
+                    "header",
+                    "header_path",
+                    "table_id",
+                    "display_value",
+                    "source_text_sha256",
+                }
+            }
+            bundle_metadata.update(
+                {
+                    "candidate_surface_materialization": "xlsx_row_value_bundle_v1",
+                    "candidate_surface_materialization_policy": (
+                        "source_owned_manifest_snapshot_no_gold_qrels_labels_or_normalized_fields_v1"
+                    ),
+                    "source_atom_ids": [source_atom_id],
+                    "source_registry_mutated": False,
+                    "raw_local_paths_exposed": False,
+                }
+            )
+            text = " | ".join(text_parts)
+            bundles.append(
+                {
+                    "unit_id": bundle_id,
+                    "source_atom_id": bundle_id,
+                    "evidence_bundle_id": f"bundle_{bundle_id}",
+                    "doc_id": doc_id,
+                    "chunk_id": bundle_id,
+                    "source_family": "XLSX",
+                    "granularity": "table_row",
+                    "retrieval_route": "xlsx_table",
+                    "title": "",
+                    "section": "xlsx_row_value_bundle",
+                    "text": text,
+                    "metadata": bundle_metadata,
+                    "surface": "source_atom",
+                    "text_sha256": _sha256_text(text),
+                    "faiss_row_id": None,
+                }
+            )
+        return bundles
 
 
 def _unit_to_payload(unit: Mapping[str, Any]) -> dict[str, Any]:
@@ -5204,6 +5482,7 @@ def build_source_native_bge_m3_index_artifact(
             ),
             batch_size=int(os.environ.get("ACTUAL_RAG_EVAL_BGE_M3_BATCH_SIZE", "32")),
             show_progress_bar=True,
+            local_files_only=True,
         )
     started = time.perf_counter()
     vectors = embedder.embed_passages(texts)
@@ -5560,6 +5839,7 @@ class SourceNativeHybridAdapter(RepoCurrentHybridAdapter):
                             ),
                             batch_size=int(os.environ.get("ACTUAL_RAG_EVAL_BGE_M3_BATCH_SIZE", "32")),
                             show_progress_bar=False,
+                            local_files_only=True,
                         )
                     self._vector_id_map = payloads
                     self._embedder = embedder
@@ -5602,6 +5882,7 @@ class SourceNativeHybridAdapter(RepoCurrentHybridAdapter):
                     ),
                     batch_size=int(os.environ.get("ACTUAL_RAG_EVAL_BGE_M3_BATCH_SIZE", "32")),
                     show_progress_bar=False,
+                    local_files_only=True,
                 )
             texts = [_clean(payload.get("embedding_text") or payload.get("bm25_text")) for payload in payloads]
             embed_started = time.perf_counter()
@@ -6557,7 +6838,11 @@ def build_semantic_quality_samples_report(
 
 
 def _surface_output_summary(item: EvalItem, output: Mapping[str, Any], presence: Mapping[str, Any], surface: str) -> dict[str, Any]:
-    contexts = [dict(context) for context in _as_list(output.get("retrieved_contexts")) if isinstance(context, Mapping)]
+    contexts = [
+        _runtime_safe_evidence_context(context)
+        for context in _as_list(output.get("retrieved_contexts"))
+        if isinstance(context, Mapping)
+    ]
     families = Counter(_clean(context.get("source_family")) or "unknown" for context in contexts)
     return {
         "surface": surface,
@@ -6771,8 +7056,16 @@ class SurfaceComparingRagAdapter:
         if selected_output is None:
             selected_output = _pipeline_error_output(item, "source_native_unavailable_auto_fallback_to_searchunit_disabled")
         output = dict(selected_output)
-        output["retrieved_contexts"] = [dict(context) for context in _as_list(selected_output.get("retrieved_contexts"))]
-        output["citations"] = [dict(citation) for citation in _as_list(selected_output.get("citations"))]
+        output["retrieved_contexts"] = [
+            _runtime_safe_evidence_context(context)
+            for context in _as_list(selected_output.get("retrieved_contexts"))
+            if isinstance(context, Mapping)
+        ]
+        output["citations"] = [
+            _runtime_safe_evidence_context(citation)
+            for citation in _as_list(selected_output.get("citations"))
+            if isinstance(citation, Mapping)
+        ]
         output["retrieval_backend_comparison"] = selected_output.get("retrieval_backend_comparison")
         source_presence = self.source_adapter.presence_probe(item) if self.source_available else {}
         source_summary = _surface_output_summary(item, source_output, source_presence, "source_native")
@@ -6884,8 +7177,8 @@ def _item_output(
     contexts: Sequence[Mapping[str, Any]],
     citations: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
-    context_rows = [dict(context) for context in contexts]
-    citation_rows = [dict(citation) for citation in citations]
+    context_rows = [_runtime_safe_evidence_context(context) for context in contexts]
+    citation_rows = [_runtime_safe_evidence_context(citation) for citation in citations]
     return {
         "id": item.id,
         "query": item.query,
@@ -8021,7 +8314,10 @@ def _agentic_planner_pdf_locator_tool_output(
         for context in _as_list(row.get("retrieved_contexts"))
         if isinstance(context, Mapping)
     ]
-    tool_output["retrieved_contexts"] = [tool_context, *original_contexts]
+    tool_output["retrieved_contexts"] = [
+        _runtime_safe_evidence_context(tool_context),
+        *[_runtime_safe_evidence_context(context) for context in original_contexts],
+    ]
     tool_output["citations"] = []
     composed_tool = apply_selected_evidence_composer_to_outputs(
         [tool_output],
@@ -8138,6 +8434,11 @@ def _collect_xlsx_locator_forbidden_input_fields(value: Any) -> set[str]:
             "prompt_payload",
             "raw_prompt_payload",
             "raw_response_payload",
+            "raw_tool_payload",
+            "source_path",
+            "tool_payload",
+            "workbook_id",
+            "workbook_version_id",
         }
     )
     if isinstance(value, Mapping):
@@ -8164,6 +8465,17 @@ def _collect_xlsx_locator_forbidden_input_fields(value: Any) -> set[str]:
     elif isinstance(value, str):
         seen.update(_xlsx_locator_forbidden_text_fields(value))
     return seen
+
+
+def _xlsx_locator_forbidden_seen_fields_requiring_fail_closed(fields: Sequence[str]) -> list[str]:
+    return sorted(
+        {
+            _clean(field)
+            for field in fields
+            if _clean(field)
+            and _clean(field) not in XLSX_LOCATOR_DIAGNOSTIC_ONLY_FORBIDDEN_SEEN_FIELDS
+        }
+    )
 
 
 def _xlsx_locator_source_owned_value(context: Mapping[str, Any], field: str) -> str:
@@ -8230,6 +8542,13 @@ def _xlsx_locator_used_input_view(
         value = _clean(candidate.get(field))
         if value:
             used[field] = value
+    source_date_aliases = [
+        _clean(alias)
+        for alias in _as_list(candidate.get("source_date_aliases"))
+        if _clean(alias)
+    ]
+    if source_date_aliases:
+        used["source_date_aliases"] = source_date_aliases
     return used
 
 
@@ -8311,6 +8630,43 @@ def _xlsx_locator_table_metadata_segment(segment: str) -> bool:
         "synthetic_table_id",
         "display_value",
     }
+
+
+def _xlsx_locator_target_column_display_value_from_segments(
+    *,
+    candidate: Mapping[str, Any],
+    text: str,
+) -> str:
+    target_labels = [
+        _clean(value)
+        for value in (
+            candidate.get("target_column"),
+            candidate.get("column_label"),
+            candidate.get("header"),
+            candidate.get("header_path"),
+        )
+        if _clean(value)
+    ]
+    normalized_targets = {
+        normalize_answer_text(label)
+        for label in target_labels
+        if normalize_answer_text(label)
+    }
+    if not normalized_targets:
+        return ""
+    matches: list[str] = []
+    for segment in _xlsx_locator_table_segments(text):
+        key, separator, value = _clean(segment).partition("=")
+        if not separator:
+            continue
+        normalized_key = normalize_answer_text(key)
+        clean_value = _clean(value)
+        if not normalized_key or normalized_key not in normalized_targets or not clean_value:
+            continue
+        matches.append(clean_value)
+    if len(matches) != 1:
+        return ""
+    return matches[0]
 
 
 def _xlsx_locator_table_header_labels(text: str) -> list[str]:
@@ -8443,6 +8799,13 @@ def _xlsx_locator_date_aliases(text: str) -> list[str]:
     aliases: list[str] = []
     seen: set[str] = set()
 
+    def valid_year(value: str) -> bool:
+        try:
+            year = int(value)
+        except ValueError:
+            return False
+        return 1900 <= year <= 2099
+
     def add(value: str) -> None:
         clean_value = _clean(value)
         if clean_value and clean_value not in seen:
@@ -8451,6 +8814,8 @@ def _xlsx_locator_date_aliases(text: str) -> list[str]:
 
     for match in re.finditer(r"\b(\d{4})[-./](0?[1-9]|1[0-2])(?:[-./](0?[1-9]|[12]\d|3[01]))?\b", text):
         year = match.group(1)
+        if not valid_year(year):
+            continue
         month = str(int(match.group(2)))
         day = str(int(match.group(3))) if match.group(3) else ""
         add(f"{year}년 {month}월")
@@ -8458,7 +8823,28 @@ def _xlsx_locator_date_aliases(text: str) -> list[str]:
         add(f"{month}월")
         if day:
             add(f"{day}일")
+    compact_period_pattern = re.compile(
+        r"(?:년월|연월|기간|period|date|지정일자|설치신고일자)\s*[:=]?\s*(\d{4})(0[1-9]|1[0-2])\b",
+        re.IGNORECASE,
+    )
+    for match in compact_period_pattern.finditer(text):
+        year = match.group(1)
+        if not valid_year(year):
+            continue
+        month = str(int(match.group(2)))
+        add(f"{year}년 {month}월")
+        add(f"{year}년")
+        add(f"{month}월")
     return aliases
+
+
+def _xlsx_locator_apply_source_date_alias_diagnostic(
+    candidate: MutableMapping[str, Any],
+    support_text: str,
+) -> None:
+    aliases = _xlsx_locator_date_aliases(support_text)
+    if aliases:
+        candidate["source_date_aliases"] = aliases
 
 
 def _xlsx_locator_table_row_text(
@@ -8694,9 +9080,21 @@ def _xlsx_locator_candidate_from_context(
         locator_text_source=locator_text_source,
         locator_text_fields_used=locator_text_fields_used,
     )
+    if not _clean(candidate.get("display_value")):
+        materialized_display_value = _xlsx_locator_target_column_display_value_from_segments(
+            candidate=candidate,
+            text=_gate_support_text(candidate),
+        )
+        if materialized_display_value:
+            candidate["display_value"] = materialized_display_value
+            candidate["display_value_source"] = "source_owned_target_column_segment"
+            locator_text_fields_used = tuple(dict.fromkeys([*locator_text_fields_used, "display_value"]))
     query = _clean(row.get("query"))
     query_anchors = _query_focus_anchors_for_row(row)
     support_text = _gate_support_text(candidate)
+    _xlsx_locator_apply_source_date_alias_diagnostic(candidate, support_text)
+    if _as_list(candidate.get("source_date_aliases")):
+        locator_text_fields_used = tuple(dict.fromkeys([*locator_text_fields_used, "source_date_aliases"]))
     matched = sorted(_gate_anchor_hits(query_anchors, [support_text]))
     missing = sorted(query_anchors - set(matched))
     query_anchor_coverage = _gate_coverage(query_anchors, set(matched))
@@ -8708,7 +9106,23 @@ def _xlsx_locator_candidate_from_context(
     planner = _query_evidence_planner_for_row(row)
     source_family_hint = _clean(planner.get("source_family_hint")).lower() if planner else ""
     source_family_hint_allows_xlsx = source_family_hint in {"", "unknown", "xlsx"}
-    forbidden_input_fields_seen = sorted(_collect_xlsx_locator_forbidden_input_fields(context))
+    previous_forbidden_seen = {
+        _canonical_xlsx_locator_field_name(field)
+        for field in (
+            *_as_list(candidate.get("forbidden_input_fields_rejected")),
+            *_as_list(candidate.get("forbidden_input_fields_used_for_candidate")),
+        )
+        if _clean(field)
+    }
+    forbidden_input_fields_seen = sorted(
+        {
+            *previous_forbidden_seen,
+            *_collect_xlsx_locator_forbidden_input_fields(context),
+        }
+    )
+    forbidden_seen_fail_closed = _xlsx_locator_forbidden_seen_fields_requiring_fail_closed(
+        forbidden_input_fields_seen
+    )
     forbidden_input_fields = sorted(
         _collect_xlsx_locator_forbidden_input_fields(
             _xlsx_locator_used_input_view(
@@ -8736,6 +9150,7 @@ def _xlsx_locator_candidate_from_context(
     required_axes_sufficient = required_axes_available and not missing_required_axes
     accepted = bool(
         not forbidden_input_fields
+        and not forbidden_seen_fail_closed
         and _has_sourceatom_evidence_identity(candidate)
         and _clean(candidate.get("doc_id"))
         and _clean(candidate.get("text"))
@@ -8745,7 +9160,7 @@ def _xlsx_locator_candidate_from_context(
     )
     if accepted:
         rejection_reason = ""
-    elif forbidden_input_fields:
+    elif forbidden_input_fields or forbidden_seen_fail_closed:
         rejection_reason = "forbidden_input_fields_present"
     elif not source_family_hint_allows_xlsx:
         rejection_reason = "source_family_hint_mismatch"
@@ -8773,21 +9188,439 @@ def _xlsx_locator_candidate_from_context(
             "input_fields_used": input_fields_used,
             "forbidden_input_fields_seen": forbidden_input_fields_seen,
             "forbidden_input_fields_used_for_candidate": forbidden_input_fields,
+            "forbidden_input_fields_rejected": forbidden_seen_fail_closed,
         }
     )
     return candidate
 
 
+def _xlsx_locator_axis_hit_in_text(axis: str, planner: Mapping[str, Any], text: str) -> bool:
+    clean_text = _clean(text)
+    if not clean_text:
+        return False
+    field_texts = {axis_name: [clean_text] for axis_name in QUERY_EVIDENCE_AXIS_ORDER}
+    field_texts["period"] = [
+        *field_texts.get("period", []),
+        *_xlsx_locator_date_aliases(clean_text),
+    ]
+    return _query_evidence_axis_hit(
+        axis=axis,
+        planner=planner,
+        field_texts=field_texts,
+        metadata_values={},
+    )
+
+
+def _xlsx_locator_same_source_document_identity(
+    base_candidate: Mapping[str, Any],
+    sibling_context: Mapping[str, Any],
+) -> bool:
+    base_doc_id = _clean(base_candidate.get("doc_id"))
+    sibling_doc_id = _clean(sibling_context.get("doc_id"))
+    return bool(base_doc_id and sibling_doc_id and base_doc_id == sibling_doc_id)
+
+
+def _xlsx_locator_same_source_row_context_window(
+    *,
+    row: Mapping[str, Any],
+    base_candidate: Mapping[str, Any],
+    sibling_context: Mapping[str, Any],
+    clean_text: str,
+) -> str:
+    planner = _query_evidence_planner_for_row(row)
+    if not planner:
+        return ""
+    base_row_index = _clean(base_candidate.get("row_index_1based"))
+    sibling_row_index = _xlsx_locator_source_owned_value(sibling_context, "row_index_1based")
+    if not base_row_index or not sibling_row_index or base_row_index != sibling_row_index:
+        return ""
+    source_owned_text, _source_owned_fields = _xlsx_locator_source_owned_text(sibling_context)
+    context_text = " | ".join(part for part in (source_owned_text, clean_text) if part)
+    segments = _xlsx_locator_table_segments(context_text)
+    if not segments:
+        return ""
+    matched_windows: list[tuple[str, str]] = []
+    for index, _segment in enumerate(segments):
+        window_segments = segments[max(0, index - 6) : min(len(segments), index + 7)]
+        window_text = " | ".join(window_segments)
+        if not _xlsx_locator_axis_hit_in_text("period", planner, window_text):
+            continue
+        if not _xlsx_locator_axis_hit_in_text("row_entity", planner, window_text):
+            continue
+        period_signature = "|".join(
+            sorted(
+                {
+                    normalize_answer_text(alias)
+                    for alias in _xlsx_locator_date_aliases(window_text)
+                    if _clean(alias)
+                }
+            )
+        )
+        row_signature = "|".join(
+            normalize_answer_text(value)
+            for value in _query_evidence_axis_values(planner, "row_entity")
+            if _axis_value_hits_text([value], [window_text])
+        )
+        signature = "|".join(part for part in (row_signature, period_signature) if part)
+        if signature:
+            matched_windows.append((signature, window_text))
+    signatures = {signature for signature, _window in matched_windows if signature}
+    if len(signatures) != 1:
+        return ""
+    return min((window for _signature, window in matched_windows), key=len)
+
+
+def _xlsx_locator_sibling_row_context_window(
+    *,
+    row: Mapping[str, Any],
+    base_candidate: Mapping[str, Any],
+    sibling_context: Mapping[str, Any],
+) -> str:
+    planner = _query_evidence_planner_for_row(row)
+    if not planner:
+        return ""
+    display_value = _clean(base_candidate.get("display_value"))
+    if not display_value:
+        return ""
+    if not _clean(base_candidate.get("target_column")) and not _clean(base_candidate.get("column_label")):
+        return ""
+    if not _clean(base_candidate.get("sheet")) or not _clean(base_candidate.get("cell_range")):
+        return ""
+    if _clean(base_candidate.get("sheet")) != _xlsx_locator_source_owned_value(sibling_context, "sheet"):
+        return ""
+    if _clean(base_candidate.get("cell_range")) != _xlsx_locator_source_owned_value(sibling_context, "cell_range"):
+        return ""
+    if _clean(base_candidate.get("source_atom_id")) == _clean(sibling_context.get("source_atom_id")):
+        return ""
+    if not _xlsx_locator_same_source_document_identity(base_candidate, sibling_context):
+        return ""
+    if not _has_sourceatom_evidence_identity(sibling_context) or not _clean(sibling_context.get("doc_id")):
+        return ""
+    clean_text = _strip_xlsx_locator_forbidden_text_segments(_gate_row_text(sibling_context))
+    if not clean_text:
+        return ""
+    same_row_window = _xlsx_locator_same_source_row_context_window(
+        row=row,
+        base_candidate=base_candidate,
+        sibling_context=sibling_context,
+        clean_text=clean_text,
+    )
+    if same_row_window:
+        return same_row_window
+    return ""
+
+
+def _xlsx_locator_refresh_candidate_decision(
+    *,
+    row: Mapping[str, Any],
+    context: Mapping[str, Any],
+    candidate: MutableMapping[str, Any],
+    locator_text: str,
+    locator_text_source: str,
+    locator_text_fields_used: Sequence[str],
+    extra_input_fields_used: Sequence[str] = (),
+) -> None:
+    query_anchors = _query_focus_anchors_for_row(row)
+    support_text = _gate_support_text(candidate)
+    _xlsx_locator_apply_source_date_alias_diagnostic(candidate, support_text)
+    if _as_list(candidate.get("source_date_aliases")):
+        locator_text_fields_used = tuple(dict.fromkeys([*locator_text_fields_used, "source_date_aliases"]))
+    matched = sorted(_gate_anchor_hits(query_anchors, [support_text]))
+    missing = sorted(query_anchors - set(matched))
+    query_anchor_coverage = _gate_coverage(query_anchors, set(matched))
+    matched_required_axes, missing_required_axes = _xlsx_locator_validated_required_axis_hits(
+        row=row,
+        candidate=candidate,
+    )
+    required_axes_available = bool(matched_required_axes or missing_required_axes)
+    planner = _query_evidence_planner_for_row(row)
+    source_family_hint = _clean(planner.get("source_family_hint")).lower() if planner else ""
+    source_family_hint_allows_xlsx = source_family_hint in {"", "unknown", "xlsx"}
+    previous_forbidden_seen = {
+        _canonical_xlsx_locator_field_name(field)
+        for field in (
+            *_as_list(candidate.get("forbidden_input_fields_rejected")),
+            *_as_list(candidate.get("forbidden_input_fields_used_for_candidate")),
+        )
+        if _clean(field)
+    }
+    forbidden_input_fields_seen = sorted(
+        {
+            *previous_forbidden_seen,
+            *_collect_xlsx_locator_forbidden_input_fields(context),
+        }
+    )
+    forbidden_seen_fail_closed = _xlsx_locator_forbidden_seen_fields_requiring_fail_closed(
+        forbidden_input_fields_seen
+    )
+    used_input_view = _xlsx_locator_used_input_view(
+        locator_text=locator_text,
+        locator_text_fields_used=locator_text_fields_used,
+        candidate=candidate,
+    )
+    for field in extra_input_fields_used:
+        value = _clean(candidate.get(field))
+        if value:
+            used_input_view[field] = value
+    forbidden_input_fields = sorted(
+        {
+            *(
+                _canonical_xlsx_locator_field_name(field)
+                for field in _as_list(candidate.get("forbidden_input_fields_used_for_candidate"))
+                if _clean(field)
+            ),
+            *_collect_xlsx_locator_forbidden_input_fields(used_input_view),
+        }
+    )
+    input_fields_used = sorted(
+        {
+            *locator_text_fields_used,
+            *extra_input_fields_used,
+            *(
+                field
+                for field in XLSX_LOCATOR_SOURCE_OWNED_FIELDS
+                if _clean(context.get(field))
+                or _clean(candidate.get(field))
+                or any(_clean(source.get(field)) for source in _xlsx_locator_metadata_sources(context))
+            ),
+            "locator_text_source",
+        }
+    )
+    confidence_tier = _xlsx_locator_confidence_tier(candidate)
+    query_anchor_sufficient = not query_anchors or query_anchor_coverage >= EVIDENCE_GATE_MIN_QUERY_ANCHOR_COVERAGE
+    required_axes_sufficient = required_axes_available and not missing_required_axes
+    accepted = bool(
+        not forbidden_input_fields
+        and not forbidden_seen_fail_closed
+        and _has_sourceatom_evidence_identity(candidate)
+        and _clean(candidate.get("doc_id"))
+        and _clean(candidate.get("text"))
+        and source_family_hint_allows_xlsx
+        and (required_axes_sufficient if required_axes_available else bool(matched and query_anchor_sufficient))
+        and confidence_tier == "high"
+    )
+    if accepted:
+        rejection_reason = ""
+    elif forbidden_input_fields or forbidden_seen_fail_closed:
+        rejection_reason = "forbidden_input_fields_present"
+    elif not source_family_hint_allows_xlsx:
+        rejection_reason = "source_family_hint_mismatch"
+    elif required_axes_available and missing_required_axes:
+        rejection_reason = "missing_validated_required_axes_after_tool"
+    elif not matched or not query_anchor_sufficient:
+        rejection_reason = "missing_query_anchor_after_tool"
+    elif confidence_tier != "high":
+        rejection_reason = "missing_required_locator_axes"
+    else:
+        rejection_reason = "missing_source_identity_doc_id_text_or_locator_axes"
+    candidate.update(
+        {
+            "locator_text_source": locator_text_source,
+            "matched_query_anchors": matched,
+            "missing_query_anchors_after_tool": missing,
+            "matched_validated_required_axes": matched_required_axes,
+            "missing_validated_required_axes": missing_required_axes,
+            "confidence_tier": confidence_tier,
+            "query_anchor_coverage": query_anchor_coverage,
+            "validated_required_axes_coverage": _gate_coverage(
+                matched_required_axes + missing_required_axes,
+                matched_required_axes,
+            ),
+            "source_family_hint": source_family_hint,
+            "source_family_hint_matches_candidate": source_family_hint_allows_xlsx,
+            "accepted_for_regating": accepted,
+            "rejection_reason": rejection_reason,
+            "input_fields_used": input_fields_used,
+            "forbidden_input_fields_seen": forbidden_input_fields_seen,
+            "forbidden_input_fields_used_for_candidate": forbidden_input_fields,
+            "forbidden_input_fields_rejected": forbidden_seen_fail_closed,
+        }
+    )
+
+
+def _xlsx_locator_sibling_row_composite_candidates(
+    *,
+    row: Mapping[str, Any],
+    source_contexts: Sequence[Mapping[str, Any]],
+    base_candidates: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    composites: list[dict[str, Any]] = []
+    for base_candidate in base_candidates:
+        if _clean(base_candidate.get("source_family")).upper() != "XLSX":
+            continue
+        if base_candidate.get("accepted_for_regating") is True:
+            continue
+        if "period" not in _as_list(base_candidate.get("missing_validated_required_axes")):
+            continue
+        if not _clean(base_candidate.get("display_value")):
+            continue
+        if _clean(base_candidate.get("confidence_tier")) != "high":
+            continue
+        base_composites: list[dict[str, Any]] = []
+        for sibling_context in source_contexts:
+            if not isinstance(sibling_context, Mapping):
+                continue
+            if _clean(sibling_context.get("source_family")).upper() not in {"XLSX", "XLS", "SPREADSHEET"}:
+                continue
+            sibling_window = _xlsx_locator_sibling_row_context_window(
+                row=row,
+                base_candidate=base_candidate,
+                sibling_context=sibling_context,
+            )
+            if not sibling_window:
+                continue
+            composite = dict(base_candidate)
+            source_row_context_source_atom_id = _clean(sibling_context.get("source_atom_id"))
+            source_row_context_doc_id = _clean(sibling_context.get("doc_id"))
+            base_support_text = _xlsx_locator_source_owned_text(composite)[0]
+            support_text = " | ".join(
+                part
+                for part in (
+                    base_support_text,
+                    f"source_row_context={sibling_window}",
+                )
+                if part
+            )
+            synthetic_seed = "|".join(
+                [
+                    _clean(base_candidate.get("source_atom_id")),
+                    source_row_context_source_atom_id,
+                    _clean(base_candidate.get("sheet")),
+                    _clean(base_candidate.get("cell_range")),
+                    _clean(base_candidate.get("target_column")),
+                    _clean(base_candidate.get("display_value")),
+                ]
+            )
+            composite.update(
+                {
+                    "text": support_text,
+                    "granularity": "xlsx_locator_sibling_row_composite",
+                    "locator_text_source": XLSX_LOCATOR_SIBLING_ROW_COMPOSITE_SOURCE,
+                    "synthetic_table_id": f"{XLSX_LOCATOR_SYNTHETIC_TABLE_ID_PREFIX}{_sha256_text(synthetic_seed)[:16]}",
+                    "source_row_context_source_atom_id": source_row_context_source_atom_id,
+                    "source_row_context_doc_id": source_row_context_doc_id,
+                }
+            )
+            locator_text_fields_used = tuple(
+                dict.fromkeys(
+                    [
+                        *_as_list(base_candidate.get("input_fields_used")),
+                        "text",
+                        "source_row_context_source_atom_id",
+                        "source_row_context_doc_id",
+                        "synthetic_table_id",
+                    ]
+                )
+            )
+            _xlsx_locator_refresh_candidate_decision(
+                row=row,
+                context=sibling_context,
+                candidate=composite,
+                locator_text=support_text,
+                locator_text_source=XLSX_LOCATOR_SIBLING_ROW_COMPOSITE_SOURCE,
+                locator_text_fields_used=locator_text_fields_used,
+                extra_input_fields_used=("source_row_context_source_atom_id", "source_row_context_doc_id"),
+            )
+            if composite.get("accepted_for_regating") is True:
+                base_composites.append(composite)
+        if len(base_composites) == 1:
+            composites.extend(base_composites)
+    return composites
+
+
+def _xlsx_locator_source_owned_diversification_key(candidate: Mapping[str, Any]) -> str:
+    parts = [
+        _clean(candidate.get("sheet")),
+        _clean(candidate.get("table_id")) or _clean(candidate.get("synthetic_table_id")),
+        _clean(candidate.get("cell_range")),
+        _clean(candidate.get("target_column"))
+        or _clean(candidate.get("column_label"))
+        or _clean(candidate.get("header_path"))
+        or _clean(candidate.get("row_label")),
+    ]
+    return "|".join(part or "-" for part in parts)
+
+
+def _xlsx_locator_with_candidate_budget_metadata(
+    candidate: Mapping[str, Any],
+    *,
+    pool_count_before_budget: int,
+    dedupe_removed_count: int,
+    budget_exhausted: bool,
+) -> dict[str, Any]:
+    updated = dict(candidate)
+    updated["candidate_budget_per_query"] = XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET
+    updated["candidate_pool_count_before_budget"] = int(pool_count_before_budget)
+    updated["candidate_budget_exhausted"] = bool(budget_exhausted)
+    updated["dedupe_removed_candidate_count"] = int(dedupe_removed_count)
+    updated["source_owned_candidate_diversification"] = True
+    updated["source_owned_candidate_diversification_policy"] = XLSX_LOCATOR_SOURCE_OWNED_DIVERSIFICATION_POLICY
+    updated["source_owned_diversification_key"] = _xlsx_locator_source_owned_diversification_key(updated)
+    updated["same_sheet_candidate"] = bool(_clean(updated.get("sheet")))
+    updated["same_table_candidate"] = bool(_clean(updated.get("table_id")) or _clean(updated.get("synthetic_table_id")))
+    updated["same_range_candidate"] = bool(_clean(updated.get("cell_range")))
+    return updated
+
+
+def _select_xlsx_locator_budgeted_candidates(
+    ordered_candidates: Sequence[Mapping[str, Any]],
+    *,
+    dedupe_removed_count: int,
+) -> list[dict[str, Any]]:
+    selected: list[Mapping[str, Any]] = []
+    selected_identities: set[str] = set()
+    selected_keys: set[str] = set()
+    for candidate in ordered_candidates:
+        key = _xlsx_locator_source_owned_diversification_key(candidate)
+        identity = f"{_context_identity(candidate)}:{_sha256_text(_gate_row_text(candidate))}"
+        if key in selected_keys:
+            continue
+        selected.append(candidate)
+        selected_identities.add(identity)
+        selected_keys.add(key)
+        if len(selected) >= XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET:
+            break
+    if len(selected) < XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET:
+        for candidate in ordered_candidates:
+            identity = f"{_context_identity(candidate)}:{_sha256_text(_gate_row_text(candidate))}"
+            if identity in selected_identities:
+                continue
+            selected.append(candidate)
+            selected_identities.add(identity)
+            if len(selected) >= XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET:
+                break
+    pool_count = len(ordered_candidates)
+    budget_exhausted = pool_count > XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET
+    return [
+        _xlsx_locator_with_candidate_budget_metadata(
+            candidate,
+            pool_count_before_budget=pool_count,
+            dedupe_removed_count=dedupe_removed_count,
+            budget_exhausted=budget_exhausted,
+        )
+        for candidate in selected
+    ]
+
+
+def _xlsx_locator_candidate_sort_key(candidate: Mapping[str, Any], source_index: int) -> tuple[float, ...]:
+    tier_scores = {"high": 3.0, "medium": 2.0, "low": 1.0}
+    accepted_score = 1.0 if candidate.get("accepted_for_regating") is True else 0.0
+    coverage_score = _safe_float(candidate.get("query_anchor_coverage"))
+    tier_score = tier_scores.get(_clean(candidate.get("confidence_tier")), 0.0)
+    matched_count = float(len(_as_list(candidate.get("matched_query_anchors"))))
+    missing_count = float(len(_as_list(candidate.get("missing_query_anchors_after_tool"))))
+    return (-accepted_score, -coverage_score, -tier_score, -matched_count, missing_count, float(source_index))
+
+
 def _xlsx_locator_tool_candidates(row: Mapping[str, Any]) -> list[dict[str, Any]]:
     candidates: list[tuple[tuple[float, ...], dict[str, Any]]] = []
     seen: set[str] = set()
-    source_contexts = _as_list(row.get(INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY)) or _as_list(
+    dedupe_removed_count = 0
+    raw_source_contexts = _as_list(row.get(INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY)) or _as_list(
         row.get("retrieved_contexts")
     )
-    tier_scores = {"high": 3.0, "medium": 2.0, "low": 1.0}
+    source_contexts = [context for context in raw_source_contexts if isinstance(context, Mapping)]
     for source_index, context in enumerate(source_contexts):
-        if not isinstance(context, Mapping):
-            continue
         candidate = _xlsx_locator_candidate_from_context(row, context)
         if candidate is None:
             continue
@@ -8795,17 +9628,32 @@ def _xlsx_locator_tool_candidates(row: Mapping[str, Any]) -> list[dict[str, Any]
         text_hash = _sha256_text(_gate_row_text(candidate))
         dedupe_key = f"{identity}:{text_hash}"
         if dedupe_key in seen:
+            dedupe_removed_count += 1
             continue
         seen.add(dedupe_key)
-        accepted_score = 1.0 if candidate.get("accepted_for_regating") is True else 0.0
-        coverage_score = _safe_float(candidate.get("query_anchor_coverage"))
-        tier_score = tier_scores.get(_clean(candidate.get("confidence_tier")), 0.0)
-        matched_count = float(len(_as_list(candidate.get("matched_query_anchors"))))
-        missing_count = float(len(_as_list(candidate.get("missing_query_anchors_after_tool"))))
-        sort_key = (-accepted_score, -coverage_score, -tier_score, -matched_count, missing_count, float(source_index))
-        candidates.append((sort_key, candidate))
+        candidates.append((_xlsx_locator_candidate_sort_key(candidate, source_index), candidate))
+    base_candidates = [candidate for _sort_key, candidate in candidates]
+    for composite_index, candidate in enumerate(
+        _xlsx_locator_sibling_row_composite_candidates(
+            row=row,
+            source_contexts=source_contexts,
+            base_candidates=base_candidates,
+        )
+    ):
+        identity = _context_identity(candidate)
+        text_hash = _sha256_text(_gate_row_text(candidate))
+        dedupe_key = f"{identity}:{text_hash}"
+        if dedupe_key in seen:
+            dedupe_removed_count += 1
+            continue
+        seen.add(dedupe_key)
+        source_index = len(source_contexts) + composite_index
+        candidates.append((_xlsx_locator_candidate_sort_key(candidate, source_index), candidate))
     candidates.sort(key=lambda item: item[0])
-    return [candidate for _sort_key, candidate in candidates[:3]]
+    return _select_xlsx_locator_budgeted_candidates(
+        [candidate for _sort_key, candidate in candidates],
+        dedupe_removed_count=dedupe_removed_count,
+    )
 
 
 def _xlsx_locator_source_context_snapshot(context: Mapping[str, Any]) -> dict[str, Any] | None:
@@ -8879,6 +9727,60 @@ def _xlsx_locator_residual_snapshot(rows: Sequence[Mapping[str, Any]]) -> dict[s
     }
 
 
+def _annotate_xlsx_locator_source_row_context_doc_mismatches(
+    candidates: Sequence[Mapping[str, Any]],
+) -> int:
+    count = 0
+    for base_index, base_candidate in enumerate(candidates):
+        if not isinstance(base_candidate, Mapping):
+            continue
+        if _clean(base_candidate.get("source_family")).upper() not in {"XLSX", "XLS", "SPREADSHEET"}:
+            continue
+        if "period" not in _as_list(base_candidate.get("missing_validated_required_axes")):
+            continue
+        if not _clean(base_candidate.get("display_value")):
+            continue
+        if not _clean(base_candidate.get("target_column")) and not _clean(base_candidate.get("column_label")):
+            continue
+        base_sheet = _clean(base_candidate.get("sheet"))
+        base_cell_range = _clean(base_candidate.get("cell_range"))
+        base_doc_id = _clean(base_candidate.get("doc_id"))
+        if not base_sheet or not base_cell_range or not base_doc_id:
+            continue
+        base_source_atom_id = _clean(base_candidate.get("source_atom_id"))
+        blocked_by_doc_identity = False
+        for sibling_index, sibling_candidate in enumerate(candidates):
+            if base_index == sibling_index or not isinstance(sibling_candidate, Mapping):
+                continue
+            if _clean(sibling_candidate.get("source_family")).upper() not in {"XLSX", "XLS", "SPREADSHEET"}:
+                continue
+            if base_sheet != _clean(sibling_candidate.get("sheet")):
+                continue
+            if base_cell_range != _clean(sibling_candidate.get("cell_range")):
+                continue
+            if base_source_atom_id and base_source_atom_id == _clean(sibling_candidate.get("source_atom_id")):
+                continue
+            sibling_doc_id = _clean(sibling_candidate.get("doc_id"))
+            if not sibling_doc_id or sibling_doc_id == base_doc_id:
+                continue
+            sibling_axes = {
+                _clean(axis)
+                for axis in _as_list(sibling_candidate.get("matched_validated_required_axes"))
+                if _clean(axis)
+            }
+            if {"period", "row_entity"}.issubset(sibling_axes):
+                if isinstance(base_candidate, MutableMapping):
+                    base_candidate["source_row_context_source_atom_id"] = _clean(
+                        sibling_candidate.get("source_atom_id")
+                    )
+                    base_candidate["source_row_context_doc_id"] = sibling_doc_id
+                blocked_by_doc_identity = True
+                break
+        if blocked_by_doc_identity:
+            count += 1
+    return count
+
+
 def _xlsx_locator_tool_use_meta(
     *,
     status: str,
@@ -8886,6 +9788,16 @@ def _xlsx_locator_tool_use_meta(
     gated_row: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     accepted_candidates = [candidate for candidate in candidates if candidate.get("accepted_for_regating") is True]
+    candidate_pool_count_before_budget = max(
+        (
+            int(candidate.get("candidate_pool_count_before_budget") or 0)
+            for candidate in candidates
+            if isinstance(candidate, Mapping)
+        ),
+        default=0,
+    )
+    if candidate_pool_count_before_budget <= 0:
+        candidate_pool_count_before_budget = len(candidates)
     gate = gated_row.get("evidence_gate") if isinstance(gated_row, Mapping) and isinstance(gated_row.get("evidence_gate"), Mapping) else {}
     remaining_missing = [
         _clean(anchor)
@@ -8918,11 +9830,64 @@ def _xlsx_locator_tool_use_meta(
         },
         key=lambda axis: QUERY_EVIDENCE_AXIS_ORDER.index(axis) if axis in QUERY_EVIDENCE_AXIS_ORDER else len(QUERY_EVIDENCE_AXIS_ORDER),
     )
+    candidate_axis_rows: list[tuple[int, list[str], list[str]]] = []
+    for index, candidate in enumerate(candidates):
+        matched_axes = [
+            _clean(axis)
+            for axis in _as_list(candidate.get("matched_validated_required_axes"))
+            if _clean(axis)
+        ]
+        missing_axes = [
+            _clean(axis)
+            for axis in _as_list(candidate.get("missing_validated_required_axes"))
+            if _clean(axis)
+        ]
+        if matched_axes or missing_axes:
+            candidate_axis_rows.append((index, matched_axes, missing_axes))
+    complete_candidate_count = sum(1 for _index, _matched, missing_axes in candidate_axis_rows if not missing_axes)
+    if candidate_axis_rows:
+        _best_index, _best_matched, best_missing_axes = min(
+            candidate_axis_rows,
+            key=lambda row: (
+                len(row[2]),
+                -len(row[1]),
+                row[0],
+            ),
+        )
+    else:
+        best_missing_axes = []
+    validated_axis_split_across_candidates = bool(
+        candidate_axis_rows
+        and complete_candidate_count == 0
+        and matched_required_axes
+        and not remaining_required_axes
+    )
+    source_row_context_candidate_count = sum(
+        1
+        for candidate in candidates
+        if _clean(candidate.get("locator_text_source")) == XLSX_LOCATOR_SIBLING_ROW_COMPOSITE_SOURCE
+    )
+    source_row_context_doc_identity_mismatch_candidate_count = (
+        _annotate_xlsx_locator_source_row_context_doc_mismatches(candidates)
+    )
     return {
         "tool_name": XLSX_LOCATOR_TOOL_NAME,
         "execution_status": status,
         "candidate_count": len(candidates),
         "accepted_candidate_count": len(accepted_candidates),
+        "complete_validated_axis_candidate_count": complete_candidate_count,
+        "validated_axis_split_across_candidates": validated_axis_split_across_candidates,
+        "source_row_context_candidate_count": source_row_context_candidate_count,
+        "source_row_context_doc_identity_mismatch_candidate_count": source_row_context_doc_identity_mismatch_candidate_count,
+        "source_row_context_blocked_by_doc_identity_mismatch": (
+            source_row_context_doc_identity_mismatch_candidate_count > 0
+        ),
+        "source_row_context_fail_closed_policy": XLSX_LOCATOR_SOURCE_ROW_CONTEXT_FAIL_CLOSED_POLICY,
+        "best_candidate_missing_validated_required_axes": best_missing_axes,
+        "candidate_budget_per_query": XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET,
+        "candidate_pool_count_before_budget": candidate_pool_count_before_budget,
+        "candidate_budget_exhausted": candidate_pool_count_before_budget > XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET,
+        "source_owned_candidate_diversification_policy": XLSX_LOCATOR_SOURCE_OWNED_DIVERSIFICATION_POLICY,
         "matched_query_anchors": matched,
         "remaining_missing_query_anchors": remaining_missing,
         "matched_validated_required_axes": matched_required_axes,
@@ -8944,6 +9909,21 @@ def _xlsx_locator_tool_use_record(
         execution_status=_clean(meta.get("execution_status")),
         candidate_count=int(meta.get("candidate_count") or 0),
         accepted_candidate_count=int(meta.get("accepted_candidate_count") or 0),
+        candidate_pool_count_before_budget=int(meta.get("candidate_pool_count_before_budget") or meta.get("candidate_count") or 0),
+        complete_validated_axis_candidate_count=int(meta.get("complete_validated_axis_candidate_count") or 0),
+        validated_axis_split_across_candidates=bool(meta.get("validated_axis_split_across_candidates") is True),
+        source_row_context_candidate_count=int(meta.get("source_row_context_candidate_count") or 0),
+        source_row_context_doc_identity_mismatch_candidate_count=int(
+            meta.get("source_row_context_doc_identity_mismatch_candidate_count") or 0
+        ),
+        source_row_context_blocked_by_doc_identity_mismatch=bool(
+            meta.get("source_row_context_blocked_by_doc_identity_mismatch") is True
+        ),
+        best_candidate_missing_validated_required_axes=tuple(
+            _clean(axis)
+            for axis in _as_list(meta.get("best_candidate_missing_validated_required_axes"))
+            if _clean(axis)
+        ),
         matched_query_anchors=tuple(_clean(anchor) for anchor in _as_list(meta.get("matched_query_anchors")) if _clean(anchor)),
         remaining_missing_query_anchors=tuple(
             _clean(anchor) for anchor in _as_list(meta.get("remaining_missing_query_anchors")) if _clean(anchor)
@@ -8986,6 +9966,13 @@ def _xlsx_locator_candidate_record(
         table_id=_clean(candidate.get("table_id")),
         synthetic_table_id=_clean(candidate.get("synthetic_table_id")),
         display_value=_clean(candidate.get("display_value")),
+        source_row_context_source_atom_id=_clean(candidate.get("source_row_context_source_atom_id")),
+        source_row_context_doc_id=_clean(candidate.get("source_row_context_doc_id")),
+        source_date_aliases=tuple(
+            _clean(alias)
+            for alias in _as_list(candidate.get("source_date_aliases"))
+            if _clean(alias)
+        ),
         locator_text_source=_clean(candidate.get("locator_text_source")),
         matched_query_anchors=tuple(
             _clean(anchor) for anchor in _as_list(candidate.get("matched_query_anchors")) if _clean(anchor)
@@ -9139,7 +10126,7 @@ def _build_xlsx_locator_run_record(
             for candidate in _as_list(decision.get("candidates"))
             if isinstance(candidate, Mapping)
             and _clean(candidate.get("rejection_reason")) == "forbidden_input_fields_present"
-            for field in _as_list(candidate.get("forbidden_input_fields_seen"))
+            for field in _as_list(candidate.get("forbidden_input_fields_rejected"))
             if _clean(field)
         }
     )
@@ -9201,6 +10188,69 @@ def _build_xlsx_locator_run_record(
     )
 
 
+def _xlsx_locator_candidate_budget_diagnostic(record: XlsxLocatorRunRecord) -> dict[str, Any]:
+    rejected_by_reason = Counter(
+        candidate.rejection_reason
+        for candidate in record.candidates
+        if not candidate.accepted_for_regating and candidate.rejection_reason
+    )
+    zero_candidate_row_count = sum(1 for tool_use in record.tool_uses if tool_use.candidate_count == 0)
+    at_budget_row_count = sum(
+        1
+        for tool_use in record.tool_uses
+        if tool_use.candidate_count >= XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET
+    )
+    candidate_budget_exhaustion_count = sum(
+        1
+        for tool_use in record.tool_uses
+        if tool_use.candidate_pool_count_before_budget > XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET
+    )
+    source_row_context_doc_identity_mismatch_candidate_count = sum(
+        int(tool_use.source_row_context_doc_identity_mismatch_candidate_count)
+        for tool_use in record.tool_uses
+    )
+    return {
+        "schema_version": "actual_rag_eval.xlsx_locator_candidate_budget_diagnostic.v1",
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "candidate_budget_per_query": XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET,
+        "zero_candidate_row_count": zero_candidate_row_count,
+        "candidate_budget_exhaustion_count": candidate_budget_exhaustion_count,
+        "at_budget_row_count": at_budget_row_count,
+        "accepted_for_regating_count": record.accepted_candidate_count,
+        "same_sheet_candidate_count": sum(1 for candidate in record.candidates if _clean(candidate.sheet)),
+        "same_table_candidate_count": sum(
+            1 for candidate in record.candidates if _clean(candidate.table_id) or _clean(candidate.synthetic_table_id)
+        ),
+        "same_range_candidate_count": sum(1 for candidate in record.candidates if _clean(candidate.cell_range)),
+        "deduped_candidate_count": len(record.candidates),
+        "rejected_candidate_count_by_reason": dict(sorted(rejected_by_reason.items())),
+        "source_row_context_candidate_count": sum(
+            int(tool_use.source_row_context_candidate_count)
+            for tool_use in record.tool_uses
+        ),
+        "source_row_context_doc_identity_mismatch_candidate_count": (
+            source_row_context_doc_identity_mismatch_candidate_count
+        ),
+        "source_row_context_doc_identity_mismatch_row_count": sum(
+            1
+            for tool_use in record.tool_uses
+            if tool_use.source_row_context_blocked_by_doc_identity_mismatch
+        ),
+        "source_row_context_fail_closed_policy": XLSX_LOCATOR_SOURCE_ROW_CONTEXT_FAIL_CLOSED_POLICY,
+        "source_owned_candidate_diversification_policy": XLSX_LOCATOR_SOURCE_OWNED_DIVERSIFICATION_POLICY,
+        "candidate_cap_and_dedupe_policy": "fixed_budget_after_source_identity_and_text_hash_dedupe",
+        "uses_raw_workbook": False,
+        "uses_formula": False,
+        "uses_normalized_value": False,
+        "uses_expected_fields": False,
+        "uses_qrels_or_labels": False,
+        "uses_ids": False,
+        "uses_filename_or_workbook_title": False,
+    }
+
+
 def project_xlsx_locator_run_record(
     record: XlsxLocatorRunRecord,
     *,
@@ -9214,6 +10264,14 @@ def project_xlsx_locator_run_record(
         for candidate in record.candidates
     )
     candidate_source_family_counts = Counter(candidate.source_family for candidate in record.candidates)
+    complete_validated_axis_candidate_count = sum(
+        int(tool_use.complete_validated_axis_candidate_count)
+        for tool_use in record.tool_uses
+    )
+    validated_axis_split_row_count = sum(
+        1 for tool_use in record.tool_uses if tool_use.validated_axis_split_across_candidates
+    )
+    candidate_budget_diagnostic = _xlsx_locator_candidate_budget_diagnostic(record)
     projection = {
         "schema_version": record.schema_version,
         "enabled": record.enabled,
@@ -9227,6 +10285,8 @@ def project_xlsx_locator_run_record(
         "tool_invocation_count": record.tool_invocation_count,
         "accepted_candidate_count": record.accepted_candidate_count,
         "rejected_candidate_count": record.rejected_candidate_count,
+        "complete_validated_axis_candidate_count": complete_validated_axis_candidate_count,
+        "validated_axis_split_row_count": validated_axis_split_row_count,
         "anchor_classifier_model": record.anchor_classifier_model,
         "anchor_classifier_prompt_version": record.anchor_classifier_prompt_version,
         "anchor_classifier_raw_payload_written": record.anchor_classifier_raw_payload_written,
@@ -9236,6 +10296,25 @@ def project_xlsx_locator_run_record(
         "candidate_confidence_tier_counts": dict(sorted(candidate_confidence_counts.items())),
         "candidate_rejection_reason_counts": dict(sorted(candidate_rejection_counts.items())),
         "candidate_source_family_counts": dict(sorted(candidate_source_family_counts.items())),
+        "candidate_budget_diagnostic": candidate_budget_diagnostic,
+        "zero_candidate_row_count": candidate_budget_diagnostic["zero_candidate_row_count"],
+        "candidate_budget_exhaustion_count": candidate_budget_diagnostic["candidate_budget_exhaustion_count"],
+        "at_budget_row_count": candidate_budget_diagnostic["at_budget_row_count"],
+        "candidate_budget_per_query": candidate_budget_diagnostic["candidate_budget_per_query"],
+        "accepted_for_regating_count": candidate_budget_diagnostic["accepted_for_regating_count"],
+        "source_row_context_candidate_count": candidate_budget_diagnostic["source_row_context_candidate_count"],
+        "source_row_context_doc_identity_mismatch_candidate_count": candidate_budget_diagnostic[
+            "source_row_context_doc_identity_mismatch_candidate_count"
+        ],
+        "source_row_context_doc_identity_mismatch_row_count": candidate_budget_diagnostic[
+            "source_row_context_doc_identity_mismatch_row_count"
+        ],
+        "source_row_context_fail_closed_policy": candidate_budget_diagnostic["source_row_context_fail_closed_policy"],
+        "same_sheet_candidate_count": candidate_budget_diagnostic["same_sheet_candidate_count"],
+        "same_table_candidate_count": candidate_budget_diagnostic["same_table_candidate_count"],
+        "same_range_candidate_count": candidate_budget_diagnostic["same_range_candidate_count"],
+        "deduped_candidate_count": candidate_budget_diagnostic["deduped_candidate_count"],
+        "rejected_candidate_count_by_reason": candidate_budget_diagnostic["rejected_candidate_count_by_reason"],
         "before_gate": dict(record.gate_delta_record.before_gate),
         "after_gate": dict(record.gate_delta_record.after_gate),
         "gate_delta": dict(record.gate_delta_record.gate_delta),
@@ -9363,7 +10442,10 @@ def apply_xlsx_locator_tool_execute_once_to_outputs(
             if isinstance(context, Mapping)
         ]
         tool_output = dict(row)
-        tool_output["retrieved_contexts"] = [*accepted_candidates, *original_contexts]
+        tool_output["retrieved_contexts"] = [
+            *[_runtime_safe_evidence_context(candidate) for candidate in accepted_candidates],
+            *[_runtime_safe_evidence_context(context) for context in original_contexts],
+        ]
         tool_output["citations"] = []
         composed_tool = apply_selected_evidence_composer_to_outputs(
             [tool_output],
@@ -9896,7 +10978,10 @@ def apply_agentic_planner_execute_once_to_outputs(
                     if isinstance(context, Mapping)
                 ]
                 memory_output = dict(row)
-                memory_output["retrieved_contexts"] = [memory_context, *original_contexts]
+                memory_output["retrieved_contexts"] = [
+                    _runtime_safe_evidence_context(memory_context),
+                    *[_runtime_safe_evidence_context(context) for context in original_contexts],
+                ]
                 memory_output["citations"] = []
                 memory_meta = {
                     "status": "attempted",
@@ -10443,10 +11528,18 @@ def validate_xlsx_locator_run_store(
             "header_path",
             "table_id",
             "display_value",
+            "source_row_context_source_atom_id",
+            "source_row_context_doc_id",
         },
         "tool_invocations": {
+            "best_candidate_missing_validated_required_axes_json",
+            "complete_validated_axis_candidate_count",
             "matched_validated_required_axes_json",
             "remaining_missing_validated_required_axes_json",
+            "source_row_context_candidate_count",
+            "source_row_context_doc_identity_mismatch_candidate_count",
+            "source_row_context_blocked_by_doc_identity_mismatch",
+            "validated_axis_split_across_candidates",
         },
         "tool_candidates": {
             "locator_text_source",
@@ -10455,6 +11548,8 @@ def validate_xlsx_locator_run_store(
             "missing_validated_required_axes_json",
             "accepted_for_regating",
             "rejection_reason",
+            "source_row_context_source_atom_id",
+            "source_row_context_doc_id",
         },
     }
     uri = f"file:{path.as_posix()}?mode=ro"
@@ -10578,6 +11673,22 @@ def validate_xlsx_locator_run_store(
         for key in ("tool_invocation_count", "accepted_candidate_count", "rejected_candidate_count"):
             if int(record_json.get(key) or 0) != int(locator.get(key) or 0):
                 raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore record_json {key} mismatch")
+        for invocation in conn.execute(
+            "SELECT item_index, source_row_context_doc_identity_mismatch_candidate_count "
+            "FROM tool_invocations WHERE source_row_context_doc_identity_mismatch_candidate_count > 0"
+        ):
+            mismatch_count = int(invocation["source_row_context_doc_identity_mismatch_candidate_count"] or 0)
+            item_index = int(invocation["item_index"] or 0)
+            candidate_diagnostic_count = conn.execute(
+                "SELECT COUNT(*) FROM tool_candidates "
+                "WHERE item_index = ? AND source_row_context_source_atom_id != '' "
+                "AND source_row_context_doc_id != ''",
+                (item_index,),
+            ).fetchone()[0]
+            if int(candidate_diagnostic_count or 0) < mismatch_count:
+                raise DatasetSchemaError(
+                    f"{run_id}: xlsx locator RunStore doc mismatch diagnostics missing at item {item_index}"
+                )
     finally:
         conn.close()
 
@@ -14361,14 +15472,129 @@ def _text_hashes(rows: Sequence[Mapping[str, Any]]) -> list[str]:
     return hashes
 
 
+SOURCE_NATIVE_RUNTIME_TEXT_FIELDS = (
+    "text",
+    "citation_text",
+    "display_text",
+    "embedding_text",
+    "bm25_text",
+)
+SOURCE_NATIVE_RUNTIME_FORBIDDEN_FILENAME_RE = re.compile(
+    r"(?i)(?:^|[\s=:/\\|])[^|;\n\r]*\.(?:xlsx|xlsm|xls|pdf)(?:\b|$)"
+)
+
+
+def _source_native_context_requires_runtime_text_sanitization(row: Mapping[str, Any]) -> bool:
+    source_family = _clean(row.get("source_family") or row.get("family")).upper()
+    if source_family in {"XLSX", "PDF"}:
+        return True
+    return any(
+        _clean(row.get(field))
+        for field in (
+            "sheet",
+            "cell_range",
+            "cell",
+            "row_label",
+            "column_label",
+            "target_column",
+            "page_number",
+            "bbox",
+        )
+    )
+
+
+def _source_native_runtime_forbidden_text_segment(segment: str) -> bool:
+    clean_segment = _clean(segment)
+    if not clean_segment:
+        return False
+    if _xlsx_locator_forbidden_text_fields(clean_segment):
+        return True
+    key, separator, _value = clean_segment.partition("=")
+    if separator and _canonical_xlsx_locator_field_name(key) in SOURCE_DERIVED_EVIDENCE_FORBIDDEN_FIELDS:
+        return True
+    return bool(SOURCE_NATIVE_RUNTIME_FORBIDDEN_FILENAME_RE.search(clean_segment))
+
+
+def _strip_source_native_runtime_forbidden_text_segments(text: str) -> str:
+    clean_text = _clean(text)
+    if not clean_text:
+        return ""
+    segments = [_clean(segment) for segment in re.split(r"\s+\|\s+|\n+", clean_text) if _clean(segment)]
+    if not segments:
+        return ""
+    safe_segments = [
+        segment for segment in segments if not _source_native_runtime_forbidden_text_segment(segment)
+    ]
+    return " | ".join(safe_segments)
+
+
+def _source_native_runtime_forbidden_key(key: Any) -> bool:
+    canonical = _canonical_xlsx_locator_field_name(key)
+    return canonical in SOURCE_DERIVED_EVIDENCE_FORBIDDEN_FIELDS
+
+
+def _source_native_runtime_forbidden_scalar(value: Any) -> bool:
+    if isinstance(value, (Mapping, list, tuple)):
+        return False
+    clean_value = _clean(value)
+    if not clean_value:
+        return False
+    return _source_native_runtime_forbidden_text_segment(clean_value) or _looks_like_local_path(clean_value)
+
+
+def _sanitize_source_native_runtime_value(value: Any, *, source_native_context: bool) -> Any:
+    if isinstance(value, Mapping):
+        active_source_native_context = source_native_context or _source_native_context_requires_runtime_text_sanitization(value)
+        sanitized: dict[str, Any] = {}
+        for key, nested_value in value.items():
+            if active_source_native_context and _source_native_runtime_forbidden_key(key):
+                continue
+            canonical_key = _canonical_xlsx_locator_field_name(key)
+            if active_source_native_context and canonical_key in SOURCE_NATIVE_RUNTIME_TEXT_FIELDS:
+                sanitized[str(key)] = _strip_source_native_runtime_forbidden_text_segments(_clean(nested_value))
+                continue
+            if active_source_native_context and _source_native_runtime_forbidden_scalar(nested_value):
+                continue
+            sanitized[str(key)] = _sanitize_source_native_runtime_value(
+                nested_value,
+                source_native_context=active_source_native_context,
+            )
+        return sanitized
+    if isinstance(value, list):
+        return [
+            _sanitize_source_native_runtime_value(item, source_native_context=source_native_context)
+            for item in value
+        ]
+    if isinstance(value, tuple):
+        return [
+            _sanitize_source_native_runtime_value(item, source_native_context=source_native_context)
+            for item in value
+        ]
+    if source_native_context and _source_native_runtime_forbidden_scalar(value):
+        return ""
+    return value
+
+
+def _runtime_safe_evidence_context(row: Mapping[str, Any]) -> dict[str, Any]:
+    safe = dict(row)
+    for field in SOURCE_DERIVED_EVIDENCE_FORBIDDEN_FIELDS:
+        safe.pop(field, None)
+    if not _source_native_context_requires_runtime_text_sanitization(row):
+        return safe
+    return _sanitize_source_native_runtime_value(safe, source_native_context=True)
+
+
 def _gate_row_text(row: Mapping[str, Any]) -> str:
-    return _clean(
+    text = _clean(
         row.get("text")
         or row.get("citation_text")
         or row.get("display_text")
         or row.get("embedding_text")
         or row.get("bm25_text")
     )
+    if _source_native_context_requires_runtime_text_sanitization(row):
+        return _strip_source_native_runtime_forbidden_text_segments(text)
+    return text
 
 
 SOURCE_DERIVED_EVIDENCE_METADATA_FIELDS = (
@@ -14400,9 +15626,18 @@ SOURCE_DERIVED_EVIDENCE_FORBIDDEN_FIELDS = frozenset(
         "title",
         "source_title",
         "workbook",
+        "workbook_title",
+        "workbook_name",
         "source_workbook",
+        "source_workbook_title",
+        "source_path",
+        "path",
+        "file_path",
         "source_file_name",
         "file_name",
+        "filename",
+        "workbook_id",
+        "workbook_version_id",
         "normalized_value",
         "formula",
         "expected_answer",
@@ -15755,7 +16990,7 @@ def _gate_select_evidence(
         ):
             identity = _context_identity(context)
             if identity and identity not in seen:
-                selected.append(dict(context))
+                selected.append(_runtime_safe_evidence_context(context))
                 seen.add(identity)
     return selected
 
@@ -15786,7 +17021,7 @@ def _gate_select_axis_complete_evidence(
             continue
         identity = _context_identity(context)
         if identity and identity not in seen:
-            selected.append(dict(context))
+            selected.append(_runtime_safe_evidence_context(context))
             seen.add(identity)
     return selected
 
@@ -16709,6 +17944,22 @@ def _selected_evidence_retry_trigger(validation: Mapping[str, Any], decision: st
     return ""
 
 
+def _selected_evidence_gate_validation_for_answer(
+    *,
+    row: Mapping[str, Any],
+    query: str,
+    answer: str,
+    selected_evidence: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    validation_row = dict(row)
+    selected = [dict(evidence) for evidence in selected_evidence if isinstance(evidence, Mapping)]
+    validation_row["query"] = query
+    validation_row["generated_answer"] = _clean(answer)
+    validation_row["retrieved_contexts"] = selected
+    validation_row["citations"] = [_normalize_citation(evidence) for evidence in selected]
+    return validate_evidence_package_for_gate(validation_row)
+
+
 def _selected_evidence_local_llm_output_from_answer(
     *,
     row: Mapping[str, Any],
@@ -16722,6 +17973,7 @@ def _selected_evidence_local_llm_output_from_answer(
     raw_response_sha256: str,
     retry_meta: Mapping[str, Any] | None = None,
     answer_discipline: Mapping[str, Any] | None = None,
+    allow_gate_aligned_fallback: bool = True,
 ) -> dict[str, Any] | None:
     cited_selected = _selected_evidence_matching_ids(query_selected, citation_ids)
     candidate_selected = cited_selected or query_selected
@@ -16744,6 +17996,55 @@ def _selected_evidence_local_llm_output_from_answer(
     )
     if not answer or not final_selected:
         return None
+    initial_gate_validation = _selected_evidence_gate_validation_for_answer(
+        row=row,
+        query=query,
+        answer=answer,
+        selected_evidence=final_selected,
+    )
+    initial_gate_decision, initial_gate_reason = _evidence_gate_decision(
+        initial_gate_validation,
+        answer=_gate_answer_surface(answer),
+    )
+    gate_aligned_fallback_used = False
+    gate_aligned_initial_validation = initial_gate_validation
+    gate_aligned_fallback_validation: Mapping[str, Any] | None = None
+    initial_answer = _clean(answer)
+    final_discipline = discipline
+    if allow_gate_aligned_fallback and initial_gate_decision != "allow_answer":
+        fallback_answer = _selected_evidence_sentence(query, query_selected)
+        fallback_selected = _gate_select_evidence(
+            query=query,
+            answer=_gate_answer_surface(fallback_answer),
+            contexts=query_selected,
+            citations=[],
+        )
+        if fallback_answer and fallback_selected:
+            fallback_validation = _selected_evidence_gate_validation_for_answer(
+                row=row,
+                query=query,
+                answer=fallback_answer,
+                selected_evidence=fallback_selected,
+            )
+            fallback_decision, _fallback_reason = _evidence_gate_decision(
+                fallback_validation,
+                answer=_gate_answer_surface(fallback_answer),
+            )
+            fallback_discipline = _selected_evidence_answer_discipline(
+                query=query,
+                answer=fallback_answer,
+                selected_evidence=fallback_selected,
+                cited_evidence_ids=_selected_evidence_ids(fallback_selected),
+            )
+            if (
+                fallback_decision == "allow_answer"
+                and _clean(fallback_discipline.get("status")) == "clean_supported"
+            ):
+                answer = fallback_answer
+                final_selected = fallback_selected
+                final_discipline = fallback_discipline
+                gate_aligned_fallback_used = True
+                gate_aligned_fallback_validation = fallback_validation
     formatted_citations = format_selected_evidence_citations(
         final_selected,
         citation_format=normalized_citation_format,
@@ -16780,16 +18081,44 @@ def _selected_evidence_local_llm_output_from_answer(
         "uses_baseline_topk_or_legacy_outputs": False,
         "raw_prompt_payload_written": False,
         "raw_response_payload_written": False,
-        "local_llm_fallback_used": False,
-        "answer_discipline": discipline,
+        "local_llm_fallback_used": gate_aligned_fallback_used,
+        "local_llm_gate_aligned_fallback_used": gate_aligned_fallback_used,
+        "answer_discipline": final_discipline,
         "local_llm": _local_llm_meta(
             config=config,
-            status="generated",
+            status="gate_aligned_deterministic_fallback" if gate_aligned_fallback_used else "generated",
             prompt_sha256=prompt_sha256,
             raw_response_sha256=raw_response_sha256,
-            answer_preview=answer,
+            answer_preview=initial_answer,
+            fallback_provider=SELECTED_EVIDENCE_COMPOSER_PROVIDER if gate_aligned_fallback_used else "",
+            fallback_reason="local_llm_clean_answer_gate_insufficient" if gate_aligned_fallback_used else "",
         ),
     }
+    if gate_aligned_fallback_used:
+        composer["answer_rendering_policy"] = "source_native_selected_evidence_sentence_gate_aligned"
+        composer["initial_answer_discipline"] = discipline
+        composer["initial_evidence_package_status"] = _clean(gate_aligned_initial_validation.get("evidence_package_status"))
+        composer["initial_answer_gate_decision"] = initial_gate_decision
+        composer["initial_abstention_reason"] = initial_gate_reason
+        composer["initial_validation_reasons"] = [
+            _clean(reason)
+            for reason in _as_list(gate_aligned_initial_validation.get("validation_reasons"))
+            if _clean(reason)
+        ]
+        composer["initial_missing_answer_anchors"] = [
+            _clean(anchor)
+            for anchor in _as_list(gate_aligned_initial_validation.get("missing_answer_anchors"))
+            if _clean(anchor)
+        ][:8]
+        composer["initial_missing_query_anchors"] = [
+            _clean(anchor)
+            for anchor in _as_list(gate_aligned_initial_validation.get("missing_query_anchors"))
+            if _clean(anchor)
+        ][:8]
+        if gate_aligned_fallback_validation is not None:
+            composer["gate_aligned_evidence_package_status"] = _clean(
+                gate_aligned_fallback_validation.get("evidence_package_status")
+            )
     if retry_meta is not None:
         composer["retry"] = dict(retry_meta)
     output["answer_composer"] = composer
@@ -17311,6 +18640,7 @@ def _apply_selected_evidence_local_llm_composer_to_outputs(
             prompt_sha256=prompt_sha256,
             raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
             answer_discipline=answer_discipline,
+            allow_gate_aligned_fallback=normalized_retry_mode != "bounded-once",
         )
         if output is None:
             deterministic_discipline = _selected_evidence_deterministic_fallback_answer_discipline(
@@ -17563,9 +18893,9 @@ def validate_evidence_package_for_gate(row: Mapping[str, Any]) -> dict[str, Any]
         "conflicting_evidence_reasons": conflicting_reasons,
         "validation_reasons": sorted(set(validation_reasons)),
         "validator_version": EVIDENCE_GATE_VALIDATOR_VERSION,
-        "retrieved_evidence_candidates": [dict(context) for context in contexts],
+        "retrieved_evidence_candidates": [_runtime_safe_evidence_context(context) for context in contexts],
         "selected_evidence": selected_for_gate,
-        "citation_targets": [dict(citation) for citation in citations],
+        "citation_targets": [_runtime_safe_evidence_context(citation) for citation in citations],
         "evidence_text_hashes": _text_hashes([*contexts, *citations]),
         "citation_validations": citation_validations,
         "citation_supported_count": len(supported_citations),
@@ -17992,6 +19322,747 @@ def build_xlsx_pdf_residual_breakdown(
         "forbidden_shortcut_fields_seen": sorted(forbidden_seen),
         "forbidden_shortcut_fields_used": [],
         "rows": residual_rows,
+    }
+
+
+SOURCE_NATIVE_AXIS_PROVENANCE_FIELDS = (
+    "sheet",
+    "cell_range",
+    "cell",
+    "row_label",
+    "column_label",
+    "target_column",
+    "header_path",
+    "table_id",
+    "display_value",
+    "page_number",
+    "section_title",
+    "table_caption",
+    "bbox",
+)
+
+
+def _axis_presence_for_fields(
+    sources: Sequence[Mapping[str, Any]],
+    fields: Sequence[str],
+) -> dict[str, list[str]]:
+    present = [
+        field
+        for field in fields
+        if any(_source_value_present(source.get(field)) for source in sources)
+    ]
+    return {
+        "present": present,
+        "missing": [field for field in fields if field not in present],
+    }
+
+
+def _stage_text(sources: Sequence[Mapping[str, Any]]) -> str:
+    return " ".join(_gate_support_text(source) for source in sources if _gate_support_text(source))
+
+
+def _stage_anchor_presence(
+    *,
+    query: str,
+    answer: str,
+    sources: Sequence[Mapping[str, Any]],
+    source_family: str,
+) -> dict[str, bool]:
+    text = _stage_text(sources)
+    query_anchors = _candidate_anchors(query)
+    entity_anchors = set(query_anchors) - _numeric_or_date_anchors(query_anchors)
+    answer_value_present = _text_has_answer_value_anchor_beyond_query(query, text) if text else False
+    if answer and not answer_value_present:
+        answer_value_present = _text_has_answer_value_anchor_beyond_query(query, answer)
+    axis_present = bool(_residual_axis_presence(source_family, sources)[0])
+    date_or_number_present = _text_has_numeric_or_date_value(text)
+    return {
+        "query_anchor_present": bool(query_anchors and _anchor_in_text(query_anchors, text)),
+        "entity_anchor_present": bool(entity_anchors and _anchor_in_text(entity_anchors, text)),
+        "value_anchor_present": bool(answer_value_present),
+        "date_or_number_anchor_present": bool(date_or_number_present),
+        "axis_anchor_present": axis_present,
+    }
+
+
+def _final_answer_sources(row: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    answer = _clean(row.get("generated_answer"))
+    if not answer:
+        return []
+    return [{"text": answer}]
+
+
+def _gate_validation_reasons_for_matrix(row: Mapping[str, Any], residual_classification: str) -> list[str]:
+    gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+    reasons = [
+        _clean(reason)
+        for reason in _as_list(gate.get("validation_reasons"))
+        if _clean(reason)
+    ]
+    if (
+        residual_classification == "selected_evidence_has_value_missing_axis"
+        and "missing_validated_required_axes" not in reasons
+    ):
+        reasons.append("missing_validated_required_axes")
+    return reasons
+
+
+def _residual_anchor_matrix_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    retrieved = _row_retrieved_contexts(row)
+    selected = _row_selected_evidence(row)
+    final_answer = _final_answer_sources(row)
+    source_family = _source_family_for_diagnostic(row)
+    query = _clean(row.get("query"))
+    answer = _clean(row.get("generated_answer"))
+    residual = _classify_xlsx_pdf_residual_row(row)
+    residual_classification = _clean(residual.get("classification")) or "not_classified"
+    query_shape = _query_shape(query)
+    if source_family == "XLSX" and query_shape in {"numeric_date_fact", "entity_fact"}:
+        query_shape = "table_lookup"
+    elif source_family == "PDF" and query_shape in {"numeric_date_fact", "entity_fact"}:
+        query_shape = "page_section_lookup"
+    return {
+        "item_id": _diagnostic_row_id(row.get("id")),
+        "source_family": source_family,
+        "query_shape": query_shape,
+        "retrieval_empty": not bool(retrieved),
+        "topk_anchor_presence": _stage_anchor_presence(
+            query=query,
+            answer=answer,
+            sources=retrieved,
+            source_family=source_family,
+        ),
+        "selected_evidence_anchor_presence": _stage_anchor_presence(
+            query=query,
+            answer=answer,
+            sources=selected,
+            source_family=source_family,
+        ),
+        "final_answer_anchor_presence": _stage_anchor_presence(
+            query=query,
+            answer=answer,
+            sources=final_answer,
+            source_family=source_family,
+        ),
+        "gate_validation_reasons": _gate_validation_reasons_for_matrix(row, residual_classification),
+        "residual_classification": residual_classification,
+    }
+
+
+def build_residual_anchor_matrix(
+    *,
+    items: Sequence[EvalItem],
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    _ = items
+    matrix_rows = [_residual_anchor_matrix_row(row) for row in rows]
+    return {
+        "schema_version": RESIDUAL_ANCHOR_MATRIX_SCHEMA_VERSION,
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "uses_gold_fields_as_runtime_inputs": False,
+        "uses_expected_fields_as_runtime_inputs": False,
+        "uses_qrels_or_labels_as_runtime_inputs": False,
+        "row_count": len(matrix_rows),
+        "rows": matrix_rows,
+    }
+
+
+def _axis_fields_for_provenance_family(source_family: str) -> tuple[str, ...]:
+    if source_family == "XLSX":
+        return (
+            "sheet",
+            "cell_range",
+            "cell",
+            "row_label",
+            "column_label",
+            "target_column",
+            "header_path",
+            "table_id",
+            "display_value",
+        )
+    if source_family == "PDF":
+        return (
+            "page_number",
+            "section_title",
+            "table_caption",
+            "bbox",
+            "row_label",
+            "column_label",
+        )
+    return SOURCE_NATIVE_AXIS_PROVENANCE_FIELDS
+
+
+def _source_owned_metadata_sources_for_stage(sources: Sequence[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
+    metadata_sources: list[Mapping[str, Any]] = []
+    for source in sources:
+        for container_key in SOURCE_DERIVED_EVIDENCE_METADATA_CONTAINERS:
+            metadata_source = _parse_jsonish(source.get(container_key))
+            if not isinstance(metadata_source, Mapping):
+                continue
+            if metadata_source not in metadata_sources:
+                metadata_sources.append(metadata_source)
+    return metadata_sources
+
+
+def _axis_provenance_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    retrieved = _row_retrieved_contexts(row)
+    selected = _row_selected_evidence(row)
+    citations = _row_contexts(row, "citations")
+    source_family = _source_family_for_diagnostic(row)
+    family_fields = _axis_fields_for_provenance_family(source_family)
+    source_registry_or_manifest = _axis_presence_for_fields([], family_fields)
+    source_registry_or_manifest["stage_status"] = "not_inspected"
+    source_registry_or_manifest[
+        "not_inspected_reason"
+    ] = "report_only_output_axis_loss_diagnostic_no_source_registry_or_manifest_runtime_input"
+    return {
+        "item_id": _diagnostic_row_id(row.get("id")),
+        "source_family": source_family,
+        "axis_presence_by_stage": {
+            "source_registry_or_manifest": source_registry_or_manifest,
+            "raw_locator_metadata": _axis_presence_for_fields(
+                _source_owned_metadata_sources_for_stage(retrieved),
+                family_fields,
+            ),
+            "weaviate_payload": _axis_presence_for_fields(retrieved, family_fields),
+            "retrieved_context": _axis_presence_for_fields(retrieved, family_fields),
+            "selected_evidence": _axis_presence_for_fields(selected, family_fields),
+            "final_citation": _axis_presence_for_fields(citations, family_fields),
+        },
+    }
+
+
+def build_source_native_axis_provenance(
+    *,
+    items: Sequence[EvalItem],
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    _ = items
+    return {
+        "schema_version": SOURCE_NATIVE_AXIS_PROVENANCE_SCHEMA_VERSION,
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "axis_fields": list(SOURCE_NATIVE_AXIS_PROVENANCE_FIELDS),
+        "stage_notes": {
+            "source_registry_or_manifest": "not_inspected_report_only_diagnostic_no_source_registry_or_manifest_runtime_input"
+        },
+        "rows": [_axis_provenance_row(row) for row in rows],
+    }
+
+
+def _diagnostic_row_id(value: Any) -> str:
+    text = _clean(value)
+    if not text:
+        return ""
+    if "SECRET" in text.upper():
+        return ""
+    return text
+
+
+def _row_retrieved_contexts(row: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    contexts = _row_contexts(row, "retrieved_contexts")
+    if contexts:
+        return contexts
+    gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+    return _residual_contexts(row, gate, "retrieved_evidence_candidates")
+
+
+def _row_selected_evidence(row: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+    selected = _residual_contexts(row, gate, "selected_evidence")
+    if selected:
+        return selected
+    composer = row.get("answer_composer") if isinstance(row.get("answer_composer"), Mapping) else {}
+    values = composer.get("selected_evidence")
+    if isinstance(values, Sequence) and not isinstance(values, (str, bytes)):
+        return [value for value in values if isinstance(value, Mapping)]
+    return []
+
+
+def _source_family_for_diagnostic(row: Mapping[str, Any]) -> str:
+    for source in (*_row_selected_evidence(row), *_row_retrieved_contexts(row), *_row_contexts(row, "citations")):
+        family = _clean(source.get("source_family")).upper()
+        if family in {"TEXT", "XLSX", "PDF", "CSV"}:
+            return family
+    return "unknown"
+
+
+def _row_has_source_value(sources: Sequence[Mapping[str, Any]]) -> bool:
+    value_fields = (
+        "display_value",
+        "value",
+        "answer_value",
+        "cell_value",
+        "table_value",
+        "normalized_display_value",
+    )
+    for source in sources:
+        if any(_source_value_present(source.get(field)) for field in value_fields):
+            return True
+        text = _gate_row_text(source)
+        if _text_has_numeric_or_date_value(text):
+            return True
+    return False
+
+
+def _answer_discipline_maps(row: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    composer = row.get("answer_composer") if isinstance(row.get("answer_composer"), Mapping) else {}
+    maps: list[Mapping[str, Any]] = []
+    for key in ("initial_answer_discipline", "answer_discipline"):
+        value = composer.get(key)
+        if isinstance(value, Mapping):
+            maps.append(value)
+    return maps
+
+
+def _selected_evidence_failure_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+    composer = row.get("answer_composer") if isinstance(row.get("answer_composer"), Mapping) else {}
+    retrieved = _row_retrieved_contexts(row)
+    selected = _row_selected_evidence(row)
+    selected_count = int(composer.get("selected_evidence_count") or len(selected) or 0)
+    validation_reasons = {_clean(value) for value in _as_list(gate.get("validation_reasons")) if _clean(value)}
+    answer_gate_decision = _clean(gate.get("answer_gate_decision"))
+    evidence_status = _clean(gate.get("evidence_package_status"))
+    local_llm = composer.get("local_llm") if isinstance(composer.get("local_llm"), Mapping) else {}
+    initial_discipline = (
+        composer.get("initial_answer_discipline")
+        if isinstance(composer.get("initial_answer_discipline"), Mapping)
+        else {}
+    )
+    discipline_maps = _answer_discipline_maps(row)
+    discipline_statuses = {_clean(discipline.get("status")) for discipline in discipline_maps}
+    pre_fallback_true_insufficient = bool(
+        _clean(local_llm.get("fallback_reason")) == "answer_discipline_true_insufficient_evidence"
+        or _clean(local_llm.get("status")) == "answer_discipline_deterministic_fallback"
+        or _clean(initial_discipline.get("status")) == "true_insufficient_evidence"
+    )
+    local_llm_clean_gate_blocked = (
+        _clean(local_llm.get("status")) == "generated"
+        and "clean_supported" in discipline_statuses
+        and answer_gate_decision == "block_unsupported_answer"
+    )
+    selected_anchor_missing = bool(
+        selected_count
+        and validation_reasons
+        & {"missing_query_anchor", "missing_entity_anchor", "missing_numeric_or_date_anchor"}
+    )
+    selected_absent = bool(retrieved and selected_count == 0)
+    selected_value_present_anchor_missing = bool(
+        _row_has_source_value([*selected, *retrieved])
+        and (selected_anchor_missing or selected_absent)
+    )
+    citation_mismatch = bool(
+        any(_clean(discipline.get("status")) == "citation_id_mismatch_or_missing" for discipline in discipline_maps)
+        or int(gate.get("citation_wrong_target_count") or 0)
+        or int(gate.get("citation_missing_target_count") or 0)
+    )
+    answer_overexpanded = any(
+        bool(discipline.get("unsupported_extra_detail"))
+        or bool(discipline.get("query_irrelevant_supported_detail"))
+        or _clean(discipline.get("status"))
+        in {
+            "supported_core_with_unsupported_extra",
+            "query_irrelevant_supported_detail",
+            "local_llm_rejected_then_deterministic_overexpanded",
+        }
+        for discipline in discipline_maps
+    )
+    retrieval_empty = not retrieved
+    corpus_missing = bool(retrieval_empty or (evidence_status == "insufficient" and not selected_count))
+    true_insufficient = bool(
+        retrieval_empty
+        or selected_absent
+        or (evidence_status == "insufficient" and not selected_count)
+        or evidence_status == "insufficient"
+        or answer_gate_decision == "block_unsupported_answer"
+    )
+    classifications: list[str] = []
+    if retrieval_empty:
+        classifications.append("retrieval_empty")
+    if selected_absent:
+        classifications.append("selected_evidence_absent")
+    if selected_anchor_missing:
+        classifications.append("selected_evidence_anchor_missing")
+    if selected_value_present_anchor_missing:
+        classifications.append("selected_evidence_value_present_anchor_missing")
+    if citation_mismatch:
+        classifications.append("citation_id_mismatch_or_missing")
+    if local_llm_clean_gate_blocked:
+        classifications.append("gate_blocked_clean_local_llm")
+    if corpus_missing:
+        classifications.append("corpus_coverage_suspected_missing")
+    if answer_overexpanded:
+        classifications.append("answer_discipline_overexpansion")
+    if pre_fallback_true_insufficient:
+        classifications.append("pre_fallback_true_insufficient_evidence")
+    if true_insufficient:
+        classifications.append("true_insufficient_evidence")
+    if not classifications:
+        classifications.append("no_failure_detected")
+    answer_preview = _bounded_text_preview(row.get("generated_answer"), 160)
+    evidence_preview = ""
+    if selected:
+        evidence_preview = _bounded_text_preview(_gate_support_text(selected[0]), 160)
+    elif retrieved:
+        evidence_preview = _bounded_text_preview(_gate_support_text(retrieved[0]), 160)
+    return {
+        "id": _diagnostic_row_id(row.get("id")),
+        "classifications": classifications,
+        "source_family": _source_family_for_diagnostic(row),
+        "retrieved_context_count": len(retrieved),
+        "selected_evidence_count": selected_count,
+        "evidence_package_status": evidence_status,
+        "answer_gate_decision": answer_gate_decision,
+        "validation_reasons": sorted(validation_reasons),
+        "retrieval_empty": retrieval_empty,
+        "selected_evidence_absent": selected_absent,
+        "selected_evidence_anchor_missing": selected_anchor_missing,
+        "selected_evidence_value_present_anchor_missing": selected_value_present_anchor_missing,
+        "citation_id_mismatch_or_missing": citation_mismatch,
+        "local_llm_clean_answer_gate_blocked": local_llm_clean_gate_blocked,
+        "pre_fallback_true_insufficient_evidence": pre_fallback_true_insufficient,
+        "corpus_coverage_suspected_missing": corpus_missing,
+        "answer_discipline_overexpansion": answer_overexpanded,
+        "true_insufficient_evidence": true_insufficient,
+        "bounded_answer_preview": answer_preview,
+        "bounded_selected_evidence_preview": evidence_preview,
+    }
+
+
+def build_selected_evidence_failure_decomposition(
+    *,
+    items: Sequence[EvalItem],
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    _ = items
+    diagnostic_rows = [_selected_evidence_failure_row(row) for row in rows]
+    def count(flag: str) -> int:
+        return sum(1 for row in diagnostic_rows if bool(row.get(flag)))
+
+    return {
+        "schema_version": "selected_evidence_failure_decomposition_v1",
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "uses_expected_fields_as_runtime_inputs": False,
+        "post_run_expected_evidence_diagnostics_used": False,
+        "uses_gold_fields": False,
+        "uses_qrels": False,
+        "uses_labels": False,
+        "uses_ids_as_runtime_inputs": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "retrieval_empty_count": count("retrieval_empty"),
+        "retrieval_related_but_expected_evidence_unresolved_count_diagnostic": 0,
+        "selected_evidence_absent_count": count("selected_evidence_absent"),
+        "selected_evidence_anchor_missing_count": count("selected_evidence_anchor_missing"),
+        "selected_evidence_value_present_anchor_missing_count": count(
+            "selected_evidence_value_present_anchor_missing"
+        ),
+        "citation_id_mismatch_or_missing_count": count("citation_id_mismatch_or_missing"),
+        "gate_blocked_clean_local_llm_count": count("local_llm_clean_answer_gate_blocked"),
+        "pre_fallback_true_insufficient_evidence_count": count("pre_fallback_true_insufficient_evidence"),
+        "corpus_coverage_suspected_missing_count": count("corpus_coverage_suspected_missing"),
+        "answer_discipline_overexpansion_count": count("answer_discipline_overexpansion"),
+        "true_insufficient_evidence_count": count("true_insufficient_evidence"),
+        "rows": diagnostic_rows,
+    }
+
+
+def _query_shape(query: str) -> str:
+    text = normalize_answer_text(query)
+    if any(term in text for term in ("page", "section", "chapter", "페이지", "쪽", "섹션", "장")):
+        return "page_section_lookup"
+    if any(term in text for term in ("table", "row", "column", "cell", "sheet", "표", "행", "열", "셀", "시트")):
+        return "table_lookup"
+    if any(term in text for term in ("compare", "versus", "vs", "difference", "비교", "차이")):
+        return "comparison"
+    if re.search(r"\d", text) or any(
+        term in text
+        for term in (
+            "january",
+            "february",
+            "march",
+            "april",
+            "may",
+            "june",
+            "july",
+            "august",
+            "september",
+            "october",
+            "november",
+            "december",
+            "년",
+            "월",
+            "일",
+        )
+    ):
+        return "numeric_date_fact"
+    if any(term in text for term in ("average", "sum", "total", "count", "how many", "합계", "평균", "총", "몇")):
+        return "aggregate"
+    if any(term in text for term in ("why", "how", "explain", "method", "왜", "어떻게", "설명", "방법")):
+        return "explanatory"
+    return "entity_fact"
+
+
+def _language_script(query: str) -> str:
+    has_ko = bool(re.search(r"[가-힣]", query))
+    has_en = bool(re.search(r"[A-Za-z]", query))
+    if has_ko and has_en:
+        return "mixed"
+    if has_ko:
+        return "Korean"
+    if has_en:
+        return "English"
+    return "unknown"
+
+
+def _composer_outcome(row: Mapping[str, Any]) -> str:
+    composer = row.get("answer_composer") if isinstance(row.get("answer_composer"), Mapping) else {}
+    local_llm = composer.get("local_llm") if isinstance(composer.get("local_llm"), Mapping) else {}
+    if local_llm:
+        status = _clean(local_llm.get("status")) or "unknown"
+        if status == "generated" and not composer.get("local_llm_fallback_used"):
+            return "local_llm_accepted"
+        if "fallback" in status:
+            return "local_llm_fallback"
+        if "abstain" in status:
+            return "local_llm_abstained"
+        return f"local_llm_{status}"
+    if composer.get("abstained"):
+        return "deterministic_abstained"
+    if composer:
+        return "deterministic_allowed"
+    return "unknown"
+
+
+def build_dataset_sufficiency_diagnostic(
+    *,
+    items: Sequence[EvalItem],
+    rows: Sequence[Mapping[str, Any]],
+    dataset_path: Path,
+) -> dict[str, Any]:
+    item_by_id = {_clean(item.id): item for item in items}
+    source_counts: Counter[str] = Counter()
+    shape_counts: Counter[str] = Counter()
+    language_counts: Counter[str] = Counter()
+    availability_counts: Counter[str] = Counter()
+    composer_counts: Counter[str] = Counter()
+    diagnostic_rows: list[dict[str, Any]] = []
+    coverage_gaps: list[dict[str, Any]] = []
+    rows_by_id: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        item_id_raw = _clean(row.get("id"))
+        item = item_by_id.get(item_id_raw)
+        query = _clean(row.get("query") or (item.query if item else ""))
+        gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+        retrieved = _row_retrieved_contexts(row)
+        selected = _row_selected_evidence(row)
+        family = _source_family_for_diagnostic(row)
+        shape = _query_shape(query)
+        language = _language_script(query)
+        selected_present = bool(selected)
+        retrieved_present = bool(retrieved)
+        coverage_suspected = not retrieved_present
+        availability = (
+            "selected_evidence_present"
+            if selected_present
+            else "retrieved_context_present"
+            if retrieved_present
+            else "corpus_coverage_suspected_missing"
+        )
+        source_counts[family] += 1
+        shape_counts[shape] += 1
+        language_counts[language] += 1
+        availability_counts[availability] += 1
+        composer_outcome = _composer_outcome(row)
+        composer_counts[composer_outcome] += 1
+        safe_id = _diagnostic_row_id(item_id_raw)
+        external_needed = bool(coverage_suspected)
+        row_diagnostic = {
+            "id": safe_id,
+            "source_family": family,
+            "query_shape": shape,
+            "language_script": language,
+            "evidence_availability": availability,
+            "composer_outcome": composer_outcome,
+            "retrieved_context_present": retrieved_present,
+            "selected_evidence_present": selected_present,
+            "corpus_coverage_suspected_missing": coverage_suspected,
+            "external_archive_candidate_needed": external_needed,
+        }
+        diagnostic_rows.append(row_diagnostic)
+        if safe_id:
+            rows_by_id[safe_id] = row_diagnostic
+        if external_needed:
+            coverage_gaps.append(
+                {
+                    "id": safe_id,
+                    "source_family": family,
+                    "query_shape": shape,
+                    "reason": "retrieval_empty_or_corpus_coverage_suspected",
+                }
+            )
+    dataset_text = _clean(dataset_path.as_posix()).casefold()
+    return {
+        "schema_version": "dataset_sufficiency_diagnostic_v1",
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "uses_gold_fields": False,
+        "uses_expected_fields_as_runtime_inputs": False,
+        "uses_qrels": False,
+        "uses_labels": False,
+        "uses_ids_as_runtime_inputs": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "gold_rows_checked": len(rows) if "gold" in dataset_text else 0,
+        "silver_rows_checked": len(rows) if "silver" in dataset_text else 0,
+        "source_families_observed": dict(source_counts),
+        "query_shape_counts": dict(shape_counts),
+        "language_script_counts": dict(language_counts),
+        "evidence_availability_counts": dict(availability_counts),
+        "composer_outcome_counts": dict(composer_counts),
+        "coverage_gaps": coverage_gaps,
+        "external_archive_recommended": bool(coverage_gaps),
+        "external_archive_used": False,
+        "external_archive_root": "",
+        "rows": diagnostic_rows,
+        "rows_by_id": rows_by_id,
+    }
+
+
+RULE_SURFACE_KEY_TOKENS = (
+    "heuristic_rule",
+    "rule_surface",
+    "literal_case",
+    "literal_terms",
+    "case_specific",
+    "hardcoded_alias",
+    "row_specific",
+    "dataset_specific",
+)
+ROW_RULE_KEY_TOKENS = ("row_specific", "query_id_rule", "target_id_rule")
+DATASET_RULE_KEY_TOKENS = ("dataset_specific",)
+LITERAL_RULE_KEY_TOKENS = ("literal_case", "literal_terms", "case_specific", "hardcoded_alias")
+ROW_SPECIFIC_RULE_RE = re.compile(r"\b(?:text_namu_v\d+_\d+|gq_[\w-]+|row[_-]?id|query[_-]?id|target[_-]?id)\b", re.IGNORECASE)
+DATASET_SPECIFIC_RULE_RE = re.compile(
+    r"\b(?:gold(?:\d+)?|silver(?:\d+)?|six[-_\s]?row|namu[_-]?v\d+|dataset[-_\s]?specific)\b",
+    re.IGNORECASE,
+)
+
+
+def _heuristic_rule_kinds_for_key(key: str) -> set[str]:
+    normalized = _clean(key).casefold()
+    kinds: set[str] = set()
+    if any(token in normalized for token in LITERAL_RULE_KEY_TOKENS):
+        kinds.add("literal")
+    if any(token in normalized for token in ROW_RULE_KEY_TOKENS):
+        kinds.add("row")
+    if any(token in normalized for token in DATASET_RULE_KEY_TOKENS):
+        kinds.add("dataset")
+    if any(token in normalized for token in RULE_SURFACE_KEY_TOKENS):
+        kinds.add("surface")
+    if ROW_SPECIFIC_RULE_RE.search(normalized):
+        kinds.add("row")
+    if DATASET_SPECIFIC_RULE_RE.search(normalized):
+        kinds.add("dataset")
+    return kinds
+
+
+def _collect_configured_rule_surfaces(
+    value: Any,
+    *,
+    path: tuple[str, ...] = (),
+    active_kinds: frozenset[str] = frozenset(),
+) -> list[dict[str, Any]]:
+    surfaces: list[dict[str, Any]] = []
+    if isinstance(value, Mapping):
+        for raw_key, child in value.items():
+            key = _clean(raw_key)
+            if not key:
+                continue
+            key_kinds = _heuristic_rule_kinds_for_key(key)
+            next_kinds = frozenset(set(active_kinds) | key_kinds)
+            if key_kinds - {"surface"}:
+                surfaces.append(
+                    {
+                        "path": ".".join((*path, key)),
+                        "kinds": sorted(key_kinds - {"surface"}),
+                        "term": key,
+                    }
+                )
+            surfaces.extend(_collect_configured_rule_surfaces(child, path=(*path, key), active_kinds=next_kinds))
+        return surfaces
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        for index, child in enumerate(value):
+            surfaces.extend(_collect_configured_rule_surfaces(child, path=(*path, str(index)), active_kinds=active_kinds))
+        return surfaces
+    term = _clean(value)
+    if not term or not active_kinds:
+        return surfaces
+    kinds = set(active_kinds) - {"surface"}
+    if "row" not in kinds and ROW_SPECIFIC_RULE_RE.search(term):
+        kinds.add("row")
+    if "dataset" not in kinds and DATASET_SPECIFIC_RULE_RE.search(term):
+        kinds.add("dataset")
+    if "literal" not in kinds and ("surface" in active_kinds):
+        kinds.add("literal")
+    if not kinds:
+        return surfaces
+    surfaces.append(
+        {
+            "path": ".".join(path),
+            "kinds": sorted(kinds),
+            "term": _bounded_text_preview(term, 120),
+        }
+    )
+    return surfaces
+
+
+def build_overfit_and_heuristic_audit(
+    *,
+    rows: Sequence[Mapping[str, Any]],
+    generator_config: Mapping[str, Any],
+) -> dict[str, Any]:
+    detected_surfaces = _collect_configured_rule_surfaces(generator_config)
+    literal_terms = sorted(
+        {
+            _clean(surface.get("term"))
+            for surface in detected_surfaces
+            if "literal" in set(surface.get("kinds") or []) and _clean(surface.get("term"))
+        }
+    )
+    row_specific_detected = any("row" in set(surface.get("kinds") or []) for surface in detected_surfaces)
+    dataset_specific_detected = any("dataset" in set(surface.get("kinds") or []) for surface in detected_surfaces)
+    return {
+        "schema_version": "overfit_and_heuristic_audit_v1",
+        "report_only_diagnostic": True,
+        "gold_or_expected_runtime_input_detected": False,
+        "audit_method": "configured_rule_surface_scan_v1",
+        "rule_surface_count": len(detected_surfaces),
+        "row_specific_rule_detected": row_specific_detected,
+        "dataset_specific_rule_detected": dataset_specific_detected,
+        "literal_case_term_rule_detected": bool(literal_terms),
+        "literal_case_terms_detected": literal_terms,
+        "detected_rule_surfaces": detected_surfaces,
+        "uses_expected_answers": False,
+        "uses_expected_evidence": False,
+        "uses_qrels": False,
+        "uses_labels": False,
+        "uses_ids_as_runtime_inputs": False,
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "remaining_rule_based_components": [
+            "answer_focus_generic_terms",
+            "bounded_evidence_gate_v1",
+            "source_family_query_shape_classifier",
+        ],
+        "row_count_checked": len(rows),
+        "input_policy": (
+            _clean(generator_config.get("selected_evidence_composer_input_policy"))
+            or "query_text_and_selected_sourceatom_evidence_only_no_gold_qrels_labels_ids_or_baseline"
+        ),
     }
 
 
@@ -18914,11 +20985,7 @@ def _corpus_coverage_target_anchors(item: EvalItem, explicit_anchors: Sequence[s
     explicit = _dedupe_clean(explicit_anchors or [])
     if explicit:
         return explicit
-    if item.id == "text_namu_v2_0014":
-        return list(TEXT_NAMU_V2_0014_ADVERSARY_AUDIT_ANCHORS)
-    evidence_texts = [evidence.text for evidence in item.expected_evidence]
-    anchors = sorted(_candidate_anchors(item.query, item.expected_answer, *item.expected_answer_aliases, *evidence_texts))
-    return anchors[:8]
+    return []
 
 
 def _anchor_hit_count(rows: Sequence[Mapping[str, Any]], anchors: Sequence[str]) -> int:
@@ -19316,6 +21383,39 @@ def build_corpus_coverage_audit_report(
             )
             continue
         anchors = _corpus_coverage_target_anchors(item, target_anchors)
+        if not anchors:
+            audit_rows.append(
+                {
+                    "query_id": query_id,
+                    "query": item.query,
+                    "target_anchors": [],
+                    "target_anchor_count": 0,
+                    "primary_classification": "skipped_missing_explicit_target_anchors",
+                    "corpus_presence": "unknown",
+                    "failure_modes": ["skipped_missing_explicit_target_anchors"],
+                    "classification_reason": "explicit target anchors are required for corpus coverage probes",
+                    "audit_skipped_reason": "explicit_target_anchors_required",
+                    "active_retrieval_probe": _probe_unavailable("explicit_target_anchors_required"),
+                    "source_registry_presence": _probe_unavailable("explicit_target_anchors_required"),
+                    "active_index_presence": _probe_unavailable("explicit_target_anchors_required"),
+                    "full_index_probe": _probe_unavailable("explicit_target_anchors_required"),
+                    "route_selected_probe": _probe_unavailable("explicit_target_anchors_required"),
+                    "corpus_present": False,
+                    "corpus_absent": False,
+                    "collision": False,
+                    "tokenization_or_alias_failure": False,
+                    "route_selected_filter_failure": False,
+                    "audit_query_sha256": "",
+                    "audit_query_policy": "explicit_target_anchors_required_no_expected_or_literal_defaults",
+                    "audit_uses_expected_fields_for_candidate_generation": False,
+                    "audit_uses_gold_fields_for_candidate_generation": False,
+                    "audit_uses_qrels_for_candidate_generation": False,
+                    "audit_uses_labels_for_candidate_generation": False,
+                    "gold_or_qrels_mutation": False,
+                    "official_metric_input_rows": 0,
+                }
+            )
+            continue
         active_row = row_by_id.get(query_id, {})
         active_contexts = _retrieved_contexts(active_row)
         active_probe = _probe_context_summary(active_contexts, query=item.query, anchors=anchors)
@@ -19402,6 +21502,10 @@ def build_corpus_coverage_audit_report(
         "source_registry_mutation": False,
         "active_index_mutation": False,
         "label_or_denominator_mutation": False,
+        "uses_expected_fields_for_candidate_generation": False,
+        "uses_gold_fields_for_candidate_generation": False,
+        "uses_qrels_for_candidate_generation": False,
+        "uses_labels_for_candidate_generation": False,
         "official_metric_input_rows": 0,
         "official_metric": False,
         "promotion_evidence": False,
@@ -20768,6 +22872,13 @@ def run_eval_from_paths(
         == "unsupported_or_empty_deterministic_fallback"
         and bool(row.get("local_llm_fallback_used"))
     )
+    local_llm_gate_aligned_fallback_count = sum(
+        1
+        for row in composer_rows
+        if _clean((row.get("local_llm") if isinstance(row.get("local_llm"), Mapping) else {}).get("status"))
+        == "gate_aligned_deterministic_fallback"
+        and bool(row.get("local_llm_gate_aligned_fallback_used"))
+    )
     local_llm_clean_answer_gate_blocked_count = sum(
         1
         for output, row in zip(raw_outputs, composer_rows)
@@ -20846,6 +22957,7 @@ def run_eval_from_paths(
             local_llm_rejected_then_deterministic_overexpanded_count
         ),
         "local_llm_clean_answer_output_rejected_count": int(local_llm_clean_answer_output_rejected_count),
+        "local_llm_gate_aligned_fallback_count": int(local_llm_gate_aligned_fallback_count),
         "local_llm_clean_answer_gate_blocked_count": int(local_llm_clean_answer_gate_blocked_count),
         "citation_id_mismatch_or_missing_count": int(
             answer_discipline_status_counts.get("citation_id_mismatch_or_missing", 0)
@@ -20940,6 +23052,21 @@ def run_eval_from_paths(
             "diagnostic_retrieval_metrics": diagnostic_retrieval_metrics,
             "semantic_quality_samples": semantic_quality_samples,
             "response_quality_input_summary": response_quality_input_summary,
+            "selected_evidence_failure_decomposition": build_selected_evidence_failure_decomposition(
+                items=items,
+                rows=raw_outputs,
+            ),
+            "dataset_sufficiency_diagnostic": build_dataset_sufficiency_diagnostic(
+                items=items,
+                rows=raw_outputs,
+                dataset_path=dataset,
+            ),
+            "overfit_and_heuristic_audit": build_overfit_and_heuristic_audit(
+                rows=raw_outputs,
+                generator_config=generator_config,
+            ),
+            "residual_anchor_matrix": build_residual_anchor_matrix(items=items, rows=raw_outputs),
+            "source_native_axis_provenance": build_source_native_axis_provenance(items=items, rows=raw_outputs),
             "xlsx_pdf_residual_breakdown": build_xlsx_pdf_residual_breakdown(items=items, rows=raw_outputs),
             "corpus_coverage_audit": corpus_coverage_audit,
             "source_native_index_build": dict(source_native_index_build or {}),
@@ -21983,7 +24110,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=[],
         help=(
             "Target anchor for the report-only corpus coverage audit. "
-            "May be repeated; text_namu_v2_0014 defaults to the Adversary/Alison Sealy-Smith aliases."
+            "May be repeated; required for any target query id audit."
         ),
     )
     parser.add_argument(

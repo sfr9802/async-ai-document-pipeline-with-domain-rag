@@ -29,6 +29,8 @@ WEAVIATE_SOURCE_ATOM_SCHEMA_VERSIONS = frozenset(
 WEAVIATE_SOURCE_ATOM_INDEX_CHECKPOINT_VERSION = "weaviate_source_atom_index_checkpoint_v1"
 WEAVIATE_STREAMING_BGE_M3_VECTOR_SOURCE = "streaming-bge-m3"
 WEAVIATE_CANDIDATE_INPUT_POLICY = "query_text_and_query_embedding_only_no_gold_qrels_labels_ids_or_baseline"
+WEAVIATE_CANDIDATE_SURFACE_COMPLETE_MANIFEST_SCHEMA_VERSION = "candidate_surface_complete_manifest.v1"
+WEAVIATE_CANDIDATE_SURFACE_DIRTY_STATUSES = frozenset({"dirty", "dirty_partial", "partial_dirty"})
 WEAVIATE_ROUTE_SELECTED_NONPROD_DEFAULT_CONFIG_PATH = (
     "ai/eval/configs/weaviate_route_selected_nonprod_default.json"
 )
@@ -472,6 +474,10 @@ def _sha256_text(value: Any) -> str:
     return hashlib.sha256(_clean(value).encode("utf-8")).hexdigest()
 
 
+def _sha256_file_bytes(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
 def _utc_now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -819,11 +825,56 @@ def load_weaviate_adapter_config_path(
         "index_manifest_path": config.index_manifest_path,
         "namespace": config.namespace,
         "visibility": config.visibility,
+        "use_local_docker": config.use_local_docker,
         "fallback_used": False,
         "fail_closed_on_unavailable": True,
         "rollback_key": rollback_report["rollback_key"],
         "rollback": rollback_report,
     }
+    candidate_surface = data.get("candidate_surface_rebuild")
+    if isinstance(candidate_surface, Mapping):
+        candidate_surface_report = dict(candidate_surface)
+        candidate_surface_report.setdefault("schema_version", "actual_rag_eval.candidate_surface_rebuild.v1")
+        candidate_surface_report.setdefault("report_only_diagnostic", True)
+        candidate_surface_report.setdefault("official_metric", False)
+        candidate_surface_report.setdefault("official_metric_input_rows", 0)
+        candidate_surface_report.setdefault("candidate_collection", config.collection_name)
+        candidate_surface_report.setdefault("surface_status", "ready")
+        candidate_surface_report.setdefault("metric_blocked_until_complete_manifest", False)
+        candidate_surface_report.setdefault("complete_manifest_required", False)
+        candidate_surface_report.setdefault("production_namespace", config.production_namespace)
+        candidate_surface_report.setdefault("source_registry_mutated", False)
+        candidate_surface_report.setdefault("latest_current_mutated", False)
+        candidate_surface_report.setdefault("external_archive_profiled", False)
+        candidate_surface_report.setdefault("external_archive_indexed", False)
+        if candidate_surface_report.get("report_only_diagnostic") is not True:
+            raise WeaviateUnavailableError(
+                "weaviate_unavailable: candidate_surface_report_only_diagnostic_required"
+            )
+        if candidate_surface_report.get("official_metric") is not False:
+            raise WeaviateUnavailableError("weaviate_unavailable: candidate_surface_official_metric_blocked")
+        try:
+            official_metric_input_rows = int(candidate_surface_report.get("official_metric_input_rows") or 0)
+        except (TypeError, ValueError) as exc:
+            raise WeaviateUnavailableError(
+                "weaviate_unavailable: candidate_surface_official_metric_input_rows_invalid"
+            ) from exc
+        if official_metric_input_rows != 0:
+            raise WeaviateUnavailableError(
+                "weaviate_unavailable: candidate_surface_official_metric_input_rows_blocked"
+            )
+        for protected_flag in (
+            "production_namespace",
+            "source_registry_mutated",
+            "latest_current_mutated",
+            "external_archive_profiled",
+            "external_archive_indexed",
+        ):
+            if candidate_surface_report.get(protected_flag) is not False:
+                raise WeaviateUnavailableError(
+                    f"weaviate_unavailable: candidate_surface_{protected_flag}_blocked"
+                )
+        selection_report["candidate_surface_rebuild"] = candidate_surface_report
     return config, route_mode, selection_report
 
 
@@ -2297,6 +2348,7 @@ class BgeM3EmbeddingBuilder:
             max_seq_length=resolve_max_seq_length(int(os.environ.get("ACTUAL_RAG_EVAL_BGE_M3_MAX_SEQ_LENGTH", "1024"))),
             batch_size=self.batch_size,
             show_progress_bar=False,
+            local_files_only=True,
         )
         return self.embedding_provider
 
@@ -3026,6 +3078,74 @@ class WeaviateSourceAtomAdapter:
         self._index_manifest = data if isinstance(data, dict) else {}
         return self._index_manifest
 
+    def _candidate_surface_metric_gate_report(self) -> dict[str, Any]:
+        candidate_surface = self.default_config_report.get("candidate_surface_rebuild")
+        if not isinstance(candidate_surface, Mapping):
+            return {}
+        status = _clean(candidate_surface.get("surface_status")).casefold()
+        metric_blocked = candidate_surface.get("metric_blocked_until_complete_manifest") is True
+        complete_required = candidate_surface.get("complete_manifest_required") is True
+        report: dict[str, Any] = {
+            "surface_status": status or "ready",
+            "metric_blocked_until_complete_manifest": metric_blocked,
+            "complete_manifest_required": complete_required,
+            "complete_manifest_verified": False,
+            "complete_manifest_schema_version_required": WEAVIATE_CANDIDATE_SURFACE_COMPLETE_MANIFEST_SCHEMA_VERSION,
+        }
+        if status in WEAVIATE_CANDIDATE_SURFACE_DIRTY_STATUSES:
+            report["blocked_reason"] = "candidate_surface_dirty_partial_metrics_blocked"
+            return report
+        if not metric_blocked and not complete_required:
+            report["complete_manifest_verified"] = True
+            return report
+
+        manifest = self._load_index_manifest()
+        report["manifest_present"] = bool(manifest)
+        report["manifest_valid"] = manifest.get("valid") is True
+        report["manifest_collection"] = _clean(manifest.get("collection_name"))
+        if not manifest:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_missing"
+            return report
+        if manifest.get("valid") is not True:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_invalid"
+            return report
+        if manifest.get("candidate_surface_complete_manifest") is not True:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_missing"
+            return report
+        if (
+            _clean(manifest.get("candidate_surface_complete_manifest_schema_version"))
+            != WEAVIATE_CANDIDATE_SURFACE_COMPLETE_MANIFEST_SCHEMA_VERSION
+        ):
+            report["blocked_reason"] = "candidate_surface_complete_manifest_schema_version_invalid"
+            return report
+        if _clean(manifest.get("collection_name")) != self.config_obj.collection_name:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_collection_mismatch"
+            return report
+        for protected_flag in ("production_namespace", "source_registry_mutated", "latest_current_mutated"):
+            if manifest.get(protected_flag) is not False:
+                report["blocked_reason"] = f"candidate_surface_complete_manifest_{protected_flag}_blocked"
+                return report
+        try:
+            official_metric_input_rows = int(manifest.get("official_metric_input_rows") or 0)
+            failed_count = int(manifest.get("failed_count") or 0)
+        except (TypeError, ValueError):
+            report["blocked_reason"] = "candidate_surface_complete_manifest_count_invalid"
+            return report
+        if official_metric_input_rows != 0:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_official_metric_input_rows_blocked"
+            return report
+        if failed_count != 0:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_failed_count_blocked"
+            return report
+        report["complete_manifest_verified"] = True
+        return report
+
+    def _validate_candidate_surface_metric_gate(self) -> None:
+        gate_report = self._candidate_surface_metric_gate_report()
+        blocked_reason = _clean(gate_report.get("blocked_reason"))
+        if blocked_reason:
+            raise WeaviateUnavailableError(f"weaviate_unavailable: {blocked_reason}")
+
     def _indexed_object_count(self) -> int:
         manifest = self._load_index_manifest()
         for key in ("index_object_count", "indexed_count", "weaviate_indexed_object_count"):
@@ -3251,6 +3371,40 @@ class WeaviateSourceAtomAdapter:
                 and not current_index_vectorizes_all_source_atoms
             )
         )
+        candidate_surface_rebuild = (
+            dict(default_config.get("candidate_surface_rebuild") or {})
+            if isinstance(default_config.get("candidate_surface_rebuild"), Mapping)
+            else {}
+        )
+        candidate_surface_gate = self._candidate_surface_metric_gate_report()
+        if candidate_surface_rebuild:
+            manifest_path = Path(self.config_obj.index_manifest_path)
+            manifest_fingerprint = (
+                f"sha256:{_sha256_file_bytes(manifest_path)}"
+                if manifest and manifest_path.exists()
+                else ""
+            )
+            candidate_surface_rebuild.update(
+                {
+                    "candidate_collection": self.config_obj.collection_name,
+                    "production_namespace": self.config_obj.production_namespace,
+                    "index_manifest_path": self.config_obj.index_manifest_path,
+                    "index_manifest_sha256": manifest_fingerprint,
+                    "metric_gate": candidate_surface_gate,
+                    "axis_materialization_summary": {
+                        "vectorized_by_granularity": vectorized_by_granularity,
+                        "metadata_only_by_granularity": metadata_only_by_granularity,
+                        "metadata_only_by_source_family": metadata_only_by_source_family,
+                    },
+                    "vectorization_policy": {
+                        "current_index_vectorizes_all_source_atoms": current_index_vectorizes_all_source_atoms,
+                        "index_time_metadata_only_supported": index_time_metadata_only_supported,
+                        "schema_index_v2_rebuild_required_for_metadata_only_policy": bool(
+                            manifest.get("schema_index_v2_rebuild_required_for_metadata_only_policy")
+                        ),
+                    },
+                }
+            )
         return {
             "active_retrieval_backend": self.selected_backend,
             "active_retrieval_service_boundary": "weaviate",
@@ -3291,6 +3445,7 @@ class WeaviateSourceAtomAdapter:
             "metadata_only_by_source_family": metadata_only_by_source_family,
             "current_index_vectorizes_all_source_atoms": current_index_vectorizes_all_source_atoms,
             "index_time_metadata_only_supported": index_time_metadata_only_supported,
+            "candidate_surface_rebuild": candidate_surface_rebuild,
             "schema_index_v2_rebuild_required_for_metadata_only_policy": bool(
                 manifest.get("schema_index_v2_rebuild_required_for_metadata_only_policy")
             ),
@@ -3513,6 +3668,7 @@ class WeaviateSourceAtomAdapter:
 
     def validate_ready_for_run(self) -> None:
         self.config_obj.validate_for_nonprod()
+        self._validate_candidate_surface_metric_gate()
         try:
             self._reachable = bool(self.client.ping())
         except WeaviateUnavailableError:
@@ -3705,21 +3861,25 @@ class WeaviateSourceAtomAdapter:
                 continue
             table_id = _clean(context.get("table_id"))
             cell_range = _clean(context.get("cell_range"))
+            row_index = _clean(context.get("row_index_1based"))
             if table_id:
-                scope_type = "same_table"
+                scope_type = "same_table_row" if row_index else "same_table"
                 scope_filters = {"source_family": "XLSX", "doc_id": doc_id, "sheet": sheet, "table_id": table_id}
             elif cell_range:
-                scope_type = "same_cell_range"
+                scope_type = "same_cell_range_row" if row_index else "same_cell_range"
                 scope_filters = {"source_family": "XLSX", "doc_id": doc_id, "sheet": sheet, "cell_range": cell_range}
             else:
                 scope_type = "same_sheet"
                 scope_filters = {"source_family": "XLSX", "doc_id": doc_id, "sheet": sheet}
+            if row_index:
+                scope_filters["row_index_1based"] = row_index
             key = (
                 scope_type,
                 doc_id,
                 sheet,
                 _clean(scope_filters.get("table_id")),
                 _clean(scope_filters.get("cell_range")),
+                _clean(scope_filters.get("row_index_1based")),
             )
             if key in seen:
                 continue
@@ -3762,7 +3922,7 @@ class WeaviateSourceAtomAdapter:
 
     def _context_matches_xlsx_scope(self, context: Mapping[str, Any], scope: Mapping[str, Any]) -> bool:
         filters = scope.get("filters") if isinstance(scope.get("filters"), Mapping) else {}
-        for key in ("doc_id", "sheet", "table_id", "cell_range"):
+        for key in ("doc_id", "sheet", "table_id", "cell_range", "row_index_1based"):
             value = _clean(filters.get(key))
             if value and _clean(context.get(key)) != value:
                 return False
@@ -4030,6 +4190,8 @@ class WeaviateSourceAtomAdapter:
             granularity = _clean(row.get("granularity"))
             if source_family == "XLSX" and granularity == "cell":
                 doc_limit = 4
+            elif source_family == "PDF" and _clean(row.get("pdf_scoped_expansion_policy")):
+                doc_limit = 2
             elif source_family in {"PDF", "XLSX"}:
                 doc_limit = 1
             else:

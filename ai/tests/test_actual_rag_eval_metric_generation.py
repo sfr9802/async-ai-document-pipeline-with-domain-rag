@@ -4,9 +4,11 @@ import csv
 import hashlib
 import json
 import inspect
+import os
 import sqlite3
 import subprocess
 import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -69,7 +71,6 @@ from ai.eval.weaviate_source_atom import (
 )
 import ai.scripts.rag_weaviate_source_atom_index as weaviate_index_script
 from ai.scripts.rag_weaviate_source_atom_index import build_parser as build_weaviate_index_parser
-
 
 def write_jsonl(path: Path, rows: list[dict]) -> None:
     path.write_text(
@@ -1494,6 +1495,370 @@ def test_xlsx_scoped_expansion_query_uses_source_owned_axis_terms(tmp_path: Path
     assert output_file_names(output_dir) == ["report.json"]
 
 
+def test_xlsx_scoped_expansion_filters_same_source_row_when_row_index_available(tmp_path: Path) -> None:
+    class RowScopedWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(
+                {
+                    "mode": kwargs["mode"],
+                    "query_text": kwargs["query_text"],
+                    "vector_dim": len(kwargs.get("query_vector") or []),
+                    "filters": dict(kwargs["filters"]),
+                    "limit": int(kwargs["limit"]),
+                    "alpha": float(kwargs["alpha"]),
+                }
+            )
+            filters = dict(kwargs["filters"])
+            row_scoped = (
+                filters.get("source_family") == "XLSX"
+                and filters.get("doc_id") == "doc-care"
+                and filters.get("sheet") == "일반현황"
+                and filters.get("cell_range") == "A5002:J5051"
+                and filters.get("row_index_1based") == "5002"
+            )
+            rows: list[dict] = []
+            for obj in self.objects:
+                if _filter_mismatch(obj, filters):
+                    continue
+                source_atom_id = obj.get("source_atom_id")
+                if row_scoped and source_atom_id == "srcatom-care-date":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+                elif not row_scoped and source_atom_id == "srcatom-care-address":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+            return rows[: int(kwargs["limit"])]
+
+    def _filter_mismatch(obj: dict, filters: dict) -> bool:
+        for key, value in filters.items():
+            if not value:
+                continue
+            if isinstance(value, list):
+                if obj.get(key) not in value:
+                    return True
+            elif obj.get(key) != value:
+                return True
+        return False
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_same_source_row_scope"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx-same-source-row-scope",
+                "query": "2015년 6월 부여효요양원 기관별 상세주소",
+                "answerability": "answerable",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    address = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                706,
+                text=(
+                    "row_label=장기요양기관이름=부여효요양원 | "
+                    "target_column=기관별 상세주소 | display_value=충청남도 부여군 석성면 왕릉로 773"
+                ),
+            ),
+            "source_atom_id": "srcatom-care-address",
+            "evidence_bundle_id": "bundle-care-address",
+            "doc_id": "doc-care",
+            "chunk_id": "chunk-care-address",
+            "source_family": "XLSX",
+            "granularity": "cell",
+            "retrieval_route": "xlsx_cell_trace",
+            "sheet": "일반현황",
+            "cell_range": "A5002:J5051",
+            "cell": "J5002",
+            "row_index_1based": "5002",
+            "row_label": "장기요양기관이름=부여효요양원",
+            "column_label": "기관별 상세주소",
+            "target_column": "기관별 상세주소",
+            "display_value": "충청남도 부여군 석성면 왕릉로 773",
+        },
+        config,
+    )
+    date = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                707,
+                text="row_label=장기요양기관이름=부여효요양원 | target_column=지정일자 | display_value=2015-06-01",
+            ),
+            "source_atom_id": "srcatom-care-date",
+            "evidence_bundle_id": "bundle-care-date",
+            "doc_id": "doc-care",
+            "chunk_id": "chunk-care-date",
+            "source_family": "XLSX",
+            "granularity": "cell",
+            "retrieval_route": "xlsx_cell_trace",
+            "sheet": "일반현황",
+            "cell_range": "A5002:J5051",
+            "cell": "H5002",
+            "row_index_1based": "5002",
+            "row_label": "장기요양기관이름=부여효요양원",
+            "column_label": "지정일자",
+            "target_column": "지정일자",
+            "display_value": "2015-06-01",
+        },
+        config,
+    )
+    wrong_row = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                708,
+                text="row_label=장기요양기관이름=다른요양원 | target_column=지정일자 | display_value=2015-06-01",
+            ),
+            "source_atom_id": "srcatom-care-wrong-row-date",
+            "evidence_bundle_id": "bundle-care-wrong-row-date",
+            "doc_id": "doc-care",
+            "chunk_id": "chunk-care-wrong-row-date",
+            "source_family": "XLSX",
+            "granularity": "cell",
+            "retrieval_route": "xlsx_cell_trace",
+            "sheet": "일반현황",
+            "cell_range": "A5002:J5051",
+            "cell": "H2",
+            "row_index_1based": "2",
+            "row_label": "장기요양기관이름=다른요양원",
+            "column_label": "지정일자",
+            "target_column": "지정일자",
+            "display_value": "2015-06-01",
+        },
+        config,
+    )
+    client = RowScopedWeaviateClient(objects=[address, date, wrong_row])
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="xlsx_same_source_row_scope",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    contexts = report["items"][0]["retrieved_contexts"]
+    scoped_queries = [query for query in client.query_log if query["filters"].get("cell_range") == "A5002:J5051"]
+    assert scoped_queries
+    assert any(query["filters"].get("row_index_1based") == "5002" for query in scoped_queries)
+    assert any(
+        context["source_atom_id"] == "srcatom-care-date"
+        and context["xlsx_scoped_expansion_scope_type"] == "same_cell_range_row"
+        for context in contexts
+    )
+    assert all(context["source_atom_id"] != "srcatom-care-wrong-row-date" for context in contexts)
+    query_payload = json.dumps(client.query_log, ensure_ascii=False)
+    assert "expected_answer" not in query_payload
+    assert "expected_evidence" not in query_payload
+    assert "qrels" not in query_payload
+    assert "labels" not in query_payload
+    assert "row_id" not in query_payload
+    assert "target_id" not in query_payload
+    assert "formula" not in query_payload
+    assert "normalized_value" not in query_payload
+    assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_xlsx_scoped_expansion_post_filters_missing_or_wrong_row_index(tmp_path: Path) -> None:
+    class OverbroadRowScopedWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(
+                {
+                    "mode": kwargs["mode"],
+                    "query_text": kwargs["query_text"],
+                    "vector_dim": len(kwargs.get("query_vector") or []),
+                    "filters": dict(kwargs["filters"]),
+                    "limit": int(kwargs["limit"]),
+                    "alpha": float(kwargs["alpha"]),
+                }
+            )
+            filters = dict(kwargs["filters"])
+            row_scoped = (
+                filters.get("source_family") == "XLSX"
+                and filters.get("doc_id") == "doc-care"
+                and filters.get("sheet") == "일반현황"
+                and filters.get("cell_range") == "A5002:J5051"
+                and filters.get("row_index_1based") == "5002"
+            )
+            rows: list[dict] = []
+            for obj in self.objects:
+                source_atom_id = obj.get("source_atom_id")
+                if row_scoped and source_atom_id in {"srcatom-care-missing-row-date", "srcatom-care-wrong-row-date"}:
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+                    continue
+                if not row_scoped and source_atom_id == "srcatom-care-address" and not _filter_mismatch(obj, filters):
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+            return rows[: int(kwargs["limit"])]
+
+    def _filter_mismatch(obj: dict, filters: dict) -> bool:
+        for key, value in filters.items():
+            if not value:
+                continue
+            if isinstance(value, list):
+                if obj.get(key) not in value:
+                    return True
+            elif obj.get(key) != value:
+                return True
+        return False
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_same_source_row_scope_post_filter"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx-same-source-row-scope-post-filter",
+                "query": "2015년 6월 부여효요양원 기관별 상세주소",
+                "answerability": "answerable",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    common = {
+        "doc_id": "doc-care",
+        "source_family": "XLSX",
+        "granularity": "cell",
+        "retrieval_route": "xlsx_cell_trace",
+        "sheet": "일반현황",
+        "cell_range": "A5002:J5051",
+    }
+    address = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                709,
+                text=(
+                    "row_label=장기요양기관이름=부여효요양원 | "
+                    "target_column=기관별 상세주소 | display_value=충청남도 부여군 석성면 왕릉로 773"
+                ),
+            ),
+            **common,
+            "source_atom_id": "srcatom-care-address",
+            "evidence_bundle_id": "bundle-care-address",
+            "chunk_id": "chunk-care-address",
+            "cell": "J5002",
+            "row_index_1based": "5002",
+            "row_label": "장기요양기관이름=부여효요양원",
+            "column_label": "기관별 상세주소",
+            "target_column": "기관별 상세주소",
+            "display_value": "충청남도 부여군 석성면 왕릉로 773",
+        },
+        config,
+    )
+    missing_row_date = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                710,
+                text="row_label=장기요양기관이름=부여효요양원 | target_column=지정일자 | display_value=2015-06-01",
+            ),
+            **common,
+            "source_atom_id": "srcatom-care-missing-row-date",
+            "evidence_bundle_id": "bundle-care-missing-row-date",
+            "chunk_id": "chunk-care-missing-row-date",
+            "cell": "H5002",
+            "row_label": "장기요양기관이름=부여효요양원",
+            "column_label": "지정일자",
+            "target_column": "지정일자",
+            "display_value": "2015-06-01",
+        },
+        config,
+    )
+    wrong_row_date = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                711,
+                text="row_label=장기요양기관이름=부여효요양원 | target_column=지정일자 | display_value=2015-06-01",
+            ),
+            **common,
+            "source_atom_id": "srcatom-care-wrong-row-date",
+            "evidence_bundle_id": "bundle-care-wrong-row-date",
+            "chunk_id": "chunk-care-wrong-row-date",
+            "cell": "H2",
+            "row_index_1based": "2",
+            "row_label": "장기요양기관이름=부여효요양원",
+            "column_label": "지정일자",
+            "target_column": "지정일자",
+            "display_value": "2015-06-01",
+        },
+        config,
+    )
+    client = OverbroadRowScopedWeaviateClient(objects=[address, missing_row_date, wrong_row_date])
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="xlsx_same_source_row_scope_post_filter",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    contexts = report["items"][0]["retrieved_contexts"]
+    scoped_queries = [query for query in client.query_log if query["filters"].get("cell_range") == "A5002:J5051"]
+    assert scoped_queries
+    assert any(query["filters"].get("row_index_1based") == "5002" for query in scoped_queries)
+    assert report["items"][0]["weaviate_xlsx_scoped_expansion"]["added_count"] == 0
+    assert all(context["source_atom_id"] not in {"srcatom-care-missing-row-date", "srcatom-care-wrong-row-date"} for context in contexts)
+    assert output_file_names(output_dir) == ["report.json"]
+
+
 def test_xlsx_selected_evidence_requires_value_and_axes_to_cooccur() -> None:
     selected = select_composer_evidence(
         "2019년 2월 5호선 승차총승객수는 얼마야?",
@@ -1896,6 +2261,85 @@ def test_corpus_coverage_audit_classifies_route_filter_failure_report_only(tmp_p
         assert "expected_answer" not in query_payload
         assert "expected_evidence" not in query_payload
         assert "row_id" not in query_payload
+
+
+def test_corpus_coverage_audit_query_id_without_explicit_anchors_fails_closed(tmp_path: Path) -> None:
+    class NoProbeClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(dict(kwargs))
+            return []
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "corpus_coverage_audit_no_anchors"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "text_namu_v2_0014",
+                "query": "엑스맨 구십칠 등장인물 목록에 애드버서리는 어떤 식으로 올라와",
+                "expected_answer": "SECRET_EXPECTED_ANSWER_NEVER_AUDIT",
+                "expected_evidence": [{"text": "SECRET_EXPECTED_EVIDENCE_NEVER_AUDIT"}],
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprod",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    active_client = NoProbeClient()
+    active_adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=active_client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+    )
+
+    def unexpected_lane_factory(route_mode: str) -> WeaviateSourceAtomAdapter:
+        raise AssertionError(f"corpus audit probe should fail closed without explicit anchors: {route_mode}")
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="corpus_coverage_audit_no_anchors",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=active_adapter,
+        corpus_coverage_audit_query_ids=["text_namu_v2_0014"],
+        corpus_coverage_audit_lane_factory=unexpected_lane_factory,
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    audit = report["corpus_coverage_audit"]
+    assert audit["enabled"] is True
+    assert audit["classification_counts"] == {"skipped_missing_explicit_target_anchors": 1}
+    assert audit["official_metric_input_rows"] == 0
+    assert audit["gold_or_qrels_mutation"] is False
+    assert audit["uses_expected_fields_for_candidate_generation"] is False
+    row = audit["rows"][0]
+    assert row["query_id"] == "text_namu_v2_0014"
+    assert row["primary_classification"] == "skipped_missing_explicit_target_anchors"
+    assert row["target_anchors"] == []
+    assert row["audit_skipped_reason"] == "explicit_target_anchors_required"
+    assert active_client.query_log
+    for query_payload in active_client.query_log:
+        query_text = str(query_payload.get("query_text", ""))
+        assert "SECRET_EXPECTED_ANSWER_NEVER_AUDIT" not in query_text
+        assert "SECRET_EXPECTED_EVIDENCE_NEVER_AUDIT" not in query_text
+        assert "Adversary" not in query_text
+        assert "Alison Sealy-Smith" not in query_text
+    encoded_report = json.dumps(audit, ensure_ascii=False)
+    assert "SECRET_EXPECTED_ANSWER_NEVER_AUDIT" not in encoded_report
+    assert "SECRET_EXPECTED_EVIDENCE_NEVER_AUDIT" not in encoded_report
+    assert "Adversary" not in encoded_report
+    assert "Alison Sealy-Smith" not in encoded_report
 
 
 def test_run_eval_embeds_heuristic_risk_ledger_and_metric_continuity_checkpoint(tmp_path: Path) -> None:
@@ -3425,6 +3869,77 @@ def test_xlsx_locator_tool_execute_once_runs_source_owned_candidate_and_regates(
         }
         assert gate_rows == {("before", "block_unsupported_answer"), ("after", "allow_answer")}
 
+    legacy_sqlite_path = tmp_path / "legacy-run-without-source-date-aliases.sqlite"
+    with sqlite3.connect(sqlite_path) as source, sqlite3.connect(legacy_sqlite_path) as target:
+        source.backup(target)
+    with sqlite3.connect(legacy_sqlite_path) as conn:
+        columns = [
+            row[1]
+            for row in conn.execute("PRAGMA table_info(tool_candidates)")
+            if row[1] != "source_date_aliases_json"
+        ]
+        quoted_columns = ", ".join(f'"{column}"' for column in columns)
+        conn.execute("ALTER TABLE tool_candidates RENAME TO tool_candidates_with_source_date_aliases")
+        conn.execute(f"CREATE TABLE tool_candidates AS SELECT {quoted_columns} FROM tool_candidates_with_source_date_aliases")
+        conn.execute("DROP TABLE tool_candidates_with_source_date_aliases")
+    legacy_locator = json.loads(json.dumps(locator))
+    legacy_locator["run_store"]["path"] = legacy_sqlite_path.as_posix()
+    actual_rag_eval.validate_xlsx_locator_run_store(
+        "xlsx_locator_tool_execute_once",
+        legacy_locator,
+        run_store_path=legacy_sqlite_path,
+    )
+
+    bad_legacy_sqlite_path = tmp_path / "legacy-run-without-required-locator-source.sqlite"
+    with sqlite3.connect(sqlite_path) as source, sqlite3.connect(bad_legacy_sqlite_path) as target:
+        source.backup(target)
+    with sqlite3.connect(bad_legacy_sqlite_path) as conn:
+        columns = [
+            row[1]
+            for row in conn.execute("PRAGMA table_info(tool_candidates)")
+            if row[1] != "locator_text_source"
+        ]
+        quoted_columns = ", ".join(f'"{column}"' for column in columns)
+        conn.execute("ALTER TABLE tool_candidates RENAME TO tool_candidates_missing_required_locator_source")
+        conn.execute(
+            "CREATE TABLE tool_candidates AS SELECT "
+            f"{quoted_columns} FROM tool_candidates_missing_required_locator_source"
+        )
+        conn.execute("DROP TABLE tool_candidates_missing_required_locator_source")
+    bad_legacy_locator = json.loads(json.dumps(locator))
+    bad_legacy_locator["run_store"]["path"] = bad_legacy_sqlite_path.as_posix()
+    with pytest.raises(DatasetSchemaError, match="tool_candidates missing column locator_text_source"):
+        actual_rag_eval.validate_xlsx_locator_run_store(
+            "xlsx_locator_tool_execute_once",
+            bad_legacy_locator,
+            run_store_path=bad_legacy_sqlite_path,
+        )
+
+    missing_invocation_column_path = tmp_path / "run-without-source-row-invocation-column.sqlite"
+    with sqlite3.connect(sqlite_path) as source, sqlite3.connect(missing_invocation_column_path) as target:
+        source.backup(target)
+    with sqlite3.connect(missing_invocation_column_path) as conn:
+        columns = [
+            row[1]
+            for row in conn.execute("PRAGMA table_info(tool_invocations)")
+            if row[1] != "source_row_context_candidate_count"
+        ]
+        quoted_columns = ", ".join(f'"{column}"' for column in columns)
+        conn.execute("ALTER TABLE tool_invocations RENAME TO tool_invocations_missing_source_row_context")
+        conn.execute(
+            "CREATE TABLE tool_invocations AS SELECT "
+            f"{quoted_columns} FROM tool_invocations_missing_source_row_context"
+        )
+        conn.execute("DROP TABLE tool_invocations_missing_source_row_context")
+    missing_invocation_locator = json.loads(json.dumps(locator))
+    missing_invocation_locator["run_store"]["path"] = missing_invocation_column_path.as_posix()
+    with pytest.raises(DatasetSchemaError, match="tool_invocations missing column source_row_context_candidate_count"):
+        actual_rag_eval.validate_xlsx_locator_run_store(
+            "xlsx_locator_tool_execute_once",
+            missing_invocation_locator,
+            run_store_path=missing_invocation_column_path,
+        )
+
     with sqlite3.connect(sqlite_path) as conn:
         conn.execute("UPDATE items SET query_task = 'gold_lookup'")
     with pytest.raises(DatasetSchemaError, match="items.query_task invalid"):
@@ -4422,6 +4937,2100 @@ def test_xlsx_locator_uses_validated_required_axes_instead_of_question_anchor_wo
         assert json.loads(candidate["missing_validated_required_axes_json"]) == []
 
 
+def test_xlsx_locator_candidate_budget_uses_source_owned_candidate_diversification() -> None:
+    query = "2019년 2월 5호선 승차총승객수는 얼마야?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"line_name": "5호선", "period": "2019-02"},
+            "target_axis": {"column": "승차총승객수", "value_type": "number"},
+            "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-02", "2019년 2월"],
+                "row_entity": ["5호선"],
+                "target_column": ["승차총승객수"],
+                "display_value": [],
+            },
+        },
+    )
+    contexts = []
+    for index in range(7):
+        contexts.append(
+            {
+                "doc_id": f"doc-{index}",
+                "chunk_id": f"chunk-{index}",
+                "source_atom_id": f"src-{index}",
+                "evidence_bundle_id": f"bundle-{index}",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": "2019년 2월 5호선 승차총승객수 값은 15,446,522명입니다.",
+                "sheet": f"2019년 {2 + (index % 3)}월",
+                "cell_range": f"A{1 + index}:D{7 + index}",
+                "row_label": "5호선",
+                "column_label": "승차총승객수",
+                "target_column": "승차총승객수",
+                "table_id": f"table-{index % 4}",
+                "display_value": "15,446,522",
+            }
+        )
+    contexts[0]["formula"] = "SECRET_FORMULA_NEVER_USED"
+    row = {
+        "id": "xlsx-budget-diversity",
+        "query": query,
+        "generated_answer": "15,446,522명",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": contexts,
+    }
+
+    candidates = actual_rag_eval._xlsx_locator_tool_candidates(row)
+
+    assert len(candidates) == actual_rag_eval.XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET
+    assert all(candidate["candidate_budget_per_query"] == actual_rag_eval.XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET for candidate in candidates)
+    assert all(candidate["candidate_pool_count_before_budget"] == 7 for candidate in candidates)
+    assert all(candidate["candidate_budget_exhausted"] is True for candidate in candidates)
+    assert all(candidate["source_owned_candidate_diversification"] is True for candidate in candidates)
+    assert len({candidate["source_owned_diversification_key"] for candidate in candidates}) == len(candidates)
+    assert sum(1 for candidate in candidates if candidate["same_sheet_candidate"]) >= 1
+    assert sum(1 for candidate in candidates if candidate["same_table_candidate"]) >= 1
+    assert sum(1 for candidate in candidates if candidate["same_range_candidate"]) >= 1
+    encoded = json.dumps(candidates, ensure_ascii=False)
+    assert "SECRET_FORMULA_NEVER_USED" not in encoded
+
+
+def test_xlsx_locator_candidate_budget_exact_budget_is_not_exhausted() -> None:
+    budget = actual_rag_eval.XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET
+    ordered_candidates = [
+        {
+            "doc_id": f"doc-{index}",
+            "chunk_id": f"chunk-{index}",
+            "source_atom_id": f"src-{index}",
+            "evidence_bundle_id": f"bundle-{index}",
+            "source_family": "XLSX",
+            "sheet": f"2019년 {index + 1}월",
+            "cell_range": f"A{index}:D{index + 3}",
+            "table_id": f"table-{index}",
+            "target_column": "승차총승객수",
+            "text": "2019년 2월 5호선 승차총승객수 값은 15,446,522명입니다.",
+        }
+        for index in range(budget)
+    ]
+
+    candidates = actual_rag_eval._select_xlsx_locator_budgeted_candidates(
+        ordered_candidates,
+        dedupe_removed_count=0,
+    )
+    meta = actual_rag_eval._xlsx_locator_tool_use_meta(
+        status="skipped_missing_source_locator",
+        candidates=candidates,
+    )
+    projection = actual_rag_eval.project_xlsx_locator_run_record(
+        actual_rag_eval.XlsxLocatorRunRecord(
+            schema_version=actual_rag_eval.XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION,
+            enabled=True,
+            report_only_diagnostic=True,
+            official_metric=False,
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            eligible_failed_row_count=1,
+            tool_invocation_count=1,
+            accepted_candidate_count=0,
+            rejected_candidate_count=budget,
+            gate_delta_record=actual_rag_eval.XlsxLocatorGateDeltaRecord(),
+            guardrail_record=actual_rag_eval.XlsxLocatorGuardrailRecord(),
+            tool_uses=(
+                actual_rag_eval.XlsxLocatorToolUseRecord(
+                    item_index=0,
+                    item_id="exact-budget",
+                    execution_status="skipped_missing_source_locator",
+                    candidate_count=budget,
+                    accepted_candidate_count=0,
+                    candidate_pool_count_before_budget=budget,
+                ),
+            ),
+        )
+    )
+
+    assert len(candidates) == budget
+    assert all(candidate["candidate_pool_count_before_budget"] == budget for candidate in candidates)
+    assert all(candidate["candidate_budget_exhausted"] is False for candidate in candidates)
+    assert meta["candidate_pool_count_before_budget"] == budget
+    assert meta["candidate_budget_exhausted"] is False
+    assert projection["at_budget_row_count"] == 1
+    assert projection["candidate_budget_exhaustion_count"] == 0
+
+
+def test_xlsx_locator_tool_use_marks_split_validated_axes_without_accepting_candidate() -> None:
+    candidates = [
+        {
+            "source_family": "XLSX",
+            "doc_id": "doc-xlsx-split-axis",
+            "source_atom_id": "src-xlsx-split-axis-value",
+            "text": "row_label=해뜨는요양원2 | target_column=시도 시군구 법정동명 | display_value=대구광역시 북구 복현동",
+            "sheet": "일반현황",
+            "cell_range": "A752:J801",
+            "row_label": "해뜨는요양원2",
+            "target_column": "시도 시군구 법정동명",
+            "display_value": "대구광역시 북구 복현동",
+            "matched_validated_required_axes": ["row_entity", "target_column", "display_value"],
+            "missing_validated_required_axes": ["period"],
+            "accepted_for_regating": False,
+            "rejection_reason": "missing_validated_required_axes_after_tool",
+        },
+        {
+            "source_family": "XLSX",
+            "doc_id": "doc-xlsx-split-axis",
+            "source_atom_id": "src-xlsx-split-axis-period",
+            "text": "2014년 12월 해뜨는요양원2 일반현황",
+            "sheet": "일반현황",
+            "cell_range": "A752:J801",
+            "matched_validated_required_axes": ["period", "row_entity"],
+            "missing_validated_required_axes": ["target_column", "display_value"],
+            "accepted_for_regating": False,
+            "rejection_reason": "missing_validated_required_axes_after_tool",
+        },
+    ]
+
+    meta = actual_rag_eval._xlsx_locator_tool_use_meta(
+        status="skipped_missing_source_locator",
+        candidates=candidates,
+    )
+
+    assert meta["accepted_candidate_count"] == 0
+    assert meta["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert meta["remaining_missing_validated_required_axes"] == []
+    assert meta["complete_validated_axis_candidate_count"] == 0
+    assert meta["validated_axis_split_across_candidates"] is True
+    assert meta["best_candidate_missing_validated_required_axes"] == ["period"]
+    assert meta["source_row_context_candidate_count"] == 0
+    assert meta["source_row_context_doc_identity_mismatch_candidate_count"] == 0
+    assert meta["source_row_context_blocked_by_doc_identity_mismatch"] is False
+
+
+def test_xlsx_locator_tool_use_reports_source_row_context_doc_mismatch_fail_closed() -> None:
+    candidates = [
+        {
+            "source_family": "XLSX",
+            "doc_id": "doc-cell",
+            "source_atom_id": "src-cell",
+            "text": "row_label=해뜨는요양원2 | target_column=시도 시군구 법정동명 | display_value=대구광역시 북구 복현동",
+            "sheet": "일반현황",
+            "cell_range": "A752:J801",
+            "row_label": "해뜨는요양원2",
+            "target_column": "시도 시군구 법정동명",
+            "display_value": "대구광역시 북구 복현동",
+            "matched_validated_required_axes": ["row_entity", "target_column", "display_value"],
+            "missing_validated_required_axes": ["period"],
+            "accepted_for_regating": False,
+            "rejection_reason": "missing_validated_required_axes_after_tool",
+        },
+        {
+            "source_family": "XLSX",
+            "doc_id": "doc-row",
+            "source_atom_id": "src-row",
+            "text": "2014년 12월 해뜨는요양원2 일반현황",
+            "sheet": "일반현황",
+            "cell_range": "A752:J801",
+            "matched_validated_required_axes": ["period", "row_entity"],
+            "missing_validated_required_axes": ["target_column", "display_value"],
+            "accepted_for_regating": False,
+            "rejection_reason": "missing_validated_required_axes_after_tool",
+        },
+    ]
+
+    meta = actual_rag_eval._xlsx_locator_tool_use_meta(
+        status="skipped_missing_source_locator",
+        candidates=candidates,
+    )
+    tool_use = actual_rag_eval._xlsx_locator_tool_use_record(
+        item_index=0,
+        item_id="xlsx-doc-mismatch",
+        meta=meta,
+    )
+    projection = actual_rag_eval.project_xlsx_locator_run_record(
+        actual_rag_eval.XlsxLocatorRunRecord(
+            schema_version=actual_rag_eval.XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION,
+            enabled=True,
+            report_only_diagnostic=True,
+            official_metric=False,
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            eligible_failed_row_count=1,
+            tool_invocation_count=1,
+            accepted_candidate_count=0,
+            rejected_candidate_count=len(candidates),
+            gate_delta_record=actual_rag_eval.XlsxLocatorGateDeltaRecord(),
+            guardrail_record=actual_rag_eval.XlsxLocatorGuardrailRecord(),
+            tool_uses=(tool_use,),
+        )
+    )
+
+    assert meta["validated_axis_split_across_candidates"] is True
+    assert meta["source_row_context_candidate_count"] == 0
+    assert meta["source_row_context_doc_identity_mismatch_candidate_count"] == 1
+    assert meta["source_row_context_blocked_by_doc_identity_mismatch"] is True
+    assert (
+        meta["source_row_context_fail_closed_policy"]
+        == "requires_same_doc_sheet_range_row_index_for_sibling_row_context"
+    )
+    assert tool_use.source_row_context_doc_identity_mismatch_candidate_count == 1
+    assert tool_use.source_row_context_blocked_by_doc_identity_mismatch is True
+    assert projection["source_row_context_doc_identity_mismatch_candidate_count"] == 1
+    assert projection["source_row_context_doc_identity_mismatch_row_count"] == 1
+    assert candidates[0]["source_row_context_source_atom_id"] == "src-row"
+    assert candidates[0]["source_row_context_doc_id"] == "doc-row"
+
+
+def test_xlsx_locator_builds_source_owned_sibling_row_composite_for_split_axes() -> None:
+    query = "2014년 12월에 지정된 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"line_name": "해뜨는요양원2", "period": "2014-12"},
+            "target_axis": {"column": "시도 시군구 법정동명", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2014-12", "2014년 12월", "201412"],
+                "row_entity": ["해뜨는요양원2"],
+                "target_column": ["시도 시군구 법정동명"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-split-axis-composite",
+        "query": query,
+        "generated_answer": "대구광역시 북구 복현동",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-cell",
+                "chunk_id": "chunk-cell",
+                "source_atom_id": "src-cell",
+                "source_family": "XLSX",
+                "granularity": "cell",
+                "text": (
+                    "sheet=일반현황 | range=A752:J801 | cell=G752 | "
+                    "row_label=장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526 | "
+                    "column_label=시도 시군구 법정동명 | target_column=시도 시군구 법정동명 | "
+                    "value=국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx / 일반현황 G752 | "
+                    "시도 시군구 법정동명=대구광역시 북구 복현동"
+                ),
+                "title": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+                "workbook_id": "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+                "workbook_version_id": "docv-forbidden-workbook-version",
+                "sheet": "일반현황",
+                "cell_range": "A752:J801",
+                "cell": "G752",
+                "row_index_1based": "752",
+                "row_label": "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526",
+                "column_label": "시도 시군구 법정동명",
+                "target_column": "시도 시군구 법정동명",
+            },
+            {
+                "doc_id": "doc-cell",
+                "chunk_id": "chunk-row",
+                "source_atom_id": "src-row",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": (
+                    "sheet=일반현황 | range=A752:J801 | "
+                    "해뜨는요양원2 | 41526 | 27 | 230 | 112 | 대구광역시 북구 복현동 | "
+                    "2014-12-31 | 2014-12-31 | 대구광역시 북구 공항로 10-7 (복현동)"
+                ),
+                "sheet": "일반현황",
+                "cell_range": "A752:J801",
+                "row_index_1based": "752",
+            },
+        ],
+    }
+
+    candidates = actual_rag_eval._xlsx_locator_tool_candidates(row)
+
+    accepted = [candidate for candidate in candidates if candidate["accepted_for_regating"] is True]
+    assert len(accepted) == 1
+    candidate = accepted[0]
+    assert candidate["locator_text_source"] == "source_owned_sibling_row_context"
+    assert candidate["source_atom_id"] == "src-cell"
+    assert candidate["source_row_context_source_atom_id"] == "src-row"
+    assert candidate["source_row_context_doc_id"] == "doc-cell"
+    assert candidate["display_value"] == "대구광역시 북구 복현동"
+    assert candidate["target_column"] == "시도 시군구 법정동명"
+    assert candidate["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert candidate["missing_validated_required_axes"] == []
+    assert "source_row_context_source_atom_id" in candidate["input_fields_used"]
+    encoded = json.dumps(candidate, ensure_ascii=False)
+    for forbidden in (
+        "workbook_id",
+        "workbook_version_id",
+        "title",
+        "file_name",
+        "expected_answer",
+        "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
+    ):
+        assert forbidden not in encoded
+
+
+def test_xlsx_locator_sibling_row_composite_rejects_ambiguous_sibling_contexts() -> None:
+    query = "2014년 12월에 지정된 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"line_name": "해뜨는요양원2", "period": "2014-12"},
+            "target_axis": {"column": "시도 시군구 법정동명", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2014-12", "2014년 12월", "201412"],
+                "row_entity": ["해뜨는요양원2"],
+                "target_column": ["시도 시군구 법정동명"],
+                "display_value": [],
+            },
+        },
+    )
+    sibling_text = (
+        "sheet=일반현황 | range=A752:J801 | "
+        "해뜨는요양원2 | 41526 | 27 | 230 | 112 | 대구광역시 북구 복현동 | "
+        "2014-12-31 | 2014-12-31 | 대구광역시 북구 공항로 10-7 (복현동)"
+    )
+    row = {
+        "id": "xlsx-split-axis-composite-ambiguous",
+        "query": query,
+        "generated_answer": "대구광역시 북구 복현동",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-cell",
+                "source_atom_id": "src-cell",
+                "source_family": "XLSX",
+                "granularity": "cell",
+                "text": (
+                    "sheet=일반현황 | range=A752:J801 | cell=G752 | "
+                    "row_label=장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526 | "
+                    "column_label=시도 시군구 법정동명 | target_column=시도 시군구 법정동명 | "
+                    "시도 시군구 법정동명=대구광역시 북구 복현동"
+                ),
+                "sheet": "일반현황",
+                "cell_range": "A752:J801",
+                "cell": "G752",
+                "row_index_1based": "752",
+                "row_label": "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526",
+                "column_label": "시도 시군구 법정동명",
+                "target_column": "시도 시군구 법정동명",
+            },
+            {
+                "doc_id": "doc-cell",
+                "source_atom_id": "src-row-a",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": sibling_text,
+                "sheet": "일반현황",
+                "cell_range": "A752:J801",
+            },
+            {
+                "doc_id": "doc-cell",
+                "source_atom_id": "src-row-b",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": sibling_text,
+                "sheet": "일반현황",
+                "cell_range": "A752:J801",
+            },
+        ],
+    }
+
+    candidates = actual_rag_eval._xlsx_locator_tool_candidates(row)
+
+    assert all(candidate["accepted_for_regating"] is False for candidate in candidates)
+
+
+def test_xlsx_locator_sibling_row_composite_rejects_source_document_mismatch() -> None:
+    query = "2014년 12월에 지정된 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"line_name": "해뜨는요양원2", "period": "2014-12"},
+            "target_axis": {"column": "시도 시군구 법정동명", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2014-12", "2014년 12월", "201412"],
+                "row_entity": ["해뜨는요양원2"],
+                "target_column": ["시도 시군구 법정동명"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-split-axis-composite-doc-mismatch",
+        "query": query,
+        "generated_answer": "대구광역시 북구 복현동",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-cell",
+                "source_atom_id": "src-cell",
+                "source_family": "XLSX",
+                "granularity": "cell",
+                "text": (
+                    "sheet=일반현황 | range=A752:J801 | cell=G752 | "
+                    "row_label=장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526 | "
+                    "column_label=시도 시군구 법정동명 | target_column=시도 시군구 법정동명 | "
+                    "시도 시군구 법정동명=대구광역시 북구 복현동"
+                ),
+                "sheet": "일반현황",
+                "cell_range": "A752:J801",
+                "cell": "G752",
+                "row_index_1based": "752",
+                "row_label": "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526",
+                "column_label": "시도 시군구 법정동명",
+                "target_column": "시도 시군구 법정동명",
+            },
+            {
+                "doc_id": "doc-row-other",
+                "source_atom_id": "src-row",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": (
+                    "sheet=일반현황 | range=A752:J801 | "
+                    "해뜨는요양원2 | 41526 | 27 | 230 | 112 | 대구광역시 북구 복현동 | "
+                    "2014-12-31 | 2014-12-31 | 대구광역시 북구 공항로 10-7 (복현동)"
+                ),
+                "sheet": "일반현황",
+                "cell_range": "A752:J801",
+                "row_index_1based": "752",
+            },
+        ],
+    }
+
+    candidates = actual_rag_eval._xlsx_locator_tool_candidates(row)
+
+    assert all(candidate["accepted_for_regating"] is False for candidate in candidates)
+
+
+def test_xlsx_locator_sibling_row_composite_requires_display_value_in_sibling_context() -> None:
+    query = "2014년 12월에 지정된 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"line_name": "해뜨는요양원2", "period": "2014-12"},
+            "target_axis": {"column": "시도 시군구 법정동명", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2014-12", "2014년 12월", "201412"],
+                "row_entity": ["해뜨는요양원2"],
+                "target_column": ["시도 시군구 법정동명"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-split-axis-composite-negative",
+        "query": query,
+        "generated_answer": "대구광역시 북구 복현동",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-cell",
+                "source_atom_id": "src-cell",
+                "source_family": "XLSX",
+                "granularity": "cell",
+                "text": (
+                    "sheet=일반현황 | range=A752:J801 | cell=G752 | "
+                    "row_label=장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526 | "
+                    "column_label=시도 시군구 법정동명 | target_column=시도 시군구 법정동명 | "
+                    "시도 시군구 법정동명=대구광역시 북구 복현동"
+                ),
+                "sheet": "일반현황",
+                "cell_range": "A752:J801",
+                "cell": "G752",
+                "row_index_1based": "752",
+                "row_label": "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526",
+                "column_label": "시도 시군구 법정동명",
+                "target_column": "시도 시군구 법정동명",
+            },
+            {
+                "doc_id": "doc-cell",
+                "source_atom_id": "src-row",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": (
+                    "sheet=일반현황 | range=A752:J801 | "
+                    "해뜨는요양원2 | 41526 | 27 | 230 | 112 | "
+                    "2014-12-31 | 2014-12-31 | 대구광역시 북구 공항로 10-7 (복현동)"
+                ),
+                "sheet": "일반현황",
+                "cell_range": "A752:J801",
+            },
+        ],
+    }
+
+    candidates = actual_rag_eval._xlsx_locator_tool_candidates(row)
+
+    assert all(candidate["accepted_for_regating"] is False for candidate in candidates)
+    meta = actual_rag_eval._xlsx_locator_tool_use_meta(
+        status="skipped_missing_source_locator",
+        candidates=candidates,
+    )
+    assert meta["validated_axis_split_across_candidates"] is True
+    assert meta["complete_validated_axis_candidate_count"] == 0
+
+
+def test_xlsx_locator_sibling_row_composite_accepts_same_source_row_period_cell() -> None:
+    query = "2015년 6월에 지정된 부여효요양원의 기관별 상세주소는 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"line_name": "부여효요양원", "period": "2015-06"},
+            "target_axis": {"column": "기관별 상세주소", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2015-06", "2015년 6월", "201506"],
+                "row_entity": ["부여효요양원"],
+                "target_column": ["기관별 상세주소"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-same-row-period-cell-composite",
+        "query": query,
+        "generated_answer": "충청남도 부여군 석성면 왕릉로 773",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-care",
+                "chunk_id": "chunk-address",
+                "source_atom_id": "src-address",
+                "source_family": "XLSX",
+                "granularity": "cell",
+                "text": (
+                    "sheet=일반현황 | range=A5002:J5051 | cell=J5002 | "
+                    "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176 | "
+                    "column_label=기관별 상세주소 | target_column=기관별 상세주소 | "
+                    "기관별 상세주소=충청남도 부여군 석성면 왕릉로 773"
+                ),
+                "sheet": "일반현황",
+                "cell_range": "A5002:J5051",
+                "cell": "J5002",
+                "row_index_1based": "5002",
+                "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176",
+                "column_label": "기관별 상세주소",
+                "target_column": "기관별 상세주소",
+            },
+            {
+                "doc_id": "doc-care",
+                "chunk_id": "chunk-date",
+                "source_atom_id": "src-date",
+                "source_family": "XLSX",
+                "granularity": "cell",
+                "text": (
+                    "sheet=일반현황 | range=A5002:J5051 | cell=H5002 | "
+                    "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176 | "
+                    "column_label=지정일자 | target_column=지정일자 | 지정일자=2015-06-01"
+                ),
+                "sheet": "일반현황",
+                "cell_range": "A5002:J5051",
+                "cell": "H5002",
+                "row_index_1based": "5002",
+                "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176",
+                "column_label": "지정일자",
+                "target_column": "지정일자",
+            },
+        ],
+    }
+
+    candidates = actual_rag_eval._xlsx_locator_tool_candidates(row)
+
+    accepted = [candidate for candidate in candidates if candidate["accepted_for_regating"] is True]
+    assert len(accepted) == 1
+    candidate = accepted[0]
+    assert candidate["locator_text_source"] == "source_owned_sibling_row_context"
+    assert candidate["source_atom_id"] == "src-address"
+    assert candidate["source_row_context_source_atom_id"] == "src-date"
+    assert candidate["source_row_context_doc_id"] == "doc-care"
+    assert candidate["display_value"] == "충청남도 부여군 석성면 왕릉로 773"
+    assert candidate["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert candidate["missing_validated_required_axes"] == []
+    encoded = json.dumps(candidate, ensure_ascii=False)
+    for forbidden in (
+        "workbook_id",
+        "workbook_version_id",
+        "title",
+        "file_name",
+        "expected_answer",
+    ):
+        assert forbidden not in encoded
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("sheet", "다른시트"),
+        ("cell_range", "A2:J51"),
+        ("row_index_1based", "2"),
+        ("row_index_1based", ""),
+    ],
+)
+def test_xlsx_locator_sibling_row_composite_rejects_period_cell_scope_mismatch(
+    field: str,
+    value: str,
+) -> None:
+    query = "2015년 6월에 지정된 부여효요양원의 기관별 상세주소는 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"line_name": "부여효요양원", "period": "2015-06"},
+            "target_axis": {"column": "기관별 상세주소", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2015-06", "2015년 6월", "201506"],
+                "row_entity": ["부여효요양원"],
+                "target_column": ["기관별 상세주소"],
+                "display_value": [],
+            },
+        },
+    )
+    sibling = {
+        "doc_id": "doc-care",
+        "chunk_id": "chunk-date",
+        "source_atom_id": "src-date",
+        "source_family": "XLSX",
+        "granularity": "cell",
+        "text": (
+            "sheet=일반현황 | range=A5002:J5051 | cell=H5002 | "
+            "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176 | "
+            "column_label=지정일자 | target_column=지정일자 | 지정일자=2015-06-01"
+        ),
+        "sheet": "일반현황",
+        "cell_range": "A5002:J5051",
+        "cell": "H5002",
+        "row_index_1based": "5002",
+        "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176",
+        "column_label": "지정일자",
+        "target_column": "지정일자",
+    }
+    if value:
+        sibling[field] = value
+    else:
+        sibling.pop(field, None)
+    row = {
+        "id": "xlsx-same-row-period-cell-composite-scope-mismatch",
+        "query": query,
+        "generated_answer": "충청남도 부여군 석성면 왕릉로 773",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-care",
+                "chunk_id": "chunk-address",
+                "source_atom_id": "src-address",
+                "source_family": "XLSX",
+                "granularity": "cell",
+                "text": (
+                    "sheet=일반현황 | range=A5002:J5051 | cell=J5002 | "
+                    "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176 | "
+                    "column_label=기관별 상세주소 | target_column=기관별 상세주소 | "
+                    "기관별 상세주소=충청남도 부여군 석성면 왕릉로 773"
+                ),
+                "sheet": "일반현황",
+                "cell_range": "A5002:J5051",
+                "cell": "J5002",
+                "row_index_1based": "5002",
+                "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176",
+                "column_label": "기관별 상세주소",
+                "target_column": "기관별 상세주소",
+            },
+            sibling,
+        ],
+    }
+
+    candidates = actual_rag_eval._xlsx_locator_tool_candidates(row)
+
+    assert all(candidate["accepted_for_regating"] is False for candidate in candidates)
+    assert not any(candidate.get("locator_text_source") == "source_owned_sibling_row_context" for candidate in candidates)
+
+
+def test_xlsx_locator_sibling_row_composite_rejects_forbidden_sibling_context_fields() -> None:
+    query = "2015년 6월에 지정된 부여효요양원의 기관별 상세주소는 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"line_name": "부여효요양원", "period": "2015-06"},
+            "target_axis": {"column": "기관별 상세주소", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2015-06", "2015년 6월", "201506"],
+                "row_entity": ["부여효요양원"],
+                "target_column": ["기관별 상세주소"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-same-row-period-cell-composite-forbidden-sibling",
+        "query": query,
+        "generated_answer": "충청남도 부여군 석성면 왕릉로 773",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-care",
+                "chunk_id": "chunk-address",
+                "source_atom_id": "src-address",
+                "source_family": "XLSX",
+                "granularity": "cell",
+                "text": (
+                    "sheet=일반현황 | range=A5002:J5051 | cell=J5002 | "
+                    "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176 | "
+                    "column_label=기관별 상세주소 | target_column=기관별 상세주소 | "
+                    "기관별 상세주소=충청남도 부여군 석성면 왕릉로 773"
+                ),
+                "sheet": "일반현황",
+                "cell_range": "A5002:J5051",
+                "cell": "J5002",
+                "row_index_1based": "5002",
+                "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176",
+                "column_label": "기관별 상세주소",
+                "target_column": "기관별 상세주소",
+            },
+            {
+                "doc_id": "doc-care",
+                "chunk_id": "chunk-date",
+                "source_atom_id": "src-date",
+                "source_family": "XLSX",
+                "granularity": "cell",
+                "text": (
+                    "sheet=일반현황 | range=A5002:J5051 | cell=H5002 | "
+                    "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176 | "
+                    "column_label=지정일자 | target_column=지정일자 | 지정일자=2015-06-01"
+                ),
+                "formula": "=SECRET_SIBLING_FORMULA",
+                "raw_tool_payload": {"secret": "SECRET_SIBLING_RAW_TOOL_PAYLOAD"},
+                "sheet": "일반현황",
+                "cell_range": "A5002:J5051",
+                "cell": "H5002",
+                "row_index_1based": "5002",
+                "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176",
+                "column_label": "지정일자",
+                "target_column": "지정일자",
+            },
+        ],
+    }
+
+    candidates = actual_rag_eval._xlsx_locator_tool_candidates(row)
+
+    assert all(candidate["accepted_for_regating"] is False for candidate in candidates)
+    assert not any(candidate.get("locator_text_source") == "source_owned_sibling_row_context" for candidate in candidates)
+    encoded = json.dumps(candidates, ensure_ascii=False)
+    assert "SECRET_SIBLING_FORMULA" not in encoded
+    assert "SECRET_SIBLING_RAW_TOOL_PAYLOAD" not in encoded
+
+
+def test_xlsx_locator_sibling_row_composite_rejects_forbidden_base_context_fields() -> None:
+    query = "2014년 12월에 지정된 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"line_name": "해뜨는요양원2", "period": "2014-12"},
+            "target_axis": {"column": "시도 시군구 법정동명", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2014-12", "2014년 12월", "201412"],
+                "row_entity": ["해뜨는요양원2"],
+                "target_column": ["시도 시군구 법정동명"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-split-axis-composite-forbidden-base",
+        "query": query,
+        "generated_answer": "대구광역시 북구 복현동",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-cell",
+                "source_atom_id": "src-cell",
+                "source_family": "XLSX",
+                "granularity": "cell",
+                "text": (
+                    "sheet=일반현황 | range=A752:J801 | cell=G752 | "
+                    "row_label=장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526 | "
+                    "column_label=시도 시군구 법정동명 | target_column=시도 시군구 법정동명 | "
+                    "시도 시군구 법정동명=대구광역시 북구 복현동"
+                ),
+                "formula": "=SECRET_FORMULA_NEVER_USED",
+                "raw_tool_payload": {"secret": "SECRET_RAW_TOOL_PAYLOAD"},
+                "sheet": "일반현황",
+                "cell_range": "A752:J801",
+                "cell": "G752",
+                "row_index_1based": "752",
+                "row_label": "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526",
+                "column_label": "시도 시군구 법정동명",
+                "target_column": "시도 시군구 법정동명",
+            },
+            {
+                "doc_id": "doc-cell",
+                "source_atom_id": "src-row",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": (
+                    "sheet=일반현황 | range=A752:J801 | "
+                    "해뜨는요양원2 | 41526 | 27 | 230 | 112 | 대구광역시 북구 복현동 | "
+                    "2014-12-31 | 2014-12-31 | 대구광역시 북구 공항로 10-7 (복현동)"
+                ),
+                "sheet": "일반현황",
+                "cell_range": "A752:J801",
+            },
+        ],
+    }
+
+    candidates = actual_rag_eval._xlsx_locator_tool_candidates(row)
+
+    assert all(candidate["accepted_for_regating"] is False for candidate in candidates)
+    assert not any(
+        candidate.get("locator_text_source") == "source_owned_sibling_row_context"
+        for candidate in candidates
+    )
+    forbidden_candidates = [
+        candidate
+        for candidate in candidates
+        if {"formula", "raw_tool_payload"} <= set(candidate.get("forbidden_input_fields_seen", []))
+    ]
+    assert forbidden_candidates
+    assert all(
+        candidate["rejection_reason"] == "forbidden_input_fields_present"
+        for candidate in forbidden_candidates
+    )
+    encoded = json.dumps(candidates, ensure_ascii=False)
+    assert "SECRET_FORMULA_NEVER_USED" not in encoded
+    assert "SECRET_RAW_TOOL_PAYLOAD" not in encoded
+
+
+def test_run_eval_xlsx_locator_sibling_row_composite_regates_and_persists_runstore(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    dataset = tmp_path / "xlsx_locator_sibling_composite_gold.jsonl"
+    context = tmp_path / "xlsx_locator_sibling_composite_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_sibling_composite"
+    query = "2014년 12월에 지정된 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"line_name": "해뜨는요양원2", "period": "2014-12"},
+            "target_axis": {"column": "시도 시군구 법정동명", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2014-12", "2014년 12월", "201412"],
+                "row_entity": ["해뜨는요양원2"],
+                "target_column": ["시도 시군구 법정동명"],
+                "display_value": [],
+            },
+        },
+    )
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx_locator_sibling_composite_q",
+                "query": query,
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx_locator_sibling_composite_q",
+                "generated_answer": "대구광역시 북구 복현동",
+                "query_evidence_planner": planner,
+                "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx-sibling",
+                        "chunk_id": "chunk-cell",
+                        "source_atom_id": "src-cell",
+                        "source_family": "XLSX",
+                        "granularity": "cell",
+                        "text": (
+                            "sheet=일반현황 | range=A752:J801 | cell=G752 | "
+                            "row_label=장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526 | "
+                            "column_label=시도 시군구 법정동명 | target_column=시도 시군구 법정동명 | "
+                            "시도 시군구 법정동명=대구광역시 북구 복현동"
+                        ),
+                        "sheet": "일반현황",
+                        "cell_range": "A752:J801",
+                        "cell": "G752",
+                        "row_index_1based": "752",
+                        "row_label": "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526",
+                        "column_label": "시도 시군구 법정동명",
+                        "target_column": "시도 시군구 법정동명",
+                    },
+                    {
+                        "doc_id": "doc-xlsx-sibling",
+                        "chunk_id": "chunk-row",
+                        "source_atom_id": "src-row",
+                        "source_family": "XLSX",
+                        "granularity": "table_row",
+                        "text": (
+                            "sheet=일반현황 | range=A752:J801 | "
+                            "해뜨는요양원2 | 41526 | 27 | 230 | 112 | 대구광역시 북구 복현동 | "
+                            "2014-12-31 | 2014-12-31 | 대구광역시 북구 공항로 10-7 (복현동)"
+                        ),
+                        "sheet": "일반현황",
+                        "cell_range": "A752:J801",
+                        "row_index_1based": "752",
+                    },
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "source_family_hint": "xlsx",
+                "query_task": "entity_attribute_lookup",
+                "row_filters": {"line_name": "해뜨는요양원2", "period": "2014-12"},
+                "target_axis": {"column": "시도 시군구 법정동명", "value_type": "text"},
+                "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+                "intent_tokens": ["무엇입니까"],
+            },
+            {"raw_response_sha256": "sha256:sibling-composite-planner"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=2,
+        run_id="xlsx_locator_sibling_composite",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        xlsx_locator_tool_execute_once=True,
+        llm_query_anchor_classifier=True,
+        local_llm_composer_model="gemma4-e2b-local",
+        skip_local_llm_composer_endpoint_check=True,
+    )
+
+    report = json.loads(bundle.report_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    assert row["xlsx_locator_tool_use"]["execution_status"] == "accepted_after_regating"
+    assert row["xlsx_locator_tool_use"]["source_row_context_candidate_count"] == 1
+    assert row["xlsx_locator_tool_use"]["source_row_context_doc_identity_mismatch_candidate_count"] == 0
+    assert row["xlsx_locator_tool_use"]["source_row_context_blocked_by_doc_identity_mismatch"] is False
+    assert row["evidence_gate"]["selected_evidence"][0]["locator_text_source"] == "source_owned_sibling_row_context"
+    assert row["evidence_gate"]["selected_evidence"][0]["source_row_context_source_atom_id"] == "src-row"
+    with sqlite3.connect(output_dir / "run.sqlite") as conn:
+        conn.row_factory = sqlite3.Row
+        candidate = conn.execute(
+            "SELECT locator_text_source, accepted_for_regating, source_row_context_source_atom_id, "
+            "source_row_context_doc_id, source_date_aliases_json, matched_validated_required_axes_json, "
+            "missing_validated_required_axes_json "
+            "FROM tool_candidates WHERE locator_text_source = 'source_owned_sibling_row_context'"
+        ).fetchone()
+        assert candidate is not None
+        assert candidate["accepted_for_regating"] == 1
+        assert candidate["source_row_context_source_atom_id"] == "src-row"
+        assert candidate["source_row_context_doc_id"] == "doc-xlsx-sibling"
+        assert "2014년 12월" in json.loads(candidate["source_date_aliases_json"])
+        assert json.loads(candidate["matched_validated_required_axes_json"]) == [
+            "period",
+            "row_entity",
+            "target_column",
+            "display_value",
+        ]
+        assert json.loads(candidate["missing_validated_required_axes_json"]) == []
+        selected = conn.execute(
+            "SELECT source_row_context_source_atom_id, source_row_context_doc_id "
+            "FROM selected_evidence WHERE source_row_context_source_atom_id = 'src-row'"
+        ).fetchone()
+        assert selected is not None
+        assert selected["source_row_context_doc_id"] == "doc-xlsx-sibling"
+        invocation = conn.execute(
+            "SELECT accepted_candidate_count, complete_validated_axis_candidate_count, "
+            "validated_axis_split_across_candidates, source_row_context_candidate_count, "
+            "source_row_context_doc_identity_mismatch_candidate_count, "
+            "source_row_context_blocked_by_doc_identity_mismatch FROM tool_invocations"
+        ).fetchone()
+        assert dict(invocation) == {
+            "accepted_candidate_count": 1,
+            "complete_validated_axis_candidate_count": 1,
+            "validated_axis_split_across_candidates": 0,
+            "source_row_context_candidate_count": 1,
+            "source_row_context_doc_identity_mismatch_candidate_count": 0,
+            "source_row_context_blocked_by_doc_identity_mismatch": 0,
+        }
+        actual_rag_eval.validate_xlsx_locator_run_store(
+            "xlsx_locator_sibling_composite",
+            report["xlsx_locator_tool_execute_once"],
+            run_store_path=output_dir / "run.sqlite",
+        )
+
+
+def test_run_eval_xlsx_locator_source_row_context_doc_mismatch_persists_fail_closed_diagnostics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    dataset = tmp_path / "xlsx_locator_doc_mismatch_gold.jsonl"
+    context = tmp_path / "xlsx_locator_doc_mismatch_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_doc_mismatch"
+    query = "2014년 12월에 지정된 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"line_name": "해뜨는요양원2", "period": "2014-12"},
+            "target_axis": {"column": "시도 시군구 법정동명", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2014-12", "2014년 12월", "201412"],
+                "row_entity": ["해뜨는요양원2"],
+                "target_column": ["시도 시군구 법정동명"],
+                "display_value": [],
+            },
+        },
+    )
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx_locator_doc_mismatch_q",
+                "query": query,
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx_locator_doc_mismatch_q",
+                "generated_answer": "대구광역시 북구 복현동",
+                "query_evidence_planner": planner,
+                "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-cell",
+                        "chunk_id": "chunk-cell",
+                        "source_atom_id": "src-cell",
+                        "source_family": "XLSX",
+                        "granularity": "cell",
+                        "text": (
+                            "sheet=일반현황 | range=A752:J801 | cell=G752 | "
+                            "row_label=장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526 | "
+                            "column_label=시도 시군구 법정동명 | target_column=시도 시군구 법정동명 | "
+                            "시도 시군구 법정동명=대구광역시 북구 복현동"
+                        ),
+                        "sheet": "일반현황",
+                        "cell_range": "A752:J801",
+                        "cell": "G752",
+                        "row_index_1based": "752",
+                        "row_label": "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526",
+                        "column_label": "시도 시군구 법정동명",
+                        "target_column": "시도 시군구 법정동명",
+                    },
+                    {
+                        "doc_id": "doc-row-other",
+                        "chunk_id": "chunk-row",
+                        "source_atom_id": "src-row",
+                        "source_family": "XLSX",
+                        "granularity": "table_row",
+                        "text": (
+                            "sheet=일반현황 | range=A752:J801 | "
+                            "해뜨는요양원2 | 41526 | 27 | 230 | 112 | 대구광역시 북구 복현동 | "
+                            "2014-12-31 | 2014-12-31 | 대구광역시 북구 공항로 10-7 (복현동)"
+                        ),
+                        "sheet": "일반현황",
+                        "cell_range": "A752:J801",
+                    },
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "source_family_hint": "xlsx",
+                "query_task": "entity_attribute_lookup",
+                "row_filters": {"line_name": "해뜨는요양원2", "period": "2014-12"},
+                "target_axis": {"column": "시도 시군구 법정동명", "value_type": "text"},
+                "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+                "intent_tokens": ["무엇입니까"],
+            },
+            {"raw_response_sha256": "sha256:doc-mismatch-planner"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=2,
+        run_id="xlsx_locator_doc_mismatch",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        xlsx_locator_tool_execute_once=True,
+        llm_query_anchor_classifier=True,
+        local_llm_composer_model="gemma4-e2b-local",
+        skip_local_llm_composer_endpoint_check=True,
+    )
+
+    report = json.loads(bundle.report_path.read_text(encoding="utf-8"))
+    locator = report["xlsx_locator_tool_execute_once"]
+    row = report["items"][0]
+    tool_use = row["xlsx_locator_tool_use"]
+
+    assert report["evidence_gate"]["allowed_answer_count"] == 0
+    assert tool_use["execution_status"] == "skipped_missing_source_locator"
+    assert tool_use["accepted_candidate_count"] == 0
+    assert tool_use["source_row_context_candidate_count"] == 0
+    assert tool_use["source_row_context_doc_identity_mismatch_candidate_count"] == 1
+    assert tool_use["source_row_context_blocked_by_doc_identity_mismatch"] is True
+    assert (
+        tool_use["source_row_context_fail_closed_policy"]
+        == "requires_same_doc_sheet_range_row_index_for_sibling_row_context"
+    )
+    assert locator["official_metric"] is False
+    assert locator["official_metric_input_rows"] == 0
+    assert locator["guardrail_status"]["evidence_gate_loosened"] is False
+    assert locator["guardrail_status"]["official_metric_input_rows"] == 0
+    assert locator["accepted_candidate_count"] == 0
+    assert locator["source_row_context_candidate_count"] == 0
+    assert locator["source_row_context_doc_identity_mismatch_candidate_count"] == 1
+    assert locator["source_row_context_doc_identity_mismatch_row_count"] == 1
+    assert locator["candidate_budget_diagnostic"]["source_row_context_doc_identity_mismatch_candidate_count"] == 1
+    assert locator["candidate_budget_diagnostic"]["source_row_context_doc_identity_mismatch_row_count"] == 1
+    assert (
+        locator["candidate_budget_diagnostic"]["source_row_context_fail_closed_policy"]
+        == "requires_same_doc_sheet_range_row_index_for_sibling_row_context"
+    )
+    encoded = json.dumps(report, ensure_ascii=False)
+    assert "source_owned_sibling_row_context" not in encoded
+
+    with sqlite3.connect(output_dir / "run.sqlite") as conn:
+        conn.row_factory = sqlite3.Row
+        invocation = conn.execute(
+            "SELECT accepted_candidate_count, complete_validated_axis_candidate_count, "
+            "validated_axis_split_across_candidates, source_row_context_candidate_count, "
+            "source_row_context_doc_identity_mismatch_candidate_count, "
+            "source_row_context_blocked_by_doc_identity_mismatch FROM tool_invocations"
+        ).fetchone()
+        assert dict(invocation) == {
+            "accepted_candidate_count": 0,
+            "complete_validated_axis_candidate_count": 0,
+            "validated_axis_split_across_candidates": 1,
+            "source_row_context_candidate_count": 0,
+            "source_row_context_doc_identity_mismatch_candidate_count": 1,
+            "source_row_context_blocked_by_doc_identity_mismatch": 1,
+        }
+        assert (
+            conn.execute(
+                "SELECT COUNT(*) FROM selected_evidence WHERE source_row_context_source_atom_id != ''"
+            ).fetchone()[0]
+            == 0
+        )
+        diagnostic_candidate = conn.execute(
+            "SELECT source_atom_id, doc_id, source_row_context_source_atom_id, source_row_context_doc_id "
+            "FROM tool_candidates WHERE source_row_context_doc_id != ''"
+        ).fetchone()
+        assert dict(diagnostic_candidate) == {
+            "source_atom_id": "src-cell",
+            "doc_id": "doc-cell",
+            "source_row_context_source_atom_id": "src-row",
+            "source_row_context_doc_id": "doc-row-other",
+        }
+        actual_rag_eval.validate_xlsx_locator_run_store(
+            "xlsx_locator_doc_mismatch",
+            locator,
+            run_store_path=output_dir / "run.sqlite",
+        )
+        conn.execute(
+            "UPDATE tool_candidates SET source_row_context_source_atom_id = '', source_row_context_doc_id = ''"
+        )
+        conn.commit()
+        with pytest.raises(DatasetSchemaError, match="doc mismatch diagnostics missing"):
+            actual_rag_eval.validate_xlsx_locator_run_store(
+                "xlsx_locator_doc_mismatch",
+                locator,
+                run_store_path=output_dir / "run.sqlite",
+            )
+
+
+def test_xlsx_locator_materializes_display_value_from_target_column_segment() -> None:
+    query = "2008년 6월에 지정된 청운노인요양원의 기관별 상세주소는 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2008-06", "line_name": "청운노인요양원"},
+            "target_axis": {"column": "기관별 상세주소", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2008-06", "2008년 6월"],
+                "row_entity": ["청운노인요양원"],
+                "target_column": ["기관별 상세주소"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-display-value-materialize",
+        "query": query,
+        "generated_answer": "서울특별시 종로구 비봉길 76 (구기동)",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+    }
+    context = {
+        "doc_id": "doc-xlsx",
+        "chunk_id": "chunk-xlsx",
+        "source_atom_id": "src-xlsx",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": (
+            "sheet=일반현황 | range=A2:J51 | cell=J2 | "
+            "row_label=장기요양기관코드=11111000006 | 장기요양기관이름=청운노인요양원 | 우편번호=03001 | "
+            "column_label=기관별 상세주소 | target_column=기관별 상세주소 | "
+            "지정일자=2008-06-25 | 기관별 상세주소=서울특별시 종로구 비봉길 76 (구기동)"
+        ),
+        "sheet": "일반현황",
+        "cell_range": "A2:J51",
+        "cell": "J2",
+        "row_index_1based": "2",
+        "row_label": "장기요양기관코드=11111000006 | 장기요양기관이름=청운노인요양원 | 우편번호=03001",
+        "column_label": "기관별 상세주소",
+        "target_column": "기관별 상세주소",
+    }
+
+    candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
+
+    assert candidate is not None
+    assert candidate["display_value"] == "서울특별시 종로구 비봉길 76 (구기동)"
+    assert candidate["display_value_source"] == "source_owned_target_column_segment"
+    assert "display_value" in candidate["input_fields_used"]
+    assert candidate["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert candidate["missing_validated_required_axes"] == []
+    assert candidate["accepted_for_regating"] is True
+    encoded = json.dumps(candidate, ensure_ascii=False)
+    assert "expected_answer" not in encoded
+    assert "normalized_value" not in encoded
+    assert "formula" not in encoded
+
+
+def test_xlsx_locator_records_source_date_aliases_without_accepting_incomplete_candidate() -> None:
+    query = "2019년 2월 안산선의 수송인원은 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2019-02", "line_name": "안산선"},
+            "target_axis": {"column": "수송인원", "value_type": "number"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-02", "2019년 2월"],
+                "row_entity": ["안산선"],
+                "target_column": ["수송인원"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-source-date-alias",
+        "query": query,
+        "generated_answer": "근거만으로는 알 수 없습니다.",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+    }
+    context = {
+        "doc_id": "doc-xlsx-date-alias",
+        "chunk_id": "chunk-xlsx-date-alias",
+        "source_atom_id": "src-xlsx-date-alias",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": "sheet=철도 | range=A302:D351 | 년월: 201902 | 노선명: 안산선 | 수송인원",
+        "sheet": "철도",
+        "cell_range": "A302:D351",
+    }
+
+    candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
+
+    assert candidate is not None
+    assert candidate["source_date_aliases"] == ["2019년 2월", "2019년", "2월"]
+    assert "source_date_aliases" in candidate["input_fields_used"]
+    assert candidate["matched_validated_required_axes"] == ["period", "row_entity", "target_column"]
+    assert candidate["missing_validated_required_axes"] == ["display_value"]
+    assert candidate["accepted_for_regating"] is False
+    encoded = json.dumps(candidate, ensure_ascii=False)
+    assert "expected_answer" not in encoded
+    assert "normalized_value" not in encoded
+    assert "formula" not in encoded
+
+
+def test_xlsx_locator_date_aliases_ignore_bare_or_non_date_compact_numbers() -> None:
+    assert actual_rag_eval._xlsx_locator_date_aliases("201902") == []
+    assert actual_rag_eval._xlsx_locator_date_aliases("관리번호: 201902") == []
+    assert actual_rag_eval._xlsx_locator_date_aliases("row_id=201902") == []
+    assert actual_rag_eval._xlsx_locator_date_aliases("영남대로 1351-12") == []
+    assert actual_rag_eval._xlsx_locator_date_aliases("년월: 201902") == ["2019년 2월", "2019년", "2월"]
+
+
+def test_run_eval_xlsx_locator_persists_source_date_aliases_for_rejected_candidate(tmp_path: Path) -> None:
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_source_date_alias"
+    query = "2019년 2월 안산선의 수송인원은 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2019-02", "line_name": "안산선"},
+            "target_axis": {"column": "수송인원", "value_type": "number"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-02", "2019년 2월"],
+                "row_entity": ["안산선"],
+                "target_column": ["수송인원"],
+                "display_value": [],
+            },
+        },
+    )
+    context = {
+        "doc_id": "doc-xlsx-date-alias",
+        "chunk_id": "chunk-xlsx-date-alias",
+        "source_atom_id": "src-xlsx-date-alias",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": "sheet=철도 | range=A302:D351 | 년월: 201902 | 노선명: 안산선 | 수송인원",
+        "sheet": "철도",
+        "cell_range": "A302:D351",
+    }
+    before_row = {
+        "id": "xlsx_locator_source_date_alias_q",
+        "query": query,
+        "answerability": "answerable",
+        "track": "xlsx_business_structured",
+        "generated_answer": "안산선의 수송인원은 999명입니다.",
+        "answer_gate_decision": "block_unsupported_answer",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [context],
+        "citations": [],
+        "evidence_gate": {
+            "evidence_package_status": "insufficient",
+            "answer_gate_decision": "block_unsupported_answer",
+            "validation_reasons": ["missing_validated_required_axes"],
+            "retrieved_evidence_candidates": [context],
+            "selected_evidence": [],
+        },
+    }
+
+    after_rows, record = actual_rag_eval.apply_xlsx_locator_tool_execute_once_to_outputs(
+        [before_row],
+        evidence_gate_mode="enforce",
+        citation_format="evidence-id",
+        composer_provider="selected-evidence-deterministic-v1",
+        local_llm_model="gemma4-e2b-local",
+        skip_local_llm_endpoint_check=True,
+    )
+    run_store_path = output_dir / "run.sqlite"
+    actual_rag_eval.XlsxLocatorRunStore(run_store_path).write_run_record(
+        run_id="xlsx_locator_source_date_alias",
+        dataset_slug="unit",
+        collection="unit",
+        record=record,
+        before_rows=[before_row],
+        after_rows=after_rows,
+    )
+    locator = actual_rag_eval.project_xlsx_locator_run_record(record, run_store_path=run_store_path)
+
+    assert locator["accepted_candidate_count"] == 0
+    assert locator["gate_delta"]["allowed_answer_count_delta"] == 0
+    assert after_rows[0]["xlsx_locator_tool_use"]["execution_status"] == "skipped_missing_source_locator"
+
+    with sqlite3.connect(run_store_path) as conn:
+        conn.row_factory = sqlite3.Row
+        candidate = conn.execute(
+            "SELECT source_date_aliases_json, input_fields_used_json, accepted_for_regating, "
+            "rejection_reason, matched_validated_required_axes_json, "
+            "missing_validated_required_axes_json "
+            "FROM tool_candidates WHERE source_atom_id = 'src-xlsx-date-alias'"
+        ).fetchone()
+        assert candidate is not None
+        assert json.loads(candidate["source_date_aliases_json"]) == ["2019년 2월", "2019년", "2월"]
+        assert "source_date_aliases" in json.loads(candidate["input_fields_used_json"])
+        assert candidate["accepted_for_regating"] == 0
+        assert candidate["rejection_reason"] == "missing_validated_required_axes_after_tool"
+        assert json.loads(candidate["matched_validated_required_axes_json"]) == [
+            "period",
+            "row_entity",
+            "target_column",
+        ]
+        assert json.loads(candidate["missing_validated_required_axes_json"]) == ["display_value"]
+        actual_rag_eval.validate_xlsx_locator_run_store(
+            "xlsx_locator_source_date_alias",
+            locator,
+            run_store_path=run_store_path,
+        )
+
+
+def test_run_eval_xlsx_locator_materialized_display_value_regates_and_persists(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    dataset = tmp_path / "xlsx_locator_materialized_display_gold.jsonl"
+    context = tmp_path / "xlsx_locator_materialized_display_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_materialized_display"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx_locator_materialized_display_q",
+                "query": "2008년 6월에 지정된 청운노인요양원의 기관별 상세주소는 무엇입니까?",
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "xlsx_locator_materialized_display_q",
+                "generated_answer": "서울특별시 종로구 비봉길 76 (구기동)",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-xlsx-materialized-display",
+                        "chunk_id": "chunk-xlsx-materialized-display",
+                        "source_atom_id": "src-xlsx-materialized-display",
+                        "evidence_bundle_id": "bundle-xlsx-materialized-display",
+                        "source_family": "XLSX",
+                        "granularity": "table_row",
+                        "text": "청운노인요양원 기관별 상세주소",
+                        "xlsx_locator_text": (
+                            "sheet=일반현황 | cell_range=A2:J51 | cell=J2 | "
+                            "row_label=장기요양기관코드=11111000006 | 장기요양기관이름=청운노인요양원 | 우편번호=03001 | "
+                            "column_label=기관별 상세주소 | target_column=기관별 상세주소 | "
+                            "지정일자=2008-06-25 | 기관별 상세주소=서울특별시 종로구 비봉길 76 (구기동)"
+                        ),
+                        "xlsx_locator_metadata": {
+                            "sheet": "일반현황",
+                            "cell_range": "A2:J51",
+                            "cell": "J2",
+                            "row_index_1based": "2",
+                            "row_label": "장기요양기관코드=11111000006 | 장기요양기관이름=청운노인요양원 | 우편번호=03001",
+                            "column_label": "기관별 상세주소",
+                            "target_column": "기관별 상세주소",
+                        },
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "source_family_hint": "xlsx",
+                "query_task": "date_filtered_lookup",
+                "row_filters": {"period": "2008-06", "facility_name": "청운노인요양원"},
+                "target_axis": {"column": "기관별 상세주소", "value_type": "text"},
+                "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+                "intent_tokens": ["무엇입니까"],
+            },
+            {"raw_response_sha256": "sha256:xlsx-materialized-display"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="xlsx_locator_materialized_display",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        xlsx_locator_tool_execute_once=True,
+        llm_query_anchor_classifier=True,
+        local_llm_composer_model="gemma4-e2b-local",
+        skip_local_llm_composer_endpoint_check=True,
+    )
+
+    report = json.loads(bundle.report_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    locator = report["xlsx_locator_tool_execute_once"]
+
+    assert report["evidence_gate"]["allowed_answer_count"] == 1
+    assert row["xlsx_locator_tool_use"]["execution_status"] == "accepted_after_regating"
+    assert locator["accepted_candidate_count"] == 1
+    assert locator["complete_validated_axis_candidate_count"] == 1
+    assert locator["validated_axis_split_row_count"] == 0
+    selected = row["evidence_gate"]["selected_evidence"][0]
+    assert selected["display_value"] == "서울특별시 종로구 비봉길 76 (구기동)"
+    assert selected["target_column"] == "기관별 상세주소"
+
+    with sqlite3.connect(output_dir / "run.sqlite") as conn:
+        conn.row_factory = sqlite3.Row
+        candidate = conn.execute(
+            "SELECT display_value, input_fields_used_json, accepted_for_regating, rejection_reason "
+            "FROM tool_candidates"
+        ).fetchone()
+        assert candidate["display_value"] == "서울특별시 종로구 비봉길 76 (구기동)"
+        assert "display_value" in json.loads(candidate["input_fields_used_json"])
+        assert candidate["accepted_for_regating"] == 1
+        assert candidate["rejection_reason"] == ""
+        invocation = conn.execute(
+            "SELECT complete_validated_axis_candidate_count, validated_axis_split_across_candidates, "
+            "best_candidate_missing_validated_required_axes_json FROM tool_invocations"
+        ).fetchone()
+        assert invocation["complete_validated_axis_candidate_count"] == 1
+        assert invocation["validated_axis_split_across_candidates"] == 0
+        assert json.loads(invocation["best_candidate_missing_validated_required_axes_json"]) == []
+
+    selected_encoded = json.dumps(selected, ensure_ascii=False)
+    assert "expected_answer" not in selected_encoded
+    assert "normalized_value" not in selected_encoded
+    assert "formula" not in selected_encoded
+
+
+def test_xlsx_locator_display_value_materialization_fails_closed_on_duplicate_target_segments() -> None:
+    query = "2008년 6월에 지정된 청운노인요양원의 기관별 상세주소는 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2008-06", "line_name": "청운노인요양원"},
+            "target_axis": {"column": "기관별 상세주소", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2008-06", "2008년 6월"],
+                "row_entity": ["청운노인요양원"],
+                "target_column": ["기관별 상세주소"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-display-value-duplicate",
+        "query": query,
+        "generated_answer": "서울특별시 종로구 비봉길 76 (구기동)",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+    }
+    context = {
+        "doc_id": "doc-xlsx",
+        "chunk_id": "chunk-xlsx",
+        "source_atom_id": "src-xlsx",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": (
+            "sheet=일반현황 | range=A2:J51 | cell=J2 | "
+            "row_label=장기요양기관이름=청운노인요양원 | "
+            "column_label=기관별 상세주소 | target_column=기관별 상세주소 | "
+            "지정일자=2008-06-25 | 기관별 상세주소=서울특별시 종로구 비봉길 76 (구기동) | "
+            "기관별 상세주소=부산광역시 중복 주소"
+        ),
+        "sheet": "일반현황",
+        "cell_range": "A2:J51",
+        "cell": "J2",
+        "row_index_1based": "2",
+        "row_label": "장기요양기관이름=청운노인요양원",
+        "column_label": "기관별 상세주소",
+        "target_column": "기관별 상세주소",
+    }
+
+    candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
+
+    assert candidate is not None
+    assert candidate.get("display_value", "") == ""
+    assert candidate.get("display_value_source", "") == ""
+    assert candidate["missing_validated_required_axes"] == ["display_value"]
+    assert candidate["accepted_for_regating"] is False
+    assert candidate["rejection_reason"] == "missing_validated_required_axes_after_tool"
+
+
+def test_xlsx_locator_display_value_materialization_fails_closed_on_same_value_duplicate_target_segments() -> None:
+    candidate = {
+        "target_column": "기관별 상세주소",
+        "column_label": "기관별 상세주소",
+    }
+    text = (
+        "row_label=장기요양기관이름=청운노인요양원 | "
+        "target_column=기관별 상세주소 | "
+        "기관별 상세주소=서울특별시 종로구 비봉길 76 (구기동) | "
+        "기관별 상세주소=서울특별시 종로구 비봉길 76 (구기동)"
+    )
+
+    display_value = actual_rag_eval._xlsx_locator_target_column_display_value_from_segments(
+        candidate=candidate,
+        text=text,
+    )
+
+    assert display_value == ""
+
+
+def test_xlsx_locator_display_value_materialization_fails_closed_on_target_label_alias_collision() -> None:
+    candidate = {
+        "target_column": "기관별 상세주소",
+        "column_label": "주소",
+    }
+    text = (
+        "row_label=장기요양기관이름=청운노인요양원 | "
+        "target_column=기관별 상세주소 | "
+        "주소=서울특별시 종로구 비봉길 76 (구기동) | "
+        "기관별 상세주소=서울특별시 종로구 비봉길 76 (구기동)"
+    )
+
+    display_value = actual_rag_eval._xlsx_locator_target_column_display_value_from_segments(
+        candidate=candidate,
+        text=text,
+    )
+
+    assert display_value == ""
+
+
+def test_xlsx_locator_materialization_ignores_generic_value_segment_without_target_label_key() -> None:
+    candidate = {
+        "target_column": "기관별 상세주소",
+        "column_label": "기관별 상세주소",
+    }
+    text = (
+        "row_label=장기요양기관이름=청운노인요양원 | "
+        "target_column=기관별 상세주소 | "
+        "value=서울특별시 종로구 비봉길 76 (구기동)"
+    )
+
+    display_value = actual_rag_eval._xlsx_locator_target_column_display_value_from_segments(
+        candidate=candidate,
+        text=text,
+    )
+
+    assert display_value == ""
+
+
+def test_xlsx_locator_forbidden_input_scan_flags_raw_tool_payload_keys() -> None:
+    seen = actual_rag_eval._collect_xlsx_locator_forbidden_input_fields(
+        {
+            "raw_tool_payload": {"secret": "SECRET_RAW_TOOL_PAYLOAD"},
+            "rawToolPayload": {"secret": "SECRET_CAMEL_RAW_TOOL_PAYLOAD"},
+            "tool_payload": {"secret": "SECRET_TOOL_PAYLOAD"},
+            "toolPayload": {"secret": "SECRET_CAMEL_TOOL_PAYLOAD"},
+            "text": "toolPayload={'secret':'SECRET_TEXT_TOOL_PAYLOAD'} | rawToolPayload={}",
+        }
+    )
+
+    assert {"raw_tool_payload", "tool_payload"} <= seen
+
+
+def test_xlsx_locator_forbidden_input_scan_flags_source_path_and_workbook_ids() -> None:
+    text = (
+        "row_label=장기요양기관이름=청운노인요양원 | "
+        "target_column=기관별 상세주소 | "
+        "source_path=C:/private/raw.xlsx | "
+        "workbookId=secret-workbook | "
+        "workbookVersionId=secret-version | "
+        "기관별 상세주소=서울특별시 종로구 비봉길 76 (구기동)"
+    )
+    seen = actual_rag_eval._collect_xlsx_locator_forbidden_input_fields(
+        {
+            "source_path": "C:/private/raw.xlsx",
+            "workbook_id": "secret-workbook",
+            "workbookVersionId": "secret-version",
+            "text": text,
+        }
+    )
+    stripped = actual_rag_eval._strip_xlsx_locator_forbidden_text_segments(text)
+
+    assert {"source_path", "workbook_id", "workbook_version_id"} <= seen
+    assert "source_path" not in stripped
+    assert "workbookId" not in stripped
+    assert "workbookVersionId" not in stripped
+    assert "기관별 상세주소=서울특별시 종로구 비봉길 76 (구기동)" in stripped
+
+
+def test_xlsx_locator_rejects_explicit_locator_text_with_source_path_or_workbook_ids() -> None:
+    query = "2008년 6월에 지정된 청운노인요양원의 기관별 상세주소는 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2008-06", "line_name": "청운노인요양원"},
+            "target_axis": {"column": "기관별 상세주소", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2008-06", "2008년 6월"],
+                "row_entity": ["청운노인요양원"],
+                "target_column": ["기관별 상세주소"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-source-path-workbook-id-reject",
+        "query": query,
+        "generated_answer": "서울특별시 종로구 비봉길 76 (구기동)",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+    }
+    context = {
+        "doc_id": "doc-xlsx",
+        "chunk_id": "chunk-xlsx",
+        "source_atom_id": "src-xlsx",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "xlsx_locator_text": (
+            "sheet=일반현황 | cell_range=A2:J51 | cell=J2 | "
+            "row_label=장기요양기관이름=청운노인요양원 | "
+            "column_label=기관별 상세주소 | target_column=기관별 상세주소 | "
+            "지정일자=2008-06-25 | 기관별 상세주소=서울특별시 종로구 비봉길 76 (구기동) | "
+            "source_path=C:/private/raw.xlsx | workbook_id=secret-workbook | workbook_version_id=secret-version"
+        ),
+        "xlsx_locator_metadata": {
+            "sheet": "일반현황",
+            "cell_range": "A2:J51",
+            "cell": "J2",
+            "row_index_1based": "2",
+            "row_label": "장기요양기관이름=청운노인요양원",
+            "column_label": "기관별 상세주소",
+            "target_column": "기관별 상세주소",
+        },
+    }
+
+    candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
+
+    assert candidate is not None
+    assert candidate["accepted_for_regating"] is False
+    assert candidate["rejection_reason"] == "forbidden_input_fields_present"
+    assert {"source_path", "workbook_id", "workbook_version_id"} <= set(candidate["forbidden_input_fields_used_for_candidate"])
+
+
+def test_public_report_sanitizer_strips_raw_tool_payload_keys() -> None:
+    report = actual_rag_eval._sanitize_public_report_value(
+        {
+            "safe": "kept",
+            "raw_tool_payload": {"secret": "SECRET_RAW_TOOL_PAYLOAD"},
+            "tool_payload": {"secret": "SECRET_TOOL_PAYLOAD"},
+            "nested": [{"rawToolPayload": "SECRET_CAMEL_TOOL_PAYLOAD"}],
+        }
+    )
+
+    encoded = json.dumps(report, ensure_ascii=False)
+    assert report["safe"] == "kept"
+    assert "SECRET_RAW_TOOL_PAYLOAD" not in encoded
+    assert "SECRET_TOOL_PAYLOAD" not in encoded
+    assert "SECRET_CAMEL_TOOL_PAYLOAD" not in encoded
+    assert "raw_tool_payload" not in encoded
+    assert "tool_payload" not in encoded
+    assert "rawToolPayload" not in encoded
+
+
+def test_residual_anchor_matrix_reports_source_native_axes_without_shortcuts() -> None:
+    query = "2019년 2월 5호선 승차총승객수는 얼마야?"
+    source = {
+        "doc_id": "doc-xlsx",
+        "chunk_id": "chunk-xlsx",
+        "source_atom_id": "src-xlsx",
+        "evidence_bundle_id": "bundle-xlsx",
+        "source_family": "XLSX",
+        "text": "2019년 2월 5호선 승차총승객수 값은 15,446,522명입니다.",
+        "sheet": "2019년 2월",
+        "cell_range": "A1:D7",
+        "row_label": "5호선",
+        "target_column": "승차총승객수",
+        "display_value": "15,446,522",
+    }
+    row = {
+        "id": "xlsx-anchor-matrix",
+        "query": query,
+        "generated_answer": "15,446,522명",
+        "expected_answer": "SECRET_EXPECTED_VALUE_NEVER_RUNTIME",
+        "qrels": [{"text": "SECRET_QRELS_NEVER_RUNTIME"}],
+        "baseline_topk": [{"text": "SECRET_BASELINE_TOPK_NEVER_RUNTIME"}],
+        "retrieved_contexts": [{**source, "formula": "SECRET_FORMULA_NEVER_RUNTIME"}],
+        "evidence_gate": {
+            "evidence_package_status": "insufficient",
+            "answer_gate_decision": "abstain",
+            "validation_reasons": ["missing_validated_required_axes"],
+            "retrieved_evidence_candidates": [source],
+            "selected_evidence": [source],
+        },
+    }
+
+    matrix = actual_rag_eval.build_residual_anchor_matrix(items=[], rows=[row])
+
+    assert matrix["schema_version"] == "actual_rag_eval.residual_anchor_matrix.v1"
+    assert matrix["report_only_diagnostic"] is True
+    assert matrix["official_metric"] is False
+    assert matrix["uses_expected_fields_as_runtime_inputs"] is False
+    assert matrix["uses_qrels_or_labels_as_runtime_inputs"] is False
+    matrix_row = matrix["rows"][0]
+    assert matrix_row["query_shape"] == "table_lookup"
+    assert matrix_row["topk_anchor_presence"]["axis_anchor_present"] is True
+    assert matrix_row["selected_evidence_anchor_presence"]["value_anchor_present"] is True
+    assert matrix_row["selected_evidence_anchor_presence"]["axis_anchor_present"] is True
+    assert matrix_row["final_answer_anchor_presence"]["axis_anchor_present"] is False
+    assert matrix_row["residual_classification"] == "selected_evidence_has_value_missing_axis"
+    encoded = json.dumps(matrix, ensure_ascii=False)
+    assert "SECRET_EXPECTED_VALUE_NEVER_RUNTIME" not in encoded
+    assert "SECRET_QRELS_NEVER_RUNTIME" not in encoded
+    assert "SECRET_BASELINE_TOPK_NEVER_RUNTIME" not in encoded
+    assert "SECRET_FORMULA_NEVER_RUNTIME" not in encoded
+
+
+def test_source_native_axis_provenance_reports_pdf_location_stages() -> None:
+    row = {
+        "id": "pdf-axis-provenance",
+        "query": "2024년 영업이익 표의 값은 얼마야?",
+        "generated_answer": "12.3억원",
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-pdf",
+                "chunk_id": "chunk-pdf",
+                "source_atom_id": "src-pdf",
+                "evidence_bundle_id": "bundle-pdf",
+                "source_family": "PDF",
+                "text": "2024년 영업이익 값은 12.3억원입니다.",
+                "page_number": 7,
+                "section_title": "재무 현황",
+                "table_caption": "영업이익 표",
+                "bbox": [10, 20, 200, 240],
+                "raw_locator": {"page_number": 7, "bbox": [10, 20, 200, 240]},
+            }
+        ],
+        "evidence_gate": {
+            "selected_evidence": [
+                {
+                    "doc_id": "doc-pdf",
+                    "source_family": "PDF",
+                    "text": "2024년 영업이익 값은 12.3억원입니다.",
+                    "page_number": 7,
+                    "table_caption": "영업이익 표",
+                }
+            ],
+        },
+        "citations": [{"doc_id": "doc-pdf", "source_family": "PDF", "text": "12.3억원", "page_number": 7}],
+    }
+
+    provenance = actual_rag_eval.build_source_native_axis_provenance(items=[], rows=[row])
+
+    assert provenance["schema_version"] == "actual_rag_eval.source_native_axis_provenance.v1"
+    assert provenance["report_only_diagnostic"] is True
+    assert provenance["official_metric"] is False
+    assert provenance["stage_notes"]["source_registry_or_manifest"] == (
+        "not_inspected_report_only_diagnostic_no_source_registry_or_manifest_runtime_input"
+    )
+    axis_stages = provenance["rows"][0]["axis_presence_by_stage"]
+    assert axis_stages["source_registry_or_manifest"]["present"] == []
+    assert axis_stages["source_registry_or_manifest"]["stage_status"] == "not_inspected"
+    assert axis_stages["retrieved_context"]["present"] == [
+        "page_number",
+        "section_title",
+        "table_caption",
+        "bbox",
+    ]
+    assert axis_stages["selected_evidence"]["present"] == ["page_number", "table_caption"]
+    assert axis_stages["final_citation"]["present"] == ["page_number"]
+
+
+def test_xlsx_locator_projection_reports_candidate_budget_taxonomy() -> None:
+    budget = actual_rag_eval.XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET
+    tool_uses = (
+        actual_rag_eval.XlsxLocatorToolUseRecord(
+            item_index=0,
+            item_id="zero-candidate",
+            execution_status="skipped_missing_source_locator",
+            candidate_count=0,
+            accepted_candidate_count=0,
+        ),
+        actual_rag_eval.XlsxLocatorToolUseRecord(
+            item_index=1,
+            item_id="at-budget",
+            execution_status="accepted_after_regating",
+            candidate_count=budget,
+            accepted_candidate_count=1,
+            candidate_pool_count_before_budget=budget,
+        ),
+        actual_rag_eval.XlsxLocatorToolUseRecord(
+            item_index=2,
+            item_id="over-budget",
+            execution_status="skipped_missing_source_locator",
+            candidate_count=budget,
+            accepted_candidate_count=0,
+            candidate_pool_count_before_budget=budget + 2,
+        ),
+        actual_rag_eval.XlsxLocatorToolUseRecord(
+            item_index=3,
+            item_id="below-budget",
+            execution_status="skipped_missing_source_locator",
+            candidate_count=2,
+            accepted_candidate_count=0,
+        ),
+    )
+    candidate_records = tuple(
+        actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+            item_index=item_index,
+            candidate_index=index,
+            source_family="XLSX",
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+            source_atom_id=f"src-{item_index}-{index}",
+            evidence_bundle_id=f"bundle-{item_index}-{index}",
+            doc_id=f"doc-{item_index}-{index}",
+            sheet="2019년 2월" if index < 2 else f"2019년 {index}월",
+            cell_range=f"A{index}:D{index + 3}",
+            table_id="table-a" if index < 2 else f"table-{index}",
+            display_value="15,446,522",
+            accepted_for_regating=item_index == 1 and index == 0,
+            rejection_reason="" if item_index == 1 and index == 0 else "missing_validated_required_axes_after_tool",
+        )
+        for item_index in (1, 2)
+        for index in range(budget)
+    )
+    record = actual_rag_eval.XlsxLocatorRunRecord(
+        schema_version=actual_rag_eval.XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION,
+        enabled=True,
+        report_only_diagnostic=True,
+        official_metric=False,
+        tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+        eligible_failed_row_count=4,
+        tool_invocation_count=4,
+        accepted_candidate_count=1,
+        rejected_candidate_count=budget * 2 - 1,
+        gate_delta_record=actual_rag_eval.XlsxLocatorGateDeltaRecord(),
+        guardrail_record=actual_rag_eval.XlsxLocatorGuardrailRecord(),
+        tool_uses=tool_uses,
+        candidates=candidate_records,
+    )
+
+    projection = actual_rag_eval.project_xlsx_locator_run_record(record)
+    budget_diagnostic = projection["candidate_budget_diagnostic"]
+
+    assert budget_diagnostic["zero_candidate_row_count"] == 1
+    assert budget_diagnostic["at_budget_row_count"] == 2
+    assert budget_diagnostic["candidate_budget_exhaustion_count"] == 1
+    assert budget_diagnostic["candidate_budget_per_query"] == budget
+    assert budget_diagnostic["accepted_for_regating_count"] == 1
+    assert budget_diagnostic["same_sheet_candidate_count"] == budget * 2
+    assert budget_diagnostic["same_table_candidate_count"] == budget * 2
+    assert budget_diagnostic["same_range_candidate_count"] == budget * 2
+    assert budget_diagnostic["deduped_candidate_count"] == budget * 2
+    assert budget_diagnostic["rejected_candidate_count_by_reason"] == {
+        "missing_validated_required_axes_after_tool": budget * 2 - 1
+    }
+
+
 def test_evidence_gate_prefers_validated_required_axes_over_raw_date_anchor() -> None:
     query = "201905 우이신설선 승차총승객수는 몇 명입니까?"
     planner = actual_rag_eval._query_evidence_planner_summary(
@@ -5082,18 +7691,20 @@ def test_xlsx_locator_tool_execute_once_rejects_forbidden_locator_shortcuts(tmp_
         [
             {
                 "id": "xlsx_locator_poison_q",
-                "generated_answer": "15,446,522명",
+                "generated_answer": "15,446,523명",
                 "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-xlsx-locator",
-                        "chunk_id": "chunk-poison",
-                        "source_atom_id": "src-xlsx-locator",
-                        "evidence_bundle_id": "bundle-xlsx-locator",
-                        "source_family": "XLSX",
-                        "granularity": "table_row",
-                        "text": "15,446,522명",
-                        "xlsx_locator_text": (
-                            "2019년 2월 5호선 승차총승객수 15,446,522명 "
+                        {
+                            "doc_id": "doc-xlsx-locator",
+                            "chunk_id": "chunk-poison",
+                            "source_atom_id": "src-xlsx-locator",
+                            "evidence_bundle_id": "bundle-xlsx-locator",
+                            "source_family": "XLSX",
+                            "granularity": "table_row",
+                            "text": "승차총승객수",
+                            "locator_text_source": "explicit_locator_text",
+                            "locator_text_fields_used": ["xlsx_locator_text"],
+                            "xlsx_locator_text": (
+                                "2019년 2월 5호선 승차총승객수 15,446,522명 "
                             "normalizedValue=15446522 formula=SUM(F7) workbook=metro.xlsx "
                             "sourceTitle=shortcut title=shortcut sourceFileName=C:\\tmp\\metro.xlsx "
                             "targetLocator=F7 goldLocator=F7 queryId=x caseId=y "
@@ -5154,6 +7765,10 @@ def test_xlsx_locator_tool_execute_once_rejects_forbidden_locator_shortcuts(tmp_
     assert locator["candidate_source_family_counts"] == {"XLSX": 1}
     assert locator["forbidden_input_fields_used"] == []
     assert set(locator["forbidden_input_fields_rejected"]) >= {"expected_answer", "baseline_topk", "raw_prompt_payload"}
+    assert not (
+        set(locator["forbidden_input_fields_rejected"])
+        & {"file_name", "source_file_name", "source_title", "title", "workbook"}
+    )
     assert locator["raw_xlsx_query_time_parsing_used"] is False
     assert locator["gold_or_qrels_or_label_or_expected_used"] is False
     assert set(locator["forbidden_input_fields_seen"]) >= {
@@ -5489,423 +8104,6 @@ def test_agentic_planner_mode_parser_default_and_choices() -> None:
     assert parser.parse_args(["--dataset", "gold.jsonl", "--output-mode", "runstore"]).output_mode == "runstore"
     with pytest.raises(SystemExit):
         parser.parse_args(["--dataset", "gold.jsonl", "--agentic-planner-mode", "execute-twice"])
-
-
-def _minimal_agentic_planner_guardrail_summary() -> dict[str, object]:
-    planner = {
-        "schema_version": "actual_rag_eval.agentic_planner_dry_run.v1",
-        "planner_enabled": True,
-        "planner_mode": "dry-run",
-        "planner_version": "actual_rag_eval.agentic_planner_dry_run.v1",
-        "ran_after_selected_evidence_composer": True,
-        "ran_after_evidence_gate": True,
-        "planner_decision_count": 1,
-        "planner_action_counts": {"deterministic_abstain": 1},
-        "planner_failure_class_counts": {"no_safe_action": 1},
-        "planner_no_safe_action_count": 1,
-        "planner_forbidden_shortcut_detected_count": 0,
-        "planner_expected_extra_query_count": 0,
-        "planner_expected_tool_call_count": 0,
-        "planner_expected_llm_retry_count": 0,
-        "planner_heuristic_risk_class": "diagnostic_probe_only",
-        "official_metric": False,
-        "official_metric_input_rows": 0,
-        "raw_prompt_payload_written": False,
-        "raw_response_payload_written": False,
-        "retrieved_context_only_citation_policy": "diagnostic_only_never_promoted",
-        "planner_execution": {
-            "retrieval_executed": False,
-            "tool_call_executed": False,
-            "llm_retry_executed": False,
-            "extra_query_count_executed": 0,
-            "tool_call_count_executed": 0,
-            "llm_retry_count_executed": 0,
-        },
-        "guardrail_flags": {
-            "gold_or_qrels_mutation": False,
-            "expected_fields_used_for_planner_selection": False,
-            "query_id_used_for_planner_selection": False,
-            "row_id_used_for_planner_selection": False,
-            "target_id_used_for_planner_selection": False,
-            "qrels_used_for_planner_selection": False,
-            "labels_used_for_planner_selection": False,
-            "baseline_topk_or_legacy_outputs_used": False,
-            "row_specific_alias_or_shortcut_used": False,
-            "retrieval_executed": False,
-            "tool_call_executed": False,
-            "llm_retry_executed": False,
-            "raw_prompt_payload_written": False,
-            "raw_response_payload_written": False,
-            "evidence_gate_loosened": False,
-            "retrieved_context_only_citation_promoted": False,
-            "official_metric": False,
-            "production_routing_opened": False,
-            "protected_namespace_mutation": False,
-        },
-        "gate_before": {"allowed_answer_count": 5, "unsupported_answer_blocked_count": 1},
-        "gate_after_unchanged_because_dry_run": {"allowed_answer_count": 5, "unsupported_answer_blocked_count": 1},
-        "decisions": [
-            {
-                "item_index": 0,
-                "query_sha256": "sha256:test",
-                "query_preview": "test",
-                "failure_class": "no_safe_action",
-                "proposed_action": "deterministic_abstain",
-                "expected_extra_query_count": 0,
-                "expected_tool_call_count": 0,
-                "expected_llm_retry_count": 0,
-                "executed": False,
-            }
-        ],
-    }
-    return {
-        "run_id": "guarded_planner",
-        "official_metric_input_rows": 0,
-        "official_metric_input_rows_created": 0,
-        "official_metric_input_rows_consumed": 0,
-        "protected_namespaces_touched": [],
-        "raw_prompt_payload_written": False,
-        "raw_response_payload_written": False,
-        "guardrails": {
-            "gold_mutation": False,
-            "qrels_mutation": False,
-            "label_mutation": False,
-            "answerability_label_mutation": False,
-            "expected_answer_mutation": False,
-            "expected_evidence_mutation": False,
-            "denominator_mutation": False,
-            "retriever_ranking_improvement": False,
-            "official_metric": False,
-            "promotion_evidence": False,
-            "product_success_evidence_allowed": False,
-            "live_readiness_claim": False,
-        },
-        "agentic_planner_dry_run": planner,
-    }
-
-
-@pytest.mark.parametrize(
-    ("field", "value", "match"),
-    [
-        ("retrieval_executed", True, "retrieval_executed"),
-        ("tool_call_executed", True, "tool_call_executed"),
-        ("llm_retry_executed", True, "llm_retry_executed"),
-        ("extra_query_count_executed", 1, "extra_query_count_executed"),
-        ("tool_call_count_executed", 1, "tool_call_count_executed"),
-        ("llm_retry_count_executed", 1, "llm_retry_count_executed"),
-    ],
-)
-def test_validate_actual_rag_guardrails_rejects_agentic_planner_execution_mutation(
-    field: str,
-    value: object,
-    match: str,
-) -> None:
-    summary = _minimal_agentic_planner_guardrail_summary()
-    planner = summary["agentic_planner_dry_run"]
-    assert isinstance(planner, dict)
-    planner["planner_execution"][field] = value
-
-    with pytest.raises(DatasetSchemaError, match=match):
-        validate_actual_rag_guardrails(summary)
-
-
-def test_validate_actual_rag_guardrails_rejects_agentic_planner_gate_mutation() -> None:
-    summary = _minimal_agentic_planner_guardrail_summary()
-    planner = summary["agentic_planner_dry_run"]
-    assert isinstance(planner, dict)
-    planner["gate_after_unchanged_because_dry_run"] = {"allowed_answer_count": 6}
-
-    with pytest.raises(DatasetSchemaError, match="gate_after"):
-        validate_actual_rag_guardrails(summary)
-
-
-def test_validate_actual_rag_guardrails_rejects_agentic_planner_executed_decision() -> None:
-    summary = _minimal_agentic_planner_guardrail_summary()
-    planner = summary["agentic_planner_dry_run"]
-    assert isinstance(planner, dict)
-    planner["decisions"][0]["executed"] = True
-
-    with pytest.raises(DatasetSchemaError, match="executed"):
-        validate_actual_rag_guardrails(summary)
-
-
-@pytest.mark.parametrize(
-    ("field", "value", "match"),
-    [
-        ("broader_agent_loop_ready", True, "broader_agent_loop_ready"),
-        ("broader_agent_loop_opened", True, "broader_agent_loop_opened"),
-        ("production_routing_opened", True, "production_routing_opened"),
-        ("raw_prompt_payload_written", True, "raw_prompt_payload_written"),
-        ("raw_response_payload_written", True, "raw_response_payload_written"),
-        ("retrieved_context_only_citation_promoted", True, "retrieved_context_only_citation_promoted"),
-        ("gate_loosened", True, "gate_loosened"),
-        (
-            "gold_or_qrels_or_labels_or_expected_or_denominator_mutation",
-            True,
-            "gold_or_qrels_or_labels_or_expected_or_denominator_mutation",
-        ),
-    ],
-)
-def test_validate_actual_rag_guardrails_rejects_agentic_loop_review_opening(
-    field: str,
-    value: object,
-    match: str,
-) -> None:
-    summary = _minimal_agentic_planner_guardrail_summary()
-    summary["agentic_loop_review"] = actual_rag_eval.build_agentic_loop_review(summary)
-    assert summary["agentic_loop_review"]["broader_agent_loop_ready"] is False
-    validate_actual_rag_guardrails(summary)
-    assert isinstance(summary["agentic_loop_review"], dict)
-    summary["agentic_loop_review"][field] = value
-
-    with pytest.raises(DatasetSchemaError, match=match):
-        validate_actual_rag_guardrails(summary)
-
-
-@pytest.mark.parametrize(
-    ("field", "value", "match"),
-    [
-        ("query_id_used_for_planner_selection", True, "query_id_used_for_planner_selection"),
-        ("row_id_used_for_planner_selection", True, "row_id_used_for_planner_selection"),
-        ("target_id_used_for_planner_selection", True, "target_id_used_for_planner_selection"),
-        ("expected_fields_used_for_planner_selection", True, "expected_fields_used_for_planner_selection"),
-        ("qrels_used_for_planner_selection", True, "qrels_used_for_planner_selection"),
-        ("labels_used_for_planner_selection", True, "labels_used_for_planner_selection"),
-        ("baseline_topk_or_legacy_outputs_used", True, "baseline_topk_or_legacy_outputs_used"),
-        ("row_specific_alias_or_shortcut_used", True, "row_specific_alias_or_shortcut_used"),
-        ("retrieval_executed", True, "retrieval_executed"),
-        ("tool_call_executed", True, "tool_call_executed"),
-        ("llm_retry_executed", True, "llm_retry_executed"),
-        ("raw_prompt_payload_written", True, "raw_prompt_payload_written"),
-        ("raw_response_payload_written", True, "raw_response_payload_written"),
-        ("evidence_gate_loosened", True, "evidence_gate_loosened"),
-        ("retrieved_context_only_citation_promoted", True, "retrieved_context_only_citation_promoted"),
-        ("official_metric", True, "official_metric"),
-    ],
-)
-def test_validate_actual_rag_guardrails_rejects_forbidden_agentic_planner_flags(
-    field: str,
-    value: object,
-    match: str,
-) -> None:
-    guardrail_flags = {
-        "gold_or_qrels_mutation": False,
-        "expected_fields_used_for_planner_selection": False,
-        "query_id_used_for_planner_selection": False,
-        "row_id_used_for_planner_selection": False,
-        "target_id_used_for_planner_selection": False,
-        "qrels_used_for_planner_selection": False,
-        "labels_used_for_planner_selection": False,
-        "baseline_topk_or_legacy_outputs_used": False,
-        "row_specific_alias_or_shortcut_used": False,
-        "retrieval_executed": False,
-        "tool_call_executed": False,
-        "llm_retry_executed": False,
-        "raw_prompt_payload_written": False,
-        "raw_response_payload_written": False,
-        "evidence_gate_loosened": False,
-        "retrieved_context_only_citation_promoted": False,
-        "official_metric": False,
-        "production_routing_opened": False,
-        "protected_namespace_mutation": False,
-    }
-    guardrail_flags[field] = value
-    planner = {
-        "schema_version": "actual_rag_eval.agentic_planner_dry_run.v1",
-        "planner_enabled": True,
-        "planner_mode": "dry-run",
-        "planner_version": "actual_rag_eval.agentic_planner_dry_run.v1",
-        "ran_after_selected_evidence_composer": True,
-        "ran_after_evidence_gate": True,
-        "planner_decision_count": 1,
-        "planner_action_counts": {"deterministic_abstain": 1},
-        "planner_failure_class_counts": {"no_safe_action": 1},
-        "planner_no_safe_action_count": 1,
-        "planner_forbidden_shortcut_detected_count": 0,
-        "planner_expected_extra_query_count": 0,
-        "planner_expected_tool_call_count": 0,
-        "planner_heuristic_risk_class": "diagnostic_probe_only",
-        "official_metric": False,
-        "official_metric_input_rows": 0,
-        "raw_prompt_payload_written": False,
-        "raw_response_payload_written": False,
-        "retrieved_context_only_citation_policy": "diagnostic_only_never_promoted",
-        "planner_execution": {
-            "retrieval_executed": False,
-            "tool_call_executed": False,
-            "llm_retry_executed": False,
-            "extra_query_count_executed": 0,
-            "tool_call_count_executed": 0,
-            "llm_retry_count_executed": 0,
-        },
-        "guardrail_flags": guardrail_flags,
-        "gate_before": {},
-        "gate_after_unchanged_because_dry_run": {},
-        "decisions": [
-            {
-                "item_index": 0,
-                "query_sha256": "sha256:test",
-                "query_preview": "test",
-                "failure_class": "no_safe_action",
-                "proposed_action": "deterministic_abstain",
-                "expected_extra_query_count": 0,
-                "expected_tool_call_count": 0,
-                "executed": False,
-            }
-        ],
-    }
-    summary = {
-        "run_id": "guarded_planner",
-        "official_metric_input_rows": 0,
-        "official_metric_input_rows_created": 0,
-        "official_metric_input_rows_consumed": 0,
-        "protected_namespaces_touched": [],
-        "raw_prompt_payload_written": False,
-        "raw_response_payload_written": False,
-        "guardrails": {
-            "gold_mutation": False,
-            "qrels_mutation": False,
-            "label_mutation": False,
-            "answerability_label_mutation": False,
-            "expected_answer_mutation": False,
-            "expected_evidence_mutation": False,
-            "denominator_mutation": False,
-            "retriever_ranking_improvement": False,
-            "official_metric": False,
-            "promotion_evidence": False,
-            "product_success_evidence_allowed": False,
-            "live_readiness_claim": False,
-        },
-        "agentic_planner_dry_run": planner,
-    }
-
-    with pytest.raises(DatasetSchemaError, match=match):
-        validate_actual_rag_guardrails(summary)
-
-
-@pytest.mark.parametrize(
-    "forbidden_key",
-    [
-        "case_id",
-        "query_id",
-        "row_id",
-        "target_id",
-        "answerability",
-        "answerability_label",
-        "expected_answer",
-        "expected_evidence",
-        "supporting_evidence",
-        "qrels",
-        "label",
-        "labels",
-        "baseline_topk",
-        "legacy_outputs",
-        "source_title",
-        "workbook",
-        "gold_locator",
-        "target_locator",
-        "normalized_value",
-        "formula",
-        "raw_prompt_payload",
-        "raw_response_payload",
-    ],
-)
-def test_validate_actual_rag_guardrails_rejects_forbidden_agentic_planner_decision_fields(
-    forbidden_key: str,
-) -> None:
-    planner = {
-        "schema_version": "actual_rag_eval.agentic_planner_dry_run.v1",
-        "planner_enabled": True,
-        "planner_mode": "dry-run",
-        "planner_version": "actual_rag_eval.agentic_planner_dry_run.v1",
-        "ran_after_selected_evidence_composer": True,
-        "ran_after_evidence_gate": True,
-        "planner_decision_count": 1,
-        "planner_action_counts": {"deterministic_abstain": 1},
-        "planner_failure_class_counts": {"no_safe_action": 1},
-        "planner_no_safe_action_count": 1,
-        "planner_forbidden_shortcut_detected_count": 0,
-        "planner_expected_extra_query_count": 0,
-        "planner_expected_tool_call_count": 0,
-        "planner_heuristic_risk_class": "diagnostic_probe_only",
-        "official_metric": False,
-        "official_metric_input_rows": 0,
-        "raw_prompt_payload_written": False,
-        "raw_response_payload_written": False,
-        "retrieved_context_only_citation_policy": "diagnostic_only_never_promoted",
-        "planner_execution": {
-            "retrieval_executed": False,
-            "tool_call_executed": False,
-            "llm_retry_executed": False,
-            "extra_query_count_executed": 0,
-            "tool_call_count_executed": 0,
-            "llm_retry_count_executed": 0,
-        },
-        "guardrail_flags": {
-            "gold_or_qrels_mutation": False,
-            "expected_fields_used_for_planner_selection": False,
-            "query_id_used_for_planner_selection": False,
-            "row_id_used_for_planner_selection": False,
-            "target_id_used_for_planner_selection": False,
-            "qrels_used_for_planner_selection": False,
-            "labels_used_for_planner_selection": False,
-            "baseline_topk_or_legacy_outputs_used": False,
-            "row_specific_alias_or_shortcut_used": False,
-            "retrieval_executed": False,
-            "tool_call_executed": False,
-            "llm_retry_executed": False,
-            "raw_prompt_payload_written": False,
-            "raw_response_payload_written": False,
-            "evidence_gate_loosened": False,
-            "retrieved_context_only_citation_promoted": False,
-            "official_metric": False,
-            "production_routing_opened": False,
-            "protected_namespace_mutation": False,
-        },
-        "gate_before": {},
-        "gate_after_unchanged_because_dry_run": {},
-        "decisions": [
-            {
-                "item_index": 0,
-                "query_sha256": "sha256:test",
-                "query_preview": "test",
-                "failure_class": "no_safe_action",
-                "proposed_action": "deterministic_abstain",
-                "expected_extra_query_count": 0,
-                "expected_tool_call_count": 0,
-                "executed": False,
-                forbidden_key: "unsafe",
-            }
-        ],
-    }
-    summary = {
-        "run_id": "guarded_planner",
-        "official_metric_input_rows": 0,
-        "official_metric_input_rows_created": 0,
-        "official_metric_input_rows_consumed": 0,
-        "protected_namespaces_touched": [],
-        "raw_prompt_payload_written": False,
-        "raw_response_payload_written": False,
-        "guardrails": {
-            "gold_mutation": False,
-            "qrels_mutation": False,
-            "label_mutation": False,
-            "answerability_label_mutation": False,
-            "expected_answer_mutation": False,
-            "expected_evidence_mutation": False,
-            "denominator_mutation": False,
-            "retriever_ranking_improvement": False,
-            "official_metric": False,
-            "promotion_evidence": False,
-            "product_success_evidence_allowed": False,
-            "live_readiness_claim": False,
-        },
-        "agentic_planner_dry_run": planner,
-    }
-
-    with pytest.raises(DatasetSchemaError, match=forbidden_key):
-        validate_actual_rag_guardrails(summary)
-
 
 def test_weaviate_route_selected_collapses_same_doc_duplicates_and_fetches_bounded_neighbors_by_id(tmp_path: Path) -> None:
     dataset = tmp_path / "fixture_gold.jsonl"
@@ -6809,6 +9007,414 @@ def test_weaviate_default_backend_uses_explicit_route_selected_nonprod_config_pa
     assert rollback["retrieval_route_mode"] == "full_index"
     assert rollback["collection"] == "SourceAtomNonprod"
     assert rollback["schema_version_source_atom"] == "weaviate_source_atom_v1"
+
+
+def test_weaviate_candidate_surface_config_is_explicit_nonprod_and_not_default(tmp_path: Path) -> None:
+    candidate_config_path = tmp_path / "weaviate_route_selected_candidate_surface_v1.json"
+    candidate_config_path.write_text(
+        json.dumps(
+            {
+                "selection": "route_selected_candidate_surface_v1",
+                "vector_db": "weaviate",
+                "url": "http://localhost:8080",
+                "grpc_port": 50051,
+                "collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV1",
+                "namespace": "actual_rag_eval_nonprod",
+                "visibility": "nonprod",
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "index_manifest_path": "reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_route_selected_candidate_surface_v1/index_manifest.json",
+                "retrieval_route_mode": "route_selected",
+                "route_planner_version": "weaviate_route_planner_v1",
+                "embedding_model": "BAAI/bge-m3",
+                "embedding_device": "auto",
+                "hybrid_alpha": 0.5,
+                "use_local_docker": True,
+                "fallback_used": False,
+                "fail_closed_on_unavailable": True,
+                "candidate_surface_rebuild": {
+                    "schema_version": "actual_rag_eval.candidate_surface_rebuild.v1",
+                    "report_only_diagnostic": True,
+                    "official_metric": False,
+                    "official_metric_input_rows": 0,
+                    "candidate_collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV1",
+                    "source_collection": "SourceAtomNonprodRouteSelectedV2",
+                    "xlsx_row_value_bundle_materialization": True,
+                    "production_namespace": False,
+                    "source_registry_mutated": False,
+                    "latest_current_mutated": False,
+                    "external_archive_profiled": False,
+                    "external_archive_indexed": False,
+                    "source_intake_approval_required": False,
+                },
+                "rollback": {
+                    "rollback_key": "weaviate_full_index_nonprod_rollback",
+                    "config_path": "ai/eval/configs/weaviate_full_index_nonprod_rollback.json",
+                    "retrieval_route_mode": "full_index",
+                    "collection": "SourceAtomNonprod",
+                    "schema_version_source_atom": "weaviate_source_atom_v1",
+                    "index_manifest_path": "reports/rag_eval/weaviate_source_atom_index_manifest_nonprod/index_manifest.json",
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    default_adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        config_path=candidate_config_path.as_posix(),
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    config_report = adapter.config["weaviate_default_config"]
+    candidate_surface = config_report["candidate_surface_rebuild"]
+    rollback = config_report["rollback"]
+
+    assert default_adapter.config_obj.collection_name == "SourceAtomNonprodRouteSelectedV2"
+    assert default_adapter.config["weaviate_default_config"]["selection"] == "route_selected_nonprod_default"
+    assert adapter.retrieval_route_mode == "route_selected"
+    assert adapter.config_obj.collection_name == "SourceAtomNonprodRouteSelectedCandidateSurfaceV1"
+    assert adapter.config_obj.schema_version == "weaviate_source_atom_v2"
+    assert adapter.config_obj.production_namespace is False
+    assert config_report["selection"] == "route_selected_candidate_surface_v1"
+    assert config_report["config_path"] == candidate_config_path.as_posix()
+    assert config_report["fallback_used"] is False
+    assert config_report["fail_closed_on_unavailable"] is True
+    assert candidate_surface["report_only_diagnostic"] is True
+    assert candidate_surface["official_metric"] is False
+    assert candidate_surface["candidate_collection"] == "SourceAtomNonprodRouteSelectedCandidateSurfaceV1"
+    assert candidate_surface["source_collection"] == "SourceAtomNonprodRouteSelectedV2"
+    assert candidate_surface["xlsx_row_value_bundle_materialization"] is True
+    assert candidate_surface["production_namespace"] is False
+    assert candidate_surface["source_registry_mutated"] is False
+    assert candidate_surface["latest_current_mutated"] is False
+    assert candidate_surface["official_metric_input_rows"] == 0
+    assert rollback["rollback_key"] == "weaviate_full_index_nonprod_rollback"
+    assert rollback["collection"] == "SourceAtomNonprod"
+
+
+def test_weaviate_candidate_surface_canonical_config_path_loads() -> None:
+    candidate_config_path = Path("ai/eval/configs/weaviate_route_selected_candidate_surface_v1.json")
+    assert candidate_config_path.exists()
+
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        config_path=candidate_config_path.as_posix(),
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    config_report = adapter.config["weaviate_default_config"]
+    candidate_surface = config_report["candidate_surface_rebuild"]
+    rollback = config_report["rollback"]
+
+    assert adapter.config_obj.collection_name == "SourceAtomNonprodRouteSelectedCandidateSurfaceV1"
+    assert adapter.retrieval_route_mode == "route_selected"
+    assert config_report["selection"] == "route_selected_candidate_surface_v1"
+    assert config_report["config_path"] == candidate_config_path.as_posix()
+    assert config_report["use_local_docker"] is True
+    assert config_report["fail_closed_on_unavailable"] is True
+    assert candidate_surface["report_only_diagnostic"] is True
+    assert candidate_surface["surface_status"] == "dirty_partial"
+    assert candidate_surface["metric_blocked_until_complete_manifest"] is True
+    assert candidate_surface["official_metric"] is False
+    assert candidate_surface["official_metric_input_rows"] == 0
+    assert candidate_surface["xlsx_row_value_bundle_materialization"] is True
+    assert candidate_surface["source_registry_mutated"] is False
+    assert candidate_surface["latest_current_mutated"] is False
+    assert candidate_surface["external_archive_profiled"] is False
+    assert candidate_surface["external_archive_indexed"] is False
+    assert rollback["rollback_key"] == "weaviate_full_index_nonprod_rollback"
+
+
+def test_weaviate_dirty_candidate_surface_blocks_metric_readiness() -> None:
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        config_path="ai/eval/configs/weaviate_route_selected_candidate_surface_v1.json",
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    with pytest.raises(WeaviateUnavailableError, match="candidate_surface_dirty_partial_metrics_blocked"):
+        adapter.validate_ready_for_run()
+
+
+def test_weaviate_candidate_surface_v2_requires_complete_manifest() -> None:
+    candidate_config_path = Path("ai/eval/configs/weaviate_route_selected_candidate_surface_v2.json")
+    assert candidate_config_path.exists()
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        config_path=candidate_config_path.as_posix(),
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    candidate_surface = adapter.config["weaviate_default_config"]["candidate_surface_rebuild"]
+    assert adapter.config_obj.collection_name == "SourceAtomNonprodRouteSelectedCandidateSurfaceV2"
+    assert candidate_surface["surface_status"] == "awaiting_complete_manifest"
+    assert candidate_surface["metric_blocked_until_complete_manifest"] is True
+    with pytest.raises(WeaviateUnavailableError, match="candidate_surface_complete_manifest"):
+        adapter.validate_ready_for_run()
+
+
+def test_weaviate_candidate_surface_complete_manifest_allows_metric_readiness(tmp_path: Path) -> None:
+    manifest_path = tmp_path / "index_manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "weaviate_source_atom_index_manifest_v1",
+                "valid": True,
+                "candidate_surface_complete_manifest": True,
+                "candidate_surface_complete_manifest_schema_version": "candidate_surface_complete_manifest.v1",
+                "collection_name": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "indexed_count": 3,
+                "failed_count": 0,
+                "production_namespace": False,
+                "source_registry_mutated": False,
+                "latest_current_mutated": False,
+                "official_metric_input_rows": 0,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    config_path = tmp_path / "weaviate_route_selected_candidate_surface_v2.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "selection": "route_selected_candidate_surface_v2_recreate",
+                "vector_db": "weaviate",
+                "collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                "namespace": "actual_rag_eval_nonprod",
+                "visibility": "nonprod",
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "index_manifest_path": manifest_path.as_posix(),
+                "retrieval_route_mode": "route_selected",
+                "fallback_used": False,
+                "fail_closed_on_unavailable": True,
+                "candidate_surface_rebuild": {
+                    "schema_version": "actual_rag_eval.candidate_surface_rebuild.v1",
+                    "report_only_diagnostic": True,
+                    "surface_status": "awaiting_complete_manifest",
+                    "metric_blocked_until_complete_manifest": True,
+                    "complete_manifest_required": True,
+                    "official_metric": False,
+                    "official_metric_input_rows": 0,
+                    "candidate_collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                    "source_collection": "SourceAtomNonprodRouteSelectedV2",
+                    "production_namespace": False,
+                    "source_registry_mutated": False,
+                    "latest_current_mutated": False,
+                    "external_archive_profiled": False,
+                    "external_archive_indexed": False,
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        config_path=config_path.as_posix(),
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    adapter.validate_ready_for_run()
+
+
+def test_weaviate_index_parser_exposes_candidate_surface_xlsx_row_bundle_flag() -> None:
+    parser = build_weaviate_index_parser()
+
+    args = parser.parse_args(
+        [
+            "--schema-version",
+            "weaviate_source_atom_v2",
+            "--weaviate-collection-name",
+            "SourceAtomNonprodRouteSelectedCandidateSurfaceV1",
+            "--synthesize-xlsx-row-value-bundles",
+        ]
+    )
+
+    assert args.synthesize_xlsx_row_value_bundles is True
+
+
+def test_weaviate_candidate_surface_config_rejects_protected_surface_flags(tmp_path: Path) -> None:
+    config_path = tmp_path / "weaviate_route_selected_candidate_surface_v1.json"
+    base_candidate_surface = {
+        "schema_version": "actual_rag_eval.candidate_surface_rebuild.v1",
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "candidate_collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV1",
+        "source_collection": "SourceAtomNonprodRouteSelectedV2",
+        "production_namespace": False,
+        "source_registry_mutated": False,
+        "latest_current_mutated": False,
+    }
+
+    for override, match in [
+        ({"report_only_diagnostic": False}, "report_only_diagnostic"),
+        ({"official_metric": True}, "official_metric"),
+        ({"official_metric_input_rows": 1}, "official_metric_input_rows"),
+        ({"source_registry_mutated": True}, "source_registry_mutated"),
+        ({"latest_current_mutated": True}, "latest_current_mutated"),
+        ({"production_namespace": True}, "production_namespace"),
+        ({"external_archive_profiled": True}, "external_archive_profiled"),
+        ({"external_archive_indexed": True}, "external_archive_indexed"),
+    ]:
+        candidate_surface = dict(base_candidate_surface)
+        candidate_surface.update(override)
+        config_path.write_text(
+            json.dumps(
+                {
+                    "selection": "route_selected_candidate_surface_v1",
+                    "vector_db": "weaviate",
+                    "collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV1",
+                    "namespace": "actual_rag_eval_nonprod",
+                    "visibility": "nonprod",
+                    "schema_version_source_atom": "weaviate_source_atom_v2",
+                    "retrieval_route_mode": "route_selected",
+                    "fallback_used": False,
+                    "fail_closed_on_unavailable": True,
+                    "candidate_surface_rebuild": candidate_surface,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        with pytest.raises(WeaviateUnavailableError, match=match):
+            build_default_weaviate_adapter(
+                requested_backend="weaviate-hybrid",
+                config_path=config_path.as_posix(),
+                client=FakeWeaviateSourceAtomClient(),
+                embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+            )
+
+
+def test_weaviate_candidate_surface_config_rejects_production_namespace_claiming_nonprod(tmp_path: Path) -> None:
+    config_path = tmp_path / "weaviate_route_selected_candidate_surface_v1.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "selection": "route_selected_candidate_surface_v1",
+                "vector_db": "weaviate",
+                "collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV1",
+                "namespace": "actual_rag_eval_prod",
+                "visibility": "nonprod",
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "retrieval_route_mode": "route_selected",
+                "fallback_used": False,
+                "fail_closed_on_unavailable": True,
+                "candidate_surface_rebuild": {
+                    "schema_version": "actual_rag_eval.candidate_surface_rebuild.v1",
+                    "report_only_diagnostic": True,
+                    "official_metric": False,
+                    "official_metric_input_rows": 0,
+                    "candidate_collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV1",
+                    "source_collection": "SourceAtomNonprodRouteSelectedV2",
+                    "production_namespace": False,
+                    "source_registry_mutated": False,
+                    "latest_current_mutated": False,
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(WeaviateUnavailableError, match="production_or_ambiguous_namespace_blocked"):
+        build_default_weaviate_adapter(
+            requested_backend="weaviate-hybrid",
+            config_path=config_path.as_posix(),
+            client=FakeWeaviateSourceAtomClient(),
+            embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        )
+
+
+def test_weaviate_candidate_surface_report_hashes_manifest_file_bytes(tmp_path: Path) -> None:
+    manifest_path = tmp_path / "index_manifest.json"
+    manifest_payload = {
+        "valid": True,
+        "collection_name": "SourceAtomNonprodRouteSelectedCandidateSurfaceV1",
+        "schema_version_source_atom": "weaviate_source_atom_v2",
+        "indexed_count": 3,
+        "vectorized_object_count": 2,
+        "metadata_only_object_count": 1,
+        "vectorized_by_granularity": {"paragraph": 2},
+        "metadata_only_by_granularity": {"cell": 1},
+        "metadata_only_by_source_family": {"XLSX": 1},
+        "vectorization_policy": {
+            "current_index_vectorizes_all_source_atoms": False,
+            "index_time_metadata_only_supported": True,
+        },
+    }
+    manifest_path.write_text(json.dumps(manifest_payload, ensure_ascii=False, indent=4) + "\n", encoding="utf-8")
+    normalized_manifest_hash = "sha256:" + hashlib.sha256(
+        json.dumps(manifest_payload, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    ).hexdigest()
+    file_bytes_hash = "sha256:" + hashlib.sha256(manifest_path.read_bytes()).hexdigest()
+    assert file_bytes_hash != normalized_manifest_hash
+
+    config_path = tmp_path / "weaviate_route_selected_candidate_surface_v1.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "selection": "route_selected_candidate_surface_v1",
+                "vector_db": "weaviate",
+                "collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV1",
+                "namespace": "actual_rag_eval_nonprod",
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "retrieval_route_mode": "route_selected",
+                "index_manifest_path": manifest_path.as_posix(),
+                "fallback_used": False,
+                "fail_closed_on_unavailable": True,
+                "candidate_surface_rebuild": {
+                    "schema_version": "actual_rag_eval.candidate_surface_rebuild.v1",
+                    "report_only_diagnostic": True,
+                    "source_collection": "SourceAtomNonprodRouteSelectedV2",
+                },
+                "rollback": {
+                    "rollback_key": "weaviate_full_index_nonprod_rollback",
+                    "config_path": "ai/eval/configs/weaviate_full_index_nonprod_rollback.json",
+                    "retrieval_route_mode": "full_index",
+                    "collection": "SourceAtomNonprod",
+                    "schema_version_source_atom": "weaviate_source_atom_v1",
+                    "index_manifest_path": "reports/rag_eval/weaviate_source_atom_index_manifest_nonprod/index_manifest.json",
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        config_path=config_path.as_posix(),
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    report = adapter.active_path_report
+    candidate_surface = report["candidate_surface_rebuild"]
+
+    assert candidate_surface["index_manifest_path"] == manifest_path.as_posix()
+    assert candidate_surface["index_manifest_sha256"] == file_bytes_hash
+    assert candidate_surface["index_manifest_sha256"] != normalized_manifest_hash
+    assert candidate_surface["axis_materialization_summary"]["metadata_only_by_source_family"] == {"XLSX": 1}
 
 
 def test_weaviate_full_index_rollback_config_path_is_preserved() -> None:
@@ -7817,6 +10423,70 @@ def test_pdf_same_page_or_section_vector_expansion_is_bounded_by_source_owned_sc
     assert output_file_names(output_dir) == ["report.json"]
 
 
+def test_pdf_scoped_expansion_anchor_survives_route_selected_doc_cap_collapse() -> None:
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={"source_family": True, "granularity": True, "retrieval_route": True},
+    )
+    summary = {
+        "source_atom_id": "srcatom-financial-table-summary",
+        "doc_id": "doc-financial",
+        "chunk_id": "chunk-financial-table-summary",
+        "source_family": "PDF",
+        "granularity": "table_summary",
+        "retrieval_route": "pdf_table",
+        "text": "2024년 보고서 연결 손익계산서 영업실적 표는 주요 손익 항목을 제공한다.",
+        "page_number": "7",
+        "table_caption": "영업실적 표",
+        "score": 0.91,
+    }
+    scoped_target = {
+        "source_atom_id": "srcatom-financial-operating-profit",
+        "doc_id": "doc-financial",
+        "chunk_id": "chunk-financial-operating-profit",
+        "source_family": "PDF",
+        "granularity": "table_row",
+        "retrieval_route": "pdf_table",
+        "text": "2024년 연결 손익계산서 영업실적 표에서 영업이익은 12.3억원입니다.",
+        "page_number": "7",
+        "physical_page_index": "6",
+        "block_index": "14",
+        "bbox": "[72.0,260.0,510.0,318.0]",
+        "region_type": "table",
+        "table_caption": "영업실적 표",
+        "row_label": "영업이익",
+        "column_label": "2024년",
+        "pdf_scoped_expansion_policy": "bounded_source_owned_pdf_scope_weaviate_v1",
+        "pdf_scoped_expansion_scope_type": "same_table",
+        "pdf_scoped_expansion_source_atom_id": "srcatom-financial-table-summary",
+        "score": 0.87,
+    }
+
+    collapsed, _removed = adapter._collapse_route_selected_duplicates(
+        [summary, scoped_target],
+        top_k=5,
+    )
+
+    assert [context["source_atom_id"] for context in collapsed] == [
+        "srcatom-financial-table-summary",
+        "srcatom-financial-operating-profit",
+    ]
+
+
 def test_pdf_scoped_expansion_query_uses_source_owned_axis_terms(tmp_path: Path) -> None:
     class AxisSensitiveWeaviateClient(FakeWeaviateSourceAtomClient):
         def query(self, **kwargs: object) -> list[dict]:
@@ -8242,6 +10912,260 @@ def test_source_native_corpus_loader_bridges_source_registry_structural_metadata
     assert "15446522" not in serialized_record
     assert "=SUM" not in serialized_unit
     assert "=SUM" not in serialized_record
+
+
+def test_source_native_corpus_loader_derives_display_value_from_source_owned_snapshot_not_normalized_value(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-display-snapshot",
+                "evidence_bundle_id": "bundle-xlsx-display-snapshot",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-display-snapshot",
+                "bm25_text": (
+                    "sheet=Approvals | range=A2:D2 | row_label=department=Ops | month=202602 | "
+                    "target_column=approved_amount\n"
+                    "snapshot=Approvals B2: department=Ops | month=202602 | approved_amount=15,446,522명"
+                ),
+                "embedding_text": "department Ops month 202602 approved amount",
+                "source_identity": "registry-only-source-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            }
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-display-snapshot",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-budget",
+                    "sheet": "Approvals",
+                    "range": "A2:D2",
+                    "cell": "B2",
+                    "row_index_1based": 2,
+                    "row_label": "department=Ops | month=202602",
+                    "target_column": "approved_amount",
+                    "normalized_value": "15446522",
+                    "formula": "=SUM(B1:B6)",
+                    "source_path": "D:/private/Budget.xlsx",
+                },
+            }
+        ],
+    )
+
+    loader = SourceNativeCorpusLoader(search_view_manifest_path=manifest, source_atom_registry_path=registry)
+    unit = loader.load_units()[0]
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    record = source_atom_record_from_mapping(unit, config)
+    serialized_unit = json.dumps(unit, ensure_ascii=False)
+    serialized_record = json.dumps(record, ensure_ascii=False)
+
+    assert unit["metadata"]["display_value"] == "15,446,522명"
+    assert record["display_value"] == "15,446,522명"
+    assert "15446522" not in serialized_unit
+    assert "15446522" not in serialized_record
+    assert "normalized_value" not in serialized_unit
+    assert "normalized_value" not in serialized_record
+    assert "=SUM" not in serialized_unit
+    assert "=SUM" not in serialized_record
+    assert "D:/private/Budget.xlsx" not in serialized_unit
+    assert "D:/private/Budget.xlsx" not in serialized_record
+
+
+def test_source_native_corpus_loader_synthesizes_candidate_surface_xlsx_row_value_bundles(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-approved-amount",
+                "evidence_bundle_id": "bundle-xlsx-approved-amount",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-approved-amount",
+                "bm25_text": (
+                    "sheet=Approvals | range=A2:D2 | row_label=department=Ops | month=202602 | "
+                    "target_column=approved_amount\n"
+                    "snapshot=Approvals B2: department=Ops | month=202602 | approved_amount=15,446,522명"
+                ),
+                "embedding_text": "department Ops month 202602 approved amount",
+                "source_identity": "safe-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            }
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-approved-amount",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-budget",
+                    "sheet": "Approvals",
+                    "range": "A2:D2",
+                    "cell": "B2",
+                    "row_index_1based": 2,
+                    "row_label": "department=Ops | month=202602",
+                    "column_label": "approved_amount",
+                    "target_column": "approved_amount",
+                    "normalized_value": "15446522",
+                    "formula": "=SUM(B1:B6)",
+                    "source_path": "D:/private/Budget.xlsx",
+                },
+            }
+        ],
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+    )
+    units = loader.load_units()
+    bundles = [
+        unit
+        for unit in units
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+    ]
+    assert len(bundles) == 1
+    bundle = bundles[0]
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    record = source_atom_record_from_mapping(bundle, config)
+    serialized_bundle = json.dumps(bundle, ensure_ascii=False)
+    serialized_record = json.dumps(record, ensure_ascii=False)
+
+    assert bundle["source_family"] == "XLSX"
+    assert bundle["granularity"] == "table_row"
+    assert bundle["retrieval_route"] == "xlsx_table"
+    assert bundle["metadata"]["source_atom_ids"] == ["srcatom-xlsx-approved-amount"]
+    assert bundle["metadata"]["target_column"] == "approved_amount"
+    assert bundle["metadata"]["display_value"] == "15,446,522명"
+    assert "row_label=department=Ops | month=202602" in bundle["text"]
+    assert "target_column=approved_amount" in bundle["text"]
+    assert "display_value=15,446,522명" in bundle["text"]
+    assert "cell=" not in bundle["text"].casefold()
+    assert record["granularity"] == "table_row"
+    assert record["vectorized_semantic_content"] == "true"
+    assert record["target_column"] == "approved_amount"
+    assert record["display_value"] == "15,446,522명"
+    assert "15446522" not in serialized_bundle
+    assert "15446522" not in serialized_record
+    assert "normalized_value" not in serialized_bundle
+    assert "normalized_value" not in serialized_record
+    assert "=SUM" not in serialized_bundle
+    assert "=SUM" not in serialized_record
+    assert "D:/private/Budget.xlsx" not in serialized_bundle
+    assert "D:/private/Budget.xlsx" not in serialized_record
+
+
+@pytest.mark.parametrize(
+    ("forbidden_target", "forbidden_segment", "raises_schema_error"),
+    [
+        ("normalized_value", "normalized_value=15446522", False),
+        ("formula", "formula==SUM(B1:B6)", False),
+        ("source_path", "source_path=D:/private/Budget.xlsx", False),
+        ("raw_prompt_payload", "raw_prompt_payload=SECRET_PROMPT_PAYLOAD", True),
+    ],
+)
+def test_source_native_corpus_loader_refuses_forbidden_xlsx_row_value_bundle_targets(
+    tmp_path: Path,
+    forbidden_target: str,
+    forbidden_segment: str,
+    raises_schema_error: bool,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": f"srcatom-xlsx-forbidden-{forbidden_target}",
+                "evidence_bundle_id": f"bundle-xlsx-forbidden-{forbidden_target}",
+                "source_family": "XLSX",
+                "search_view_id": f"sv-xlsx-forbidden-{forbidden_target}",
+                "bm25_text": (
+                    "sheet=Approvals | range=A2:D2 | row_label=department=Ops | "
+                    f"target_column={forbidden_target}\n"
+                    f"snapshot=Approvals B2: department=Ops | {forbidden_segment}"
+                ),
+                "embedding_text": "department Ops normalized forbidden",
+                "source_identity": "safe-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            }
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": f"srcatom-xlsx-forbidden-{forbidden_target}",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-budget",
+                    "sheet": "Approvals",
+                    "range": "A2:D2",
+                    "row_index_1based": 2,
+                    "row_label": "department=Ops",
+                    "column_label": forbidden_target,
+                    "target_column": forbidden_target,
+                },
+            }
+        ],
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+    )
+
+    if raises_schema_error:
+        with pytest.raises(DatasetSchemaError, match="forbidden candidate text markers"):
+            loader.load_units()
+        return
+
+    units = loader.load_units()
+    bundles = [
+        unit
+        for unit in units
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+    ]
+
+    assert bundles == []
 
 
 def test_weaviate_streaming_indexer_rejects_faiss_seeded_checkpoint(tmp_path: Path) -> None:
@@ -9264,10 +12188,13 @@ def test_full_corpus_expected_evidence_resolution_finds_source_native_candidate_
             "evidence_bundle_id": "bundle-target",
             "doc_id": "doc-target",
             "chunk_id": "chunk-target",
-            "source_family": "TEXT",
+            "source_family": "XLSX",
             "title": "Mercury Launch",
             "section": "Schedule",
-            "text": "Mercury launch window opens on 2026-04-12.",
+            "text": (
+                "sheet=Schedule | display_value=Mercury launch window opens on 2026-04-12. | "
+                "normalized_value=SECRET_NORMALIZED_VALUE | formula=SECRET_FORMULA"
+            ),
             "surface": "evidence_bundle",
             "text_sha256": "src-target-sha",
             "metadata": {},
@@ -9314,6 +12241,11 @@ def test_full_corpus_expected_evidence_resolution_finds_source_native_candidate_
     assert candidate["evidence_bundle_id"] == "bundle-target"
     assert candidate["candidate_text_hash"]
     assert candidate["candidate_full_text_hash"] == candidate["candidate_text_hash"]
+    encoded_candidates = json.dumps(report["evidence_resolution_candidates"], ensure_ascii=False)
+    assert "normalized_value=" not in encoded_candidates
+    assert "SECRET_NORMALIZED_VALUE" not in encoded_candidates
+    assert "formula=" not in encoded_candidates
+    assert "SECRET_FORMULA" not in encoded_candidates
     assert candidate["normalized_match_info"]["normalized_expected_in_candidate"] is True
     assert candidate["match_type"] in {"exact_match", "normalized_match"}
     assert candidate["collision_warning"] == ""
@@ -10238,6 +13170,210 @@ def test_source_native_bge_m3_persisted_index_supersedes_diagnostic_hash(tmp_pat
     assert "diagnostic_hash" not in " ".join(audit["limitations"])
 
 
+def test_sentence_transformer_embedder_local_files_only_forces_offline_model_load(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.capabilities.rag.embeddings import SentenceTransformerEmbedder
+
+    captured: dict[str, object] = {}
+
+    class FakeSentenceTransformer:
+        def __init__(self, model_name: str, **kwargs: object) -> None:
+            captured["model_name"] = model_name
+            captured["kwargs"] = dict(kwargs)
+            captured["hf_hub_offline"] = os.environ.get("HF_HUB_OFFLINE")
+            captured["transformers_offline"] = os.environ.get("TRANSFORMERS_OFFLINE")
+            self.max_seq_length = 8192
+            self.device = "cuda:0"
+
+        def get_sentence_embedding_dimension(self) -> int:
+            return 4
+
+        def encode(self, texts: list[str], **_kwargs: object) -> object:
+            import numpy as np
+
+            return np.ones((len(texts), 4), dtype=np.float32)
+
+    fake_module = types.ModuleType("sentence_transformers")
+    fake_module.SentenceTransformer = FakeSentenceTransformer
+    monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
+    monkeypatch.delenv("HF_HUB_OFFLINE", raising=False)
+    monkeypatch.delenv("TRANSFORMERS_OFFLINE", raising=False)
+
+    embedder = SentenceTransformerEmbedder(
+        model_name="BAAI/bge-m3",
+        local_files_only=True,
+        show_progress_bar=False,
+    )
+    vectors = embedder.embed_queries(["local bge-m3 only"])
+
+    assert vectors.shape == (1, 4)
+    assert captured["model_name"] == "BAAI/bge-m3"
+    assert captured["kwargs"]["local_files_only"] is True
+    assert captured["hf_hub_offline"] == "1"
+    assert captured["transformers_offline"] == "1"
+
+
+def test_sentence_transformer_embedder_local_files_only_overrides_false_offline_envs(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.capabilities.rag.embeddings import SentenceTransformerEmbedder
+
+    captured: dict[str, object] = {}
+
+    class FakeSentenceTransformer:
+        def __init__(self, model_name: str, **kwargs: object) -> None:
+            captured["model_name"] = model_name
+            captured["kwargs"] = dict(kwargs)
+            captured["hf_hub_offline"] = os.environ.get("HF_HUB_OFFLINE")
+            captured["transformers_offline"] = os.environ.get("TRANSFORMERS_OFFLINE")
+            captured["hf_datasets_offline"] = os.environ.get("HF_DATASETS_OFFLINE")
+            self.max_seq_length = 8192
+            self.device = "cuda:0"
+
+        def get_sentence_embedding_dimension(self) -> int:
+            return 4
+
+        def encode(self, texts: list[str], **_kwargs: object) -> object:
+            import numpy as np
+
+            return np.ones((len(texts), 4), dtype=np.float32)
+
+    fake_module = types.ModuleType("sentence_transformers")
+    fake_module.SentenceTransformer = FakeSentenceTransformer
+    monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
+    monkeypatch.setenv("HF_HUB_OFFLINE", "0")
+    monkeypatch.setenv("TRANSFORMERS_OFFLINE", "0")
+    monkeypatch.setenv("HF_DATASETS_OFFLINE", "0")
+
+    embedder = SentenceTransformerEmbedder(
+        model_name="BAAI/bge-m3",
+        local_files_only=True,
+        show_progress_bar=False,
+    )
+    vectors = embedder.embed_queries(["local bge-m3 only"])
+
+    assert vectors.shape == (1, 4)
+    assert captured["model_name"] == "BAAI/bge-m3"
+    assert captured["kwargs"]["local_files_only"] is True
+    assert captured["hf_hub_offline"] == "1"
+    assert captured["transformers_offline"] == "1"
+    assert captured["hf_datasets_offline"] == "1"
+
+
+def test_sentence_transformer_embedder_local_files_only_unsupported_kwarg_fallback_stays_offline(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.capabilities.rag.embeddings import SentenceTransformerEmbedder
+
+    calls: list[dict[str, object]] = []
+    captured: dict[str, object] = {}
+
+    class FakeSentenceTransformer:
+        def __init__(self, model_name: str, **kwargs: object) -> None:
+            calls.append(dict(kwargs))
+            if "local_files_only" in kwargs:
+                raise TypeError("__init__() got an unexpected keyword argument 'local_files_only'")
+            captured["model_name"] = model_name
+            captured["hf_hub_offline"] = os.environ.get("HF_HUB_OFFLINE")
+            captured["transformers_offline"] = os.environ.get("TRANSFORMERS_OFFLINE")
+            captured["hf_datasets_offline"] = os.environ.get("HF_DATASETS_OFFLINE")
+            self.max_seq_length = 8192
+            self.device = "cuda:0"
+
+        def get_sentence_embedding_dimension(self) -> int:
+            return 4
+
+        def encode(self, texts: list[str], **_kwargs: object) -> object:
+            import numpy as np
+
+            return np.ones((len(texts), 4), dtype=np.float32)
+
+    fake_module = types.ModuleType("sentence_transformers")
+    fake_module.SentenceTransformer = FakeSentenceTransformer
+    monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
+    monkeypatch.setenv("HF_HUB_OFFLINE", "0")
+    monkeypatch.setenv("TRANSFORMERS_OFFLINE", "0")
+    monkeypatch.setenv("HF_DATASETS_OFFLINE", "0")
+
+    embedder = SentenceTransformerEmbedder(
+        model_name="BAAI/bge-m3",
+        local_files_only=True,
+        show_progress_bar=False,
+    )
+    vectors = embedder.embed_queries(["local bge-m3 only"])
+
+    assert vectors.shape == (1, 4)
+    assert calls == [{"local_files_only": True}, {}]
+    assert captured["model_name"] == "BAAI/bge-m3"
+    assert captured["hf_hub_offline"] == "1"
+    assert captured["transformers_offline"] == "1"
+    assert captured["hf_datasets_offline"] == "1"
+
+
+def test_sentence_transformer_embedder_local_files_only_restores_offline_env_for_later_loads(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from app.capabilities.rag.embeddings import SentenceTransformerEmbedder
+
+    loads: list[dict[str, object]] = []
+
+    class FakeSentenceTransformer:
+        def __init__(self, model_name: str, **kwargs: object) -> None:
+            loads.append(
+                {
+                    "model_name": model_name,
+                    "kwargs": dict(kwargs),
+                    "hf_hub_offline": os.environ.get("HF_HUB_OFFLINE"),
+                    "transformers_offline": os.environ.get("TRANSFORMERS_OFFLINE"),
+                    "hf_datasets_offline": os.environ.get("HF_DATASETS_OFFLINE"),
+                }
+            )
+            self.max_seq_length = 8192
+            self.device = "cuda:0"
+
+        def get_sentence_embedding_dimension(self) -> int:
+            return 4
+
+        def encode(self, texts: list[str], **_kwargs: object) -> object:
+            import numpy as np
+
+            return np.ones((len(texts), 4), dtype=np.float32)
+
+    fake_module = types.ModuleType("sentence_transformers")
+    fake_module.SentenceTransformer = FakeSentenceTransformer
+    monkeypatch.setitem(sys.modules, "sentence_transformers", fake_module)
+    monkeypatch.setenv("HF_HUB_OFFLINE", "0")
+    monkeypatch.setenv("TRANSFORMERS_OFFLINE", "0")
+    monkeypatch.setenv("HF_DATASETS_OFFLINE", "0")
+
+    local_embedder = SentenceTransformerEmbedder(
+        model_name="BAAI/bge-m3",
+        local_files_only=True,
+        show_progress_bar=False,
+    )
+    nonlocal_embedder = SentenceTransformerEmbedder(
+        model_name="BAAI/bge-m3",
+        local_files_only=False,
+        show_progress_bar=False,
+    )
+
+    assert local_embedder.embed_queries(["local bge-m3 only"]).shape == (1, 4)
+    assert os.environ["HF_HUB_OFFLINE"] == "0"
+    assert os.environ["TRANSFORMERS_OFFLINE"] == "0"
+    assert os.environ["HF_DATASETS_OFFLINE"] == "0"
+    assert nonlocal_embedder.embed_queries(["non-local policy"]).shape == (1, 4)
+
+    assert loads[0]["kwargs"] == {"local_files_only": True}
+    assert loads[0]["hf_hub_offline"] == "1"
+    assert loads[0]["transformers_offline"] == "1"
+    assert loads[0]["hf_datasets_offline"] == "1"
+    assert loads[1]["kwargs"] == {}
+    assert loads[1]["hf_hub_offline"] == "0"
+    assert loads[1]["transformers_offline"] == "0"
+    assert loads[1]["hf_datasets_offline"] == "0"
+
+
 def test_diagnostic_hit_mmr_ndcg_metrics_and_semantic_samples_are_reported_without_leakage(tmp_path: Path) -> None:
     dataset = tmp_path / "fixture_gold.jsonl"
     output_dir = tmp_path / "reports" / "rag_eval" / "source_native_quality_metrics"
@@ -11001,2573 +14137,6 @@ def test_quality_gate_baseline_auto_selects_exact_query_id_coverage(tmp_path: Pa
     assert baseline["run_id"] == "aaa_exact_legacy"
 
 
-def test_evidence_gate_diagnostic_computes_decision_without_mutating_answer() -> None:
-    raw_outputs = [
-        {
-            "id": "q-date",
-            "query": "When did Project Mercury launch?",
-            "generated_answer": "Project Mercury launched on 2026-04-12.",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-date",
-                    "chunk_id": "chunk-date",
-                    "source_atom_id": "src-date",
-                    "evidence_bundle_id": "bundle-date",
-                    "text": "Project Mercury launch window opens on 2026-04-12.",
-                    "text_sha256": "hash-date",
-                }
-            ],
-            "citations": [
-                {
-                    "doc_id": "doc-date",
-                    "chunk_id": "chunk-date",
-                    "source_atom_id": "src-date",
-                    "evidence_bundle_id": "bundle-date",
-                    "text": "Project Mercury launch window opens on 2026-04-12.",
-                    "text_sha256": "hash-date",
-                }
-            ],
-            "expected_answer": "forbidden expected answer",
-            "expected_evidence": [{"text": "forbidden expected evidence"}],
-            "answerability": "unanswerable",
-            "row_id": "forbidden-row-id",
-            "target_id": "forbidden-target-id",
-        }
-    ]
-
-    gated_outputs, summary = apply_evidence_gate_to_outputs(raw_outputs, mode="diagnostic")
-
-    row = gated_outputs[0]
-    assert row["generated_answer"] == "Project Mercury launched on 2026-04-12."
-    assert row["evidence_gate_mode"] == "diagnostic"
-    assert row["answer_gate_decision"] == "allow_answer"
-    assert row["answer_modified_by_gate"] is False
-    assert row["evidence_gate"]["gate_uses_expected_fields"] is False
-    assert row["evidence_gate"]["gate_uses_gold_fields"] is False
-    assert row["evidence_gate"]["gate_uses_legacy_fields"] is False
-    assert row["evidence_gate"]["validator_uses_expected_fields"] is False
-    assert row["evidence_gate"]["validator_uses_gold_fields"] is False
-    assert row["evidence_gate"]["validator_uses_legacy_fields"] is False
-    assert row["evidence_gate"]["retrieval_loop_triggered"] is False
-    assert row["evidence_gate"]["selected_evidence_count"] == 1
-    assert row["evidence_gate"]["citation_validations"][0]["citation_support_status"] == "supported"
-    assert row["evidence_gate"]["citation_validations"][0]["citation_target_in_selected_evidence"] is True
-    assert summary["evidence_gate_mode"] == "diagnostic"
-    assert summary["allowed_answer_count"] == 1
-    assert summary["abstained_count"] == 0
-    assert summary["unsupported_answer_rate_before_gate"] == 0.0
-    assert summary["unsupported_answer_rate_after_gate"] == 0.0
-
-
-def test_evidence_gate_enforce_abstains_unsupported_numeric_and_entity_anchors() -> None:
-    raw_outputs = [
-        {
-            "id": "q-wrong-date",
-            "query": "When did Project Mercury launch?",
-            "generated_answer": "Project Mercury launched on 2027-05-01.",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-date",
-                    "chunk_id": "chunk-date",
-                    "source_atom_id": "src-date",
-                    "evidence_bundle_id": "bundle-date",
-                    "text": "Project Mercury launch window opens on 2026-04-12.",
-                    "text_sha256": "hash-date",
-                }
-            ],
-            "citations": [
-                {
-                    "doc_id": "doc-date",
-                    "chunk_id": "chunk-date",
-                    "source_atom_id": "src-date",
-                    "evidence_bundle_id": "bundle-date",
-                    "text": "Project Mercury launch window opens on 2026-04-12.",
-                    "text_sha256": "hash-date",
-                }
-            ],
-        },
-        {
-            "id": "q-wrong-entity",
-            "query": "Where is Apollo HQ?",
-            "generated_answer": "Apollo HQ is in Busan.",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-hq",
-                    "chunk_id": "chunk-hq",
-                    "source_atom_id": "src-hq",
-                    "evidence_bundle_id": "bundle-hq",
-                    "text": "Apollo headquarters is in Seoul.",
-                    "text_sha256": "hash-hq",
-                }
-            ],
-            "citations": [
-                {
-                    "doc_id": "doc-hq",
-                    "chunk_id": "chunk-hq",
-                    "source_atom_id": "src-hq",
-                    "evidence_bundle_id": "bundle-hq",
-                    "text": "Apollo headquarters is in Seoul.",
-                    "text_sha256": "hash-hq",
-                }
-            ],
-        },
-    ]
-
-    gated_outputs, summary = apply_evidence_gate_to_outputs(raw_outputs, mode="enforce")
-
-    for row in gated_outputs:
-        assert row["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
-        assert row["answer_modified_by_gate"] is True
-        assert row["unsupported_answer_blocked"] is True
-        assert row["answer_gate_decision"] == "block_unsupported_answer"
-        assert row["evidence_gate"]["retrieval_loop_triggered"] is False
-    assert gated_outputs[0]["evidence_gate"]["abstention_reason"] == "missing_numeric_or_date_anchor"
-    assert "2027" in gated_outputs[0]["evidence_gate"]["unsupported_answer_anchors"]
-    assert gated_outputs[1]["evidence_gate"]["abstention_reason"] == "missing_entity_anchor"
-    assert "busan" in gated_outputs[1]["evidence_gate"]["unsupported_answer_anchors"]
-    assert summary["abstained_count"] == 2
-    assert summary["unsupported_answer_blocked_count"] == 2
-    assert summary["unsupported_answer_rate_before_gate"] == 1.0
-    assert summary["unsupported_answer_rate_after_gate"] == 0.0
-
-
-def test_evidence_gate_enforce_abstains_conflicting_numeric_date_evidence() -> None:
-    raw_outputs = [
-        {
-            "id": "q-conflict",
-            "query": "When did Project Mercury launch?",
-            "generated_answer": "Project Mercury launched on 2026-04-12 at 09:00.",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-conflict",
-                    "chunk_id": "chunk-conflict",
-                    "source_atom_id": "src-conflict",
-                    "evidence_bundle_id": "bundle-conflict",
-                    "text": "Project Mercury launched on 2026-04-12 at 10:00.",
-                    "text_sha256": "hash-conflict",
-                }
-            ],
-            "citations": [
-                {
-                    "doc_id": "doc-conflict",
-                    "chunk_id": "chunk-conflict",
-                    "source_atom_id": "src-conflict",
-                    "evidence_bundle_id": "bundle-conflict",
-                    "text": "Project Mercury launched on 2026-04-12 at 10:00.",
-                    "text_sha256": "hash-conflict",
-                }
-            ],
-        }
-    ]
-
-    gated_outputs, summary = apply_evidence_gate_to_outputs(raw_outputs, mode="enforce")
-
-    gate = gated_outputs[0]["evidence_gate"]
-    assert gated_outputs[0]["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
-    assert gated_outputs[0]["answer_modified_by_gate"] is True
-    assert gate["evidence_package_status"] == "conflicting"
-    assert "conflicting_evidence" in gate["validation_reasons"]
-    assert gate["abstention_reason"] == "conflicting_evidence"
-    assert summary["conflicting_evidence_package_count"] == 1
-    assert summary["unsupported_answer_rate_before_gate"] == 1.0
-    assert summary["unsupported_answer_rate_after_gate"] == 0.0
-
-
-def test_evidence_gate_enforce_blocks_off_topic_answer_missing_query_anchors_without_gold() -> None:
-    raw_outputs = [
-        {
-            "id": "q-off-topic",
-            "query": "Apollo headquarters location",
-            "generated_answer": "Project Mercury launched on 2026-04-12.",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-mercury",
-                    "chunk_id": "chunk-mercury",
-                    "source_atom_id": "src-mercury",
-                    "evidence_bundle_id": "bundle-mercury",
-                    "text": "Project Mercury launched on 2026-04-12.",
-                    "text_sha256": "hash-mercury",
-                }
-            ],
-            "citations": [
-                {
-                    "doc_id": "doc-mercury",
-                    "chunk_id": "chunk-mercury",
-                    "source_atom_id": "src-mercury",
-                    "evidence_bundle_id": "bundle-mercury",
-                    "text": "Project Mercury launched on 2026-04-12.",
-                    "text_sha256": "hash-mercury",
-                }
-            ],
-            "expected_answer": "Seoul",
-            "expected_evidence": [{"text": "Apollo headquarters is in Seoul."}],
-            "legacy_answer": "Seoul",
-            "row_id": "forbidden-row",
-            "target_id": "forbidden-target",
-        }
-    ]
-
-    gated_outputs, summary = apply_evidence_gate_to_outputs(raw_outputs, mode="enforce")
-
-    row = gated_outputs[0]
-    gate = row["evidence_gate"]
-    assert row["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
-    assert row["answer_modified_by_gate"] is True
-    assert row["answer_gate_decision"] == "block_unsupported_answer"
-    assert row["unsupported_answer_blocked"] is True
-    assert row["would_block_unsupported_answer"] is False
-    assert gate["evidence_package_status"] == "insufficient"
-    assert gate["selected_evidence_count"] == 1
-    assert gate["citation_validations"][0]["citation_support_status"] == "supported"
-    assert "missing_query_anchor" in gate["validation_reasons"]
-    assert gate["abstention_reason"] == "insufficient_evidence"
-    assert {"apollo", "headquarters"}.issubset(set(gate["unsupported_answer_anchors"]))
-    assert gate["gate_uses_expected_fields"] is False
-    assert gate["gate_uses_gold_fields"] is False
-    assert gate["gate_uses_legacy_fields"] is False
-    assert gate["unsupported_answer_blocked"] is True
-    assert gate["would_block_unsupported_answer"] is False
-    assert summary["insufficient_evidence_abstained_count"] == 1
-    assert summary["unsupported_answer_rate_after_gate"] == 0.0
-
-
-def test_citation_validator_requires_selected_evidence_not_retrieved_context_only() -> None:
-    raw_outputs = [
-        {
-            "id": "q-selected",
-            "query": "Where is Apollo HQ?",
-            "generated_answer": "Apollo HQ is in Seoul.",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-selected",
-                    "chunk_id": "chunk-selected",
-                    "source_atom_id": "src-selected",
-                    "evidence_bundle_id": "bundle-selected",
-                    "text": "Apollo HQ is in Seoul.",
-                    "text_sha256": "hash-selected",
-                },
-                {
-                    "doc_id": "doc-other",
-                    "chunk_id": "chunk-other",
-                    "source_atom_id": "src-other",
-                    "evidence_bundle_id": "bundle-other",
-                    "text": "Apollo HQ moved from Busan.",
-                    "text_sha256": "hash-other",
-                },
-            ],
-            "citations": [
-                {
-                    "doc_id": "doc-other",
-                    "chunk_id": "chunk-other",
-                    "source_atom_id": "src-other",
-                    "evidence_bundle_id": "bundle-other",
-                    "text": "Apollo HQ moved from Busan.",
-                    "text_sha256": "hash-other",
-                }
-            ],
-        }
-    ]
-
-    gated_outputs, summary = apply_evidence_gate_to_outputs(raw_outputs, mode="diagnostic")
-
-    row = gated_outputs[0]
-    citation = row["evidence_gate"]["citation_validations"][0]
-    assert row["evidence_gate"]["selected_evidence_count"] == 1
-    assert citation["citation_target_exists"] is True
-    assert citation["citation_target_in_retrieved_contexts"] is True
-    assert citation["citation_target_in_selected_evidence"] is False
-    assert citation["citation_support_status"] == "retrieved_context_only_diagnostic"
-    assert row["answer_gate_decision"] == "block_unsupported_answer"
-    assert row["answer_modified_by_gate"] is False
-    assert row["generated_answer"] == "Apollo HQ is in Seoul."
-    assert row["original_generated_answer_hash"] == row["gated_answer_hash"]
-    assert row["unsupported_answer_blocked"] is False
-    assert row["would_block_unsupported_answer"] is True
-    assert row["evidence_gate"]["unsupported_answer_blocked"] is False
-    assert row["evidence_gate"]["would_block_unsupported_answer"] is True
-    assert summary["citation_supported_count"] == 0
-    assert summary["citation_retrieved_context_only_diagnostic_count"] == 1
-    assert summary["unsupported_answer_blocked_count"] == 0
-    assert summary["would_block_unsupported_answer_count"] == 1
-
-
-def test_selected_evidence_composer_uses_only_query_selected_sourceatom_evidence() -> None:
-    raw_outputs = [
-        {
-            "id": "q-composer",
-            "query": "Where is Apollo HQ?",
-            "generated_answer": "extractive-v1 broad answer from all retrieved contexts",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-hq",
-                    "chunk_id": "chunk-hq",
-                    "source_atom_id": "src-hq",
-                    "evidence_bundle_id": "bundle-hq",
-                    "source_family": "TEXT",
-                    "text": "Apollo HQ is in Seoul.",
-                    "text_sha256": "hash-hq",
-                },
-                {
-                    "doc_id": "doc-noise",
-                    "chunk_id": "chunk-noise",
-                    "source_atom_id": "src-noise",
-                    "evidence_bundle_id": "bundle-noise",
-                    "source_family": "TEXT",
-                    "text": "The cafeteria menu changed in Busan.",
-                    "text_sha256": "hash-noise",
-                },
-            ],
-            "citations": [
-                {
-                    "doc_id": "doc-noise",
-                    "chunk_id": "chunk-noise",
-                    "source_atom_id": "src-noise",
-                    "evidence_bundle_id": "bundle-noise",
-                    "text": "The cafeteria menu changed in Busan.",
-                    "text_sha256": "hash-noise",
-                }
-            ],
-        }
-    ]
-
-    selected = select_composer_evidence(raw_outputs[0]["query"], raw_outputs[0]["retrieved_contexts"])
-    composed = apply_selected_evidence_composer_to_outputs(raw_outputs)[0]
-    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="diagnostic")
-
-    assert [row["evidence_bundle_id"] for row in selected] == ["bundle-hq"]
-    assert composed["answer_composer"]["provider"] == "selected-evidence-deterministic-v1"
-    assert composed["answer_composer"]["input_policy"] == (
-        "query_text_and_selected_sourceatom_evidence_only_no_gold_qrels_labels_ids_or_baseline"
-    )
-    assert composed["answer_composer"]["query_selected_evidence_count"] == 1
-    assert composed["answer_composer"]["selected_evidence_count"] == 1
-    assert composed["answer_composer"]["selected_evidence_ids"] == ["bundle-hq"]
-    assert "Seoul" in composed["generated_answer"]
-    assert "Busan" not in composed["generated_answer"]
-    assert [citation["evidence_bundle_id"] for citation in composed["citations"]] == ["bundle-hq"]
-    assert gated_outputs[0]["evidence_gate"]["citation_supported_count"] == 1
-    assert gated_outputs[0]["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
-    assert gated_outputs[0]["answer_gate_decision"] == "allow_answer"
-    assert summary["citation_retrieved_context_only_diagnostic_count"] == 0
-
-
-def test_selected_evidence_composer_abstains_without_selected_sourceatom_evidence() -> None:
-    raw_outputs = [
-        {
-            "id": "q-composer-empty",
-            "query": "Where is Apollo HQ?",
-            "generated_answer": "extractive-v1 broad answer from an unrelated retrieved context",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-noise",
-                    "chunk_id": "chunk-noise",
-                    "source_atom_id": "src-noise",
-                    "evidence_bundle_id": "bundle-noise",
-                    "source_family": "TEXT",
-                    "text": "The cafeteria menu changed in Busan.",
-                    "text_sha256": "hash-noise",
-                }
-            ],
-            "citations": [
-                {
-                    "doc_id": "doc-noise",
-                    "chunk_id": "chunk-noise",
-                    "source_atom_id": "src-noise",
-                    "evidence_bundle_id": "bundle-noise",
-                    "text": "The cafeteria menu changed in Busan.",
-                    "text_sha256": "hash-noise",
-                }
-            ],
-        }
-    ]
-
-    composed = apply_selected_evidence_composer_to_outputs(raw_outputs)[0]
-    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="enforce")
-
-    assert composed["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
-    assert composed["citations"] == []
-    assert composed["answer_composer"]["selected_evidence_count"] == 0
-    assert composed["answer_composer"]["abstained"] is True
-    assert composed["answer_composer"]["abstention_reason"] == "no_selected_sourceatom_evidence"
-    assert gated_outputs[0]["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
-    assert summary["unsupported_answer_rate_after_gate"] == 0.0
-
-
-def test_selected_evidence_composer_abstains_when_selected_evidence_is_insufficient() -> None:
-    raw_outputs = [
-        {
-            "id": "q-composer-insufficient",
-            "query": "When did Apollo HQ open?",
-            "generated_answer": "extractive-v1 broad answer from a query-overlapping context",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-hq",
-                    "chunk_id": "chunk-hq",
-                    "source_atom_id": "src-hq",
-                    "evidence_bundle_id": "bundle-hq",
-                    "source_family": "TEXT",
-                    "text": "Apollo HQ opening is described here, but the opening date is omitted.",
-                    "text_sha256": "hash-hq-no-date",
-                }
-            ],
-            "citations": [],
-        }
-    ]
-
-    selected = select_composer_evidence(raw_outputs[0]["query"], raw_outputs[0]["retrieved_contexts"])
-    composed = apply_selected_evidence_composer_to_outputs(raw_outputs)[0]
-    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="enforce")
-
-    assert [row["evidence_bundle_id"] for row in selected] == ["bundle-hq"]
-    assert composed["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
-    assert composed["citations"] == []
-    assert composed["answer_composer"]["query_selected_evidence_count"] == 1
-    assert composed["answer_composer"]["selected_evidence_count"] == 0
-    assert composed["answer_composer"]["abstained"] is True
-    assert composed["answer_composer"]["abstention_reason"] == "insufficient_selected_evidence"
-    assert gated_outputs[0]["generated_answer"] == "제공된 근거만으로는 답할 수 없습니다."
-    assert summary["unsupported_answer_rate_after_gate"] == 0.0
-
-
-def test_selected_evidence_composer_ignores_doc_chunk_only_contexts() -> None:
-    raw_outputs = [
-        {
-            "id": "q-composer-doc-only",
-            "query": "Where is Apollo HQ?",
-            "generated_answer": "extractive-v1 broad answer",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-hq",
-                    "chunk_id": "chunk-hq",
-                    "source_family": "TEXT",
-                    "text": "Apollo HQ is in Seoul.",
-                    "text_sha256": "hash-doc-only",
-                },
-                {
-                    "doc_id": "doc-hq-2",
-                    "chunk_id": "chunk-hq-2",
-                    "source_atom_id": "src-hq-2",
-                    "evidence_bundle_id": "bundle-hq-2",
-                    "source_family": "TEXT",
-                    "text": "Apollo HQ is in Seoul.",
-                    "text_sha256": "hash-sourceatom",
-                },
-            ],
-            "citations": [],
-        }
-    ]
-
-    selected = select_composer_evidence(raw_outputs[0]["query"], raw_outputs[0]["retrieved_contexts"])
-    composed = apply_selected_evidence_composer_to_outputs(raw_outputs)[0]
-
-    assert [row["evidence_bundle_id"] for row in selected] == ["bundle-hq-2"]
-    assert [citation["evidence_bundle_id"] for citation in composed["citations"]] == ["bundle-hq-2"]
-    assert all(citation.get("doc_id") != "doc-hq" for citation in composed["citations"])
-
-
-def test_selected_evidence_composer_accepts_source_atom_without_bundle_id() -> None:
-    raw_outputs = [
-        {
-            "id": "q-composer-sourceatom-only",
-            "query": "When is Apollo HQ opening?",
-            "generated_answer": "extractive-v1 broad answer",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-hq",
-                    "chunk_id": "chunk-hq",
-                    "source_atom_id": "src-hq",
-                    "evidence_bundle_id": "",
-                    "source_family": "TEXT",
-                    "text": "Apollo HQ opening is scheduled for 2026년 4월.",
-                    "text_sha256": "hash-hq",
-                }
-            ],
-            "citations": [],
-        }
-    ]
-
-    selected = select_composer_evidence(raw_outputs[0]["query"], raw_outputs[0]["retrieved_contexts"])
-    composed = apply_selected_evidence_composer_to_outputs(raw_outputs)[0]
-    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="diagnostic")
-
-    assert [row["source_atom_id"] for row in selected] == ["src-hq"]
-    assert composed["answer_composer"]["selected_evidence_ids"] == ["src-hq"]
-    assert composed["answer_composer"]["abstained"] is False
-    assert [citation["source_atom_id"] for citation in composed["citations"]] == ["src-hq"]
-    assert gated_outputs[0]["evidence_gate"]["citation_supported_count"] == 1
-    assert summary["citation_retrieved_context_only_diagnostic_count"] == 0
-
-
-def test_selected_evidence_composer_cites_only_answer_supporting_selected_evidence() -> None:
-    raw_outputs = [
-        {
-            "id": "q-composer-citation-subset",
-            "query": "Where is Apollo HQ?",
-            "generated_answer": "extractive-v1 broad answer",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-seoul",
-                    "chunk_id": "chunk-seoul",
-                    "source_atom_id": "src-seoul",
-                    "source_family": "TEXT",
-                    "text": "Apollo HQ is in Seoul.",
-                    "text_sha256": "hash-seoul",
-                },
-                {
-                    "doc_id": "doc-cafe",
-                    "chunk_id": "chunk-cafe",
-                    "source_atom_id": "src-cafe",
-                    "source_family": "TEXT",
-                    "text": "Apollo HQ cafeteria moved from Busan.",
-                    "text_sha256": "hash-cafe",
-                },
-            ],
-            "citations": [],
-        }
-    ]
-
-    selected = select_composer_evidence(raw_outputs[0]["query"], raw_outputs[0]["retrieved_contexts"])
-    composed = apply_selected_evidence_composer_to_outputs(raw_outputs)[0]
-    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="diagnostic")
-
-    assert [row["source_atom_id"] for row in selected] == ["src-seoul", "src-cafe"]
-    assert [citation["source_atom_id"] for citation in composed["citations"]] == ["src-seoul"]
-    assert gated_outputs[0]["evidence_gate"]["citation_supported_count"] == 1
-    assert summary["citation_retrieved_context_only_diagnostic_count"] == 0
-
-
-def test_selected_evidence_composer_prefers_context_when_query_anchors_span_lines() -> None:
-    raw_outputs = [
-        {
-            "id": "q-composer-line-anchors",
-            "query": "유우야키의 나이와 생일은 어떻게 적혀 있어",
-            "generated_answer": "extractive-v1 broad answer",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-yuyaki",
-                    "chunk_id": "chunk-yuyaki",
-                    "source_atom_id": "src-yuyaki",
-                    "evidence_bundle_id": "bundle-yuyaki",
-                    "source_family": "TEXT",
-                    "text": "夕焼(ユウヤキ)\n나이\n16세\n생일\n9월 29일\n유우야키 항목 참조.",
-                    "text_sha256": "hash-yuyaki",
-                    "score": 0.5,
-                },
-                {
-                    "doc_id": "doc-shiro",
-                    "chunk_id": "chunk-shiro",
-                    "source_atom_id": "src-shiro",
-                    "evidence_bundle_id": "bundle-shiro",
-                    "source_family": "TEXT",
-                    "text": "시로의 나이와 생일은 공식적으로 밝혀지지 않았고 외관은 대략 30대 중후반으로 추정된다.",
-                    "text_sha256": "hash-shiro",
-                    "score": 0.5,
-                },
-            ],
-            "citations": [],
-        }
-    ]
-
-    composed = apply_selected_evidence_composer_to_outputs(raw_outputs, citation_format="evidence-id")[0]
-    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="diagnostic")
-
-    assert composed["answer_composer"]["query_selected_evidence_ids"][0] == "bundle-yuyaki"
-    assert composed["answer_composer"]["selected_evidence_ids"] == ["bundle-yuyaki"]
-    assert "유우야키" in composed["generated_answer"]
-    assert "16세" in composed["generated_answer"]
-    assert "9월 29일" in composed["generated_answer"]
-    assert "시로" not in composed["generated_answer"]
-    assert gated_outputs[0]["answer_gate_decision"] == "allow_answer"
-    assert gated_outputs[0]["evidence_gate"]["missing_query_anchors"] == []
-    assert summary["unsupported_answer_rate_after_gate"] == 0.0
-
-
-def test_evidence_gate_matches_compact_korean_query_anchor_to_spaced_title() -> None:
-    validation = validate_evidence_package_for_gate(
-        {
-            "id": "q-spaced-title",
-            "query": "소드아트 오디널 스케일은 어떤 극장판을 가리켜",
-            "generated_answer": "소드 아트 온라인 -오디널 스케일-.",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-sao",
-                    "chunk_id": "chunk-os",
-                    "source_atom_id": "src-sao-os",
-                    "evidence_bundle_id": "bundle-sao-os",
-                    "source_family": "TEXT",
-                    "text": "극장판 소드 아트 온라인 -오디널 스케일- 과 같은 세계관이라는 것을 보여준다.",
-                    "text_sha256": "hash-sao-os",
-                }
-            ],
-            "citations": [
-                {
-                    "doc_id": "doc-sao",
-                    "chunk_id": "chunk-os",
-                    "source_atom_id": "src-sao-os",
-                    "evidence_bundle_id": "bundle-sao-os",
-                    "text": "극장판 소드 아트 온라인 -오디널 스케일- 과 같은 세계관이라는 것을 보여준다.",
-                    "text_sha256": "hash-sao-os",
-                }
-            ],
-        }
-    )
-
-    assert validation["evidence_package_status"] == "sufficient"
-    assert "소드아트" not in validation["missing_query_anchors"]
-    assert validation["query_anchor_coverage"] == 1.0
-    assert validation["citation_supported_count"] == 1
-
-
-def test_selected_evidence_composer_tolerates_invalid_scores_and_deduplicates() -> None:
-    contexts = [
-        {
-            "rank": 1,
-            "doc_id": "doc-low",
-            "chunk_id": "chunk-low",
-            "source_atom_id": "src-low",
-            "evidence_bundle_id": "bundle-low",
-            "text": "Apollo is mentioned, but HQ is not.",
-            "score": "not-a-number",
-        },
-        {
-            "rank": 2,
-            "doc_id": "doc-hq",
-            "chunk_id": "chunk-hq",
-            "source_atom_id": "src-hq",
-            "evidence_bundle_id": "bundle-hq",
-            "text": "Apollo HQ is in Seoul.",
-            "score": 0.1,
-        },
-        {
-            "rank": 3,
-            "doc_id": "doc-hq-duplicate",
-            "chunk_id": "chunk-hq-duplicate",
-            "source_atom_id": "src-hq",
-            "evidence_bundle_id": "bundle-hq",
-            "text": "Apollo HQ is in Seoul again.",
-            "score": 0.9,
-        },
-    ]
-
-    selected = select_composer_evidence("Where is Apollo HQ?", contexts, max_evidence=2)
-
-    assert [row["evidence_bundle_id"] for row in selected] == ["bundle-hq", "bundle-low"]
-
-
-def test_selected_evidence_composer_formats_selected_citations_by_variant() -> None:
-    raw_outputs = [
-        {
-            "id": "q-composer-citation-format",
-            "query": "Where is Apollo HQ?",
-            "generated_answer": "extractive-v1 broad answer",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-hq",
-                    "chunk_id": "chunk-hq",
-                    "source_atom_id": "src-hq",
-                    "evidence_bundle_id": "bundle-hq",
-                    "source_family": "TEXT",
-                    "granularity": "paragraph",
-                    "page_number": "12",
-                    "locator_fingerprint": "loc-hq",
-                    "text": "Apollo HQ is in Seoul.",
-                    "text_sha256": "hash-hq",
-                }
-            ],
-            "citations": [],
-        }
-    ]
-
-    compact = apply_selected_evidence_composer_to_outputs(raw_outputs, citation_format="compact")[0]
-    evidence_id = apply_selected_evidence_composer_to_outputs(raw_outputs, citation_format="evidence-id")[0]
-    source_locator = apply_selected_evidence_composer_to_outputs(raw_outputs, citation_format="source-locator")[0]
-
-    assert compact["answer_composer"]["citation_format"] == "compact"
-    assert compact["answer_composer"]["formatted_citations"] == ["[1] doc-hq#chunk-hq"]
-    assert evidence_id["answer_composer"]["formatted_citations"] == [
-        "[1] evidence_bundle_id=bundle-hq; source_atom_id=src-hq"
-    ]
-    assert source_locator["answer_composer"]["formatted_citations"] == [
-        "[1] TEXT paragraph doc-hq#chunk-hq page=12 locator=loc-hq"
-    ]
-    assert [citation["evidence_bundle_id"] for citation in source_locator["citations"]] == ["bundle-hq"]
-
-
-def test_selected_evidence_composer_markdown_portfolio_format_is_reader_facing() -> None:
-    raw_outputs = [
-        {
-            "id": "q-composer-markdown-format",
-            "query": "Where is Apollo HQ?",
-            "generated_answer": "extractive-v1 broad answer",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-hq",
-                    "chunk_id": "chunk-hq",
-                    "source_atom_id": "src-hq",
-                    "evidence_bundle_id": "bundle-hq",
-                    "source_family": "TEXT",
-                    "granularity": "paragraph",
-                    "text": "Apollo HQ is in Seoul.",
-                    "text_sha256": "hash-hq",
-                }
-            ],
-            "citations": [],
-        }
-    ]
-
-    composed = apply_selected_evidence_composer_to_outputs(raw_outputs, citation_format="markdown-portfolio")[0]
-    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="diagnostic")
-
-    assert composed["answer_composer"]["citation_format"] == "markdown-portfolio"
-    assert composed["answer_composer"]["formatted_citations"] == [
-        "- [1] **TEXT paragraph** doc-hq#chunk-hq (evidence_bundle_id=bundle-hq; source_atom_id=src-hq)"
-    ]
-    assert "## Selected Evidence Citations" in composed["generated_answer"]
-    assert "- [1] **TEXT paragraph** doc-hq#chunk-hq" in composed["generated_answer"]
-    assert "Apollo HQ is in Seoul." in composed["generated_answer"]
-    assert gated_outputs[0]["evidence_gate"]["citation_supported_count"] == 1
-    assert summary["citation_retrieved_context_only_diagnostic_count"] == 0
-
-
-def test_selected_evidence_sentence_keeps_question_facet_out_of_broad_profile() -> None:
-    selected = [
-        {
-            "doc_id": "doc-yuyaki",
-            "chunk_id": "chunk-yuyaki",
-            "source_atom_id": "src-yuyaki",
-            "evidence_bundle_id": "bundle-yuyaki",
-            "source_family": "TEXT",
-            "text": (
-                "夕焼(ユウヤキ) 나이 16세 생일 9월 29일 신장 164cm "
-                "가슴사이즈 F컵 쓰리사이즈 B90-W57-H90 혈액형 O형 "
-                "사용 손 양손 무기 및 전투 스타일 태도 두 자루/참격 좋아하는 음식 발효식품"
-            ),
-        }
-    ]
-
-    answer = actual_rag_eval._selected_evidence_sentence("유우야키의 나이와 생일은 어떻게 적혀 있어", selected)
-
-    assert "나이 16세" in answer
-    assert "생일 9월 29일" in answer
-    assert "신장" not in answer
-    assert "혈액형" not in answer
-    assert "무기" not in answer
-
-
-def test_selected_evidence_sentence_omits_interleaved_profile_facets() -> None:
-    selected = [
-        {
-            "doc_id": "doc-mika",
-            "chunk_id": "chunk-profile",
-            "source_atom_id": "src-mika",
-            "evidence_bundle_id": "bundle-mika",
-            "source_family": "TEXT",
-            "text": "Mika profile: age 17. Height 160cm. Birthday May 8. Blood type B. Weapon rifle.",
-        }
-    ]
-
-    answer = actual_rag_eval._selected_evidence_sentence("What are Mika's age and birthday?", selected)
-
-    assert "age 17" in answer
-    assert "Birthday May 8" in answer
-    assert "Height" not in answer
-    assert "Blood type" not in answer
-    assert "Weapon" not in answer
-
-
-def test_selected_evidence_sentence_does_not_match_profile_facet_substrings() -> None:
-    selected = [
-        {
-            "doc_id": "doc-keyword",
-            "chunk_id": "chunk-keyword",
-            "source_atom_id": "src-keyword",
-            "evidence_bundle_id": "bundle-keyword",
-            "source_family": "TEXT",
-            "text": "문서 키워드는 나침반이다. 실제 답은 서울 본부이다.",
-        }
-    ]
-
-    answer = actual_rag_eval._selected_evidence_sentence("본부는 어디야?", selected)
-
-    assert "서울 본부" in answer
-    assert answer != "키워드는 나침반이다."
-
-
-def test_selected_evidence_sentence_prefers_profile_context_with_query_entity() -> None:
-    selected = [
-        {
-            "doc_id": "doc-wrong",
-            "chunk_id": "chunk-wrong",
-            "source_atom_id": "src-wrong",
-            "evidence_bundle_id": "bundle-wrong",
-            "source_family": "TEXT",
-            "text": "시로의 나이와 생일은 공식적으로 밝혀지지 않았다.",
-        },
-        {
-            "doc_id": "doc-yuyaki",
-            "chunk_id": "chunk-yuyaki",
-            "source_atom_id": "src-yuyaki",
-            "evidence_bundle_id": "bundle-yuyaki",
-            "source_family": "TEXT",
-            "text": "夕焼(ユウヤキ) 나이 16세 생일 9월 29일 신장 164cm 유우야키 항목 참조.",
-        },
-    ]
-
-    answer = actual_rag_eval._selected_evidence_sentence("유우야키의 나이와 생일은 어떻게 적혀 있어", selected)
-
-    assert "나이 16세" in answer
-    assert "생일 9월 29일" in answer
-    assert "신장" not in answer
-
-
-def test_run_eval_selected_evidence_composer_is_explicit_and_report_only(tmp_path: Path) -> None:
-    dataset = tmp_path / "selected_composer_gold.jsonl"
-    context = tmp_path / "selected_composer_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "selected_composer"
-    write_jsonl(
-        dataset,
-        [{"id": "q-composer", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
-    )
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "q-composer",
-                "generated_answer": "extractive-v1 broad answer from every context",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-hq",
-                        "chunk_id": "chunk-hq",
-                        "source_atom_id": "src-hq",
-                        "evidence_bundle_id": "bundle-hq",
-                        "source_family": "TEXT",
-                        "text": "Apollo HQ is in Seoul.",
-                        "text_sha256": "hash-hq",
-                    },
-                    {
-                        "doc_id": "doc-noise",
-                        "chunk_id": "chunk-noise",
-                        "source_atom_id": "src-noise",
-                        "evidence_bundle_id": "bundle-noise",
-                        "source_family": "TEXT",
-                        "text": "The cafeteria menu changed in Busan.",
-                        "text_sha256": "hash-noise",
-                    },
-                ],
-                "citations": [
-                    {
-                        "doc_id": "doc-noise",
-                        "chunk_id": "chunk-noise",
-                        "source_atom_id": "src-noise",
-                        "evidence_bundle_id": "bundle-noise",
-                        "text": "The cafeteria menu changed in Busan.",
-                        "text_sha256": "hash-noise",
-                    }
-                ],
-            }
-        ],
-    )
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=2,
-        run_id="selected_composer",
-        output_mode="single",
-        evidence_gate_mode="diagnostic",
-        answer_composer="selected-evidence-deterministic-v1",
-        selected_evidence_citation_format="evidence-id",
-    )
-
-    assert output_file_names(output_dir) == ["report.json"]
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    row = report["items"][0]
-    assert report["generator_config"]["provider"] == "selected-evidence-deterministic-v1"
-    assert report["generator_config"]["extractive_v1_baseline_preserved_for_comparison"] is True
-    assert report["generator_config"]["selected_evidence_citation_formatter_invoked"] is True
-    assert report["generator_config"]["selected_evidence_citation_format"] == "evidence-id"
-    assert "markdown-portfolio" in report["generator_config"]["selected_evidence_citation_formatter_variants_available"]
-    selected_evidence_summary_text = json.dumps(
-        {
-            "limitations": report["limitations"],
-            "next_repair_targets": report["next_repair_targets"],
-            "residual_risks": report["residual_risks"],
-        },
-        ensure_ascii=False,
-    )
-    assert "selected-evidence composer supplies answers" in selected_evidence_summary_text
-    assert "selected-evidence composer is active" in selected_evidence_summary_text
-    assert "extractive-v1 remains the generator" not in selected_evidence_summary_text
-    assert "replace extractive-v1" not in selected_evidence_summary_text
-    assert "answer composition is still extractive-v1" not in selected_evidence_summary_text
-    assert report["generator_config"]["expected_answer_used_for_generation"] is False
-    assert report["generator_config"]["expected_evidence_used_for_generation"] is False
-    assert report["raw_prompt_payload_written"] is False
-    assert report["raw_response_payload_written"] is False
-    assert report["artifact_contract"]["portfolio_experiment_sidecar_written"] is False
-    assert "Seoul" in row["generated_answer"]
-    assert "Busan" not in row["generated_answer"]
-    assert [citation["evidence_bundle_id"] for citation in row["citations"]] == ["bundle-hq"]
-    assert row["answer_composer"]["selected_evidence_ids"] == ["bundle-hq"]
-    assert row["answer_composer"]["formatted_citations"] == [
-        "[1] evidence_bundle_id=bundle-hq; source_atom_id=src-hq"
-    ]
-    assert row["answer_composer"]["uses_gold_fields"] is False
-    assert row["answer_composer"]["uses_qrels"] is False
-    assert row["answer_composer"]["uses_labels"] is False
-    assert row["answer_composer"]["uses_answerability"] is False
-    assert row["answer_composer"]["uses_expected_answer"] is False
-    assert row["answer_composer"]["uses_expected_evidence"] is False
-    assert row["answer_composer"]["uses_query_or_row_or_target_ids"] is False
-    assert row["answer_composer"]["uses_baseline_topk_or_legacy_outputs"] is False
-    assert "raw_prompt_payload_written" not in row["answer_composer"]
-    assert "raw_response_payload_written" not in row["answer_composer"]
-    assert row["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
-
-
-def test_load_eval_dataset_normalizes_gold29_source_fields_in_memory(tmp_path: Path) -> None:
-    dataset = tmp_path / "official_metric_input.jsonl"
-    write_jsonl(
-        dataset,
-        [
-            {
-                "query_id": "text_namu_v2_0005",
-                "question_ko": "자동판매기 미궁 방랑 애니 3기 방영 시기는 문서에 어떻게 적혀 있어",
-                "expected_answer_ko": "감독은 야마모토 타카시, 방영 시기는 2026년 4월.",
-                "supporting_evidence_note": "감독은 야마모토 타카시, 방영 시기는 2026년 4월.",
-                "citation_locator": {"cited_chunk_ids": ["a648c3a062d55aa3"]},
-                "answerability_label": 3,
-                "relevance_label": 3,
-                "gold_status": "APPROVED",
-                "track": "text_namu_v2_1",
-            }
-        ],
-    )
-
-    items = load_eval_dataset(dataset)
-
-    assert len(items) == 1
-    item = items[0]
-    assert item.id == "text_namu_v2_0005"
-    assert item.query == "자동판매기 미궁 방랑 애니 3기 방영 시기는 문서에 어떻게 적혀 있어"
-    assert item.answerability == "answerable"
-    assert item.has_answerability_label is True
-    assert "missing_answerability_label" not in item.validation_warnings
-    assert item.expected_answer == "감독은 야마모토 타카시, 방영 시기는 2026년 4월."
-    assert item.expected_evidence[0].chunk_id == "a648c3a062d55aa3"
-    assert item.expected_evidence[0].text == "감독은 야마모토 타카시, 방영 시기는 2026년 4월."
-    assert item.source_row["question_ko"] == item.query
-
-
-def test_run_eval_response_quality_summary_marks_silver_strict_metrics_not_applicable(tmp_path: Path) -> None:
-    dataset = tmp_path / "xlsx_silver_retrieval_evidence_selected_v0.jsonl"
-    context = tmp_path / "silver_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "silver_response_quality_summary"
-    write_jsonl(
-        dataset,
-        [
-            {
-                "query_id": "xlsx_silver_v0_000001",
-                "query": "자료 안에서 테크노페미니즘 항목의 엑셀 범위를 찾아줘.",
-                "expected_answer_text": "Sheet1 > A5952:J6001",
-                "citation_text": "Sheet1 > A5952:J6001",
-                "quality_tier": "SILVER",
-                "split": "silver_selected",
-                "include_in_answer_generation_denominator": "false",
-                "include_in_official_gold_denominator": "false",
-                "track": "XLSX",
-            }
-        ],
-    )
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "xlsx_silver_v0_000001",
-                "generated_answer": "Sheet1 > A5952:J6001",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-xlsx",
-                        "chunk_id": "chunk-range",
-                        "source_atom_id": "src-range",
-                        "evidence_bundle_id": "bundle-range",
-                        "source_family": "XLSX",
-                        "granularity": "table_row",
-                        "text": "Sheet1 > A5952:J6001",
-                    }
-                ],
-                "citations": [
-                    {
-                        "doc_id": "doc-xlsx",
-                        "chunk_id": "chunk-range",
-                        "source_atom_id": "src-range",
-                        "evidence_bundle_id": "bundle-range",
-                        "text": "Sheet1 > A5952:J6001",
-                    }
-                ],
-            }
-        ],
-    )
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="silver_response_quality_summary",
-        output_mode="single",
-        evidence_gate_mode="enforce",
-        answer_composer="selected-evidence-deterministic-v1",
-    )
-
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    summary = report["response_quality_input_summary"]
-    assert summary["schema_version"] == "actual_rag_eval.response_quality_input_summary.v1"
-    assert summary["source_profile"] == "diagnostic_silver"
-    assert summary["item_count"] == 1
-    assert summary["answerability_distribution"] == {"answerable": 0, "unanswerable": 0, "unknown": 1}
-    assert summary["strict_answer_citation_e2e_policy"]["strict_metrics_not_applicable"] is True
-    assert summary["strict_answer_citation_e2e_policy"]["reason"] == "diagnostic_silver_answerability_unknown"
-    assert summary["strict_answer_citation_e2e_policy"]["silver_strict_answer_citation_e2e"] == "N/A"
-    assert summary["guardrails"]["official_metric"] is False
-    assert summary["guardrails"]["gold_or_qrels_mutation"] is False
-    assert summary["normalization"]["query_field_mappings"] == ["query"]
-    assert summary["normalization"]["expected_answer_field_mappings"] == ["expected_answer_text"]
-    assert summary["normalization"]["expected_evidence_field_mappings"] == ["citation_text"]
-    assert report["strict_metrics"]["exact_or_alias_answer_correctness"]["denominator"] == 0
-    assert report["strict_metrics"]["citation_precision"]["denominator"] == 0
-    assert report["strict_metrics"]["e2e_rag_success_strict"]["denominator"] == 0
-    assert output_file_names(output_dir) == ["report.json"]
-
-
-def test_xlsx_pdf_residual_breakdown_classifies_source_derived_failures_without_gold_fields(
-    tmp_path: Path,
-) -> None:
-    dataset = tmp_path / "gold29_xlsx_pdf_probe.jsonl"
-    context = tmp_path / "xlsx_pdf_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_pdf_residual_breakdown"
-    write_jsonl(
-        dataset,
-        [
-            {
-                "id": "xlsx-axis-missing",
-                "query": "2019년 2월 5호선 승차총승객수는 얼마야?",
-                "answerability": "answerable",
-                "track": "xlsx_business_structured",
-            },
-            {
-                "id": "pdf-axis-missing",
-                "query": "2024년 영업이익 표의 값은 얼마야?",
-                "answerability": "answerable",
-                "track": "pdf_business_ocr_mm",
-            },
-        ],
-    )
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "xlsx-axis-missing",
-                "generated_answer": "15,446,522명",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-xlsx",
-                        "chunk_id": "chunk-xlsx",
-                        "source_atom_id": "src-xlsx",
-                        "evidence_bundle_id": "bundle-xlsx",
-                        "source_family": "XLSX",
-                        "granularity": "table_row",
-                        "text": "2019년 2월 값은 15,446,522명입니다.",
-                        "sheet": "2019년 2월",
-                    }
-                ],
-                "citations": [
-                    {
-                        "doc_id": "doc-xlsx",
-                        "chunk_id": "chunk-xlsx",
-                        "source_atom_id": "src-xlsx",
-                        "evidence_bundle_id": "bundle-xlsx",
-                        "text": "2019년 2월 값은 15,446,522명입니다.",
-                    }
-                ],
-            },
-            {
-                "id": "pdf-axis-missing",
-                "generated_answer": "12.3억원",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-pdf",
-                        "chunk_id": "chunk-pdf",
-                        "source_atom_id": "src-pdf",
-                        "evidence_bundle_id": "bundle-pdf",
-                        "source_family": "PDF",
-                        "granularity": "page_text",
-                        "text": "2024년 값은 12.3억원입니다.",
-                        "page_number": 7,
-                    }
-                ],
-                "citations": [
-                    {
-                        "doc_id": "doc-pdf",
-                        "chunk_id": "chunk-pdf",
-                        "source_atom_id": "src-pdf",
-                        "evidence_bundle_id": "bundle-pdf",
-                        "text": "2024년 값은 12.3억원입니다.",
-                    }
-                ],
-            },
-        ],
-    )
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="xlsx_pdf_residual_breakdown",
-        output_mode="single",
-        evidence_gate_mode="enforce",
-        answer_composer="selected-evidence-deterministic-v1",
-    )
-
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    breakdown = report["xlsx_pdf_residual_breakdown"]
-    assert breakdown["schema_version"] == "actual_rag_eval.xlsx_pdf_residual_breakdown.v1"
-    assert breakdown["enabled"] is True
-    assert breakdown["report_only_diagnostic"] is True
-    assert breakdown["official_metric"] is False
-    assert breakdown["official_metric_input_rows"] == 0
-    assert breakdown["uses_expected_fields"] is False
-    assert breakdown["uses_gold_fields"] is False
-    assert breakdown["uses_qrels"] is False
-    assert breakdown["uses_labels"] is False
-    assert breakdown["uses_ids"] is False
-    assert breakdown["classification_counts"] == {"selected_evidence_has_value_missing_axis": 2}
-    rows_by_id = {row["item_id"]: row for row in breakdown["rows"]}
-    assert rows_by_id["xlsx-axis-missing"]["source_family"] == "XLSX"
-    assert rows_by_id["xlsx-axis-missing"]["source_axis_fields_present"] == ["sheet"]
-    assert rows_by_id["xlsx-axis-missing"]["source_axis_fields_missing"] == [
-        "cell",
-        "cell_range",
-        "column_label",
-        "header",
-        "header_path",
-        "row_index_1based",
-        "row_label",
-        "table_id",
-        "target_column",
-    ]
-    assert rows_by_id["pdf-axis-missing"]["source_family"] == "PDF"
-    assert rows_by_id["pdf-axis-missing"]["source_axis_fields_present"] == ["page_number"]
-    assert rows_by_id["pdf-axis-missing"]["source_axis_fields_missing"] == [
-        "bbox",
-        "block_index",
-        "column_label",
-        "row_label",
-        "section_title",
-        "table_caption",
-    ]
-    assert output_file_names(output_dir) == ["report.json"]
-
-
-def test_xlsx_pdf_residual_breakdown_rejects_forbidden_shortcut_fields(tmp_path: Path) -> None:
-    dataset = tmp_path / "forbidden_shortcuts.jsonl"
-    context = tmp_path / "forbidden_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_pdf_forbidden_shortcuts"
-    forbidden_fields = {
-        "expected_answer": "15,446,522명",
-        "expected_evidence": [{"chunk_id": "gold-chunk", "text": "5호선 승차총승객수"}],
-        "qrels": {"doc-xlsx": 1},
-        "labels": ["answerable"],
-        "query_id": "gold-query-id",
-        "row_id": "gold-row-id",
-        "target_id": "gold-target-id",
-        "gold_locator": "Sheet1!B7",
-        "target_locator": "Sheet1!B7",
-        "normalized_value": "15446522",
-        "formula": "=SUM(B1:B6)",
-    }
-    write_jsonl(
-        dataset,
-        [
-            {
-                "id": "forbidden-xlsx",
-                "query": "2019년 2월 5호선 승차총승객수는 얼마야?",
-                "answerability": "answerable",
-                "track": "xlsx_business_structured",
-                **forbidden_fields,
-            }
-        ],
-    )
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "forbidden-xlsx",
-                "generated_answer": "15,446,522명",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-xlsx",
-                        "chunk_id": "chunk-xlsx",
-                        "source_atom_id": "src-xlsx",
-                        "evidence_bundle_id": "bundle-xlsx",
-                        "source_family": "XLSX",
-                        "text": "이 문장은 질의 축이나 값 근거를 제공하지 않습니다.",
-                        **forbidden_fields,
-                    }
-                ],
-                "citations": [],
-            }
-        ],
-    )
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="xlsx_pdf_forbidden_shortcuts",
-        output_mode="single",
-        evidence_gate_mode="enforce",
-        answer_composer="selected-evidence-deterministic-v1",
-    )
-
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    breakdown = report["xlsx_pdf_residual_breakdown"]
-    row = breakdown["rows"][0]
-    assert breakdown["uses_expected_fields"] is False
-    assert breakdown["uses_gold_fields"] is False
-    assert breakdown["uses_qrels"] is False
-    assert breakdown["uses_labels"] is False
-    assert breakdown["uses_ids"] is False
-    assert breakdown["forbidden_shortcut_fields_used"] == []
-    assert row["classification"] in {"candidate_present_anchor_missing", "selected_evidence_absent"}
-    ignored_fields = set(row["forbidden_shortcut_fields_ignored"])
-    assert set(forbidden_fields).issubset(ignored_fields)
-    assert ignored_fields.issubset({*forbidden_fields, "answerability"})
-    assert set(forbidden_fields).issubset(set(breakdown["forbidden_shortcut_fields_seen"]))
-    assert row["forbidden_shortcut_fields_used"] == []
-    row_payload = json.dumps(row, ensure_ascii=False)
-    assert "15446522" not in row_payload
-    assert "=SUM" not in row_payload
-    assert "gold-query-id" not in row_payload
-    assert output_file_names(output_dir) == ["report.json"]
-
-
-def test_xlsx_pdf_residual_breakdown_excludes_supported_allowed_rows() -> None:
-    row = {
-        "id": "supported-xlsx",
-        "generated_answer": "15,446,522명",
-        "evidence_gate": {
-            "evidence_package_status": "sufficient",
-            "answer_gate_decision": "allow_answer",
-            "validation_reasons": [],
-            "retrieved_evidence_candidates": [
-                {
-                    "source_family": "XLSX",
-                    "text": "2019년 2월 5호선 승차총승객수는 15,446,522명입니다.",
-                    "sheet": "2019년 2월",
-                    "cell_range": "A7:J7",
-                    "cell": "F7",
-                    "row_index_1based": "7",
-                    "row_label": "5호선",
-                    "column_label": "승차총승객수",
-                    "target_column": "승차총승객수",
-                    "header_path": "승하차 > 승차총승객수",
-                    "table_id": "sheet-201902-main-table",
-                }
-            ],
-            "selected_evidence": [
-                {
-                    "source_family": "XLSX",
-                    "text": "2019년 2월 5호선 승차총승객수는 15,446,522명입니다.",
-                    "sheet": "2019년 2월",
-                    "cell_range": "A7:J7",
-                    "cell": "F7",
-                    "row_index_1based": "7",
-                    "row_label": "5호선",
-                    "column_label": "승차총승객수",
-                    "target_column": "승차총승객수",
-                    "header_path": "승하차 > 승차총승객수",
-                    "table_id": "sheet-201902-main-table",
-                }
-            ],
-        },
-    }
-
-    breakdown = actual_rag_eval.build_xlsx_pdf_residual_breakdown(items=[], rows=[row])
-
-    assert breakdown["classification_counts"] == {}
-    assert breakdown["rows"] == []
-    assert breakdown["excluded_classification_counts"] == {"no_residual": 1}
-    assert breakdown["uses_ids"] is False
-
-
-def test_xlsx_pdf_residual_breakdown_does_not_use_item_id_track_fallback() -> None:
-    item = actual_rag_eval.EvalItem(
-        id="track-only-xlsx",
-        query="2019년 2월 5호선 승차총승객수는 얼마야?",
-        source_row={"track": "xlsx_business_structured"},
-    )
-    row = {
-        "id": "track-only-xlsx",
-        "generated_answer": "제공된 근거만으로는 답할 수 없습니다.",
-        "evidence_gate": {
-            "evidence_package_status": "insufficient",
-            "answer_gate_decision": "block_answer",
-            "validation_reasons": ["missing_query_anchor"],
-            "retrieved_evidence_candidates": [],
-            "selected_evidence": [],
-        },
-    }
-
-    breakdown = actual_rag_eval.build_xlsx_pdf_residual_breakdown(items=[item], rows=[row])
-
-    assert breakdown["uses_ids"] is False
-    assert breakdown["classification_counts"] == {}
-    assert breakdown["rows"] == []
-    assert breakdown["excluded_classification_counts"] == {"not_xlsx_pdf": 1}
-
-
-def test_xlsx_pdf_residual_breakdown_date_only_text_is_not_value_evidence() -> None:
-    row = {
-        "id": "xlsx-date-only",
-        "generated_answer": "2019년 2월 5호선입니다.",
-        "evidence_gate": {
-            "evidence_package_status": "insufficient",
-            "answer_gate_decision": "block_answer",
-            "validation_reasons": ["missing_numeric_or_date_anchor"],
-            "retrieved_evidence_candidates": [
-                {
-                    "source_family": "XLSX",
-                    "text": "2019년 2월 5호선 행입니다.",
-                    "sheet": "2019년 2월",
-                    "row_label": "5호선",
-                }
-            ],
-            "selected_evidence": [
-                {
-                    "source_family": "XLSX",
-                    "text": "2019년 2월 5호선 행입니다.",
-                    "sheet": "2019년 2월",
-                    "row_label": "5호선",
-                }
-            ],
-        },
-    }
-
-    breakdown = actual_rag_eval.build_xlsx_pdf_residual_breakdown(items=[], rows=[row])
-
-    assert breakdown["classification_counts"] == {"selected_evidence_has_axis_missing_value": 1}
-    assert breakdown["rows"][0]["classification"] == "selected_evidence_has_axis_missing_value"
-    assert breakdown["rows"][0]["selected_evidence_value_anchor_present"] is False
-
-
-def test_select_composer_evidence_uses_source_derived_xlsx_metadata_without_shortcuts() -> None:
-    selected = select_composer_evidence(
-        "2019년 2월 5호선 승차총승객수는 얼마야?",
-        [
-            {
-                "doc_id": "doc-xlsx",
-                "chunk_id": "chunk-row",
-                "source_atom_id": "src-row",
-                "evidence_bundle_id": "bundle-row",
-                "source_family": "XLSX",
-                "granularity": "table_row",
-                "text": "15,446,522명",
-                "sheet": "2019년 2월",
-                "row_label": "5호선",
-                "column_label": "승차총승객수",
-                "source_workbook": "서울교통공사_월별_승하차.xlsx",
-                "normalized_value": "15446522",
-                "formula": "=SUM(A1:A3)",
-            }
-        ],
-    )
-
-    assert len(selected) == 1
-    evidence = selected[0]
-    assert evidence["source_atom_id"] == "src-row"
-    metadata_text = evidence["composer_source_derived_metadata_text"]
-    assert "2019년 2월" in metadata_text
-    assert "5호선" in metadata_text
-    assert "승차총승객수" in metadata_text
-    assert "서울교통공사_월별_승하차.xlsx" not in metadata_text
-    assert "15446522" not in metadata_text
-    assert "=SUM" not in metadata_text
-    assert evidence["composer_source_derived_metadata_fields"] == ["sheet", "row_label", "column_label"]
-    assert evidence["composer_query_anchor_hits"] == ["2019년", "2월", "5호선", "승차총승객수"]
-
-
-def test_evidence_gate_uses_source_owned_xlsx_display_value_as_value_axis() -> None:
-    validation = validate_evidence_package_for_gate(
-        {
-            "query": "2019년 2월 5호선 승차총승객수",
-            "generated_answer": "15,446,522명",
-            "retrieved_contexts": [
-                {
-                    "doc_id": "doc-xlsx",
-                    "chunk_id": "chunk-display-value",
-                    "source_atom_id": "src-display-value",
-                    "evidence_bundle_id": "bundle-display-value",
-                    "source_family": "XLSX",
-                    "granularity": "table_row",
-                    "text": "2019년 2월 5호선 승차총승객수 행입니다.",
-                    "sheet": "2019년 2월",
-                    "cell_range": "A7:J7",
-                    "row_label": "5호선",
-                    "target_column": "승차총승객수",
-                    "header_path": "승하차 > 승차총승객수",
-                    "table_id": "sheet-201902-main-table",
-                    "display_value": "15,446,522명",
-                }
-            ],
-            "citations": [],
-        }
-    )
-
-    assert validation["evidence_package_status"] == "sufficient"
-    assert validation["missing_answer_anchors"] == []
-    assert "missing_numeric_or_date_anchor" not in validation["validation_reasons"]
-    selected = validation["selected_evidence"][0]
-    assert selected["display_value"] == "15,446,522명"
-    assert "display_value=15,446,522명" in actual_rag_eval.source_derived_evidence_metadata(selected)[0]
-
-
-def test_selected_evidence_answer_discipline_allows_clean_supported_core() -> None:
-    discipline = actual_rag_eval._selected_evidence_answer_discipline(
-        query="Where is Apollo HQ?",
-        answer="Apollo HQ is in Seoul.",
-        selected_evidence=[
-            {
-                "doc_id": "doc-hq",
-                "chunk_id": "chunk-hq",
-                "source_atom_id": "src-hq",
-                "evidence_bundle_id": "bundle-hq",
-                "text": "Apollo HQ is in Seoul.",
-            }
-        ],
-        cited_evidence_ids=["bundle-hq"],
-    )
-
-    assert discipline["status"] == "clean_supported"
-    assert discipline["core_answer_supported"] is True
-    assert discipline["unsupported_extra_detail"] is False
-    assert discipline["query_irrelevant_supported_detail"] is False
-    assert discipline["fallback_reason"] == ""
-    assert discipline["unsupported_extra_preview"] == ""
-    assert discipline["query_irrelevant_preview"] == ""
-    assert discipline["input_policy"] == "query_text_selected_evidence_answer_only_no_gold_qrels_labels_ids_or_baseline"
-
-
-def test_selected_evidence_answer_discipline_allows_korean_source_native_rephrasing() -> None:
-    discipline = actual_rag_eval._selected_evidence_answer_discipline(
-        query="2019년 2월 5호선 승차총승객수는 얼마야?",
-        answer="2019년 2월 5호선의 승차총승객수는 15,446,522명입니다.",
-        selected_evidence=[
-            {
-                "doc_id": "doc-xlsx",
-                "chunk_id": "chunk-row",
-                "source_atom_id": "src-xlsx",
-                "evidence_bundle_id": "bundle-xlsx",
-                "source_family": "XLSX",
-                "text": "2019년 2월 5호선 승차총승객수 행입니다.",
-                "sheet": "2019년 2월",
-                "row_label": "5호선",
-                "target_column": "승차총승객수",
-                "display_value": "15,446,522명",
-            }
-        ],
-        cited_evidence_ids=["bundle-xlsx"],
-    )
-
-    assert discipline["status"] == "clean_supported"
-    assert discipline["core_answer_supported"] is True
-    assert discipline["unsupported_extra_detail"] is False
-    assert discipline["query_irrelevant_supported_detail"] is False
-    assert discipline["fallback_reason"] == ""
-
-
-def test_selected_evidence_answer_discipline_allows_source_native_display_value_focus() -> None:
-    discipline = actual_rag_eval._selected_evidence_answer_discipline(
-        query="2012년 3월에 지정된 해오름요양원의 기관별 상세주소는 무엇입니까?",
-        answer="대구광역시 수성구 파동로51길 96 (파동)",
-        selected_evidence=[
-            {
-                "doc_id": "doc-xlsx-address",
-                "chunk_id": "chunk-address",
-                "source_atom_id": "src-address",
-                "evidence_bundle_id": "bundle-address",
-                "source_family": "XLSX",
-                "text": (
-                    "row_label=해오름요양원 | target_column=기관별 상세주소 | "
-                    "display_value=대구광역시 수성구 파동로51길 96 (파동) | source_date_alias=2012년 3월"
-                ),
-                "row_label": "해오름요양원",
-                "target_column": "기관별 상세주소",
-                "header": "기관별 상세주소",
-                "display_value": "대구광역시 수성구 파동로51길 96 (파동)",
-            }
-        ],
-        cited_evidence_ids=["bundle-address"],
-    )
-
-    assert discipline["status"] == "clean_supported"
-    assert discipline["core_answer_supported"] is True
-    assert discipline["query_irrelevant_supported_detail"] is False
-
-
-def test_selected_evidence_answer_discipline_rejects_off_focus_source_native_display_value() -> None:
-    discipline = actual_rag_eval._selected_evidence_answer_discipline(
-        query="What are Mika's age and birthday?",
-        answer="160cm",
-        selected_evidence=[
-            {
-                "doc_id": "doc-profile-xlsx",
-                "chunk_id": "chunk-profile-xlsx",
-                "source_atom_id": "src-profile-xlsx",
-                "evidence_bundle_id": "bundle-profile-xlsx",
-                "source_family": "XLSX",
-                "text": "age=17 | birthday=May 8 | height=160cm",
-                "row_label": "Mika",
-                "target_column": "height",
-                "header": "height",
-                "display_value": "160cm",
-            }
-        ],
-        cited_evidence_ids=["bundle-profile-xlsx"],
-    )
-
-    assert discipline["status"] == "true_insufficient_evidence"
-    assert discipline["core_answer_supported"] is False
-    assert discipline["query_irrelevant_supported_detail"] is False
-
-
-def test_selected_evidence_answer_discipline_flags_unsupported_extra_detail(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    direct = actual_rag_eval._selected_evidence_answer_discipline(
-        query="Where is Apollo HQ?",
-        answer="Apollo HQ is in Seoul. CEO is Dana.",
-        selected_evidence=[
-            {
-                "doc_id": "doc-hq",
-                "chunk_id": "chunk-hq",
-                "source_atom_id": "src-hq",
-                "evidence_bundle_id": "bundle-hq",
-                "text": "Apollo HQ is in Seoul.",
-            }
-        ],
-        cited_evidence_ids=["bundle-hq"],
-    )
-    assert direct["status"] == "supported_core_with_unsupported_extra"
-    assert direct["core_answer_supported"] is True
-    assert direct["unsupported_extra_detail"] is True
-    assert "Dana" in direct["unsupported_extra_preview"]
-
-    dataset = tmp_path / "selected_local_llm_unsupported_extra_gold.jsonl"
-    context = tmp_path / "selected_local_llm_unsupported_extra_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_unsupported_extra"
-    write_jsonl(dataset, [{"id": "q-extra", "query": "Where is Apollo HQ?", "answerability": "answerable"}])
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "q-extra",
-                "generated_answer": "legacy answer must not drive discipline",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-hq",
-                        "chunk_id": "chunk-hq",
-                        "source_atom_id": "src-hq",
-                        "evidence_bundle_id": "bundle-hq",
-                        "source_family": "TEXT",
-                        "text": "Apollo HQ is in Seoul.",
-                    }
-                ],
-                "citations": [],
-            }
-        ],
-    )
-    calls: list[str] = []
-
-    def fake_blockers(**_kwargs: object) -> list[str]:
-        return []
-
-    def fake_call(**kwargs: object) -> tuple[dict, dict]:
-        calls.append(str(kwargs["prompt"]))
-        if len(calls) == 1:
-            return (
-                {"answer": "Apollo HQ is in Seoul. CEO is Dana.", "citation_evidence_ids": ["bundle-hq"]},
-                {
-                    "raw_response_sha256": "sha256:unsupported-extra",
-                    "raw_response": "SECRET_UNSUPPORTED_EXTRA_RAW_RESPONSE",
-                    "raw_prompt_payload": {"secret": "SECRET_UNSUPPORTED_EXTRA_PROMPT"},
-                },
-            )
-        return (
-            {"answer": "Apollo HQ is in Seoul.", "citation_evidence_ids": ["bundle-hq"]},
-            {
-                "raw_response_sha256": "sha256:clean-retry",
-                "raw_response": "SECRET_RETRY_RAW_RESPONSE",
-                "raw_prompt_payload": {"secret": "SECRET_RETRY_PROMPT"},
-            },
-        )
-
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="selected_local_llm_unsupported_extra",
-        output_mode="single",
-        evidence_gate_mode="enforce",
-        answer_composer="selected-evidence-local-llm-v1",
-        selected_evidence_citation_format="evidence-id",
-        selected_evidence_composer_retry_mode="bounded-once",
-    )
-
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    row = report["items"][0]
-    retry = row["answer_composer"]["retry"]
-    assert len(calls) == 2
-    assert row["generated_answer"] == "Apollo HQ is in Seoul."
-    assert row["answer_gate_decision"] == "allow_answer"
-    assert row["answer_composer"]["answer_discipline"]["status"] == "clean_supported"
-    assert retry["trigger"] == "answer_discipline_supported_core_with_unsupported_extra"
-    assert retry["initial_answer_discipline_status"] == "supported_core_with_unsupported_extra"
-    assert report["generator_config"]["unsupported_extra_detail_count"] == 1
-    assert report["generator_config"]["local_llm_fallback_reason_counts"] == {
-        "answer_discipline_supported_core_with_unsupported_extra": 1
-    }
-    encoded_report = json.dumps(report, ensure_ascii=False)
-    assert "SECRET_UNSUPPORTED_EXTRA_RAW_RESPONSE" not in encoded_report
-    assert "SECRET_UNSUPPORTED_EXTRA_PROMPT" not in encoded_report
-    assert "SECRET_RETRY_RAW_RESPONSE" not in encoded_report
-    assert "SECRET_RETRY_PROMPT" not in encoded_report
-    assert '"raw_prompt_payload":' not in encoded_report
-    assert '"raw_response":' not in encoded_report
-
-
-def test_selected_evidence_answer_discipline_flags_query_irrelevant_supported_detail(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    evidence_text = (
-        "Mika profile: age 17. Birthday May 8. Height 160cm. Blood type B. "
-        "Weapon rifle. Favorite food curry."
-    )
-    direct = actual_rag_eval._selected_evidence_answer_discipline(
-        query="What are Mika's age and birthday?",
-        answer="Mika is 17, birthday May 8, height 160cm, blood type B, weapon rifle, and favorite food curry.",
-        selected_evidence=[
-            {
-                "doc_id": "doc-mika",
-                "chunk_id": "chunk-profile",
-                "source_atom_id": "src-mika",
-                "evidence_bundle_id": "bundle-mika",
-                "text": evidence_text,
-            }
-        ],
-        cited_evidence_ids=["bundle-mika"],
-    )
-    assert direct["status"] == "query_irrelevant_supported_detail"
-    assert direct["core_answer_supported"] is True
-    assert direct["query_irrelevant_supported_detail"] is True
-    assert "height" in direct["query_irrelevant_preview"].lower()
-
-    dataset = tmp_path / "selected_local_llm_query_irrelevant_gold.jsonl"
-    context = tmp_path / "selected_local_llm_query_irrelevant_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_query_irrelevant"
-    write_jsonl(
-        dataset,
-        [{"id": "q-focus", "query": "What are Mika's age and birthday?", "answerability": "answerable"}],
-    )
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "q-focus",
-                "generated_answer": "legacy profile summary must not drive discipline",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-mika",
-                        "chunk_id": "chunk-profile",
-                        "source_atom_id": "src-mika",
-                        "evidence_bundle_id": "bundle-mika",
-                        "source_family": "TEXT",
-                        "text": evidence_text,
-                    }
-                ],
-                "citations": [],
-            }
-        ],
-    )
-    calls: list[str] = []
-
-    def fake_blockers(**_kwargs: object) -> list[str]:
-        return []
-
-    def fake_call(**kwargs: object) -> tuple[dict, dict]:
-        calls.append(str(kwargs["prompt"]))
-        if len(calls) == 1:
-            return (
-                {
-                    "answer": (
-                        "Mika is 17, birthday May 8, height 160cm, blood type B, "
-                        "weapon rifle, and favorite food curry."
-                    ),
-                    "citation_evidence_ids": ["bundle-mika"],
-                },
-                {"raw_response_sha256": "sha256:query-irrelevant"},
-            )
-        return (
-            {"answer": "Mika is 17 and her birthday is May 8.", "citation_evidence_ids": ["bundle-mika"]},
-            {"raw_response_sha256": "sha256:focused-retry"},
-        )
-
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="selected_local_llm_query_irrelevant",
-        output_mode="single",
-        evidence_gate_mode="enforce",
-        answer_composer="selected-evidence-local-llm-v1",
-        selected_evidence_citation_format="evidence-id",
-        selected_evidence_composer_retry_mode="bounded-once",
-    )
-
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    row = report["items"][0]
-    retry = row["answer_composer"]["retry"]
-    assert len(calls) == 2
-    assert row["generated_answer"] == "Mika is 17 and her birthday is May 8."
-    assert "height" not in row["generated_answer"].lower()
-    assert "blood type" not in row["generated_answer"].lower()
-    assert row["answer_composer"]["answer_discipline"]["status"] == "clean_supported"
-    assert retry["trigger"] == "answer_discipline_query_irrelevant_supported_detail"
-    assert retry["initial_answer_discipline_status"] == "query_irrelevant_supported_detail"
-    assert report["generator_config"]["query_irrelevant_supported_detail_count"] == 1
-
-
-def test_selected_evidence_local_llm_concise_answer_not_replaced_by_overexpanded_fallback(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    dataset = tmp_path / "selected_local_llm_concise_gold.jsonl"
-    context = tmp_path / "selected_local_llm_concise_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_concise"
-    write_jsonl(dataset, [{"id": "q-concise", "query": "Where is Apollo HQ?", "answerability": "answerable"}])
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "q-concise",
-                "generated_answer": "legacy profile summary",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-hq",
-                        "chunk_id": "chunk-hq",
-                        "source_atom_id": "src-hq",
-                        "evidence_bundle_id": "bundle-hq",
-                        "source_family": "TEXT",
-                        "text": "Apollo HQ is in Seoul. Apollo also has a regional office in Busan.",
-                    }
-                ],
-                "citations": [],
-            }
-        ],
-    )
-    call_count = 0
-
-    def fake_blockers(**_kwargs: object) -> list[str]:
-        return []
-
-    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
-        nonlocal call_count
-        call_count += 1
-        return (
-            {"answer": "Apollo HQ is in Seoul.", "citation_evidence_ids": ["bundle-hq"]},
-            {"raw_response_sha256": "sha256:concise"},
-        )
-
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="selected_local_llm_concise",
-        output_mode="single",
-        evidence_gate_mode="enforce",
-        answer_composer="selected-evidence-local-llm-v1",
-        selected_evidence_composer_retry_mode="bounded-once",
-    )
-
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    row = report["items"][0]
-    assert call_count == 1
-    assert row["generated_answer"] == "Apollo HQ is in Seoul."
-    assert "Busan" not in row["generated_answer"]
-    assert row["answer_composer"]["local_llm_fallback_used"] is False
-    assert row["answer_composer"]["local_llm"]["status"] == "generated"
-    assert row["answer_composer"]["retry"]["status"] == "not_triggered"
-    assert row["answer_composer"]["retry"]["reason"] == "answer_discipline_clean_supported"
-    assert report["generator_config"]["local_llm_acceptance_rate"] == 1.0
-    assert report["generator_config"]["local_llm_rejected_then_deterministic_overexpanded_count"] == 0
-
-
-def test_selected_evidence_local_llm_clean_rejected_output_uses_focused_fallback(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    dataset = tmp_path / "selected_local_llm_clean_rejected_gold.jsonl"
-    context = tmp_path / "selected_local_llm_clean_rejected_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_clean_rejected"
-    evidence_text = (
-        "Mika profile: age 17. Birthday May 8. Height 160cm. Blood type B. "
-        "Weapon rifle. Favorite food curry."
-    )
-    write_jsonl(
-        dataset,
-        [
-            {
-                "id": "q-clean-rejected",
-                "query": "What are Mika's age and birthday?",
-                "answerability": "answerable",
-                "expected_answer": "SECRET_GOLD_ANSWER_NEVER_GENERATE",
-                "expected_evidence": [{"text": "SECRET_GOLD_EVIDENCE_NEVER_GENERATE"}],
-                "qrels": {"SECRET_QREL_DOC_NEVER_GENERATE": 1},
-                "labels": ["SECRET_LABEL_NEVER_GENERATE"],
-            }
-        ],
-    )
-    prompts: list[str] = []
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "q-clean-rejected",
-                "generated_answer": "legacy profile summary must not drive discipline",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-mika",
-                        "chunk_id": "chunk-profile",
-                        "source_atom_id": "src-mika",
-                        "evidence_bundle_id": "bundle-mika",
-                        "source_family": "TEXT",
-                        "text": evidence_text,
-                    }
-                ],
-                "citations": [],
-            }
-        ],
-    )
-
-    def fake_blockers(**_kwargs: object) -> list[str]:
-        return []
-
-    def fake_call(**kwargs: object) -> tuple[dict, dict]:
-        prompts.append(str(kwargs.get("prompt")))
-        return (
-            {"answer": "Mika is 17 and her birthday is May 8.", "citation_evidence_ids": ["bundle-mika"]},
-            {
-                "raw_response_sha256": "sha256:clean-rejected",
-                "raw_prompt_payload": {"secret": "SECRET_CLEAN_REJECTED_PROMPT"},
-                "raw_response": "SECRET_CLEAN_REJECTED_RAW_RESPONSE",
-            },
-        )
-
-    original_gate_select = actual_rag_eval._gate_select_evidence
-
-    def reject_clean_local_answer(**kwargs: object) -> list[dict[str, object]]:
-        if kwargs.get("answer") == "Mika is 17 and her birthday is May 8.":
-            return []
-        return original_gate_select(**kwargs)  # type: ignore[arg-type]
-
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
-    monkeypatch.setattr(actual_rag_eval, "_gate_select_evidence", reject_clean_local_answer)
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="selected_local_llm_clean_rejected",
-        output_mode="single",
-        evidence_gate_mode="enforce",
-        answer_composer="selected-evidence-local-llm-v1",
-        selected_evidence_citation_format="evidence-id",
-    )
-
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    row = report["items"][0]
-    composer = row["answer_composer"]
-    config = report["generator_config"]
-    assert composer["local_llm"]["status"] == "unsupported_or_empty_deterministic_fallback"
-    assert composer["initial_answer_discipline"]["status"] == "clean_supported"
-    assert composer["answer_discipline"]["status"] == "clean_supported"
-    assert "age 17" in row["generated_answer"]
-    assert "Birthday May 8" in row["generated_answer"]
-    assert "height" not in row["generated_answer"].lower()
-    assert "blood type" not in row["generated_answer"].lower()
-    assert config["local_llm_rejected_then_deterministic_overexpanded_count"] == 0
-    assert config["query_irrelevant_supported_detail_count"] == 0
-    assert config["answer_overexpansion_count_diagnostic"] == 0
-    assert config["local_llm_clean_answer_output_rejected_count"] == 1
-    assert config["local_llm_final_answer_discipline_status_counts"] == {"clean_supported": 1}
-    assert config["expected_answer_used_for_generation"] is False
-    assert config["expected_evidence_used_for_generation"] is False
-    assert config["local_llm_prompt_payload_written"] is False
-    assert config["local_llm_raw_response_payload_written"] is False
-    assert composer["uses_expected_answer"] is False
-    assert composer["uses_expected_evidence"] is False
-    assert composer["uses_gold_fields"] is False
-    assert composer["uses_qrels"] is False
-    assert composer["uses_labels"] is False
-    assert report["raw_prompt_payload_written"] is False
-    assert report["raw_response_payload_written"] is False
-    prompt_text = "\n".join(prompts)
-    assert "SECRET_GOLD_ANSWER_NEVER_GENERATE" not in prompt_text
-    assert "SECRET_GOLD_EVIDENCE_NEVER_GENERATE" not in prompt_text
-    assert "SECRET_QREL_DOC_NEVER_GENERATE" not in prompt_text
-    assert "SECRET_LABEL_NEVER_GENERATE" not in prompt_text
-    generated_and_composer = json.dumps(
-        {"generated_answer": row["generated_answer"], "answer_composer": composer},
-        ensure_ascii=False,
-    )
-    assert "SECRET_GOLD_ANSWER_NEVER_GENERATE" not in generated_and_composer
-    assert "SECRET_GOLD_EVIDENCE_NEVER_GENERATE" not in generated_and_composer
-    assert "SECRET_QREL_DOC_NEVER_GENERATE" not in generated_and_composer
-    assert "SECRET_LABEL_NEVER_GENERATE" not in generated_and_composer
-    encoded_report = json.dumps(report, ensure_ascii=False)
-    assert "SECRET_CLEAN_REJECTED_PROMPT" not in encoded_report
-    assert "SECRET_CLEAN_REJECTED_RAW_RESPONSE" not in encoded_report
-    assert '"raw_prompt_payload":' not in encoded_report
-    assert '"raw_response":' not in encoded_report
-
-
-def test_run_eval_selected_evidence_local_llm_answer_discipline_metrics_are_reported_without_raw_payloads(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    dataset = tmp_path / "selected_local_llm_discipline_metrics_gold.jsonl"
-    context = tmp_path / "selected_local_llm_discipline_metrics_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_discipline_metrics"
-    write_jsonl(dataset, [{"id": "q-metrics", "query": "Where is Apollo HQ?", "answerability": "answerable"}])
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "q-metrics",
-                "generated_answer": "legacy answer",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-hq",
-                        "chunk_id": "chunk-hq",
-                        "source_atom_id": "src-hq",
-                        "evidence_bundle_id": "bundle-hq",
-                        "source_family": "TEXT",
-                        "text": "Apollo HQ is in Seoul.",
-                    }
-                ],
-                "citations": [],
-            }
-        ],
-    )
-
-    def fake_blockers(**_kwargs: object) -> list[str]:
-        return []
-
-    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
-        return (
-            {"answer": "Apollo HQ is in Seoul.", "citation_evidence_ids": ["bundle-hq"]},
-            {"raw_response_sha256": "sha256:metrics"},
-        )
-
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="selected_local_llm_discipline_metrics",
-        output_mode="single",
-        evidence_gate_mode="diagnostic",
-        answer_composer="selected-evidence-local-llm-v1",
-    )
-
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    config = report["generator_config"]
-    discipline = report["items"][0]["answer_composer"]["answer_discipline"]
-    assert discipline["status"] == "clean_supported"
-    assert config["local_llm_acceptance_rate"] == 1.0
-    assert config["local_llm_fallback_reason_counts"] == {}
-    assert config["answer_overexpansion_count_diagnostic"] == 0
-    assert config["unsupported_extra_detail_count"] == 0
-    assert config["query_irrelevant_supported_detail_count"] == 0
-    assert config["local_llm_rejected_then_deterministic_overexpanded_count"] == 0
-    assert config["citation_id_mismatch_or_missing_count"] == 0
-    assert config["anchor_morphology_false_negative_count"] == 0
-    assert config["local_llm_prompt_payload_written"] is False
-    assert config["local_llm_raw_response_payload_written"] is False
-    assert report["raw_prompt_payload_written"] is False
-    assert report["raw_response_payload_written"] is False
-    encoded_report = json.dumps(report, ensure_ascii=False)
-    assert '"raw_prompt_payload":' not in encoded_report
-    assert '"raw_response_payload":' not in encoded_report
-    assert '"prompt":' not in encoded_report
-    assert '"raw_response":' not in encoded_report
-
-
-def test_run_eval_selected_evidence_local_llm_composer_unavailable_falls_back_without_raw_payloads(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    dataset = tmp_path / "selected_local_llm_gold.jsonl"
-    context = tmp_path / "selected_local_llm_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_unavailable"
-    write_jsonl(
-        dataset,
-        [{"id": "q-local-llm", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
-    )
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "q-local-llm",
-                "generated_answer": "extractive-v1 broad answer from every context",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-hq",
-                        "chunk_id": "chunk-hq",
-                        "source_atom_id": "src-hq",
-                        "evidence_bundle_id": "bundle-hq",
-                        "source_family": "TEXT",
-                        "text": "Apollo HQ is in Seoul.",
-                        "text_sha256": "hash-hq",
-                    }
-                ],
-                "citations": [],
-            }
-        ],
-    )
-
-    def fake_blockers(**_kwargs: object) -> list[str]:
-        return ["LOCAL_LLM_UNAVAILABLE: connection refused"]
-
-    def unexpected_call(**_kwargs: object) -> tuple[dict, dict]:
-        raise AssertionError("local LLM should not be called when availability check fails")
-
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", unexpected_call)
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="selected_local_llm_unavailable",
-        output_mode="single",
-        evidence_gate_mode="enforce",
-        answer_composer="selected-evidence-local-llm-v1",
-    )
-
-    assert output_file_names(output_dir) == ["report.json"]
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    row = report["items"][0]
-    config = report["generator_config"]
-    local_meta = row["answer_composer"]["local_llm"]
-    assert config["provider"] == "selected-evidence-local-llm-v1"
-    assert config["local_llm_generation_available"] is False
-    assert config["local_llm_composer_fallback_used"] is True
-    assert config["local_llm_not_used_reason"] == "local_llm_unavailable_deterministic_fallback"
-    assert config["local_llm_blockers"] == ["LOCAL_LLM_UNAVAILABLE: connection refused"]
-    assert config["actual_generation_model_used"] is False
-    assert config["external_api_calls"] is False
-    assert "Seoul" in row["generated_answer"]
-    assert row["answer_composer"]["provider"] == "selected-evidence-local-llm-v1"
-    assert local_meta["status"] == "unavailable_deterministic_fallback"
-    assert local_meta["fallback_provider"] == "selected-evidence-deterministic-v1"
-    assert local_meta["blockers"] == ["LOCAL_LLM_UNAVAILABLE: connection refused"]
-    assert "prompt" not in local_meta
-    assert "raw_response" not in local_meta
-    assert "raw_prompt_payload_written" not in local_meta
-    assert "raw_response_payload_written" not in local_meta
-    assert report["raw_prompt_payload_written"] is False
-    assert report["raw_response_payload_written"] is False
-    assert row["evidence_gate"]["unsupported_answer_blocked"] is False
-
-
-def test_run_eval_selected_evidence_local_llm_composer_available_stores_hashes_and_preview_only(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    dataset = tmp_path / "selected_local_llm_gold.jsonl"
-    context = tmp_path / "selected_local_llm_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_available"
-    write_jsonl(
-        dataset,
-        [{"id": "q-local-llm", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
-    )
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "q-local-llm",
-                "generated_answer": "extractive-v1 broad answer from every context",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-hq",
-                        "chunk_id": "chunk-hq",
-                        "source_atom_id": "src-hq",
-                        "evidence_bundle_id": "bundle-hq",
-                        "source_family": "TEXT",
-                        "text": "Apollo HQ is in Seoul.",
-                        "text_sha256": "hash-hq",
-                    }
-                ],
-                "citations": [],
-            }
-        ],
-    )
-    captured: dict[str, str] = {}
-
-    def fake_blockers(**_kwargs: object) -> list[str]:
-        return []
-
-    def fake_call(**kwargs: object) -> tuple[dict, dict]:
-        prompt = str(kwargs["prompt"])
-        captured["prompt"] = prompt
-        assert "Apollo HQ is in Seoul." in prompt
-        assert "extractive-v1 broad answer" not in prompt
-        return (
-            {
-                "answer": "Apollo HQ is in Seoul.",
-                "citation_evidence_ids": ["bundle-hq"],
-            },
-            {
-                "raw_response_sha256": "sha256:raw-local-response",
-                "strict_json": True,
-            },
-        )
-
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="selected_local_llm_available",
-        output_mode="single",
-        evidence_gate_mode="diagnostic",
-        answer_composer="selected-evidence-local-llm-v1",
-        selected_evidence_citation_format="evidence-id",
-    )
-
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    row = report["items"][0]
-    config = report["generator_config"]
-    local_meta = row["answer_composer"]["local_llm"]
-    assert config["provider"] == "selected-evidence-local-llm-v1"
-    assert config["actual_generation_model_used"] is True
-    assert config["local_llm_generation_available"] is True
-    assert config["local_llm_composer_fallback_used"] is False
-    assert config["local_llm_composer_generated_count"] == 1
-    assert config["local_llm_prompt_payload_written"] is False
-    assert config["local_llm_raw_response_payload_written"] is False
-    assert row["generated_answer"] == "Apollo HQ is in Seoul."
-    assert "**Short answer:**" not in row["generated_answer"]
-    assert "**Supporting passages:**" not in row["generated_answer"]
-    assert row["citations"][0]["evidence_bundle_id"] == "bundle-hq"
-    assert row["answer_composer"]["formatted_citations"] == [
-        "[1] evidence_bundle_id=bundle-hq; source_atom_id=src-hq"
-    ]
-    assert row["answer_composer"]["answer_rendering_policy"] == "local_llm_natural_query_context_sentence"
-    assert row["answer_composer"]["answer_audit_scaffold_in_generated_answer"] is False
-    assert local_meta["status"] == "generated"
-    assert local_meta["prompt_sha256"].startswith("sha256:")
-    assert local_meta["raw_response_sha256"] == "sha256:raw-local-response"
-    assert local_meta["answer_preview"] == "Apollo HQ is in Seoul."
-    assert "prompt" not in local_meta
-    assert "raw_response" not in local_meta
-    assert "raw_prompt_payload_written" not in local_meta
-    assert "raw_response_payload_written" not in local_meta
-    assert captured["prompt"]
-    assert "natural, query-context sentence" in captured["prompt"]
-    assert "Do not return only a terse fragment" in captured["prompt"]
-    assert "Do not include audit headers" in captured["prompt"]
-    assert report["raw_prompt_payload_written"] is False
-    assert report["raw_response_payload_written"] is False
-    assert row["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
-
-
-def test_run_eval_selected_evidence_local_llm_composer_retries_once_after_gate_insufficient(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    dataset = tmp_path / "selected_local_llm_retry_gold.jsonl"
-    context = tmp_path / "selected_local_llm_retry_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_retry"
-    write_jsonl(
-        dataset,
-        [
-            {
-                "id": "q-local-retry",
-                "query": "Where is Apollo HQ?",
-                "answerability": "answerable",
-                "expected_answer": "Forbidden gold answer",
-                "expected_evidence": [{"text": "Forbidden expected evidence"}],
-            }
-        ],
-    )
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "q-local-retry",
-                "generated_answer": "legacy extractive answer must not become retry input",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-hq",
-                        "chunk_id": "chunk-hq",
-                        "source_atom_id": "src-hq",
-                        "evidence_bundle_id": "bundle-hq",
-                        "source_family": "TEXT",
-                        "text": "Apollo HQ is in Seoul.",
-                        "text_sha256": "hash-hq",
-                    }
-                ],
-                "citations": [],
-            }
-        ],
-    )
-    captured_prompts: list[str] = []
-
-    def fake_blockers(**_kwargs: object) -> list[str]:
-        return []
-
-    def fake_call(**kwargs: object) -> tuple[dict, dict]:
-        prompt = str(kwargs["prompt"])
-        captured_prompts.append(prompt)
-        assert "q-local-retry" not in prompt
-        assert "Forbidden gold answer" not in prompt
-        assert "Forbidden expected evidence" not in prompt
-        assert "legacy extractive answer" not in prompt
-        if len(captured_prompts) == 1:
-            return (
-                {"answer": "Apollo HQ is in Seoul and Busan.", "citation_evidence_ids": ["bundle-hq"]},
-                {"raw_response_sha256": "sha256:first"},
-            )
-        return (
-            {"answer": "Apollo HQ is in Seoul.", "citation_evidence_ids": ["bundle-hq"]},
-            {"raw_response_sha256": "sha256:retry"},
-        )
-
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="selected_local_llm_retry",
-        output_mode="single",
-        evidence_gate_mode="enforce",
-        answer_composer="selected-evidence-local-llm-v1",
-        selected_evidence_citation_format="evidence-id",
-        selected_evidence_composer_retry_mode="bounded-once",
-    )
-
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    row = report["items"][0]
-    config = report["generator_config"]
-    retry = row["answer_composer"]["retry"]
-    assert len(captured_prompts) == 2
-    assert "previous_answer_preview" not in captured_prompts[0]
-    assert "Apollo HQ is in Seoul and Busan." in captured_prompts[1]
-    assert config["selected_evidence_composer_retry_mode"] == "bounded-once"
-    assert config["selected_evidence_composer_retry_attempt_count"] == 1
-    assert config["selected_evidence_composer_retry_accepted_count"] == 1
-    assert config["selected_evidence_composer_retry_rejected_count"] == 0
-    assert config["selected_evidence_composer_retry_max_count_per_item"] == 1
-    assert config["selected_evidence_composer_retry_raw_prompt_payload_written"] is False
-    assert config["selected_evidence_composer_retry_raw_response_payload_written"] is False
-    assert retry["enabled"] is True
-    assert retry["attempted"] is True
-    assert retry["attempt_count"] == 1
-    assert retry["status"] == "accepted"
-    assert retry["trigger"] == "evidence_gate_insufficient"
-    assert retry["previous_answer_preview"] == "Apollo HQ is in Seoul and Busan."
-    assert retry["retry_prompt_sha256"].startswith("sha256:")
-    assert retry["retry_raw_response_sha256"] == "sha256:retry"
-    assert "prompt" not in retry
-    assert "raw_response" not in retry
-    assert row["generated_answer"] == "Apollo HQ is in Seoul."
-    assert "**Short answer:**" not in row["generated_answer"]
-    assert row["answer_composer"]["answer_rendering_policy"] == "local_llm_natural_query_context_sentence"
-    assert row["answer_composer"]["answer_audit_scaffold_in_generated_answer"] is False
-    assert row["answer_gate_decision"] == "allow_answer"
-    assert row["evidence_gate"]["unsupported_answer_blocked"] is False
-    assert row["evidence_gate"]["citation_retrieved_context_only_diagnostic_count"] == 0
-    assert report["raw_prompt_payload_written"] is False
-    assert report["raw_response_payload_written"] is False
-
-
-def test_run_eval_selected_evidence_local_llm_composer_does_not_retry_when_gate_allows(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
-    dataset = tmp_path / "selected_local_llm_no_retry_gold.jsonl"
-    context = tmp_path / "selected_local_llm_no_retry_context.jsonl"
-    output_dir = tmp_path / "reports" / "rag_eval" / "selected_local_llm_no_retry"
-    write_jsonl(
-        dataset,
-        [{"id": "q-local-no-retry", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
-    )
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "q-local-no-retry",
-                "generated_answer": "legacy extractive answer",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-hq",
-                        "chunk_id": "chunk-hq",
-                        "source_atom_id": "src-hq",
-                        "evidence_bundle_id": "bundle-hq",
-                        "source_family": "TEXT",
-                        "text": "Apollo HQ is in Seoul.",
-                        "text_sha256": "hash-hq",
-                    }
-                ],
-                "citations": [],
-            }
-        ],
-    )
-    call_count = 0
-
-    def fake_blockers(**_kwargs: object) -> list[str]:
-        return []
-
-    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
-        nonlocal call_count
-        call_count += 1
-        return (
-            {"answer": "Apollo HQ is in Seoul.", "citation_evidence_ids": ["bundle-hq"]},
-            {"raw_response_sha256": "sha256:first"},
-        )
-
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
-    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
-
-    bundle = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=output_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="selected_local_llm_no_retry",
-        output_mode="single",
-        evidence_gate_mode="diagnostic",
-        answer_composer="selected-evidence-local-llm-v1",
-        selected_evidence_composer_retry_mode="bounded-once",
-    )
-
-    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
-    row = report["items"][0]
-    retry = row["answer_composer"]["retry"]
-    assert call_count == 1
-    assert report["generator_config"]["selected_evidence_composer_retry_attempt_count"] == 0
-    assert retry["enabled"] is True
-    assert retry["attempted"] is False
-    assert retry["status"] == "not_triggered"
-    assert retry["reason"] == "answer_discipline_clean_supported"
-    assert row["answer_gate_decision"] == "allow_answer"
-
-
-def test_run_eval_embeds_portfolio_comparison_report_only(tmp_path: Path) -> None:
-    dataset = tmp_path / "portfolio_compare_gold.jsonl"
-    context = tmp_path / "portfolio_compare_context.jsonl"
-    baseline_dir = tmp_path / "reports" / "rag_eval" / "portfolio_compare_extractive"
-    current_dir = tmp_path / "reports" / "rag_eval" / "portfolio_compare_selected"
-    write_jsonl(
-        dataset,
-        [{"id": "q-portfolio", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
-    )
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "q-portfolio",
-                "generated_answer": "Apollo HQ is somewhere in Korea.",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-hq",
-                        "chunk_id": "chunk-hq",
-                        "source_atom_id": "src-hq",
-                        "evidence_bundle_id": "bundle-hq",
-                        "source_family": "TEXT",
-                        "granularity": "paragraph",
-                        "text": "Apollo HQ is in Seoul.",
-                        "text_sha256": "hash-hq",
-                    }
-                ],
-                "citations": [],
-            }
-        ],
-    )
-
-    baseline = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=baseline_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="portfolio_compare_extractive",
-        output_mode="single",
-        evidence_gate_mode="diagnostic",
-    )
-    current = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=current_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="portfolio_compare_selected",
-        output_mode="single",
-        evidence_gate_mode="enforce",
-        answer_composer="selected-evidence-deterministic-v1",
-        selected_evidence_citation_format="markdown-portfolio",
-        portfolio_comparison_reports=[f"extractive={baseline.report_path}"],
-    )
-
-    report = json.loads(current.report_path.read_text(encoding="utf-8"))
-    comparison = report["portfolio_experiment_comparison"]
-    assert output_file_names(current_dir) == ["report.json"]
-    assert report["artifact_contract"]["portfolio_experiment_sidecar_written"] is False
-    assert comparison["schema_version"] == "actual_rag_eval.portfolio_experiment_comparison.v1"
-    assert comparison["enabled"] is True
-    assert comparison["report_only_contract"] == "embedded_in_report_json_no_portfolio_sidecar"
-    assert comparison["portfolio_experiment_sidecar_written"] is False
-    assert comparison["comparison_input_policy"].startswith("post_run_report_json_only")
-    assert comparison["raw_prompt_payload_written"] is False
-    assert comparison["raw_response_payload_written"] is False
-    assert comparison["lane_count"] == 2
-    assert comparison["lanes"][0]["label"] == "extractive"
-    assert comparison["lanes"][1]["label"] == "current"
-    assert comparison["lanes"][0]["provider"] == "extractive-v1"
-    assert comparison["lanes"][1]["provider"] == "selected-evidence-deterministic-v1"
-    assert comparison["lanes"][1]["citation_precision_against_selected_evidence"] == 1.0
-    diff = comparison["pairwise_diffs"][0]
-    assert diff["gate_delta"]["after"]["unsupported_answer_rate_after_gate"] == 0.0
-    item_diff = diff["answer_diffs"][0]
-    assert item_diff["id"] == "q-portfolio"
-    assert item_diff["answer_changed"] is True
-    assert item_diff["citation_changed"] is True
-    assert item_diff["baseline_answer"]["answer_sha256"].startswith("sha256:")
-    assert item_diff["current_answer"]["answer_sha256"].startswith("sha256:")
-    assert "Apollo HQ is somewhere" in item_diff["baseline_answer"]["answer_preview"]
-    assert "Apollo HQ is in Seoul" in item_diff["current_answer"]["answer_preview"]
-    serialized = json.dumps(comparison)
-    assert '"prompt":' not in serialized
-    assert '"raw_response":' not in serialized
-
-
-def test_run_eval_writes_portfolio_summary_only_with_explicit_flag(tmp_path: Path) -> None:
-    dataset = tmp_path / "portfolio_sidecar_gold.jsonl"
-    context = tmp_path / "portfolio_sidecar_context.jsonl"
-    baseline_dir = tmp_path / "reports" / "rag_eval" / "portfolio_sidecar_extractive"
-    current_dir = tmp_path / "reports" / "rag_eval" / "portfolio_sidecar_selected"
-    missing_comparison_dir = tmp_path / "reports" / "rag_eval" / "portfolio_sidecar_missing_comparison"
-    write_jsonl(
-        dataset,
-        [{"id": "q-sidecar", "query": "Where is Apollo HQ?", "answerability": "answerable"}],
-    )
-    write_jsonl(
-        context,
-        [
-            {
-                "id": "q-sidecar",
-                "generated_answer": "Apollo HQ is somewhere in Korea.",
-                "retrieved_contexts": [
-                    {
-                        "doc_id": "doc-hq",
-                        "chunk_id": "chunk-hq",
-                        "source_atom_id": "src-hq",
-                        "evidence_bundle_id": "bundle-hq",
-                        "source_family": "TEXT",
-                        "granularity": "paragraph",
-                        "text": "Apollo HQ is in Seoul.",
-                        "text_sha256": "hash-hq",
-                    }
-                ],
-                "citations": [],
-            }
-        ],
-    )
-
-    baseline = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=baseline_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="portfolio_sidecar_extractive",
-        output_mode="single",
-        evidence_gate_mode="diagnostic",
-    )
-    current = run_eval_from_paths(
-        dataset_path=dataset,
-        output_dir=current_dir,
-        context_jsonl_path=context,
-        top_k=1,
-        run_id="portfolio_sidecar_selected",
-        output_mode="single",
-        evidence_gate_mode="enforce",
-        answer_composer="selected-evidence-deterministic-v1",
-        selected_evidence_citation_format="markdown-portfolio",
-        portfolio_comparison_reports=[f"extractive={baseline.report_path}"],
-        write_portfolio_experiment_summary=True,
-    )
-
-    assert output_file_names(current_dir) == ["portfolio_experiment_summary.md", "report.json"]
-    report = json.loads(current.report_path.read_text(encoding="utf-8"))
-    sidecar_path = current_dir / "portfolio_experiment_summary.md"
-    text = sidecar_path.read_text(encoding="utf-8")
-    assert report["artifact_contract"]["portfolio_experiment_sidecar_written"] is True
-    assert report["artifact_paths"]["portfolio_experiment_summary_md"] == sidecar_path.as_posix()
-    assert "# Non-Production Selected-Evidence Portfolio Experiment" in text
-    assert "## Answer Diff" in text
-    assert "## Citation Diff" in text
-    assert "## Gate Before/After" in text
-    assert "Unsupported answer blocked count" in text
-    assert "Abstain count" in text
-    assert "Citation precision against selected evidence" in text
-    assert "Retrieved-context-only citation count" in text
-    assert "## Residual Failure Taxonomy" in text
-    assert "Apollo HQ is somewhere" in text
-    assert "Apollo HQ is in Seoul" in text
-    assert '"prompt":' not in text
-    assert '"raw_response":' not in text
-
-    with pytest.raises(DatasetSchemaError, match="requires at least one --portfolio-comparison-report"):
-        run_eval_from_paths(
-            dataset_path=dataset,
-            output_dir=missing_comparison_dir,
-            context_jsonl_path=context,
-            top_k=1,
-            run_id="portfolio_sidecar_missing_comparison",
-            output_mode="single",
-            evidence_gate_mode="enforce",
-            write_portfolio_experiment_summary=True,
-        )
 
 
 def test_citation_validator_rejects_same_doc_chunk_with_different_source_identity() -> None:
