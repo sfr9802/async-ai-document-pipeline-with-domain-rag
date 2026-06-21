@@ -6363,6 +6363,200 @@ def test_xlsx_locator_records_source_date_aliases_without_accepting_incomplete_c
     assert "formula" not in encoded
 
 
+def test_xlsx_locator_accepts_same_candidate_source_date_alias_package() -> None:
+    query = "2019년 2월 안산선의 수송인원은 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2019-02", "line_name": "안산선"},
+            "target_axis": {"column": "수송인원", "value_type": "number"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-02", "2019년 2월"],
+                "row_entity": ["안산선"],
+                "target_column": ["수송인원"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-source-date-alias-package",
+        "query": query,
+        "generated_answer": "999명",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+    }
+    context = {
+        "doc_id": "doc-xlsx-date-alias-package",
+        "chunk_id": "chunk-xlsx-date-alias-package",
+        "source_atom_id": "src-xlsx-date-alias-package",
+        "evidence_bundle_id": "bundle-xlsx-date-alias-package",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": (
+            "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | "
+            "period=201902 | target_column=수송인원 | display_value=999명"
+        ),
+        "sheet": "철도",
+        "cell_range": "A302:D351",
+        "row_index_1based": "302",
+        "row_label": "노선명=안산선",
+        "column_label": "수송인원",
+        "target_column": "수송인원",
+        "display_value": "999명",
+    }
+
+    candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
+
+    assert candidate is not None
+    assert candidate["accepted_for_regating"] is True
+    assert candidate["locator_text_source"] == "source_owned_support_text"
+    assert candidate["source_owned_same_candidate_package"] is True
+    assert candidate["source_owned_same_candidate_package_policy"].endswith("_v1")
+    assert candidate["source_date_aliases"] == ["2019년 2월", "2019년", "2월"]
+    assert "source_date_alias=2019년 2월" in candidate["text"]
+    assert "source_date_aliases" in candidate["input_fields_used"]
+    assert candidate["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert candidate["missing_validated_required_axes"] == []
+    encoded = json.dumps(candidate, ensure_ascii=False)
+    assert "expected_answer" not in encoded
+    assert "normalized_value" not in encoded
+    assert "formula" not in encoded
+
+
+def test_xlsx_locator_same_candidate_source_date_alias_package_survives_budget() -> None:
+    query = "2019년 2월 안산선의 수송인원은 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2019-02", "line_name": "안산선"},
+            "target_axis": {"column": "수송인원", "value_type": "number"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-02", "2019년 2월"],
+                "row_entity": ["안산선"],
+                "target_column": ["수송인원"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-source-date-alias-budget",
+        "query": query,
+        "generated_answer": "999명",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+    }
+    contexts = []
+    for index in range(actual_rag_eval.XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET + 1):
+        period_part = " | period=201902" if index == actual_rag_eval.XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET else ""
+        context = {
+            "doc_id": "doc-xlsx-date-alias-budget",
+            "chunk_id": f"chunk-xlsx-date-alias-budget-{index}",
+            "source_atom_id": f"src-xlsx-date-alias-budget-{index}",
+            "evidence_bundle_id": f"bundle-xlsx-date-alias-budget-{index}",
+            "source_family": "XLSX",
+            "granularity": "table_row",
+            "text": (
+                "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | "
+                f"target_column=수송인원 | display_value={900 + index}명{period_part}"
+            ),
+            "sheet": "철도",
+            "cell_range": "A302:D351",
+            "row_index_1based": str(302 + index),
+            "row_label": "노선명=안산선",
+            "column_label": "수송인원",
+            "target_column": "수송인원",
+            "display_value": f"{900 + index}명",
+        }
+        contexts.append(context)
+    row[actual_rag_eval.INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY] = contexts
+
+    candidates = actual_rag_eval._xlsx_locator_tool_candidates(row)
+
+    accepted = [candidate for candidate in candidates if candidate.get("accepted_for_regating") is True]
+    assert len(candidates) == actual_rag_eval.XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET
+    assert [candidate["source_atom_id"] for candidate in accepted] == [
+        "src-xlsx-date-alias-budget-5"
+    ]
+    assert accepted[0]["candidate_budget_exhausted"] is True
+    assert accepted[0]["candidate_pool_count_before_budget"] == 6
+    assert accepted[0]["source_owned_same_candidate_package"] is True
+
+
+def test_xlsx_locator_same_candidate_source_date_alias_package_ignores_generic_metadata_aliases() -> None:
+    query = "2019년 2월 안산선의 수송인원은 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2019-02", "line_name": "안산선"},
+            "target_axis": {"column": "수송인원", "value_type": "number"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-02", "2019년 2월"],
+                "row_entity": ["안산선"],
+                "target_column": ["수송인원"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-source-date-alias-generic-metadata",
+        "query": query,
+        "generated_answer": "999명",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+    }
+    context = {
+        "doc_id": "doc-xlsx-date-alias-generic-metadata",
+        "chunk_id": "chunk-xlsx-date-alias-generic-metadata",
+        "source_atom_id": "src-xlsx-date-alias-generic-metadata",
+        "evidence_bundle_id": "bundle-xlsx-date-alias-generic-metadata",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": (
+            "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | "
+            "target_column=수송인원 | display_value=999명"
+        ),
+        "sheet": "철도",
+        "cell_range": "A302:D351",
+        "row_index_1based": "302",
+        "row_label": "노선명=안산선",
+        "column_label": "수송인원",
+        "target_column": "수송인원",
+        "display_value": "999명",
+        "metadata": {
+            "source_date_aliases": ["2019년 2월", "2019년", "2월"],
+        },
+    }
+
+    candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
+
+    assert candidate is not None
+    assert candidate["accepted_for_regating"] is False
+    assert candidate["rejection_reason"] == "missing_validated_required_axes_after_tool"
+    assert candidate["missing_validated_required_axes"] == ["period"]
+    assert "source_owned_same_candidate_package" not in candidate
+    assert "source_date_aliases" not in candidate
+
+
 def test_xlsx_locator_date_aliases_ignore_bare_or_non_date_compact_numbers() -> None:
     assert actual_rag_eval._xlsx_locator_date_aliases("201902") == []
     assert actual_rag_eval._xlsx_locator_date_aliases("관리번호: 201902") == []
@@ -6469,6 +6663,141 @@ def test_run_eval_xlsx_locator_persists_source_date_aliases_for_rejected_candida
             locator,
             run_store_path=run_store_path,
         )
+
+
+def test_run_eval_xlsx_locator_same_candidate_source_date_alias_package_regates_and_persists(
+    tmp_path: Path,
+) -> None:
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_source_date_alias_package"
+    query = "2019년 2월 안산선의 수송인원은 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2019-02", "line_name": "안산선"},
+            "target_axis": {"column": "수송인원", "value_type": "number"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-02", "2019년 2월"],
+                "row_entity": ["안산선"],
+                "target_column": ["수송인원"],
+                "display_value": [],
+            },
+        },
+    )
+    context = {
+        "doc_id": "doc-xlsx-source-date-alias-package",
+        "chunk_id": "chunk-xlsx-source-date-alias-package",
+        "source_atom_id": "src-xlsx-source-date-alias-package",
+        "evidence_bundle_id": "bundle-xlsx-source-date-alias-package",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": (
+            "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | period=201902 | "
+            "target_column=수송인원 | display_value=999명"
+        ),
+        "sheet": "철도",
+        "cell_range": "A302:D351",
+        "row_index_1based": "302",
+        "row_label": "노선명=안산선",
+        "column_label": "수송인원",
+        "target_column": "수송인원",
+        "display_value": "999명",
+    }
+    before_row = {
+        "id": "xlsx_locator_source_date_alias_package_q",
+        "query": query,
+        "answerability": "answerable",
+        "track": "xlsx_business_structured",
+        "generated_answer": "안산선의 수송인원은 999명입니다.",
+        "answer_gate_decision": "block_unsupported_answer",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [context],
+        "citations": [],
+        "evidence_gate": {
+            "evidence_package_status": "insufficient",
+            "answer_gate_decision": "block_unsupported_answer",
+            "validation_reasons": ["missing_validated_required_axes"],
+            "retrieved_evidence_candidates": [context],
+            "selected_evidence": [],
+        },
+    }
+
+    after_rows, record = actual_rag_eval.apply_xlsx_locator_tool_execute_once_to_outputs(
+        [before_row],
+        evidence_gate_mode="enforce",
+        citation_format="evidence-id",
+        composer_provider="selected-evidence-deterministic-v1",
+        local_llm_model="gemma4-e2b-local",
+        skip_local_llm_endpoint_check=True,
+    )
+    run_store_path = output_dir / "run.sqlite"
+    actual_rag_eval.XlsxLocatorRunStore(run_store_path).write_run_record(
+        run_id="xlsx_locator_source_date_alias_package",
+        dataset_slug="unit",
+        collection="unit",
+        record=record,
+        before_rows=[before_row],
+        after_rows=after_rows,
+    )
+    locator = actual_rag_eval.project_xlsx_locator_run_record(record, run_store_path=run_store_path)
+
+    row = after_rows[0]
+    tool_use = row["xlsx_locator_tool_use"]
+    assert locator["accepted_candidate_count"] == 1
+    assert locator["complete_validated_axis_candidate_count"] == 1
+    assert locator["gate_delta"]["allowed_answer_count_delta"] == 1
+    assert tool_use["execution_status"] == "accepted_after_regating"
+    assert tool_use["accepted_candidate_count"] == 1
+    assert tool_use["output_policy"] == "selected_evidence_candidate_must_pass_unchanged_gate"
+    selected = row["evidence_gate"]["selected_evidence"][0]
+    assert selected["source_atom_id"] == "src-xlsx-source-date-alias-package"
+    assert selected["locator_text_source"] == "source_owned_support_text"
+    assert selected["source_owned_same_candidate_package"] is True
+    assert "source_date_alias=2019년 2월" in selected["text"]
+    assert selected["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert selected["missing_validated_required_axes"] == []
+
+    with sqlite3.connect(run_store_path) as conn:
+        conn.row_factory = sqlite3.Row
+        candidate = conn.execute(
+            "SELECT source_date_aliases_json, input_fields_used_json, accepted_for_regating, "
+            "rejection_reason, locator_text_source, matched_validated_required_axes_json, "
+            "missing_validated_required_axes_json FROM tool_candidates "
+            "WHERE source_atom_id = 'src-xlsx-source-date-alias-package'"
+        ).fetchone()
+        assert candidate is not None
+        assert json.loads(candidate["source_date_aliases_json"]) == ["2019년 2월", "2019년", "2월"]
+        assert "source_date_aliases" in json.loads(candidate["input_fields_used_json"])
+        assert candidate["accepted_for_regating"] == 1
+        assert candidate["rejection_reason"] == ""
+        assert candidate["locator_text_source"] == "source_owned_support_text"
+        assert json.loads(candidate["matched_validated_required_axes_json"]) == [
+            "period",
+            "row_entity",
+            "target_column",
+            "display_value",
+        ]
+        assert json.loads(candidate["missing_validated_required_axes_json"]) == []
+        actual_rag_eval.validate_xlsx_locator_run_store(
+            "xlsx_locator_source_date_alias_package",
+            locator,
+            run_store_path=run_store_path,
+        )
+
+    selected_encoded = json.dumps(selected, ensure_ascii=False)
+    assert "expected_answer" not in selected_encoded
+    assert "normalized_value" not in selected_encoded
+    assert "formula" not in selected_encoded
 
 
 def test_run_eval_xlsx_locator_materialized_display_value_regates_and_persists(
@@ -8927,6 +9256,52 @@ def test_weaviate_streaming_indexer_checkpoints_and_resumes_without_faiss_transf
     assert checkpoint["source_atom_text_sha256"]["srcatom-index-3"] == "sha-index-3"
 
 
+def test_weaviate_streaming_indexer_can_recreate_nonprod_candidate_collection(tmp_path: Path) -> None:
+    class RecreateAwareClient(FakeWeaviateSourceAtomClient):
+        def __init__(self) -> None:
+            super().__init__()
+            self.recreate_schema_log: list[dict[str, object]] = []
+
+        def recreate_collection(self, schema: Mapping[str, object]) -> None:
+            self.recreate_schema_log.append(dict(schema))
+            self.objects.clear()
+
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+            "EMBEDDING_DEVICE": "cuda",
+        }
+    )
+    client = RecreateAwareClient()
+    indexer = WeaviateSourceAtomIndexer(
+        config=config,
+        client=client,
+        embedding_builder=BgeM3EmbeddingBuilder(
+            model_name="BAAI/bge-m3",
+            device="cuda",
+            batch_size=2,
+            embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        ),
+    )
+
+    manifest = indexer.index_records_streaming(
+        iter([weaviate_source_atom_record(1)]),
+        checkpoint_path=tmp_path / "weaviate-index-checkpoint.json",
+        source_atom_registry_path="ai/eval/fixtures/source_atoms.jsonl",
+        recreate_collection=True,
+    )
+
+    assert manifest["collection_recreate_requested"] is True
+    assert manifest["collection_recreated_this_run"] is True
+    assert len(client.recreate_schema_log) == 1
+    assert client.schema_log == []
+
+
 def test_weaviate_indexer_reports_vectorization_policy_by_granularity() -> None:
     config = WeaviateSourceAtomConfig.from_env(
         {
@@ -9146,12 +9521,20 @@ def test_weaviate_dirty_candidate_surface_blocks_metric_readiness() -> None:
         adapter.validate_ready_for_run()
 
 
-def test_weaviate_candidate_surface_v2_requires_complete_manifest() -> None:
+def test_weaviate_candidate_surface_v2_requires_complete_manifest(tmp_path: Path) -> None:
     candidate_config_path = Path("ai/eval/configs/weaviate_route_selected_candidate_surface_v2.json")
     assert candidate_config_path.exists()
+    candidate_config = json.loads(candidate_config_path.read_text(encoding="utf-8"))
+    missing_manifest_path = tmp_path / "missing_index_manifest.json"
+    candidate_config["index_manifest_path"] = missing_manifest_path.as_posix()
+    isolated_config_path = tmp_path / "weaviate_route_selected_candidate_surface_v2.json"
+    isolated_config_path.write_text(
+        json.dumps(candidate_config, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     adapter = build_default_weaviate_adapter(
         requested_backend="weaviate-hybrid",
-        config_path=candidate_config_path.as_posix(),
+        config_path=isolated_config_path.as_posix(),
         client=FakeWeaviateSourceAtomClient(),
         embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
     )
@@ -9173,10 +9556,16 @@ def test_weaviate_candidate_surface_complete_manifest_allows_metric_readiness(tm
                 "valid": True,
                 "candidate_surface_complete_manifest": True,
                 "candidate_surface_complete_manifest_schema_version": "candidate_surface_complete_manifest.v1",
+                "candidate_surface_full_corpus_index": True,
                 "collection_name": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
                 "schema_version_source_atom": "weaviate_source_atom_v2",
                 "indexed_count": 3,
+                "skipped_count": 0,
                 "failed_count": 0,
+                "checkpoint_resumed": False,
+                "upserted_count_this_run": 3,
+                "collection_recreate_requested": True,
+                "collection_recreated_this_run": True,
                 "production_namespace": False,
                 "source_registry_mutated": False,
                 "latest_current_mutated": False,
@@ -9233,6 +9622,428 @@ def test_weaviate_candidate_surface_complete_manifest_allows_metric_readiness(tm
     adapter.validate_ready_for_run()
 
 
+def test_weaviate_candidate_surface_complete_manifest_rejects_newer_partial_checkpoint(
+    tmp_path: Path,
+) -> None:
+    checkpoint_path = tmp_path / "index_checkpoint.json"
+    checkpoint_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "weaviate_source_atom_index_checkpoint_v1",
+                "collection_name": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                "completed_count": 2,
+                "upserted_count_this_run": 2,
+                "skipped_count_this_run": 0,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    manifest_path = tmp_path / "index_manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "weaviate_source_atom_index_manifest_v1",
+                "valid": True,
+                "candidate_surface_complete_manifest": True,
+                "candidate_surface_complete_manifest_schema_version": "candidate_surface_complete_manifest.v1",
+                "candidate_surface_full_corpus_index": True,
+                "collection_name": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "indexed_count": 3,
+                "skipped_count": 0,
+                "failed_count": 0,
+                "checkpoint_resumed": False,
+                "checkpoint_path": checkpoint_path.as_posix(),
+                "checkpoint_completed_count": 3,
+                "upserted_count_this_run": 3,
+                "collection_recreate_requested": True,
+                "collection_recreated_this_run": True,
+                "production_namespace": False,
+                "source_registry_mutated": False,
+                "latest_current_mutated": False,
+                "official_metric_input_rows": 0,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    os.utime(manifest_path, (1_800_000_000, 1_800_000_000))
+    os.utime(checkpoint_path, (1_800_000_010, 1_800_000_010))
+    config_path = tmp_path / "weaviate_route_selected_candidate_surface_v2.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "selection": "route_selected_candidate_surface_v2_recreate",
+                "vector_db": "weaviate",
+                "collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                "namespace": "actual_rag_eval_nonprod",
+                "visibility": "nonprod",
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "index_manifest_path": manifest_path.as_posix(),
+                "retrieval_route_mode": "route_selected",
+                "fallback_used": False,
+                "fail_closed_on_unavailable": True,
+                "candidate_surface_rebuild": {
+                    "schema_version": "actual_rag_eval.candidate_surface_rebuild.v1",
+                    "report_only_diagnostic": True,
+                    "surface_status": "awaiting_complete_manifest",
+                    "metric_blocked_until_complete_manifest": True,
+                    "complete_manifest_required": True,
+                    "official_metric": False,
+                    "official_metric_input_rows": 0,
+                    "candidate_collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                    "source_collection": "SourceAtomNonprodRouteSelectedV2",
+                    "production_namespace": False,
+                    "source_registry_mutated": False,
+                    "latest_current_mutated": False,
+                    "external_archive_profiled": False,
+                    "external_archive_indexed": False,
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        config_path=config_path.as_posix(),
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    with pytest.raises(
+        WeaviateUnavailableError,
+        match="candidate_surface_complete_manifest_checkpoint_newer_than_manifest",
+    ):
+        adapter.validate_ready_for_run()
+
+
+def test_weaviate_candidate_surface_complete_manifest_rejects_schema_mismatch_without_rebuild_block(
+    tmp_path: Path,
+) -> None:
+    manifest_path = tmp_path / "index_manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "weaviate_source_atom_index_manifest_v1",
+                "valid": True,
+                "candidate_surface_complete_manifest": True,
+                "candidate_surface_complete_manifest_schema_version": "candidate_surface_complete_manifest.v1",
+                "candidate_surface_full_corpus_index": True,
+                "collection_name": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                "schema_version_source_atom": "weaviate_source_atom_v1",
+                "indexed_count": 3,
+                "skipped_count": 0,
+                "failed_count": 0,
+                "checkpoint_resumed": False,
+                "upserted_count_this_run": 3,
+                "collection_recreate_requested": True,
+                "collection_recreated_this_run": True,
+                "production_namespace": False,
+                "source_registry_mutated": False,
+                "latest_current_mutated": False,
+                "official_metric_input_rows": 0,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    config_path = tmp_path / "weaviate_route_selected_candidate_surface_v2_no_rebuild_block.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "selection": "route_selected_candidate_surface_v2_recreate",
+                "vector_db": "weaviate",
+                "collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                "namespace": "actual_rag_eval_nonprod",
+                "visibility": "nonprod",
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "index_manifest_path": manifest_path.as_posix(),
+                "retrieval_route_mode": "route_selected",
+                "fallback_used": False,
+                "fail_closed_on_unavailable": True,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        config_path=config_path.as_posix(),
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    with pytest.raises(
+        WeaviateUnavailableError,
+        match="candidate_surface_complete_manifest_schema_version_source_atom_mismatch",
+    ):
+        adapter.validate_ready_for_run()
+
+
+def test_weaviate_candidate_surface_complete_manifest_requires_exact_v2_collection_allowlist(
+    tmp_path: Path,
+) -> None:
+    manifest_path = tmp_path / "index_manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "weaviate_source_atom_index_manifest_v1",
+                "valid": True,
+                "candidate_surface_complete_manifest": True,
+                "candidate_surface_complete_manifest_schema_version": "candidate_surface_complete_manifest.v1",
+                "candidate_surface_full_corpus_index": True,
+                "collection_name": "SourceAtomNonprodOtherCandidateSurfaceV2",
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "indexed_count": 3,
+                "skipped_count": 0,
+                "failed_count": 0,
+                "checkpoint_resumed": False,
+                "upserted_count_this_run": 3,
+                "collection_recreate_requested": True,
+                "collection_recreated_this_run": True,
+                "production_namespace": False,
+                "source_registry_mutated": False,
+                "latest_current_mutated": False,
+                "official_metric_input_rows": 0,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    config_path = tmp_path / "weaviate_route_selected_other_candidate_surface_v2.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "selection": "route_selected_candidate_surface_v2_recreate",
+                "vector_db": "weaviate",
+                "collection": "SourceAtomNonprodOtherCandidateSurfaceV2",
+                "namespace": "actual_rag_eval_nonprod",
+                "visibility": "nonprod",
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "index_manifest_path": manifest_path.as_posix(),
+                "retrieval_route_mode": "route_selected",
+                "fallback_used": False,
+                "fail_closed_on_unavailable": True,
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        config_path=config_path.as_posix(),
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    with pytest.raises(
+        WeaviateUnavailableError,
+        match="candidate_surface_complete_manifest_collection_allowlist_blocked",
+    ):
+        adapter.validate_ready_for_run()
+
+
+@pytest.mark.parametrize(
+    ("manifest_override", "match"),
+    [
+        ({"valid": False}, "candidate_surface_complete_manifest_invalid"),
+        ({"candidate_surface_complete_manifest": False}, "candidate_surface_complete_manifest_missing"),
+        (
+            {"candidate_surface_complete_manifest_schema_version": "candidate_surface_complete_manifest.v0"},
+            "candidate_surface_complete_manifest_schema_version_invalid",
+        ),
+        ({"collection_name": "SourceAtomNonprodRouteSelectedCandidateSurfaceV1"}, "candidate_surface_complete_manifest_collection_mismatch"),
+        (
+            {"schema_version_source_atom": "weaviate_source_atom_v1"},
+            "candidate_surface_complete_manifest_schema_version_source_atom_mismatch",
+        ),
+        ({"candidate_surface_full_corpus_index": False}, "candidate_surface_complete_manifest_full_corpus_index_missing"),
+        ({"production_namespace": True}, "candidate_surface_complete_manifest_production_namespace_blocked"),
+        ({"source_registry_mutated": True}, "candidate_surface_complete_manifest_source_registry_mutated_blocked"),
+        ({"latest_current_mutated": True}, "candidate_surface_complete_manifest_latest_current_mutated_blocked"),
+        ({"official_metric_input_rows": 1}, "candidate_surface_complete_manifest_official_metric_input_rows_blocked"),
+        ({"failed_count": 1}, "candidate_surface_complete_manifest_failed_count_blocked"),
+        ({"checkpoint_resumed": True}, "candidate_surface_complete_manifest_checkpoint_resumed_blocked"),
+        ({"collection_recreated_this_run": False}, "candidate_surface_complete_manifest_collection_recreate_missing"),
+        ({"skipped_count": 1}, "candidate_surface_complete_manifest_skipped_count_blocked"),
+        ({"upserted_count_this_run": 2}, "candidate_surface_complete_manifest_upserted_indexed_count_mismatch"),
+        ({"indexed_count": 0, "upserted_count_this_run": 0}, "candidate_surface_complete_manifest_indexed_count_invalid"),
+        ({"indexed_count": "not-an-int"}, "candidate_surface_complete_manifest_count_invalid"),
+        ({"skipped_count": None}, "candidate_surface_complete_manifest_count_invalid"),
+        ({"skipped_count": "not-an-int"}, "candidate_surface_complete_manifest_count_invalid"),
+        ({"failed_count": "not-an-int"}, "candidate_surface_complete_manifest_count_invalid"),
+        ({"upserted_count_this_run": "not-an-int"}, "candidate_surface_complete_manifest_count_invalid"),
+        ({"official_metric_input_rows": "not-an-int"}, "candidate_surface_complete_manifest_count_invalid"),
+    ],
+)
+def test_weaviate_candidate_surface_complete_manifest_rejects_invalid_edges(
+    tmp_path: Path,
+    manifest_override: dict,
+    match: str,
+) -> None:
+    manifest = {
+        "schema_version": "weaviate_source_atom_index_manifest_v1",
+        "valid": True,
+        "candidate_surface_complete_manifest": True,
+        "candidate_surface_complete_manifest_schema_version": "candidate_surface_complete_manifest.v1",
+        "candidate_surface_full_corpus_index": True,
+        "collection_name": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+        "schema_version_source_atom": "weaviate_source_atom_v2",
+        "indexed_count": 3,
+        "skipped_count": 0,
+        "failed_count": 0,
+        "checkpoint_resumed": False,
+        "upserted_count_this_run": 3,
+        "collection_recreate_requested": True,
+        "collection_recreated_this_run": True,
+        "production_namespace": False,
+        "source_registry_mutated": False,
+        "latest_current_mutated": False,
+        "official_metric_input_rows": 0,
+    }
+    manifest.update(manifest_override)
+    manifest_path = tmp_path / "index_manifest.json"
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    config_path = tmp_path / "weaviate_route_selected_candidate_surface_v2.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "selection": "route_selected_candidate_surface_v2_recreate",
+                "vector_db": "weaviate",
+                "collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                "namespace": "actual_rag_eval_nonprod",
+                "visibility": "nonprod",
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "index_manifest_path": manifest_path.as_posix(),
+                "retrieval_route_mode": "route_selected",
+                "fallback_used": False,
+                "fail_closed_on_unavailable": True,
+                "candidate_surface_rebuild": {
+                    "schema_version": "actual_rag_eval.candidate_surface_rebuild.v1",
+                    "report_only_diagnostic": True,
+                    "surface_status": "awaiting_complete_manifest",
+                    "metric_blocked_until_complete_manifest": True,
+                    "complete_manifest_required": True,
+                    "official_metric": False,
+                    "official_metric_input_rows": 0,
+                    "candidate_collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                    "source_collection": "SourceAtomNonprodRouteSelectedV2",
+                    "production_namespace": False,
+                    "source_registry_mutated": False,
+                    "latest_current_mutated": False,
+                    "external_archive_profiled": False,
+                    "external_archive_indexed": False,
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        config_path=config_path.as_posix(),
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    with pytest.raises(WeaviateUnavailableError, match=match):
+        adapter.validate_ready_for_run()
+
+
+@pytest.mark.parametrize(
+    "missing_field",
+    [
+        "official_metric_input_rows",
+        "indexed_count",
+        "skipped_count",
+        "failed_count",
+        "upserted_count_this_run",
+    ],
+)
+def test_weaviate_candidate_surface_complete_manifest_rejects_missing_count_fields(
+    tmp_path: Path,
+    missing_field: str,
+) -> None:
+    manifest = {
+        "schema_version": "weaviate_source_atom_index_manifest_v1",
+        "valid": True,
+        "candidate_surface_complete_manifest": True,
+        "candidate_surface_complete_manifest_schema_version": "candidate_surface_complete_manifest.v1",
+        "candidate_surface_full_corpus_index": True,
+        "collection_name": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+        "schema_version_source_atom": "weaviate_source_atom_v2",
+        "indexed_count": 3,
+        "skipped_count": 0,
+        "failed_count": 0,
+        "checkpoint_resumed": False,
+        "upserted_count_this_run": 3,
+        "collection_recreate_requested": True,
+        "collection_recreated_this_run": True,
+        "production_namespace": False,
+        "source_registry_mutated": False,
+        "latest_current_mutated": False,
+        "official_metric_input_rows": 0,
+    }
+    manifest.pop(missing_field)
+    manifest_path = tmp_path / "index_manifest.json"
+    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    config_path = tmp_path / "weaviate_route_selected_candidate_surface_v2.json"
+    config_path.write_text(
+        json.dumps(
+            {
+                "selection": "route_selected_candidate_surface_v2_recreate",
+                "vector_db": "weaviate",
+                "collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                "namespace": "actual_rag_eval_nonprod",
+                "visibility": "nonprod",
+                "schema_version_source_atom": "weaviate_source_atom_v2",
+                "index_manifest_path": manifest_path.as_posix(),
+                "retrieval_route_mode": "route_selected",
+                "fallback_used": False,
+                "fail_closed_on_unavailable": True,
+                "candidate_surface_rebuild": {
+                    "schema_version": "actual_rag_eval.candidate_surface_rebuild.v1",
+                    "report_only_diagnostic": True,
+                    "surface_status": "awaiting_complete_manifest",
+                    "metric_blocked_until_complete_manifest": True,
+                    "complete_manifest_required": True,
+                    "official_metric": False,
+                    "official_metric_input_rows": 0,
+                    "candidate_collection": "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+                    "source_collection": "SourceAtomNonprodRouteSelectedV2",
+                    "production_namespace": False,
+                    "source_registry_mutated": False,
+                    "latest_current_mutated": False,
+                    "external_archive_profiled": False,
+                    "external_archive_indexed": False,
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+    adapter = build_default_weaviate_adapter(
+        requested_backend="weaviate-hybrid",
+        config_path=config_path.as_posix(),
+        client=FakeWeaviateSourceAtomClient(),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+    )
+
+    with pytest.raises(WeaviateUnavailableError, match="candidate_surface_complete_manifest_count_invalid"):
+        adapter.validate_ready_for_run()
+
+
 def test_weaviate_index_parser_exposes_candidate_surface_xlsx_row_bundle_flag() -> None:
     parser = build_weaviate_index_parser()
 
@@ -9247,6 +10058,608 @@ def test_weaviate_index_parser_exposes_candidate_surface_xlsx_row_bundle_flag() 
     )
 
     assert args.synthesize_xlsx_row_value_bundles is True
+
+
+def test_weaviate_candidate_surface_v2_index_success_writes_complete_manifest(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class FakeStreamingIndexer:
+        def __init__(self, **kwargs: object) -> None:
+            self.config = kwargs["config"]
+            self.client = FakeWeaviateSourceAtomClient()
+            self.recreate_requested = False
+
+        def index_records_streaming(self, records: object, **kwargs: object) -> dict:
+            list(records)
+            self.recreate_requested = bool(kwargs.get("recreate_collection"))
+            return {
+                "schema_version": "weaviate_source_atom_index_manifest_v1",
+                "valid": True,
+                "collection_name": self.config.collection_name,
+                "schema_version_source_atom": self.config.schema_version,
+                "indexed_count": 3,
+                "skipped_count": 0,
+                "failed_count": 0,
+                "checkpoint_resumed": False,
+                "upserted_count_this_run": 3,
+                "production_namespace": False,
+                "collection_recreate_requested": self.recreate_requested,
+                "collection_recreated_this_run": self.recreate_requested,
+                "diagnostic_hash_vector_used": False,
+                "faiss_used_for_active_retrieval": False,
+            }
+
+    class FakeLoader:
+        def __init__(self, **kwargs: object) -> None:
+            self.synthesize_xlsx_row_value_bundles = bool(kwargs["synthesize_xlsx_row_value_bundles"])
+
+        def iter_units(self) -> list[dict]:
+            return [
+                {
+                    "source_atom_id": "srcatom-v2-candidate-1",
+                    "source_family": "XLSX",
+                    "text": "source-owned row/value bundle",
+                }
+            ]
+
+        def describe(self) -> dict:
+            return {"synthesize_xlsx_row_value_bundles": self.synthesize_xlsx_row_value_bundles}
+
+    monkeypatch.setattr(weaviate_index_script, "WeaviateSourceAtomIndexer", FakeStreamingIndexer)
+    monkeypatch.setattr(weaviate_index_script, "SourceNativeCorpusLoader", FakeLoader)
+    manifest_path = tmp_path / "index_manifest.json"
+    checkpoint_path = tmp_path / "index_checkpoint.json"
+
+    rc = weaviate_index_script.main(
+        [
+            "--schema-version",
+            "weaviate_source_atom_v2",
+            "--weaviate-collection-name",
+            "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+            "--source-native-index-dir",
+            str(tmp_path),
+            "--source-atom-registry-path",
+            str(tmp_path / "source_atoms.jsonl"),
+            "--manifest-path",
+            str(manifest_path),
+            "--checkpoint-path",
+            str(checkpoint_path),
+            "--reset-checkpoint",
+            "--synthesize-xlsx-row-value-bundles",
+        ]
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert rc == 0
+    assert manifest["valid"] is True
+    assert manifest["collection_name"] == "SourceAtomNonprodRouteSelectedCandidateSurfaceV2"
+    assert manifest["collection_recreate_requested"] is True
+    assert manifest["collection_recreated_this_run"] is True
+    assert manifest["candidate_surface_complete_manifest"] is True
+    assert manifest["candidate_surface_complete_manifest_schema_version"] == "candidate_surface_complete_manifest.v1"
+    assert manifest["candidate_surface_full_corpus_index"] is True
+    assert manifest["index_limit"] == 0
+    assert manifest["candidate_surface_metric_blocked_until_complete_manifest"] is False
+    assert manifest["candidate_surface_restart_policy"] == "recreate_collection_with_fresh_manifest_v2"
+    assert manifest["synthesize_xlsx_row_value_bundles"] is True
+    assert manifest["source_native_loader"]["synthesize_xlsx_row_value_bundles"] is True
+    assert manifest["official_metric_input_rows"] == 0
+    assert manifest["production_namespace"] is False
+    assert manifest["source_registry_mutated"] is False
+    assert manifest["latest_current_mutated"] is False
+
+
+def test_weaviate_candidate_surface_v2_complete_manifest_requires_collection_recreate_evidence(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class NoRecreateStreamingIndexer:
+        def __init__(self, **kwargs: object) -> None:
+            self.config = kwargs["config"]
+            self.client = FakeWeaviateSourceAtomClient()
+
+        def index_records_streaming(self, records: object, **kwargs: object) -> dict:
+            list(records)
+            return {
+                "schema_version": "weaviate_source_atom_index_manifest_v1",
+                "valid": True,
+                "collection_name": self.config.collection_name,
+                "schema_version_source_atom": self.config.schema_version,
+                "indexed_count": 3,
+                "skipped_count": 0,
+                "failed_count": 0,
+                "checkpoint_resumed": False,
+                "upserted_count_this_run": 3,
+                "production_namespace": False,
+                "collection_recreate_requested": False,
+                "collection_recreated_this_run": False,
+                "diagnostic_hash_vector_used": False,
+                "faiss_used_for_active_retrieval": False,
+            }
+
+    class FakeLoader:
+        def __init__(self, **kwargs: object) -> None:
+            self.synthesize_xlsx_row_value_bundles = bool(kwargs["synthesize_xlsx_row_value_bundles"])
+
+        def iter_units(self) -> list[dict]:
+            return [{"source_atom_id": "srcatom-v2-candidate-1", "source_family": "XLSX", "text": "bundle"}]
+
+        def describe(self) -> dict:
+            return {"synthesize_xlsx_row_value_bundles": self.synthesize_xlsx_row_value_bundles}
+
+    monkeypatch.setattr(weaviate_index_script, "WeaviateSourceAtomIndexer", NoRecreateStreamingIndexer)
+    monkeypatch.setattr(weaviate_index_script, "SourceNativeCorpusLoader", FakeLoader)
+    manifest_path = tmp_path / "index_manifest.json"
+    checkpoint_path = tmp_path / "index_checkpoint.json"
+
+    rc = weaviate_index_script.main(
+        [
+            "--schema-version",
+            "weaviate_source_atom_v2",
+            "--weaviate-collection-name",
+            "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+            "--source-native-index-dir",
+            str(tmp_path),
+            "--source-atom-registry-path",
+            str(tmp_path / "source_atoms.jsonl"),
+            "--manifest-path",
+            str(manifest_path),
+            "--checkpoint-path",
+            str(checkpoint_path),
+            "--reset-checkpoint",
+            "--synthesize-xlsx-row-value-bundles",
+        ]
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert rc == 0
+    assert manifest["valid"] is True
+    assert manifest["collection_recreate_requested"] is True
+    assert manifest["collection_recreated_this_run"] is False
+    assert manifest["candidate_surface_complete_manifest"] is False
+    assert manifest["candidate_surface_complete_manifest_schema_version"] == ""
+    assert manifest["candidate_surface_metric_blocked_until_complete_manifest"] is True
+    assert manifest["official_metric_input_rows"] == 0
+
+
+def test_weaviate_candidate_surface_v2_index_requires_schema_v2_for_complete_manifest(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class FakeStreamingIndexer:
+        def __init__(self, **kwargs: object) -> None:
+            self.config = kwargs["config"]
+            self.client = FakeWeaviateSourceAtomClient()
+
+        def index_records_streaming(self, records: object, **kwargs: object) -> dict:
+            list(records)
+            return {
+                "schema_version": "weaviate_source_atom_index_manifest_v1",
+                "valid": True,
+                "collection_name": self.config.collection_name,
+                "schema_version_source_atom": self.config.schema_version,
+                "indexed_count": 3,
+                "skipped_count": 0,
+                "failed_count": 0,
+                "checkpoint_resumed": False,
+                "upserted_count_this_run": 3,
+                "production_namespace": False,
+                "diagnostic_hash_vector_used": False,
+                "faiss_used_for_active_retrieval": False,
+            }
+
+    class FakeLoader:
+        def __init__(self, **kwargs: object) -> None:
+            self.synthesize_xlsx_row_value_bundles = bool(kwargs["synthesize_xlsx_row_value_bundles"])
+
+        def iter_units(self) -> list[dict]:
+            return [{"source_atom_id": "srcatom-v2-candidate-1", "source_family": "XLSX", "text": "bundle"}]
+
+        def describe(self) -> dict:
+            return {"synthesize_xlsx_row_value_bundles": self.synthesize_xlsx_row_value_bundles}
+
+    monkeypatch.setattr(weaviate_index_script, "WeaviateSourceAtomIndexer", FakeStreamingIndexer)
+    monkeypatch.setattr(weaviate_index_script, "SourceNativeCorpusLoader", FakeLoader)
+    monkeypatch.delenv("WEAVIATE_SCHEMA_VERSION", raising=False)
+    monkeypatch.delenv("ACTUAL_RAG_EVAL_WEAVIATE_SCHEMA_VERSION", raising=False)
+    manifest_path = tmp_path / "index_manifest.json"
+
+    rc = weaviate_index_script.main(
+        [
+            "--weaviate-collection-name",
+            "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+            "--source-native-index-dir",
+            str(tmp_path),
+            "--source-atom-registry-path",
+            str(tmp_path / "source_atoms.jsonl"),
+            "--manifest-path",
+            str(manifest_path),
+            "--synthesize-xlsx-row-value-bundles",
+        ]
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert rc == 0
+    assert manifest["valid"] is True
+    assert manifest["collection_name"] == "SourceAtomNonprodRouteSelectedCandidateSurfaceV2"
+    assert manifest["schema_version_source_atom"] == "weaviate_source_atom_v1"
+    assert manifest["candidate_surface_complete_manifest"] is False
+    assert manifest["candidate_surface_complete_manifest_schema_version"] == ""
+    assert manifest["candidate_surface_metric_blocked_until_complete_manifest"] is True
+    assert manifest["candidate_surface_restart_policy"] == "recreate_collection_with_fresh_manifest_v2"
+    assert manifest["official_metric_input_rows"] == 0
+
+
+def test_weaviate_candidate_surface_v2_index_limit_keeps_complete_manifest_blocked(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class FakeStreamingIndexer:
+        def __init__(self, **kwargs: object) -> None:
+            self.config = kwargs["config"]
+            self.client = FakeWeaviateSourceAtomClient()
+
+        def index_records_streaming(self, records: object, **kwargs: object) -> dict:
+            list(records)
+            return {
+                "schema_version": "weaviate_source_atom_index_manifest_v1",
+                "valid": True,
+                "collection_name": self.config.collection_name,
+                "schema_version_source_atom": self.config.schema_version,
+                "indexed_count": 1,
+                "skipped_count": 0,
+                "failed_count": 0,
+                "checkpoint_resumed": False,
+                "upserted_count_this_run": 1,
+                "production_namespace": False,
+                "diagnostic_hash_vector_used": False,
+                "faiss_used_for_active_retrieval": False,
+            }
+
+    class FakeLoader:
+        def __init__(self, **kwargs: object) -> None:
+            self.synthesize_xlsx_row_value_bundles = bool(kwargs["synthesize_xlsx_row_value_bundles"])
+
+        def iter_units(self) -> list[dict]:
+            return [
+                {"source_atom_id": "srcatom-v2-candidate-1", "source_family": "XLSX", "text": "bundle one"},
+                {"source_atom_id": "srcatom-v2-candidate-2", "source_family": "XLSX", "text": "bundle two"},
+            ]
+
+        def describe(self) -> dict:
+            return {"synthesize_xlsx_row_value_bundles": self.synthesize_xlsx_row_value_bundles}
+
+    monkeypatch.setattr(weaviate_index_script, "WeaviateSourceAtomIndexer", FakeStreamingIndexer)
+    monkeypatch.setattr(weaviate_index_script, "SourceNativeCorpusLoader", FakeLoader)
+    manifest_path = tmp_path / "index_manifest.json"
+
+    rc = weaviate_index_script.main(
+        [
+            "--schema-version",
+            "weaviate_source_atom_v2",
+            "--weaviate-collection-name",
+            "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+            "--source-native-index-dir",
+            str(tmp_path),
+            "--source-atom-registry-path",
+            str(tmp_path / "source_atoms.jsonl"),
+            "--manifest-path",
+            str(manifest_path),
+            "--limit",
+            "1",
+            "--synthesize-xlsx-row-value-bundles",
+        ]
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert rc == 0
+    assert manifest["valid"] is True
+    assert manifest["index_limit"] == 1
+    assert manifest["candidate_surface_full_corpus_index"] is False
+    assert manifest["candidate_surface_complete_manifest"] is False
+    assert manifest["candidate_surface_complete_manifest_schema_version"] == ""
+    assert manifest["candidate_surface_metric_blocked_until_complete_manifest"] is True
+    assert manifest["official_metric_input_rows"] == 0
+    assert manifest["source_registry_mutated"] is False
+    assert manifest["latest_current_mutated"] is False
+
+
+@pytest.mark.parametrize(
+    ("collection_name", "args_extra", "expected_restart_policy"),
+    [
+        ("SourceAtomNonprodRouteSelectedCandidateSurfaceV2", [], "recreate_collection_with_fresh_manifest_v2"),
+        (
+            "SourceAtomNonprodRouteSelectedCandidateSurfaceV1",
+            ["--synthesize-xlsx-row-value-bundles"],
+            "dirty_partial_reindex_required",
+        ),
+        (
+            "SourceAtomNonprodOtherCandidateSurfaceV2",
+            ["--reset-checkpoint", "--synthesize-xlsx-row-value-bundles"],
+            "dirty_partial_reindex_required",
+        ),
+    ],
+)
+def test_weaviate_candidate_surface_index_complete_manifest_requires_v2_and_xlsx_bundle_flag(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    collection_name: str,
+    args_extra: list[str],
+    expected_restart_policy: str,
+) -> None:
+    class FakeStreamingIndexer:
+        def __init__(self, **kwargs: object) -> None:
+            self.config = kwargs["config"]
+            self.client = FakeWeaviateSourceAtomClient()
+
+        def index_records_streaming(self, records: object, **kwargs: object) -> dict:
+            list(records)
+            return {
+                "schema_version": "weaviate_source_atom_index_manifest_v1",
+                "valid": True,
+                "collection_name": self.config.collection_name,
+                "schema_version_source_atom": self.config.schema_version,
+                "indexed_count": 3,
+                "skipped_count": 0,
+                "failed_count": 0,
+                "checkpoint_resumed": False,
+                "upserted_count_this_run": 3,
+                "production_namespace": False,
+                "diagnostic_hash_vector_used": False,
+                "faiss_used_for_active_retrieval": False,
+            }
+
+    class FakeLoader:
+        def __init__(self, **kwargs: object) -> None:
+            self.synthesize_xlsx_row_value_bundles = bool(kwargs["synthesize_xlsx_row_value_bundles"])
+
+        def iter_units(self) -> list[dict]:
+            return [{"source_atom_id": "srcatom-v2-candidate-1", "source_family": "XLSX", "text": "bundle"}]
+
+        def describe(self) -> dict:
+            return {"synthesize_xlsx_row_value_bundles": self.synthesize_xlsx_row_value_bundles}
+
+    monkeypatch.setattr(weaviate_index_script, "WeaviateSourceAtomIndexer", FakeStreamingIndexer)
+    monkeypatch.setattr(weaviate_index_script, "SourceNativeCorpusLoader", FakeLoader)
+    manifest_path = tmp_path / "index_manifest.json"
+
+    rc = weaviate_index_script.main(
+        [
+            "--schema-version",
+            "weaviate_source_atom_v2",
+            "--weaviate-collection-name",
+            collection_name,
+            "--source-native-index-dir",
+            str(tmp_path),
+            "--source-atom-registry-path",
+            str(tmp_path / "source_atoms.jsonl"),
+            "--manifest-path",
+            str(manifest_path),
+            *args_extra,
+        ]
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert rc == 0
+    assert manifest["valid"] is True
+    assert manifest["candidate_surface_complete_manifest"] is False
+    assert manifest["candidate_surface_complete_manifest_schema_version"] == ""
+    assert manifest["candidate_surface_metric_blocked_until_complete_manifest"] is True
+    assert manifest["candidate_surface_restart_policy"] == expected_restart_policy
+    assert manifest["source_native_loader"]["synthesize_xlsx_row_value_bundles"] is bool(args_extra)
+    assert manifest["official_metric_input_rows"] == 0
+    assert manifest["source_registry_mutated"] is False
+    assert manifest["latest_current_mutated"] is False
+
+
+@pytest.mark.parametrize(
+    "manifest_override",
+    [
+        {"indexed_count": 0, "upserted_count_this_run": 0},
+        {"failed_count": 1},
+        {"indexed_count": "not-an-int"},
+        {"checkpoint_resumed": True},
+        {"skipped_count": 1},
+        {"upserted_count_this_run": 2},
+    ],
+)
+def test_weaviate_candidate_surface_v2_index_incomplete_counts_keep_metrics_blocked(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    manifest_override: dict,
+) -> None:
+    class IncompleteStreamingIndexer:
+        def __init__(self, **kwargs: object) -> None:
+            self.config = kwargs["config"]
+            self.client = FakeWeaviateSourceAtomClient()
+
+        def index_records_streaming(self, records: object, **kwargs: object) -> dict:
+            list(records)
+            manifest = {
+                "schema_version": "weaviate_source_atom_index_manifest_v1",
+                "valid": True,
+                "collection_name": self.config.collection_name,
+                "schema_version_source_atom": self.config.schema_version,
+                "indexed_count": 3,
+                "skipped_count": 0,
+                "failed_count": 0,
+                "checkpoint_resumed": False,
+                "upserted_count_this_run": 3,
+                "production_namespace": False,
+                "diagnostic_hash_vector_used": False,
+                "faiss_used_for_active_retrieval": False,
+            }
+            manifest.update(manifest_override)
+            return manifest
+
+    class FakeLoader:
+        def __init__(self, **kwargs: object) -> None:
+            self.synthesize_xlsx_row_value_bundles = bool(kwargs["synthesize_xlsx_row_value_bundles"])
+
+        def iter_units(self) -> list[dict]:
+            return [{"source_atom_id": "srcatom-v2-candidate-1", "source_family": "XLSX", "text": "bundle"}]
+
+        def describe(self) -> dict:
+            return {"synthesize_xlsx_row_value_bundles": self.synthesize_xlsx_row_value_bundles}
+
+    monkeypatch.setattr(weaviate_index_script, "WeaviateSourceAtomIndexer", IncompleteStreamingIndexer)
+    monkeypatch.setattr(weaviate_index_script, "SourceNativeCorpusLoader", FakeLoader)
+    manifest_path = tmp_path / "index_manifest.json"
+
+    rc = weaviate_index_script.main(
+        [
+            "--schema-version",
+            "weaviate_source_atom_v2",
+            "--weaviate-collection-name",
+            "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+            "--source-native-index-dir",
+            str(tmp_path),
+            "--source-atom-registry-path",
+            str(tmp_path / "source_atoms.jsonl"),
+            "--manifest-path",
+            str(manifest_path),
+            "--synthesize-xlsx-row-value-bundles",
+        ]
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert rc == 0
+    assert manifest["valid"] is True
+    assert manifest["candidate_surface_complete_manifest"] is False
+    assert manifest["candidate_surface_complete_manifest_schema_version"] == ""
+    assert manifest["candidate_surface_metric_blocked_until_complete_manifest"] is True
+    assert manifest["official_metric_input_rows"] == 0
+    assert manifest["source_registry_mutated"] is False
+    assert manifest["latest_current_mutated"] is False
+
+
+def test_weaviate_candidate_surface_v2_resumed_checkpoint_keeps_metrics_blocked(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class ResumedStreamingIndexer:
+        def __init__(self, **kwargs: object) -> None:
+            self.config = kwargs["config"]
+            self.client = FakeWeaviateSourceAtomClient()
+
+        def index_records_streaming(self, records: object, **kwargs: object) -> dict:
+            list(records)
+            return {
+                "schema_version": "weaviate_source_atom_index_manifest_v1",
+                "valid": True,
+                "collection_name": self.config.collection_name,
+                "schema_version_source_atom": self.config.schema_version,
+                "indexed_count": 3,
+                "skipped_count": 1,
+                "failed_count": 0,
+                "checkpoint_resumed": True,
+                "upserted_count_this_run": 2,
+                "production_namespace": False,
+                "diagnostic_hash_vector_used": False,
+                "faiss_used_for_active_retrieval": False,
+            }
+
+    class FakeLoader:
+        def __init__(self, **kwargs: object) -> None:
+            self.synthesize_xlsx_row_value_bundles = bool(kwargs["synthesize_xlsx_row_value_bundles"])
+
+        def iter_units(self) -> list[dict]:
+            return [{"source_atom_id": "srcatom-v2-candidate-1", "source_family": "XLSX", "text": "bundle"}]
+
+        def describe(self) -> dict:
+            return {"synthesize_xlsx_row_value_bundles": self.synthesize_xlsx_row_value_bundles}
+
+    monkeypatch.setattr(weaviate_index_script, "WeaviateSourceAtomIndexer", ResumedStreamingIndexer)
+    monkeypatch.setattr(weaviate_index_script, "SourceNativeCorpusLoader", FakeLoader)
+    manifest_path = tmp_path / "index_manifest.json"
+
+    rc = weaviate_index_script.main(
+        [
+            "--schema-version",
+            "weaviate_source_atom_v2",
+            "--weaviate-collection-name",
+            "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+            "--source-native-index-dir",
+            str(tmp_path),
+            "--source-atom-registry-path",
+            str(tmp_path / "source_atoms.jsonl"),
+            "--manifest-path",
+            str(manifest_path),
+            "--synthesize-xlsx-row-value-bundles",
+        ]
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert rc == 0
+    assert manifest["valid"] is True
+    assert manifest["checkpoint_resumed"] is True
+    assert manifest["candidate_surface_complete_manifest"] is False
+    assert manifest["candidate_surface_complete_manifest_schema_version"] == ""
+    assert manifest["candidate_surface_metric_blocked_until_complete_manifest"] is True
+    assert manifest["candidate_surface_restart_policy"] == "recreate_collection_with_fresh_manifest_v2"
+    assert manifest["official_metric_input_rows"] == 0
+    assert manifest["source_registry_mutated"] is False
+    assert manifest["latest_current_mutated"] is False
+
+
+def test_weaviate_candidate_surface_v2_index_failure_manifest_keeps_metrics_blocked(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    class FailingStreamingIndexer:
+        def __init__(self, **kwargs: object) -> None:
+            self.config = kwargs["config"]
+            self.client = FakeWeaviateSourceAtomClient()
+
+        def index_records_streaming(self, records: object, **kwargs: object) -> dict:
+            raise RuntimeError("boom")
+
+    class FakeLoader:
+        def __init__(self, **kwargs: object) -> None:
+            self.synthesize_xlsx_row_value_bundles = bool(kwargs["synthesize_xlsx_row_value_bundles"])
+
+        def iter_units(self) -> list[dict]:
+            return [{"source_atom_id": "srcatom-v2-candidate-1", "source_family": "XLSX", "text": "bundle"}]
+
+        def describe(self) -> dict:
+            return {"synthesize_xlsx_row_value_bundles": self.synthesize_xlsx_row_value_bundles}
+
+    monkeypatch.setattr(weaviate_index_script, "WeaviateSourceAtomIndexer", FailingStreamingIndexer)
+    monkeypatch.setattr(weaviate_index_script, "SourceNativeCorpusLoader", FakeLoader)
+    manifest_path = tmp_path / "index_manifest.json"
+
+    rc = weaviate_index_script.main(
+        [
+            "--schema-version",
+            "weaviate_source_atom_v2",
+            "--weaviate-collection-name",
+            "SourceAtomNonprodRouteSelectedCandidateSurfaceV2",
+            "--source-native-index-dir",
+            str(tmp_path),
+            "--source-atom-registry-path",
+            str(tmp_path / "source_atoms.jsonl"),
+            "--manifest-path",
+            str(manifest_path),
+            "--synthesize-xlsx-row-value-bundles",
+        ]
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert rc == 1
+    assert manifest["valid"] is False
+    assert manifest["collection_name"] == "SourceAtomNonprodRouteSelectedCandidateSurfaceV2"
+    assert manifest["candidate_surface_complete_manifest"] is False
+    assert manifest["candidate_surface_complete_manifest_schema_version"] == ""
+    assert manifest["candidate_surface_metric_blocked_until_complete_manifest"] is True
+    assert manifest["candidate_surface_restart_policy"] == "recreate_collection_with_fresh_manifest_v2"
+    assert manifest["official_metric_input_rows"] == 0
+    assert manifest["source_registry_mutated"] is False
+    assert manifest["latest_current_mutated"] is False
+    assert manifest["python_local_corpus_scan_used_for_candidate_generation"] is False
+    assert manifest["source_native_layered_retrieval_used_for_candidate_generation"] is False
+    assert manifest["faiss_used_for_active_retrieval"] is False
+    assert "RuntimeError: boom" in manifest["fallback_reason"]
 
 
 def test_weaviate_candidate_surface_config_rejects_protected_surface_flags(tmp_path: Path) -> None:
@@ -10885,6 +12298,8 @@ def test_source_native_corpus_loader_bridges_source_registry_structural_metadata
     serialized_unit = json.dumps(unit, ensure_ascii=False)
     serialized_record = json.dumps(record, ensure_ascii=False)
 
+    assert unit["doc_id"] == "docv-budget"
+    assert record["doc_id"] == "docv-budget"
     assert unit["metadata"]["sheet"] == "Approvals"
     assert unit["metadata"]["cell_range"] == "A2:D2"
     assert unit["metadata"]["cell"] == "B2"
@@ -11088,6 +12503,659 @@ def test_source_native_corpus_loader_synthesizes_candidate_surface_xlsx_row_valu
     assert "=SUM" not in serialized_record
     assert "D:/private/Budget.xlsx" not in serialized_bundle
     assert "D:/private/Budget.xlsx" not in serialized_record
+
+
+def test_source_native_corpus_loader_keeps_source_date_aliases_in_xlsx_row_value_bundle_text(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-ridership",
+                "evidence_bundle_id": "bundle-xlsx-ridership",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-ridership",
+                "bm25_text": (
+                    "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | period=201902 | "
+                    "target_column=수송인원\n"
+                    "snapshot=철도 A302: 노선명=안산선 | period=201902 | 수송인원=999명"
+                ),
+                "embedding_text": "안산선 201902 수송인원",
+                "source_identity": "safe-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            }
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-ridership",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-ridership",
+                    "sheet": "철도",
+                    "range": "A302:D351",
+                    "cell": "D302",
+                    "row_index_1based": 302,
+                    "row_label": "노선명=안산선",
+                    "column_label": "수송인원",
+                    "target_column": "수송인원",
+                },
+            }
+        ],
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+    )
+    units = loader.load_units()
+    bundles = [
+        unit
+        for unit in units
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+    ]
+
+    assert len(bundles) == 1
+    bundle = bundles[0]
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    record = source_atom_record_from_mapping(bundle, config)
+    serialized_bundle = json.dumps(bundle, ensure_ascii=False)
+    serialized_record = json.dumps(record, ensure_ascii=False)
+
+    assert bundle["metadata"]["source_date_aliases"] == ["2019년 2월", "2019년", "2월"]
+    assert "source_date_alias=2019년 2월" in bundle["text"]
+    assert "source_date_alias=2019년" in bundle["text"]
+    assert "source_date_alias=2월" in bundle["text"]
+    assert record["text"] == bundle["text"]
+    assert "normalized_value" not in serialized_bundle
+    assert "formula" not in serialized_bundle
+    assert "source_path" not in serialized_bundle
+    assert "normalized_value" not in serialized_record
+    assert "formula" not in serialized_record
+    assert "source_path" not in serialized_record
+
+
+def test_source_native_corpus_loader_adds_same_row_date_aliases_to_xlsx_value_bundle(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address",
+                "evidence_bundle_id": "bundle-xlsx-care-address",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-care-address",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | "
+                    "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | "
+                    "target_column=기관별 상세주소 | 기관별 상세주소=충청남도 부여군 석성면 왕릉로 773"
+                ),
+                "embedding_text": "부여효요양원 기관별 상세주소",
+                "source_identity": "care-address-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-care-date",
+                "evidence_bundle_id": "bundle-xlsx-care-date",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-care-date",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | "
+                    "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | "
+                    "target_column=지정일자 | 지정일자=2015-06-01"
+                ),
+                "embedding_text": "부여효요양원 지정일자 2015-06-01",
+                "source_identity": "care-date-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "J5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원",
+                    "column_label": "기관별 상세주소",
+                    "target_column": "기관별 상세주소",
+                },
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-care-date",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "H5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원",
+                    "column_label": "지정일자",
+                    "target_column": "지정일자",
+                },
+            },
+        ],
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+    )
+    units = loader.load_units()
+    bundles = [
+        unit
+        for unit in units
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+        and unit["metadata"].get("target_column") == "기관별 상세주소"
+    ]
+
+    assert len(bundles) == 1
+    bundle = bundles[0]
+    serialized_bundle = json.dumps(bundle, ensure_ascii=False)
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    record = source_atom_record_from_mapping(bundle, config)
+    serialized_record = json.dumps(record, ensure_ascii=False)
+    assert bundle["doc_id"] == "docv-care"
+    assert bundle["metadata"]["source_atom_ids"] == [
+        "srcatom-xlsx-care-address",
+        "srcatom-xlsx-care-date",
+    ]
+    assert bundle["metadata"]["source_date_aliases"] == ["2015년 6월", "2015년", "6월", "1일"]
+    assert "source_date_alias=2015년 6월" in bundle["text"]
+    assert "source_date_alias=2015년" in bundle["text"]
+    assert "source_date_alias=6월" in bundle["text"]
+    assert "source_date_alias=1일" in bundle["text"]
+    assert record["text"] == bundle["text"]
+    assert "source_date_alias=2015년 6월" in record["text"]
+    assert "normalized_value" not in serialized_bundle
+    assert "normalized_value" not in serialized_record
+    assert "formula" not in serialized_bundle
+    assert "formula" not in serialized_record
+    assert "source_path" not in serialized_bundle
+    assert "source_path" not in serialized_record
+
+
+def test_source_native_corpus_loader_does_not_bleed_same_row_date_aliases_across_rows_or_docs(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-address",
+                "evidence_bundle_id": "bundle-xlsx-address",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-address",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | "
+                    "row_label=장기요양기관이름=부여효요양원 | "
+                    "target_column=기관별 상세주소 | 기관별 상세주소=충청남도 부여군 석성면 왕릉로 773"
+                ),
+                "embedding_text": "부여효요양원 기관별 상세주소",
+                "source_identity": "care-address-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-date-other-row",
+                "evidence_bundle_id": "bundle-xlsx-date-other-row",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-date-other-row",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | "
+                    "row_label=장기요양기관이름=다른요양원 | "
+                    "target_column=지정일자 | 지정일자=2015-06-01"
+                ),
+                "embedding_text": "다른요양원 지정일자 2015-06-01",
+                "source_identity": "other-row-date-source-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-date-other-doc",
+                "evidence_bundle_id": "bundle-xlsx-date-other-doc",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-date-other-doc",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | "
+                    "row_label=장기요양기관이름=부여효요양원 | "
+                    "target_column=지정일자 | 지정일자=2020-11-01"
+                ),
+                "embedding_text": "부여효요양원 지정일자 2020-11-01",
+                "source_identity": "other-doc-date-source-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-address",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "J5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관이름=부여효요양원",
+                    "column_label": "기관별 상세주소",
+                    "target_column": "기관별 상세주소",
+                },
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-date-other-row",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "H5003",
+                    "row_index_1based": 5003,
+                    "row_label": "장기요양기관이름=다른요양원",
+                    "column_label": "지정일자",
+                    "target_column": "지정일자",
+                },
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-date-other-doc",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-other-care",
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "H5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관이름=부여효요양원",
+                    "column_label": "지정일자",
+                    "target_column": "지정일자",
+                },
+            },
+        ],
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+    )
+    bundles = [
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+        and unit["metadata"].get("target_column") == "기관별 상세주소"
+    ]
+
+    assert len(bundles) == 1
+    bundle = bundles[0]
+    serialized_bundle = json.dumps(bundle, ensure_ascii=False)
+    assert "source_date_aliases" not in bundle["metadata"]
+    assert bundle["metadata"]["source_atom_ids"] == ["srcatom-xlsx-address"]
+    assert "source_date_alias=" not in bundle["text"]
+    assert "srcatom-xlsx-date-other-row" not in serialized_bundle
+    assert "srcatom-xlsx-date-other-doc" not in serialized_bundle
+    assert "2015년 6월" not in serialized_bundle
+    assert "2020년 11월" not in serialized_bundle
+
+
+def test_source_native_corpus_loader_does_not_propagate_date_aliases_from_forbidden_segments(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-safe-address",
+                "evidence_bundle_id": "bundle-xlsx-safe-address",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-safe-address",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | row_label=장기요양기관이름=부여효요양원 | "
+                    "target_column=기관별 상세주소 | 기관별 상세주소=충청남도 부여군 석성면 왕릉로 773"
+                ),
+                "embedding_text": "부여효요양원 기관별 상세주소",
+                "source_identity": "safe-address-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-forbidden-date",
+                "evidence_bundle_id": "bundle-xlsx-forbidden-date",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-forbidden-date",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | row_label=장기요양기관이름=부여효요양원 | "
+                    "target_column=지정일자 | formula=2015-06-01 | "
+                    "normalized_value=2015-06-01 | source_path=D:/private/2015-06.xlsx"
+                ),
+                "embedding_text": "부여효요양원 forbidden date",
+                "source_identity": "forbidden-date-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-safe-address",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "J5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관이름=부여효요양원",
+                    "column_label": "기관별 상세주소",
+                    "target_column": "기관별 상세주소",
+                },
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-forbidden-date",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "H5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관이름=부여효요양원",
+                    "column_label": "지정일자",
+                    "target_column": "지정일자",
+                },
+            },
+        ],
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+    )
+    bundles = [
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+        and unit["metadata"].get("target_column") == "기관별 상세주소"
+    ]
+
+    assert len(bundles) == 1
+    bundle = bundles[0]
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    record = source_atom_record_from_mapping(bundle, config)
+    serialized_bundle = json.dumps(bundle, ensure_ascii=False)
+    serialized_record = json.dumps(record, ensure_ascii=False)
+    assert "source_date_aliases" not in bundle["metadata"]
+    assert bundle["metadata"]["source_atom_ids"] == ["srcatom-xlsx-safe-address"]
+    assert "source_date_alias=" not in bundle["text"]
+    assert "srcatom-xlsx-forbidden-date" not in serialized_bundle
+    assert "formula" not in serialized_bundle
+    assert "formula" not in serialized_record
+    assert "normalized_value" not in serialized_bundle
+    assert "normalized_value" not in serialized_record
+    assert "source_path" not in serialized_bundle
+    assert "source_path" not in serialized_record
+
+
+def test_source_native_corpus_loader_ignores_metadata_only_date_aliases_for_row_value_bundles(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-address-metadata-only-alias",
+                "evidence_bundle_id": "bundle-xlsx-address-metadata-only-alias",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-address-metadata-only-alias",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | row_label=장기요양기관이름=부여효요양원 | "
+                    "target_column=기관별 상세주소 | 기관별 상세주소=충청남도 부여군 석성면 왕릉로 773"
+                ),
+                "embedding_text": "부여효요양원 기관별 상세주소",
+                "source_date_aliases": ["2015년 6월", "2015년", "6월"],
+                "source_identity": "metadata-only-address-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            }
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-address-metadata-only-alias",
+                "source_family": "XLSX",
+                "source_date_aliases": ["2015년 6월", "2015년", "6월"],
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "J5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관이름=부여효요양원",
+                    "column_label": "기관별 상세주소",
+                    "target_column": "기관별 상세주소",
+                },
+            }
+        ],
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+    )
+    bundles = [
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+    ]
+
+    assert len(bundles) == 1
+    bundle = bundles[0]
+    serialized_bundle = json.dumps(bundle, ensure_ascii=False)
+    assert "source_date_aliases" not in bundle["metadata"]
+    assert "source_date_alias=" not in bundle["text"]
+    assert "2015년 6월" not in serialized_bundle
+
+
+def test_preserve_xlsx_locator_source_contexts_keeps_verified_bundle_source_date_aliases_for_period_axis() -> None:
+    query = "2015년 6월 부여효요양원의 상세주소는 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"period": "2015-06", "line_name": "부여효요양원"},
+            "target_axis": {"column": "상세주소", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2015-06", "2015년 6월"],
+                "row_entity": ["부여효요양원"],
+                "target_column": ["상세주소", "기관별 상세주소"],
+                "display_value": [],
+            },
+        },
+    )
+    retrieved_context = {
+        "doc_id": "docv-care",
+        "chunk_id": "srcatom-xlsx-care-address-bundle",
+        "source_atom_id": "srcatom-xlsx-care-address-bundle",
+        "evidence_bundle_id": "bundle-srcatom-xlsx-care-address-bundle",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": (
+            "sheet=일반현황 | range=A5002:J5051 | row_index_1based=5002 | "
+            "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | "
+            "target_column=기관별 상세주소 | display_value=충청남도 부여군 석성면 왕릉로 773"
+        ),
+        "sheet": "일반현황",
+        "cell_range": "A5002:J5051",
+        "row_index_1based": "5002",
+        "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원",
+        "column_label": "기관별 상세주소",
+        "target_column": "기관별 상세주소",
+        "display_value": "충청남도 부여군 석성면 왕릉로 773",
+        "metadata": {
+            "candidate_surface_materialization": "xlsx_row_value_bundle_v1",
+            "source_date_aliases": ["2015년 6월", "2015년", "6월"],
+        },
+    }
+    row = {
+        "id": "xlsx-preserved-source-date-aliases",
+        "query": query,
+        "generated_answer": "충청남도 부여군 석성면 왕릉로 773",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [retrieved_context],
+    }
+
+    preserved = actual_rag_eval.preserve_xlsx_locator_source_contexts([row])[0]
+    candidates = actual_rag_eval._xlsx_locator_tool_candidates(preserved)
+
+    assert len(candidates) == 1
+    candidate = candidates[0]
+    assert candidate["accepted_for_regating"] is True
+    assert candidate["source_owned_same_candidate_package"] is True
+    assert candidate["source_date_aliases"] == ["2015년 6월", "2015년", "6월"]
+    assert "source_date_aliases" in candidate["input_fields_used"]
+    assert candidate["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert candidate["missing_validated_required_axes"] == []
+
+
+def test_verified_bundle_source_date_aliases_do_not_accept_incomplete_locator_candidate() -> None:
+    query = "2015년 6월 부여효요양원의 상세주소는 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"period": "2015-06", "line_name": "부여효요양원"},
+            "target_axis": {"column": "상세주소", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2015-06", "2015년 6월"],
+                "row_entity": ["부여효요양원"],
+                "target_column": ["상세주소", "기관별 상세주소"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-incomplete-source-date-aliases",
+        "query": query,
+        "generated_answer": "근거만으로는 알 수 없습니다.",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "docv-care",
+                "chunk_id": "srcatom-xlsx-care-alias-only",
+                "source_atom_id": "srcatom-xlsx-care-alias-only",
+                "evidence_bundle_id": "bundle-srcatom-xlsx-care-alias-only",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": "sheet=일반현황 | range=A1:J30761 | target_column=기관별 상세주소",
+                "sheet": "일반현황",
+                "cell_range": "A1:J30761",
+                "target_column": "기관별 상세주소",
+                "metadata": {
+                    "candidate_surface_materialization": "xlsx_row_value_bundle_v1",
+                    "source_date_aliases": ["2015년 6월", "2015년", "6월"],
+                },
+            }
+        ],
+    }
+
+    preserved = actual_rag_eval.preserve_xlsx_locator_source_contexts([row])[0]
+    snapshot = preserved[actual_rag_eval.INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY][0]
+    assert snapshot["source_date_aliases"] == ["2015년 6월", "2015년", "6월"]
+    assert snapshot["candidate_surface_materialization"] == "xlsx_row_value_bundle_v1"
+    candidates = actual_rag_eval._xlsx_locator_tool_candidates(preserved)
+
+    assert len(candidates) == 1
+    candidate = candidates[0]
+    if candidate.get("source_date_aliases"):
+        assert candidate["source_date_aliases"] == ["2015년 6월", "2015년", "6월"]
+    assert candidate["accepted_for_regating"] is False
+    assert candidate["rejection_reason"] == "missing_validated_required_axes_after_tool"
+    assert {"row_entity", "display_value"}.issubset(set(candidate["missing_validated_required_axes"]))
 
 
 @pytest.mark.parametrize(

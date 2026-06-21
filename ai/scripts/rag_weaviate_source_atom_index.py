@@ -26,6 +26,7 @@ from ai.eval.report_paths import ACTUAL_RAG_REPORT_ROOT  # noqa: E402
 from ai.eval.weaviate_source_atom import (  # noqa: E402
     BgeM3EmbeddingBuilder,
     WEAVIATE_CANDIDATE_SURFACE_COMPLETE_MANIFEST_SCHEMA_VERSION,
+    WEAVIATE_ROUTE_SELECTED_CANDIDATE_SURFACE_V2_COLLECTION,
     WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V1,
     WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V2,
     WEAVIATE_STREAMING_BGE_M3_VECTOR_SOURCE,
@@ -145,6 +146,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             manifest_path = DEFAULT_V2_MANIFEST_PATH
         if checkpoint_path == DEFAULT_CHECKPOINT_PATH:
             checkpoint_path = DEFAULT_V2_CHECKPOINT_PATH
+    candidate_surface_collection = "CandidateSurface" in config.collection_name
+    candidate_surface_recreate_v2 = config.collection_name == WEAVIATE_ROUTE_SELECTED_CANDIDATE_SURFACE_V2_COLLECTION
+    collection_recreate_requested = bool(args.reset_checkpoint and candidate_surface_recreate_v2)
     indexer: WeaviateSourceAtomIndexer | None = None
     loader = SourceNativeCorpusLoader(
         search_view_manifest_path=Path(args.source_native_index_dir) / "search_view_manifest.jsonl",
@@ -156,6 +160,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             print(json.dumps({"status": "indexing", **event}, ensure_ascii=False, sort_keys=True), file=sys.stderr)
 
         batch_size = int(args.batch_size or 32)
+        limit = max(0, int(args.limit or 0))
+        full_corpus_index_requested = limit == 0
         indexer = WeaviateSourceAtomIndexer(
             config=config,
             embedding_builder=BgeM3EmbeddingBuilder(
@@ -171,7 +177,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         def iter_limited_units():
             count = 0
             for unit in loader.iter_units():
-                if args.limit and args.limit > 0 and count >= int(args.limit):
+                if limit > 0 and count >= limit:
                     break
                 count += 1
                 yield unit
@@ -180,22 +186,45 @@ def main(argv: Sequence[str] | None = None) -> int:
             iter_limited_units(),
             checkpoint_path=checkpoint_path,
             source_atom_registry_path=Path(args.source_atom_registry_path),
-            total_count=int(args.limit) if args.limit and args.limit > 0 else None,
+            total_count=limit if limit > 0 else None,
+            recreate_collection=collection_recreate_requested,
         )
         manifest["index_vector_source"] = args.vector_source
         manifest["manifest_path"] = manifest_path.as_posix()
         manifest["checkpoint_path"] = checkpoint_path.as_posix() if checkpoint_path is not None else ""
         manifest["checkpoint_resume_enabled"] = checkpoint_path is not None
+        manifest["collection_recreate_requested"] = collection_recreate_requested
+        manifest["collection_recreated_this_run"] = bool(manifest.get("collection_recreated_this_run"))
         manifest["synthesize_xlsx_row_value_bundles"] = bool(args.synthesize_xlsx_row_value_bundles)
-        candidate_surface_collection = "CandidateSurface" in config.collection_name
-        candidate_surface_recreate_v2 = config.collection_name.endswith("CandidateSurfaceV2")
-        candidate_surface_complete = bool(
+        manifest["index_limit"] = limit
+        manifest["candidate_surface_full_corpus_index"] = full_corpus_index_requested
+        candidate_surface_schema_v2 = str(manifest.get("schema_version_source_atom") or "").strip() == WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V2
+        candidate_surface_complete = False
+        if (
             candidate_surface_collection
             and candidate_surface_recreate_v2
+            and candidate_surface_schema_v2
             and args.synthesize_xlsx_row_value_bundles
-            and not bool(manifest.get("checkpoint_resumed"))
-            and int(manifest.get("failed_count") or 0) == 0
-        )
+        ):
+            try:
+                indexed_count = int(manifest.get("indexed_count") or 0)
+                skipped_count = int(manifest.get("skipped_count") or 0)
+                failed_count = int(manifest.get("failed_count") or 0)
+                upserted_count_this_run = int(manifest.get("upserted_count_this_run") or 0)
+            except (TypeError, ValueError):
+                indexed_count = 0
+                skipped_count = 0
+                failed_count = 1
+                upserted_count_this_run = -1
+            candidate_surface_complete = bool(
+                indexed_count > 0
+                and upserted_count_this_run == indexed_count
+                and skipped_count == 0
+                and failed_count == 0
+                and manifest.get("checkpoint_resumed") is False
+                and manifest.get("collection_recreated_this_run") is True
+                and full_corpus_index_requested
+            )
         manifest["candidate_surface_complete_manifest"] = candidate_surface_complete
         manifest["candidate_surface_complete_manifest_schema_version"] = (
             WEAVIATE_CANDIDATE_SURFACE_COMPLETE_MANIFEST_SCHEMA_VERSION if candidate_surface_complete else ""
@@ -220,6 +249,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     except Exception as exc:
         reason = f"{type(exc).__name__}: {exc}"
+        limit = max(0, int(getattr(args, "limit", 0) or 0))
         failure = {
             "schema_version": "weaviate_source_atom_index_manifest_v1",
             "valid": False,
@@ -235,7 +265,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             "index_vector_source": getattr(args, "vector_source", WEAVIATE_STREAMING_BGE_M3_VECTOR_SOURCE),
             "checkpoint_path": checkpoint_path.as_posix() if checkpoint_path is not None else "",
             "checkpoint_resume_enabled": checkpoint_path is not None,
+            "collection_recreate_requested": collection_recreate_requested,
+            "collection_recreated_this_run": False,
             "synthesize_xlsx_row_value_bundles": bool(getattr(args, "synthesize_xlsx_row_value_bundles", False)),
+            "index_limit": limit,
+            "candidate_surface_full_corpus_index": limit == 0,
             "candidate_surface_complete_manifest": False,
             "candidate_surface_complete_manifest_schema_version": "",
             "candidate_surface_metric_blocked_until_complete_manifest": "CandidateSurface" in config.collection_name,

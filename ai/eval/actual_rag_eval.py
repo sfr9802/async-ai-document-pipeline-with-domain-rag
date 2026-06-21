@@ -5041,7 +5041,12 @@ class SourceNativeCorpusLoader:
             "unit_id": unit_id,
             "source_atom_id": source_atom_id,
             "evidence_bundle_id": evidence_bundle_id,
-            "doc_id": _clean(row.get("document_version_id") or row.get("document_id") or row.get("workbook_version_id"))
+            "doc_id": _clean(
+                row.get("document_version_id")
+                or row.get("document_id")
+                or row.get("workbook_version_id")
+                or structural_metadata.get("workbook_version_id")
+            )
             or f"source_native_doc_{_sha256_text(source_identity or unit_id)[:16]}",
             "chunk_id": source_atom_id or evidence_bundle_id or search_view_id or unit_id,
             "source_family": family,
@@ -5305,6 +5310,40 @@ class SourceNativeCorpusLoader:
     def _synthesize_xlsx_row_value_bundle_units(self, units: Sequence[Mapping[str, Any]]) -> list[dict[str, Any]]:
         bundles: list[dict[str, Any]] = []
         seen: set[str] = set()
+        same_row_date_aliases: dict[tuple[str, ...], list[str]] = {}
+        same_row_date_alias_source_ids: dict[tuple[str, ...], list[str]] = {}
+
+        def same_row_key(unit: Mapping[str, Any], metadata: Mapping[str, Any]) -> tuple[str, ...]:
+            return (
+                _clean(unit.get("doc_id")),
+                _clean(metadata.get("sheet")),
+                _clean(metadata.get("cell_range")),
+                _clean(metadata.get("row_index_1based")),
+                _clean(metadata.get("row_label")),
+            )
+
+        def add_alias(row_key: tuple[str, ...], alias: str, source_atom_id: str) -> None:
+            clean_alias = _clean(alias)
+            if not clean_alias or not all(row_key[:3]) or not (row_key[3] or row_key[4]):
+                return
+            aliases = same_row_date_aliases.setdefault(row_key, [])
+            if clean_alias not in aliases:
+                aliases.append(clean_alias)
+            source_ids = same_row_date_alias_source_ids.setdefault(row_key, [])
+            if source_atom_id and source_atom_id not in source_ids:
+                source_ids.append(source_atom_id)
+
+        for unit in units:
+            if _clean(unit.get("source_family")).upper() != "XLSX":
+                continue
+            metadata = unit.get("metadata") if isinstance(unit.get("metadata"), Mapping) else {}
+            row_key = same_row_key(unit, metadata)
+            source_atom_id = _clean(unit.get("source_atom_id"))
+            source_text = _strip_xlsx_locator_forbidden_text_segments(
+                _clean(unit.get("text") or unit.get("bm25_text") or unit.get("embedding_text"))
+            )
+            for alias in _xlsx_locator_date_aliases(source_text):
+                add_alias(row_key, alias, source_atom_id)
         for unit in units:
             if _clean(unit.get("source_family")).upper() != "XLSX":
                 continue
@@ -5338,6 +5377,19 @@ class SourceNativeCorpusLoader:
                 continue
             seen.add(digest)
             bundle_id = f"srcatom_xlsx_row_value_bundle_{digest}"
+            row_key = same_row_key(unit, metadata)
+            source_date_aliases = list(
+                dict.fromkeys(
+                    [
+                        *_xlsx_locator_date_aliases(
+                            _strip_xlsx_locator_forbidden_text_segments(
+                                _clean(unit.get("text") or unit.get("bm25_text") or unit.get("embedding_text"))
+                            )
+                        ),
+                        *same_row_date_aliases.get(row_key, []),
+                    ]
+                )
+            )
             text_parts = [
                 f"{key}={value}"
                 for key, value in (
@@ -5353,6 +5405,7 @@ class SourceNativeCorpusLoader:
                 )
                 if value
             ]
+            text_parts.extend(f"source_date_alias={alias}" for alias in source_date_aliases)
             bundle_metadata = {
                 key: value
                 for key, value in metadata.items()
@@ -5372,13 +5425,17 @@ class SourceNativeCorpusLoader:
                     "source_text_sha256",
                 }
             }
+            if source_date_aliases:
+                bundle_metadata["source_date_aliases"] = source_date_aliases
             bundle_metadata.update(
                 {
                     "candidate_surface_materialization": "xlsx_row_value_bundle_v1",
                     "candidate_surface_materialization_policy": (
                         "source_owned_manifest_snapshot_no_gold_qrels_labels_or_normalized_fields_v1"
                     ),
-                    "source_atom_ids": [source_atom_id],
+                    "source_atom_ids": list(
+                        dict.fromkeys([source_atom_id, *same_row_date_alias_source_ids.get(row_key, [])])
+                    ),
                     "source_registry_mutated": False,
                     "raw_local_paths_exposed": False,
                 }
@@ -8847,6 +8904,107 @@ def _xlsx_locator_apply_source_date_alias_diagnostic(
         candidate["source_date_aliases"] = aliases
 
 
+def _xlsx_locator_source_date_alias_candidate_values(value: Any) -> list[str]:
+    parsed = _parse_jsonish(value)
+    raw_values = parsed if isinstance(parsed, list) else [parsed]
+    aliases: list[str] = []
+    seen: set[str] = set()
+    for raw_value in raw_values:
+        alias = _clean(raw_value)
+        if not alias:
+            continue
+        if not (
+            re.search(r"\b\d{4}년\b", alias)
+            or re.search(r"\b\d{4}년\s+\d{1,2}월\b", alias)
+            or re.search(r"\b\d{1,2}월\b", alias)
+            or re.search(r"\b\d{4}[-./](0?[1-9]|1[0-2])\b", alias)
+        ):
+            continue
+        if alias not in seen:
+            aliases.append(alias)
+            seen.add(alias)
+    return aliases
+
+
+def _xlsx_locator_source_date_aliases_from_context(context: Mapping[str, Any]) -> list[str]:
+    aliases: list[str] = []
+    seen: set[str] = set()
+    safe_text = _gate_row_text(context)
+    for alias in _xlsx_locator_date_aliases(safe_text):
+        if alias not in seen:
+            aliases.append(alias)
+            seen.add(alias)
+    metadata = context.get("metadata") if isinstance(context.get("metadata"), Mapping) else {}
+    verified_bundle = _clean(
+        context.get("candidate_surface_materialization") or metadata.get("candidate_surface_materialization")
+    ) == "xlsx_row_value_bundle_v1"
+    if verified_bundle:
+        for source in (context, metadata):
+            for field in ("source_date_aliases", "source_date_aliases_json", "source_date_alias"):
+                for alias in _xlsx_locator_source_date_alias_candidate_values(source.get(field)):
+                    if alias not in seen:
+                        aliases.append(alias)
+                        seen.add(alias)
+    return aliases
+
+
+def _xlsx_locator_candidate_can_use_same_candidate_source_date_alias_package(
+    candidate: Mapping[str, Any],
+) -> bool:
+    if _clean(candidate.get("source_family")).upper() != "XLSX":
+        return False
+    if not _has_sourceatom_evidence_identity(candidate) or not _clean(candidate.get("doc_id")):
+        return False
+    if not _clean(candidate.get("display_value")):
+        return False
+    if not (_clean(candidate.get("target_column")) or _clean(candidate.get("column_label"))):
+        return False
+    if not (_clean(candidate.get("row_label")) or _clean(candidate.get("row_index_1based"))):
+        return False
+    if not (_clean(candidate.get("sheet")) or _clean(candidate.get("cell_range")) or _clean(candidate.get("cell"))):
+        return False
+    return True
+
+
+def _xlsx_locator_apply_same_candidate_source_date_alias_package(
+    *,
+    context: Mapping[str, Any],
+    candidate: MutableMapping[str, Any],
+    locator_text: str,
+    locator_text_source: str,
+    locator_text_fields_used: Sequence[str],
+) -> tuple[str, str, tuple[str, ...]]:
+    aliases = [
+        *(
+            _clean(alias)
+            for alias in _as_list(candidate.get("source_date_aliases"))
+            if _clean(alias)
+        ),
+        *_xlsx_locator_source_date_aliases_from_context(context),
+    ]
+    aliases = list(dict.fromkeys(alias for alias in aliases if alias))
+    if not aliases or not _xlsx_locator_candidate_can_use_same_candidate_source_date_alias_package(candidate):
+        return locator_text, locator_text_source, tuple(locator_text_fields_used)
+
+    text = _clean(candidate.get("text") or locator_text)
+    existing_text = normalize_answer_text(text)
+    alias_parts = [
+        f"source_date_alias={alias}"
+        for alias in aliases
+        if normalize_answer_text(alias) not in existing_text
+    ]
+    if alias_parts:
+        text = " | ".join(part for part in (text, *alias_parts) if part)
+        candidate["text"] = text
+    candidate["source_date_aliases"] = aliases
+    candidate["source_owned_same_candidate_package"] = True
+    candidate["source_owned_same_candidate_package_policy"] = (
+        "source_owned_same_candidate_date_aliases_only_no_gold_qrels_labels_ids_titles_or_files_v1"
+    )
+    fields = tuple(dict.fromkeys([*locator_text_fields_used, "source_date_aliases"]))
+    return text, locator_text_source, fields
+
+
 def _xlsx_locator_table_row_text(
     *,
     row: Mapping[str, Any],
@@ -9089,6 +9247,15 @@ def _xlsx_locator_candidate_from_context(
             candidate["display_value"] = materialized_display_value
             candidate["display_value_source"] = "source_owned_target_column_segment"
             locator_text_fields_used = tuple(dict.fromkeys([*locator_text_fields_used, "display_value"]))
+    locator_text, locator_text_source, locator_text_fields_used = (
+        _xlsx_locator_apply_same_candidate_source_date_alias_package(
+            context=context,
+            candidate=candidate,
+            locator_text=locator_text,
+            locator_text_source=locator_text_source,
+            locator_text_fields_used=locator_text_fields_used,
+        )
+    )
     query = _clean(row.get("query"))
     query_anchors = _query_focus_anchors_for_row(row)
     support_text = _gate_support_text(candidate)
@@ -9684,6 +9851,23 @@ def _xlsx_locator_source_context_snapshot(context: Mapping[str, Any]) -> dict[st
         value = _xlsx_locator_source_owned_value(context, field)
         if value:
             snapshot[field] = value
+    metadata = context.get("metadata") if isinstance(context.get("metadata"), Mapping) else {}
+    materialization = _clean(
+        context.get("candidate_surface_materialization")
+        or metadata.get("candidate_surface_materialization")
+    )
+    if materialization == "xlsx_row_value_bundle_v1":
+        aliases: list[str] = []
+        seen_aliases: set[str] = set()
+        for source in (context, metadata):
+            for field in ("source_date_aliases", "source_date_aliases_json", "source_date_alias"):
+                for alias in _xlsx_locator_source_date_alias_candidate_values(source.get(field)):
+                    if alias not in seen_aliases:
+                        aliases.append(alias)
+                        seen_aliases.add(alias)
+        snapshot["candidate_surface_materialization"] = materialization
+        if aliases:
+            snapshot["source_date_aliases"] = aliases
     forbidden_seen = sorted(_collect_xlsx_locator_forbidden_input_fields(context))
     if forbidden_seen:
         snapshot["forbidden_input_fields_seen"] = forbidden_seen

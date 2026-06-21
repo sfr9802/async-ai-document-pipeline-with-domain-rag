@@ -30,6 +30,7 @@ WEAVIATE_SOURCE_ATOM_INDEX_CHECKPOINT_VERSION = "weaviate_source_atom_index_chec
 WEAVIATE_STREAMING_BGE_M3_VECTOR_SOURCE = "streaming-bge-m3"
 WEAVIATE_CANDIDATE_INPUT_POLICY = "query_text_and_query_embedding_only_no_gold_qrels_labels_ids_or_baseline"
 WEAVIATE_CANDIDATE_SURFACE_COMPLETE_MANIFEST_SCHEMA_VERSION = "candidate_surface_complete_manifest.v1"
+WEAVIATE_ROUTE_SELECTED_CANDIDATE_SURFACE_V2_COLLECTION = "SourceAtomNonprodRouteSelectedCandidateSurfaceV2"
 WEAVIATE_CANDIDATE_SURFACE_DIRTY_STATUSES = frozenset({"dirty", "dirty_partial", "partial_dirty"})
 WEAVIATE_ROUTE_SELECTED_NONPROD_DEFAULT_CONFIG_PATH = (
     "ai/eval/configs/weaviate_route_selected_nonprod_default.json"
@@ -591,6 +592,9 @@ class WeaviateSourceAtomClientProtocol(Protocol):
         ...
 
     def ensure_collection(self, schema: Mapping[str, Any]) -> None:
+        ...
+
+    def recreate_collection(self, schema: Mapping[str, Any]) -> None:
         ...
 
     def upsert_many(self, objects: Sequence[Mapping[str, Any]], vectors: Sequence[Sequence[float]]) -> int:
@@ -1806,6 +1810,7 @@ class FakeWeaviateSourceAtomClient:
         self.upsert_log: list[dict[str, Any]] = []
         self.metadata_only_upsert_log: list[dict[str, Any]] = []
         self.schema_log: list[dict[str, Any]] = []
+        self.recreate_schema_log: list[dict[str, Any]] = []
         self.local_scan_used = False
 
     def ping(self) -> bool:
@@ -1817,6 +1822,12 @@ class FakeWeaviateSourceAtomClient:
         if not self.available:
             raise WeaviateUnavailableError("weaviate_unavailable: fake client unavailable")
         self.schema_log.append(dict(schema))
+
+    def recreate_collection(self, schema: Mapping[str, Any]) -> None:
+        if not self.available:
+            raise WeaviateUnavailableError("weaviate_unavailable: fake client unavailable")
+        self.recreate_schema_log.append(dict(schema))
+        self.objects.clear()
 
     def upsert_many(self, objects: Sequence[Mapping[str, Any]], vectors: Sequence[Sequence[float]]) -> int:
         if not self.available:
@@ -2071,6 +2082,23 @@ class WeaviateSourceAtomClient:
             tokenization=tokenizations.get(_clean(prop.get("tokenization")).casefold(), Tokenization.WORD),
         )
 
+    def _create_collection(self, client: Any, schema: Mapping[str, Any]) -> None:
+        try:
+            from weaviate.classes.config import Configure, VectorDistances  # type: ignore
+
+            props = []
+            for prop in schema.get("properties") or []:
+                props.append(self._weaviate_property_from_schema(prop))
+            self._collection = client.collections.create(
+                self.config.collection_name,
+                properties=props,
+                vector_config=Configure.Vectors.self_provided(
+                    vector_index_config=Configure.VectorIndex.hnsw(distance_metric=VectorDistances.COSINE)
+                ),
+            )
+        except Exception as exc:  # pragma: no cover - depends on live service/client version
+            raise WeaviateUnavailableError(f"weaviate_unavailable: schema create failed:{type(exc).__name__}: {exc}") from exc
+
     def _add_missing_existing_v2_properties(self, schema: Mapping[str, Any], collection: Any) -> None:
         if _clean(schema.get("schema_version")) != WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V2:
             return
@@ -2107,21 +2135,27 @@ class WeaviateSourceAtomClient:
             self._add_missing_existing_v2_properties(schema, self._collection)
             self._validate_existing_collection(schema, self._collection)
             return
-        try:
-            from weaviate.classes.config import Configure, VectorDistances  # type: ignore
+        self._create_collection(client, schema)
 
-            props = []
-            for prop in schema.get("properties") or []:
-                props.append(self._weaviate_property_from_schema(prop))
-            self._collection = client.collections.create(
-                self.config.collection_name,
-                properties=props,
-                vector_config=Configure.Vectors.self_provided(
-                    vector_index_config=Configure.VectorIndex.hnsw(distance_metric=VectorDistances.COSINE)
-                ),
+    def recreate_collection(self, schema: Mapping[str, Any]) -> None:
+        self.config.validate_for_nonprod()
+        collection_name = _clean(self.config.collection_name)
+        if collection_name != WEAVIATE_ROUTE_SELECTED_CANDIDATE_SURFACE_V2_COLLECTION:
+            raise WeaviateUnavailableError(
+                f"weaviate_unavailable: collection_recreate_nonprod_candidate_surface_v2_required:{collection_name}"
             )
+        try:
+            client = self._connect()
+            if client.collections.exists(collection_name):
+                client.collections.delete(collection_name)
+            self._collection = None
+            self._create_collection(client, schema)
         except Exception as exc:  # pragma: no cover - depends on live service/client version
-            raise WeaviateUnavailableError(f"weaviate_unavailable: schema create failed:{type(exc).__name__}: {exc}") from exc
+            if isinstance(exc, WeaviateUnavailableError):
+                raise
+            raise WeaviateUnavailableError(
+                f"weaviate_unavailable: collection recreate failed:{type(exc).__name__}: {exc}"
+            ) from exc
 
     def upsert_many(self, objects: Sequence[Mapping[str, Any]], vectors: Sequence[Sequence[float]]) -> int:
         collection = self._use_collection()
@@ -2535,6 +2569,7 @@ class WeaviateSourceAtomIndexer:
         checkpoint_path: Path | str | None = None,
         source_atom_registry_path: Path | str | None = None,
         total_count: int | None = None,
+        recreate_collection: bool = False,
     ) -> dict[str, Any]:
         self.config.validate_for_nonprod()
         started_at = _utc_now_iso()
@@ -2554,7 +2589,12 @@ class WeaviateSourceAtomIndexer:
         checkpoint_resumed = bool(completed_set)
         schema = build_weaviate_source_atom_schema(self.config)
         self.client.ping()
-        self.client.ensure_collection(schema)
+        collection_recreated_this_run = False
+        if recreate_collection:
+            self.client.recreate_collection(schema)
+            collection_recreated_this_run = True
+        else:
+            self.client.ensure_collection(schema)
 
         pending: list[dict[str, Any]] = []
         text_hashes: list[str] = []
@@ -2719,6 +2759,8 @@ class WeaviateSourceAtomIndexer:
             "checkpoint_resumed": checkpoint_resumed,
             "checkpoint_path": checkpoint_file.as_posix() if checkpoint_file else "",
             "checkpoint_completed_count": len(completed_ids),
+            "collection_recreate_requested": bool(recreate_collection),
+            "collection_recreated_this_run": collection_recreated_this_run,
             "corpus_fingerprint": f"sha256:{_sha256_text(json.dumps(sorted(text_hashes), sort_keys=True))}",
             "source_atom_registry_path_hash": f"sha256:{_sha256_text(source_path.as_posix())}" if source_path else "",
             "started_at": started_at,
@@ -3078,13 +3120,74 @@ class WeaviateSourceAtomAdapter:
         self._index_manifest = data if isinstance(data, dict) else {}
         return self._index_manifest
 
+    def _candidate_surface_manifest_checkpoint_blocked_reason(
+        self,
+        manifest: Mapping[str, Any],
+    ) -> str:
+        checkpoint_path_text = _clean(manifest.get("checkpoint_path"))
+        manifest_path_text = _clean(self.config_obj.index_manifest_path)
+        if not checkpoint_path_text or not manifest_path_text:
+            return ""
+        checkpoint_path = _resolve_repo_path(checkpoint_path_text)
+        manifest_path = _resolve_repo_path(manifest_path_text)
+        if not checkpoint_path.exists() or not manifest_path.exists():
+            return ""
+        try:
+            checkpoint_mtime_ns = checkpoint_path.stat().st_mtime_ns
+            manifest_mtime_ns = manifest_path.stat().st_mtime_ns
+        except OSError:
+            return "candidate_surface_complete_manifest_checkpoint_stat_unavailable"
+        if checkpoint_mtime_ns > manifest_mtime_ns:
+            return "candidate_surface_complete_manifest_checkpoint_newer_than_manifest"
+        try:
+            checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            return "candidate_surface_complete_manifest_checkpoint_invalid"
+        if not isinstance(checkpoint, Mapping):
+            return "candidate_surface_complete_manifest_checkpoint_invalid"
+        if _clean(checkpoint.get("collection_name")) != self.config_obj.collection_name:
+            return "candidate_surface_complete_manifest_checkpoint_collection_mismatch"
+
+        def int_or_none(value: Any) -> int | None:
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return None
+
+        manifest_checkpoint_completed = int_or_none(manifest.get("checkpoint_completed_count"))
+        checkpoint_completed = int_or_none(checkpoint.get("completed_count"))
+        if (
+            manifest_checkpoint_completed is not None
+            and checkpoint_completed is not None
+            and manifest_checkpoint_completed != checkpoint_completed
+        ):
+            return "candidate_surface_complete_manifest_checkpoint_count_mismatch"
+        checkpoint_upserted = int_or_none(checkpoint.get("upserted_count_this_run"))
+        manifest_upserted = int_or_none(manifest.get("upserted_count_this_run"))
+        if (
+            checkpoint_upserted is not None
+            and manifest_upserted is not None
+            and checkpoint_upserted != manifest_upserted
+        ):
+            return "candidate_surface_complete_manifest_checkpoint_count_mismatch"
+        return ""
+
     def _candidate_surface_metric_gate_report(self) -> dict[str, Any]:
         candidate_surface = self.default_config_report.get("candidate_surface_rebuild")
+        manifest = self._load_index_manifest()
+        manifest_claims_complete = manifest.get("candidate_surface_complete_manifest") is True
+        collection_requires_gate = "CandidateSurface" in self.config_obj.collection_name
         if not isinstance(candidate_surface, Mapping):
-            return {}
+            if not collection_requires_gate and not manifest_claims_complete:
+                return {}
+            candidate_surface = {}
         status = _clean(candidate_surface.get("surface_status")).casefold()
         metric_blocked = candidate_surface.get("metric_blocked_until_complete_manifest") is True
-        complete_required = candidate_surface.get("complete_manifest_required") is True
+        complete_required = (
+            candidate_surface.get("complete_manifest_required") is True
+            or collection_requires_gate
+            or manifest_claims_complete
+        )
         report: dict[str, Any] = {
             "surface_status": status or "ready",
             "metric_blocked_until_complete_manifest": metric_blocked,
@@ -3099,7 +3202,6 @@ class WeaviateSourceAtomAdapter:
             report["complete_manifest_verified"] = True
             return report
 
-        manifest = self._load_index_manifest()
         report["manifest_present"] = bool(manifest)
         report["manifest_valid"] = manifest.get("valid") is True
         report["manifest_collection"] = _clean(manifest.get("collection_name"))
@@ -3121,21 +3223,69 @@ class WeaviateSourceAtomAdapter:
         if _clean(manifest.get("collection_name")) != self.config_obj.collection_name:
             report["blocked_reason"] = "candidate_surface_complete_manifest_collection_mismatch"
             return report
+        if self.config_obj.collection_name != WEAVIATE_ROUTE_SELECTED_CANDIDATE_SURFACE_V2_COLLECTION:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_collection_allowlist_blocked"
+            return report
+        manifest_schema_version_source_atom = _clean(manifest.get("schema_version_source_atom"))
+        if (
+            manifest_schema_version_source_atom != self.config_obj.schema_version
+            or manifest_schema_version_source_atom != WEAVIATE_SOURCE_ATOM_SCHEMA_VERSION_V2
+        ):
+            report["blocked_reason"] = "candidate_surface_complete_manifest_schema_version_source_atom_mismatch"
+            return report
+        if manifest.get("candidate_surface_full_corpus_index") is not True:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_full_corpus_index_missing"
+            return report
         for protected_flag in ("production_namespace", "source_registry_mutated", "latest_current_mutated"):
             if manifest.get(protected_flag) is not False:
                 report["blocked_reason"] = f"candidate_surface_complete_manifest_{protected_flag}_blocked"
                 return report
+        count_fields = (
+            "official_metric_input_rows",
+            "indexed_count",
+            "skipped_count",
+            "failed_count",
+            "upserted_count_this_run",
+        )
+        if any(field not in manifest or manifest.get(field) is None for field in count_fields):
+            report["blocked_reason"] = "candidate_surface_complete_manifest_count_invalid"
+            return report
         try:
-            official_metric_input_rows = int(manifest.get("official_metric_input_rows") or 0)
-            failed_count = int(manifest.get("failed_count") or 0)
+            official_metric_input_rows = int(manifest.get("official_metric_input_rows"))
+            indexed_count = int(manifest.get("indexed_count"))
+            skipped_count = int(manifest.get("skipped_count"))
+            failed_count = int(manifest.get("failed_count"))
+            upserted_count_this_run = int(manifest.get("upserted_count_this_run"))
         except (TypeError, ValueError):
             report["blocked_reason"] = "candidate_surface_complete_manifest_count_invalid"
             return report
         if official_metric_input_rows != 0:
             report["blocked_reason"] = "candidate_surface_complete_manifest_official_metric_input_rows_blocked"
             return report
+        if indexed_count <= 0:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_indexed_count_invalid"
+            return report
+        if manifest.get("checkpoint_resumed") is not False:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_checkpoint_resumed_blocked"
+            return report
+        if manifest.get("collection_recreate_requested") is not True:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_collection_recreate_missing"
+            return report
+        if manifest.get("collection_recreated_this_run") is not True:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_collection_recreate_missing"
+            return report
+        checkpoint_blocked_reason = self._candidate_surface_manifest_checkpoint_blocked_reason(manifest)
+        if checkpoint_blocked_reason:
+            report["blocked_reason"] = checkpoint_blocked_reason
+            return report
+        if skipped_count != 0:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_skipped_count_blocked"
+            return report
         if failed_count != 0:
             report["blocked_reason"] = "candidate_surface_complete_manifest_failed_count_blocked"
+            return report
+        if upserted_count_this_run != indexed_count:
+            report["blocked_reason"] = "candidate_surface_complete_manifest_upserted_indexed_count_mismatch"
             return report
         report["complete_manifest_verified"] = True
         return report

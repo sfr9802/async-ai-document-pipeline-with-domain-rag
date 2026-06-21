@@ -195,6 +195,79 @@ def sha256_file(path: Path) -> str:
     return hashlib.sha256(resolve_report_artifact_path(path).read_bytes()).hexdigest()
 
 
+def _between_markers(text: str, marker: str) -> str:
+    start = f"<!-- {marker}:start -->"
+    end = f"<!-- {marker}:end -->"
+    assert start in text
+    assert end in text
+    return text.split(start, 1)[1].split(end, 1)[0]
+
+
+def test_xlsx_pdf_candidate_surface_v2_checkpoint_docs_record_guardrails():
+    marker_prefix = "xlsx_pdf_source_native_candidate_surface_rebuild_v2_20260621"
+    manifest_path = "reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_route_selected_candidate_surface_v2/index_manifest.json"
+    manifest_hash = "sha256:f59ff8c4cae77eb15dc75d88291a3452bd1cbac8ba6df2e75e9b9f61728b2151"
+    gold_path = (
+        "reports/rag_eval/"
+        "actual_rag_eval_gold29_xlsx_pdf_candidate_surface_v2_source_date_alias_llm_validated_axis_det_nonprod_20260621/"
+        "report.json"
+    )
+    silver_path = (
+        "reports/rag_eval/"
+        "actual_rag_eval_silver500_xlsx_candidate_surface_v2_source_date_alias_llm_validated_axis_det_nonprod_20260621/"
+        "report.json"
+    )
+    runstore_path = (
+        "reports/rag_eval/"
+        "actual_rag_eval_gold29_xlsx_locator_runstore_v2_source_date_alias_llm_validated_axis_nonprod_20260621/"
+        "run.sqlite"
+    )
+
+    sections = {
+        "progress": _between_markers(PROGRESS_DOC.read_text(encoding="utf-8"), f"{marker_prefix}:progress-entry"),
+        "measurements": _between_markers(
+            MEASUREMENTS_DOC.read_text(encoding="utf-8"),
+            f"{marker_prefix}:measurements-entry",
+        ),
+        "triage": _between_markers(TRIAGE_DOC.read_text(encoding="utf-8"), f"{marker_prefix}:triage-entry"),
+    }
+
+    for section in sections.values():
+        assert manifest_path in section
+        assert manifest_hash in section
+        assert "official_metric_input_rows=0" in section
+        assert "source_registry_mutated=false" in section
+        assert "latest_current_mutated=false" in section
+        assert "SourceAtomNonprodRouteSelectedCandidateSurfaceV2" in section
+        assert "External archive" in section or "external archive" in section or "external archives" in section
+        assert "not profiled" in section or "not profiled or used" in section
+        assert "indexed" in section
+        assert "registered" in section or "source_registry_mutated=false" in section
+
+    joined = "\n".join(sections.values())
+    assert gold_path in joined
+    assert silver_path in joined
+    assert runstore_path in joined
+    assert "5/24 -> 20/9" in joined
+    assert "7/493 -> 44/456" in joined
+    assert "17 gate flips" in joined
+    assert "strict E2E" in joined
+    assert "0/29=0.0" in joined
+    assert "0 accepted" in joined
+    assert "missing_validated_required_axes_after_tool" in joined
+    assert "report.json only" in joined
+    assert "run.sqlite only" in joined
+    assert "citation-supported falls `41 -> 36`" in joined
+    assert "source_date_aliases" in joined
+    assert "does not validate locator acceptance mechanism" in joined
+    assert "not an official quality gain" in joined
+    assert "product success" in joined
+    assert "production readiness" in joined
+    assert "promotion" in joined
+    assert "no `--append-registry`" in joined
+    assert "no `--write-latest`" in joined
+
+
 def test_progress_doc_current_board_records_v563_backend_probe_v562_preflight_and_v560_baseline():
     text = PROGRESS_DOC.read_text(encoding="utf-8")
     current_text = text.split("## Short History", 1)[0]

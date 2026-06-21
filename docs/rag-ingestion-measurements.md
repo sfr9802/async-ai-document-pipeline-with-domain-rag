@@ -1,3 +1,42 @@
+<!-- xlsx_pdf_source_native_candidate_surface_rebuild_v2_20260621:measurements-entry:start -->
+### xlsx_pdf_source_native_candidate_surface_rebuild_v2_20260621
+
+- Scope: historical non-production source-native candidate-surface V2 source-date-alias measurement for XLSX/PDF actual-RAG diagnostics only. After these measurements, a later exact V2 recreate was stopped at a partial checkpoint; current `SourceAtomNonprodRouteSelectedCandidateSurfaceV2` is metric-blocked until a fresh verified complete manifest records `collection_recreated_this_run=true`.
+- Historical candidate index context: `reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_route_selected_candidate_surface_v2/index_manifest.json` has file-byte hash `sha256:f59ff8c4cae77eb15dc75d88291a3452bd1cbac8ba6df2e75e9b9f61728b2151` and old complete-manifest fields, but under current code it is stale because it lacks `collection_recreated_this_run=true` and is blocked with `candidate_surface_complete_manifest_collection_recreate_missing`.
+- Stopped recreate checkpoint: `reports/rag_eval/weaviate_source_atom_index_manifest_nonprod_route_selected_candidate_surface_v2/index_checkpoint.json` records `completed_count=27712`, `upserted_count_this_run=27712`, `skipped_count_this_run=0`, `vectorized_object_count=27616`, `metadata_only_object_count=96`, `embedding_dim=1024`, `embedding_device=cuda:0`, SHA-256 `9DE1AF9C0E362AA0DA6455EDEF612E918F08C6F2042C13BB83DC4C5EC67C3FF7`. This is dirty/partial checkpoint evidence only, not a metric precondition. Current readiness also blocks complete-looking stale manifests when the referenced checkpoint is newer than the manifest or count-mismatched.
+- Pre-dirtying source-date-alias artifacts retained as historical context: gold `reports/rag_eval/actual_rag_eval_gold29_xlsx_pdf_candidate_surface_v2_source_date_alias_llm_validated_axis_det_nonprod_20260621/report.json`, silver `reports/rag_eval/actual_rag_eval_silver500_xlsx_candidate_surface_v2_source_date_alias_llm_validated_axis_det_nonprod_20260621/report.json`, and RunStore `reports/rag_eval/actual_rag_eval_gold29_xlsx_locator_runstore_v2_source_date_alias_llm_validated_axis_nonprod_20260621/run.sqlite`.
+- Predecessor/control artifacts are also retained only for historical comparison: gold `reports/rag_eval/actual_rag_eval_gold29_xlsx_pdf_candidate_surface_v2_complete_manifest_llm_validated_axis_det_nonprod_20260621/report.json`, silver `reports/rag_eval/actual_rag_eval_silver500_xlsx_candidate_surface_v2_complete_manifest_llm_validated_axis_det_nonprod_20260621/report.json`, and RunStore `reports/rag_eval/actual_rag_eval_gold29_xlsx_locator_runstore_v2_complete_manifest_llm_validated_axis_nonprod_20260621/run.sqlite`.
+
+| lane | exact baseline | V2 local validated-axis control | V2 source-date-alias run |
+| --- | --- | --- | --- |
+| gold gate allowed/insufficient | `5/24` | `20/9` | `20/9` |
+| gold unsupported-after-gate | `0.0` | `0.0` | `0.0` |
+| gold strict E2E | `0/29=0.0` | `0/29=0.0` | `0/29=0.0` |
+| gold exact/alias answer correctness | `0/29=0.0` | `0/29=0.0` | `0/29=0.0` |
+| gold citation-supported rows | `22` | `41` | `36` |
+| gold strict citation precision | `8/22=0.363636` | `19/41=0.463415` | `23/36=0.638889` |
+| gold strict citation recall | `8/14=0.571429` | `18/28=0.642857` | `23/28=0.821429` |
+| gold strict evidence_recall@1 | `3/29=0.103448` | `11/29=0.37931` | `16/29=0.551724` |
+| gold strict evidence_recall@10 | `10/29=0.344828` | `19/29=0.655172` | `24/29=0.827586` |
+| gold provisional judged correctness | `3/29=0.103448` | `4/29=0.137931` | `5/29=0.172414` |
+| gold provisional E2E | `3/29=0.103448` | `3/29=0.103448` | `4/29=0.137931` |
+| gold XLSX/PDF residual value-missing-axis | `23` | `5` | `5` |
+| silver gate allowed/insufficient | `7/493` | `43/457` | `44/456` |
+| silver unsupported-after-gate | `0.0` | `0.0` | `0.0` |
+| silver citation-supported rows | `379` | `374` | `377` |
+| silver judged answer correctness provisional | `4/500=0.008` | `2/500=0.004` | `4/500=0.008` |
+| silver provisional E2E | `0/500=0.0` | `0/500=0.0` | `0/500=0.0` |
+| silver inferred E2E | `0/500=0.0` | `0/500=0.0` | `0/500=0.0` |
+| silver residual value-missing-axis | `479` | `445` | `444` |
+
+- Gold source-date-alias residual details: `residual_anchor_matrix.row_count=29`, with `selected_evidence_has_value_missing_axis=5`, `no_residual=18`, and `not_xlsx_pdf=6`. Strict answer quality remains flat even though strict evidence recall moves; `citation-supported falls 41 -> 36` versus prior control, so the gold signal is mixed rather than a clean quality improvement.
+- Silver source-date-alias residual details: `residual_anchor_matrix.row_count=500`, with `selected_evidence_has_value_missing_axis=444`, `no_residual=43`, and `not_xlsx_pdf=13`. The net `43/457 -> 44/456` movement includes `17 gate flips` (`9` gained, `8` lost), so silver remains diagnostic churn.
+- Source-date-alias RunStore measurement: `reports/rag_eval/actual_rag_eval_gold29_xlsx_locator_runstore_v2_source_date_alias_llm_validated_axis_nonprod_20260621/run.sqlite` has `report_only_diagnostic=1`, `official_metric=0`, `official_metric_input_rows=0`, `anchor_classifier_model=gemma4-e2b-local`, `anchor_classifier_prompt_version=llm_query_anchor_classifier_v1`, `anchor_classifier_raw_payload_written=0`, 29 items, 148 retrieved contexts, 48 selected-evidence rows, 2 invocations, 7 XLSX tool candidates, 0 accepted for re-gating, and all 7 rejected as `missing_validated_required_axes_after_tool`. Before/after gate and residual counts are identical (`20/9` and 5 residual rows), and `source_date_aliases` appear on 2 rejected candidates. The RunStore validates storage/observability and alias propagation on rejected candidates but does not validate locator acceptance mechanism.
+- PDF diagnostic note from the current gold lane: 3 PDF residuals remain (`gq_auto_024`, `gq_auto_030`, `gq_pdf_section_question_001`). Current PDF retrieved contexts carry page and bbox fields, but section/table axes remain sparse and the artifacts do not yet compute `pdf_page_hit`, `bbox_overlap`, or `exact_bbox` at query level.
+- Boundary measurement: pointer hashes stayed unchanged (`latest.json` and `latest_text_gold.json` both `F96C0948FA4588177D6B792CF22AA7B608C12D11326BF90AE2028DDD20D33C48`; `runs.jsonl` `E1C97E8238FFC4825F346BC0F33A518243BAFCD640447EEB21E3C3409CAE18DB`), protected namespace diff was empty, and checkpoint scans over the new reports/manifest/RunStore found no raw prompt/response/tool payload, authorization, API key, or secret strings. External archive data was not profiled or used.
+- Measurement conclusion: source-date-alias package assembly produces mixed diagnostic movement on top of the prior V2 validated-axis control. Gold strict E2E and strict answer correctness remain flat, silver has only net `+1` gate movement with row-level churn, and RunStore still has `0/7` accepted locator candidates. This is not an official quality gain, product success, promotion signal, production readiness signal, or permission to open source intake/indexing.
+<!-- xlsx_pdf_source_native_candidate_surface_rebuild_v2_20260621:measurements-entry:end -->
+
 <!-- xlsx_pdf_source_native_candidate_surface_rebuild_20260620:measurements-entry:start -->
 ### xlsx_pdf_source_native_candidate_surface_rebuild_20260620
 
