@@ -521,6 +521,11 @@ policy exist.
 | `dataset/` | Dataset and fixture generation helpers. |
 | `needs_review/` | Reserved for scripts that need a data-contract or migration review before relocation. |
 
+`maintenance/` and `needs_review/` are classification buckets, not proof that a
+relocation already happened. As of the 2026-06-25 cleanup checkpoint, only
+`ai/scripts/maintenance/README.md` is tracked in these buckets and no tracked
+script has been moved into `needs_review/`.
+
 ## Report And Artifact Namespaces
 
 RAG reports now use explicit namespaces instead of ad-hoc script defaults. The
@@ -635,5 +640,22 @@ checkability.
 | `ai/scripts/confirm_*`, `ai/scripts/rerender_variant_verdict.py`, wide-MMR helper scripts | active-diagnostic-only | Preserved. | Script headers and helper imports label silver/diagnostic retrieval comparisons and optuna-winner analysis. | Medium; may read historical reports and ignored outputs. | Current tests and no path moves. |
 | `ai/scripts/run_phase7_*`, `ai/scripts/rag_*optuna*`, `ai/eval/configs/*optuna*.yaml` | active-diagnostic-only | Preserved; `jsonschema` added to experiment dependencies for readiness diagnostics. | Phase 7 and answer-recovery configs set tuning/reporting gates explicitly. | High if these were removed because they encode gold/silver policy boundaries. | py_compile and dependency import smoke. |
 | `reports/rag_eval/rag-ingestion/*`, `ai/eval/indexes/*`, `ai/eval/eval_queries/*`, `ai/eval/source_registry/*`, `ai/eval/silver/*` | unknown-preserve | No deletion or semantic edits. | Boundary guardian and guardrail tests identify these as protected or evidence-critical even when ignored. | High; deletion or denominator edits would require human gold/eval policy. | Protected diff check and RAG checks. |
-| `__pycache__`, `.pytest_cache`, `core-api/target`, `frontend/app/dist` | safe-transient-delete | Removed in the 2026-06-09 cleanup inventory only after path resolution proved every target stayed inside the repo. | `.gitignore` and `frontend/app/.gitignore` classify these as cache/build output; generated report `repo_cleanup_20260609_diagnostic_inventory` records the counters. | Low; they regenerate on test/build. | Re-run current RAG checks and targeted tests after cleanup. |
+| `__pycache__`, `.pytest_cache`, `core-api/target`, `frontend/app/node_modules`, `frontend/app/dist` | safe-transient-delete | Remove only after path resolution proves every target stays inside the repo; for frontend dependency/build output, verify `pnpm-lock.yaml` with `pnpm install --frozen-lockfile` and `pnpm build` first. | `.gitignore` and `frontend/app/.gitignore` classify these as cache/dependency/build output; generated report `repo_cleanup_20260609_diagnostic_inventory` records the earlier cache/build counters. | Low when verification passes; they regenerate from lockfile/test/build. | Re-run current RAG checks and targeted tests after cleanup; rerun frontend install/build when frontend artifacts are touched. |
 | legacy-remove | legacy-remove | None. | No experiment had enough evidence to delete without risking diagnostic or gold/eval evidence loss. | N/A | Final diff review. |
+
+## Repository Cleanup Script Inventory (2026-06-25 Checkpoint 2)
+
+This checkpoint classified the script surface without moving or deleting tracked
+scripts. A direct-reference miss is not deletion evidence: scripts may be CLI
+entrypoints, ignored-report readers, status-ledger helpers, or historical
+diagnostic reproducers.
+
+| Surface | Checkpoint evidence | Classification | Action |
+|---|---|---|---|
+| `ai/scripts/**` | 307 tracked files, including 305 Python files; first-pass scan found 87 Python files with no direct text reference | mixed active, diagnostic, and manual-hold surface | Preserve; require per-file reader proof before any future archive/delete |
+| `ai/eval/rag_v*.py` | 45 tracked diagnostic runner/check modules | active/diagnostic runner surface | Preserve through `rag_eval.py` and `rag_eval_registry.py` contracts |
+| root `scripts/**`, `tools/**`, top-level command wrappers | 0 tracked command files | legacy/empty compatibility surface | Do not add new defaults here |
+| v3/v4/v5 diagnostic runners | current tests/docs/status still reference historical runner and report lineage | `LEGACY_DEBUG_KEEP` | Preserve unless a dedicated archive proof shows no reader remains |
+| enterprise/sample fixture generators | `dataset/build_enterprise_corpus.py`, `dataset/generate_enterprise_queries.py`, `dataset/validate_enterprise_dataset.py`, `dataset/rebuild_corpus_index.py`, `dataset/sample_anime_corpus.py`, `make_anime_poster_fixtures.py`, `make_multimodal_sample_fixtures.py`, `make_ocr_sample_fixtures.py` | `EXTERNAL_ARCHIVE_CANDIDATE` | Hold until fixture regeneration/import checks and a hash-verified external archive manifest exist |
+| answerability, gold/silver, route-label, and human-review scripts | review or label ownership touches protected policy surfaces | `REVIEW_MANUAL_HOLD` | Do not delete without explicit gold/evidence-policy review |
+| tracked safe delete | none met the evidence standard | none | No tracked script deletion |
