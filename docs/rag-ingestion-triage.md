@@ -2695,6 +2695,14 @@ Repair decision:
 
 <!-- repo_cleanup_20260609_diagnostic_inventory:triage-entry:end -->
 
+<!-- repo_cleanup_checkpoint3_archive_dry_run_20260625:triage-entry:start -->
+### 2026-06-25 Repo Cleanup Checkpoint 3 Triage Update
+
+- The 2026-06-09 cleanup boundary remains historical context. Checkpoint 3 supersedes only the frontend dependency/build-output classification: `frontend/app/node_modules` and `frontend/app/dist` are `SAFE_TRANSIENT_DELETE` after `pnpm install --frozen-lockfile`, `pnpm build`, in-repo path resolution, and active-process checks pass.
+- `outputs/` was externally archived and deleted only after per-file SHA-256 parity; the tracked triage note intentionally omits the absolute external archive path. Restore from the external manifest before relying on those files again.
+- `output/**`, `reports/rag_eval/**`, `reports/rag_eval/rag-ingestion/**`, `ai/eval/indexes/**`, candidate-surface manifests/checkpoints, `local-storage/**`, `tmp/portfolio_ai_backend_ko_pdf/**`, portfolio PDFs/reports, and protected gold/qrels/labels/expected/denominator/source-registry/index/silver/current/latest/status surfaces remain hold or protected surfaces, not bulk-delete targets.
+<!-- repo_cleanup_checkpoint3_archive_dry_run_20260625:triage-entry:end -->
+
 - Verification is recorded in `docs/rag-ingestion-progress.md`: both current
   pytest profiles PASS with 133 tests, py_compile PASS, doctor selected checks
   PASS, and `git diff --check` PASS with line-ending warnings only.
