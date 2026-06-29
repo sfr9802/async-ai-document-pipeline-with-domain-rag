@@ -4629,6 +4629,36 @@ def test_agentic_xlsx_repair_explainer_fails_closed_on_protected_removal() -> No
         )
 
 
+def test_agentic_xlsx_repair_explainer_rejects_intent_only_when_axes_missing() -> None:
+    axis_inspection = actual_rag_eval.AgenticXlsxAxisInspectionRecord(
+        has_required_period_axis=True,
+        has_required_entity_axis=True,
+        has_required_measure_axis=True,
+        has_display_value=False,
+        missing_axes=("display_value",),
+        source_owned_axis_evidence={
+            "period": "matched",
+            "row_entity": "matched",
+            "target_column": "matched",
+            "display_value": "missing",
+        },
+    )
+    explanation = actual_rag_eval.AgenticXlsxRepairExplanationRecord(
+        primary_failure_family="intent_anchor_only",
+        secondary_failure_families=(),
+        safe_to_simulate_intent_removal=False,
+        repair_recommendation="repair missing XLSX display_value axis before any intent-token simulation",
+        evidence_summary="candidate is still missing display_value after the XLSX locator tool",
+    )
+
+    with pytest.raises(DatasetSchemaError, match="missing axes cannot be reported as intent-only"):
+        actual_rag_eval.validate_agentic_xlsx_repair_explainer_output(
+            "cp03",
+            explanation,
+            axis_inspection=axis_inspection,
+        )
+
+
 def test_agentic_xlsx_protected_anchor_verifier_fails_closed_without_taxonomy() -> None:
     unsafe_verification = actual_rag_eval.AgenticXlsxProtectedAnchorVerifierRecord(
         proposed_removed_tokens=("일산선",),
@@ -8262,6 +8292,178 @@ def test_xlsx_locator_projection_reports_query_anchor_tool_acceptance_diagnostic
     assert "doc-blocked" not in encoded
     assert "xlsx-query-anchor-blocked" not in encoded
     assert "xlsx-query-anchor-accepted" not in encoded
+
+
+def test_xlsx_locator_projection_reports_agentic_axis_repair_diagnostic() -> None:
+    tool_uses = (
+        actual_rag_eval.XlsxLocatorToolUseRecord(
+            item_index=0,
+            item_id="xlsx-axis-repair-blocked",
+            execution_status="skipped_missing_source_locator",
+            candidate_count=3,
+            accepted_candidate_count=0,
+            source_family_hint="xlsx",
+            query_task="date_filtered_lookup",
+            before_gate_status="block_answer",
+            after_gate_status="block_answer",
+            before_residual_class="selected_evidence_has_value_missing_axis",
+            after_residual_class="selected_evidence_has_value_missing_axis",
+            matched_query_anchors=("2019년", "5월"),
+            remaining_missing_query_anchors=("무엇입니까",),
+            matched_validated_required_axes=("period", "row_entity", "target_column"),
+            remaining_missing_validated_required_axes=("display_value",),
+        ),
+    )
+    candidates = (
+        actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+            item_index=0,
+            candidate_index=0,
+            source_family="XLSX",
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+            source_atom_id="src-axis-repair-0",
+            evidence_bundle_id="bundle-axis-repair-0",
+            doc_id="doc-axis-repair",
+            sheet="2019년 5월",
+            cell_range="A1:D4",
+            row_label="우이신설선",
+            target_column="승차총승객수",
+            display_value="15,446,522",
+            matched_query_anchors=("2019년", "5월"),
+            missing_query_anchors_after_tool=("무엇입니까",),
+            matched_validated_required_axes=("period", "row_entity", "target_column", "display_value"),
+            missing_validated_required_axes=(),
+            confidence_tier="high",
+            accepted_for_regating=False,
+            rejection_reason="missing_query_anchor_after_tool",
+        ),
+        actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+            item_index=0,
+            candidate_index=1,
+            source_family="XLSX",
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+            source_atom_id="src-axis-repair-1",
+            evidence_bundle_id="bundle-axis-repair-1",
+            doc_id="doc-axis-repair",
+            sheet="2019년 5월",
+            cell_range="A5:D8",
+            row_label="우이신설선",
+            target_column="승차총승객수",
+            matched_query_anchors=("2019년",),
+            missing_query_anchors_after_tool=("5월", "무엇입니까"),
+            matched_validated_required_axes=("period", "row_entity", "target_column"),
+            missing_validated_required_axes=("display_value",),
+            confidence_tier="high",
+            accepted_for_regating=False,
+            rejection_reason="missing_query_anchor_after_tool",
+        ),
+        actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+            item_index=0,
+            candidate_index=2,
+            source_family="XLSX",
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+            source_atom_id="src-axis-repair-2",
+            evidence_bundle_id="bundle-axis-repair-2",
+            doc_id="doc-axis-repair",
+            sheet="2019년 5월",
+            cell_range="A9:D12",
+            row_label="우이신설선",
+            target_column="승차총승객수",
+            matched_query_anchors=("2019년", "5월", "우이신설선"),
+            missing_query_anchors_after_tool=(),
+            matched_validated_required_axes=("period", "row_entity", "target_column"),
+            missing_validated_required_axes=("display_value",),
+            confidence_tier="high",
+            accepted_for_regating=False,
+            rejection_reason="missing_validated_required_axes_after_tool",
+        ),
+    )
+    record = actual_rag_eval.XlsxLocatorRunRecord(
+        schema_version=actual_rag_eval.XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION,
+        enabled=True,
+        report_only_diagnostic=True,
+        official_metric=False,
+        tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+        eligible_failed_row_count=1,
+        tool_invocation_count=1,
+        accepted_candidate_count=0,
+        rejected_candidate_count=3,
+        gate_delta_record=actual_rag_eval.XlsxLocatorGateDeltaRecord(),
+        guardrail_record=actual_rag_eval.XlsxLocatorGuardrailRecord(),
+        tool_uses=tool_uses,
+        candidates=candidates,
+    )
+
+    diagnostic = actual_rag_eval.project_xlsx_locator_run_record(record)[
+        "agentic_xlsx_axis_repair_diagnostic"
+    ]
+
+    assert diagnostic["schema_version"] == "actual_rag_eval.agentic_xlsx_axis_repair_diagnostic.v1"
+    assert diagnostic["axis_inspector_schema_version"] == "actual_rag_eval.agentic_xlsx_axis_inspector.v1"
+    assert diagnostic["repair_explainer_schema_version"] == "actual_rag_eval.agentic_xlsx_repair_explainer.v1"
+    assert diagnostic["report_only_diagnostic"] is True
+    assert diagnostic["official_metric"] is False
+    assert diagnostic["official_metric_input_rows"] == 0
+    assert diagnostic["candidate_count"] == 3
+    assert diagnostic["inspected_candidate_count"] == 3
+    assert diagnostic["missing_axis_candidate_count"] == 2
+    assert diagnostic["safe_to_simulate_intent_removal_candidate_count"] == 1
+    assert diagnostic["primary_failure_family_counts"] == {
+        "axis_materialization_gap": 1,
+        "intent_anchor_only": 1,
+        "query_anchor_and_axis_missing": 1,
+    }
+    assert diagnostic["missing_axis_counts"] == {"display_value": 2}
+    assert diagnostic["candidate_summaries"] == [
+        {
+            "item_index": 0,
+            "candidate_index": 0,
+            "rejection_reason": "missing_query_anchor_after_tool",
+            "primary_failure_family": "intent_anchor_only",
+            "secondary_failure_families": [],
+            "missing_axes": [],
+            "safe_to_simulate_intent_removal": True,
+        },
+        {
+            "item_index": 0,
+            "candidate_index": 1,
+            "rejection_reason": "missing_query_anchor_after_tool",
+            "primary_failure_family": "query_anchor_and_axis_missing",
+            "secondary_failure_families": ["axis_materialization_gap"],
+            "missing_axes": ["display_value"],
+            "safe_to_simulate_intent_removal": False,
+        },
+        {
+            "item_index": 0,
+            "candidate_index": 2,
+            "rejection_reason": "missing_validated_required_axes_after_tool",
+            "primary_failure_family": "axis_materialization_gap",
+            "secondary_failure_families": [],
+            "missing_axes": ["display_value"],
+            "safe_to_simulate_intent_removal": False,
+        },
+    ]
+    assert diagnostic["uses_expected_fields"] is False
+    assert diagnostic["uses_gold_fields"] is False
+    assert diagnostic["uses_qrels_or_labels"] is False
+    assert diagnostic["uses_ids_as_runtime_inputs"] is False
+    assert diagnostic["uses_file_workbook_title"] is False
+    assert diagnostic["uses_formula_or_normalized_value"] is False
+    assert diagnostic["evidence_gate_loosened"] is False
+    encoded = json.dumps(diagnostic, ensure_ascii=False)
+    for forbidden in (
+        "src-axis-repair",
+        "bundle-axis-repair",
+        "doc-axis-repair",
+        "xlsx-axis-repair-blocked",
+        "expected_answer",
+        "expected_evidence",
+        "row_id",
+        "candidate_id",
+    ):
+        assert forbidden not in encoded
 
 
 def test_evidence_gate_prefers_validated_required_axes_over_raw_date_anchor() -> None:

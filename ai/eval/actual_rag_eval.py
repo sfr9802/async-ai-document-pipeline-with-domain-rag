@@ -68,6 +68,9 @@ AGENTIC_XLSX_PROTECTED_ANCHOR_VERIFIER_SCHEMA_VERSION = (
 )
 AGENTIC_XLSX_AXIS_INSPECTOR_SCHEMA_VERSION = "actual_rag_eval.agentic_xlsx_axis_inspector.v1"
 AGENTIC_XLSX_REPAIR_EXPLAINER_SCHEMA_VERSION = "actual_rag_eval.agentic_xlsx_repair_explainer.v1"
+AGENTIC_XLSX_AXIS_REPAIR_DIAGNOSTIC_SCHEMA_VERSION = (
+    "actual_rag_eval.agentic_xlsx_axis_repair_diagnostic.v1"
+)
 AGENTIC_XLSX_REGATED_CANDIDATE_SIMULATOR_SCHEMA_VERSION = (
     "actual_rag_eval.agentic_xlsx_regated_candidate_simulator.v1"
 )
@@ -10633,6 +10636,188 @@ def _xlsx_locator_query_anchor_tool_acceptance_diagnostic(record: XlsxLocatorRun
     }
 
 
+def _agentic_xlsx_optional_clean_tuple(value: Any) -> tuple[str, ...]:
+    if not isinstance(value, Sequence) or isinstance(value, (str, bytes, bytearray)):
+        return ()
+    return tuple(_clean(item) for item in value if _clean(item))
+
+
+def _agentic_xlsx_ordered_axes(axes: Iterable[str]) -> tuple[str, ...]:
+    cleaned = {_clean(axis) for axis in axes if _clean(axis)}
+    return tuple(
+        sorted(
+            cleaned,
+            key=lambda axis: QUERY_EVIDENCE_AXIS_ORDER.index(axis)
+            if axis in QUERY_EVIDENCE_AXIS_ORDER
+            else len(QUERY_EVIDENCE_AXIS_ORDER),
+        )
+    )
+
+
+def agentic_xlsx_axis_inspector_tool(
+    candidate: XlsxLocatorEvidenceCandidateRecord | Mapping[str, Any],
+) -> AgenticXlsxAxisInspectionRecord:
+    matched_axes = set(
+        _agentic_xlsx_ordered_axes(
+            _agentic_xlsx_optional_clean_tuple(
+                _agentic_xlsx_record_value(candidate, "matched_validated_required_axes")
+            )
+        )
+    )
+    missing_axes = _agentic_xlsx_ordered_axes(
+        _agentic_xlsx_optional_clean_tuple(
+            _agentic_xlsx_record_value(candidate, "missing_validated_required_axes")
+        )
+    )
+    source_owned_axis_evidence = {
+        axis: "missing" if axis in missing_axes else ("matched" if axis in matched_axes else "not_required_or_not_observed")
+        for axis in QUERY_EVIDENCE_COMMON_AXES
+    }
+    inspection = AgenticXlsxAxisInspectionRecord(
+        has_required_period_axis="period" in matched_axes,
+        has_required_entity_axis="row_entity" in matched_axes,
+        has_required_measure_axis="target_column" in matched_axes,
+        has_display_value="display_value" in matched_axes and "display_value" not in missing_axes,
+        missing_axes=missing_axes,
+        source_owned_axis_evidence=source_owned_axis_evidence,
+    )
+    validate_agentic_xlsx_axis_inspector_output("agentic_xlsx", inspection)
+    return inspection
+
+
+def agentic_xlsx_candidate_repair_explainer_tool(
+    candidate: XlsxLocatorEvidenceCandidateRecord | Mapping[str, Any],
+    *,
+    axis_inspection: AgenticXlsxAxisInspectionRecord | Mapping[str, Any],
+) -> AgenticXlsxRepairExplanationRecord:
+    validate_agentic_xlsx_axis_inspector_output("agentic_xlsx", axis_inspection)
+    missing_axes = _agentic_xlsx_clean_tuple(
+        "agentic_xlsx",
+        "xlsx_axis_inspector",
+        "missing_axes",
+        _agentic_xlsx_record_value(axis_inspection, "missing_axes"),
+    )
+    missing_query_anchors = tuple(
+        _clean(anchor)
+        for anchor in _agentic_xlsx_optional_clean_tuple(
+            _agentic_xlsx_record_value(candidate, "missing_query_anchors_after_tool")
+        )
+        if _clean(anchor)
+    )
+    rejection_reason = _clean(_agentic_xlsx_record_value(candidate, "rejection_reason"))
+    if missing_axes and missing_query_anchors:
+        primary = "query_anchor_and_axis_missing"
+        secondary = ("axis_materialization_gap",)
+        safe_to_simulate = False
+        recommendation = "repair missing XLSX axes before simulating intent-token removal"
+        evidence_summary = "candidate still has missing query anchors and missing validated XLSX axes"
+    elif missing_axes or rejection_reason == "missing_validated_required_axes_after_tool":
+        primary = "axis_materialization_gap"
+        secondary = ()
+        safe_to_simulate = False
+        recommendation = "materialize missing source-owned XLSX axes before regating"
+        evidence_summary = "candidate is blocked by missing validated XLSX axes"
+    elif missing_query_anchors or rejection_reason == "missing_query_anchor_after_tool":
+        primary = "intent_anchor_only"
+        secondary = ()
+        safe_to_simulate = True
+        recommendation = "simulate only verifier-approved intent-token removal"
+        evidence_summary = "candidate has complete validated XLSX axes and only query-anchor residue"
+    elif "budget" in rejection_reason:
+        primary = "candidate_budget_gap"
+        secondary = ()
+        safe_to_simulate = False
+        recommendation = "inspect candidate budget and source-owned diversification before regating"
+        evidence_summary = "candidate selection appears blocked by budget or diversification limits"
+    elif rejection_reason in {"source_family_hint_mismatch", "missing_source_identity_doc_id_text_or_locator_axes"}:
+        primary = "source_family_or_route_gap"
+        secondary = ()
+        safe_to_simulate = False
+        recommendation = "repair source-family routing or source-owned locator coverage"
+        evidence_summary = "candidate lacks the required XLSX route or locator identity"
+    else:
+        primary = "unknown_fail_closed"
+        secondary = ()
+        safe_to_simulate = False
+        recommendation = "keep diagnostic fail-closed until a source-owned repair path is identified"
+        evidence_summary = "candidate rejection family is not specific enough for intent-removal simulation"
+    explanation = AgenticXlsxRepairExplanationRecord(
+        primary_failure_family=primary,
+        secondary_failure_families=secondary,
+        safe_to_simulate_intent_removal=safe_to_simulate,
+        repair_recommendation=recommendation,
+        evidence_summary=evidence_summary,
+    )
+    validate_agentic_xlsx_repair_explainer_output(
+        "agentic_xlsx",
+        explanation,
+        axis_inspection=axis_inspection,
+    )
+    return explanation
+
+
+def _agentic_xlsx_axis_repair_diagnostic(record: XlsxLocatorRunRecord) -> dict[str, Any]:
+    inspected: list[tuple[XlsxLocatorEvidenceCandidateRecord, AgenticXlsxAxisInspectionRecord]] = [
+        (candidate, agentic_xlsx_axis_inspector_tool(candidate))
+        for candidate in record.candidates
+    ]
+    primary_counts: Counter[str] = Counter()
+    secondary_counts: Counter[str] = Counter()
+    missing_axis_counts: Counter[str] = Counter()
+    candidate_summaries: list[dict[str, Any]] = []
+    safe_to_simulate_count = 0
+    for candidate, inspection in inspected:
+        missing_axes = list(inspection.missing_axes)
+        missing_axis_counts.update(missing_axes)
+        if candidate.accepted_for_regating:
+            continue
+        explanation = agentic_xlsx_candidate_repair_explainer_tool(
+            candidate,
+            axis_inspection=inspection,
+        )
+        primary_counts[explanation.primary_failure_family] += 1
+        secondary_counts.update(explanation.secondary_failure_families)
+        if explanation.safe_to_simulate_intent_removal:
+            safe_to_simulate_count += 1
+        candidate_summaries.append(
+            {
+                "item_index": candidate.item_index,
+                "candidate_index": candidate.candidate_index,
+                "rejection_reason": candidate.rejection_reason or "accepted_for_regating",
+                "primary_failure_family": explanation.primary_failure_family,
+                "secondary_failure_families": list(explanation.secondary_failure_families),
+                "missing_axes": missing_axes,
+                "safe_to_simulate_intent_removal": explanation.safe_to_simulate_intent_removal,
+            }
+        )
+    diagnostic = {
+        "schema_version": AGENTIC_XLSX_AXIS_REPAIR_DIAGNOSTIC_SCHEMA_VERSION,
+        "axis_inspector_schema_version": AGENTIC_XLSX_AXIS_INSPECTOR_SCHEMA_VERSION,
+        "repair_explainer_schema_version": AGENTIC_XLSX_REPAIR_EXPLAINER_SCHEMA_VERSION,
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "candidate_count": len(record.candidates),
+        "inspected_candidate_count": len(inspected),
+        "repair_explained_candidate_count": len(candidate_summaries),
+        "missing_axis_candidate_count": sum(1 for _candidate, inspection in inspected if inspection.missing_axes),
+        "safe_to_simulate_intent_removal_candidate_count": safe_to_simulate_count,
+        "primary_failure_family_counts": dict(sorted(primary_counts.items())),
+        "secondary_failure_family_counts": dict(sorted(secondary_counts.items())),
+        "missing_axis_counts": dict(sorted(missing_axis_counts.items())),
+        "candidate_summaries": candidate_summaries,
+        "uses_expected_fields": False,
+        "uses_gold_fields": False,
+        "uses_qrels_or_labels": False,
+        "uses_ids_as_runtime_inputs": False,
+        "uses_file_workbook_title": False,
+        "uses_formula_or_normalized_value": False,
+        "evidence_gate_loosened": record.guardrail_record.evidence_gate_loosened,
+    }
+    validate_agentic_xlsx_axis_repair_diagnostic("agentic_xlsx", diagnostic)
+    return diagnostic
+
+
 XLSX_LOCATOR_QUERY_ANCHOR_DIAGNOSTIC_FORBIDDEN_KEYS = frozenset(
     {
         *XLSX_PDF_RESIDUAL_FORBIDDEN_SHORTCUT_FIELDS,
@@ -10865,6 +11050,7 @@ def project_xlsx_locator_run_record(
     )
     candidate_budget_diagnostic = _xlsx_locator_candidate_budget_diagnostic(record)
     query_anchor_tool_acceptance_diagnostic = _xlsx_locator_query_anchor_tool_acceptance_diagnostic(record)
+    axis_repair_diagnostic = _agentic_xlsx_axis_repair_diagnostic(record)
     projection = {
         "schema_version": record.schema_version,
         "enabled": record.enabled,
@@ -10891,6 +11077,7 @@ def project_xlsx_locator_run_record(
         "candidate_source_family_counts": dict(sorted(candidate_source_family_counts.items())),
         "candidate_budget_diagnostic": candidate_budget_diagnostic,
         "query_anchor_tool_acceptance_diagnostic": query_anchor_tool_acceptance_diagnostic,
+        "agentic_xlsx_axis_repair_diagnostic": axis_repair_diagnostic,
         "zero_candidate_row_count": candidate_budget_diagnostic["zero_candidate_row_count"],
         "candidate_budget_exhaustion_count": candidate_budget_diagnostic["candidate_budget_exhaustion_count"],
         "at_budget_row_count": candidate_budget_diagnostic["at_budget_row_count"],
@@ -12167,6 +12354,133 @@ def validate_xlsx_locator_query_anchor_tool_acceptance_diagnostic(
                 )
 
 
+def validate_agentic_xlsx_axis_repair_diagnostic(
+    run_id: str,
+    diagnostic: Mapping[str, Any],
+    *,
+    locator: Mapping[str, Any] | None = None,
+) -> None:
+    owner = "agentic_xlsx_axis_repair_diagnostic"
+    if not isinstance(diagnostic, Mapping):
+        raise DatasetSchemaError(f"{run_id}: {owner} must be present")
+    forbidden_keys = sorted(_collect_xlsx_locator_query_anchor_diagnostic_forbidden_keys(diagnostic))
+    if forbidden_keys:
+        raise DatasetSchemaError(f"{run_id}: {owner} contains forbidden field {forbidden_keys[0]}")
+    if diagnostic.get("schema_version") != AGENTIC_XLSX_AXIS_REPAIR_DIAGNOSTIC_SCHEMA_VERSION:
+        raise DatasetSchemaError(f"{run_id}: {owner}.schema_version unsupported")
+    if diagnostic.get("axis_inspector_schema_version") != AGENTIC_XLSX_AXIS_INSPECTOR_SCHEMA_VERSION:
+        raise DatasetSchemaError(f"{run_id}: {owner}.axis_inspector_schema_version unsupported")
+    if diagnostic.get("repair_explainer_schema_version") != AGENTIC_XLSX_REPAIR_EXPLAINER_SCHEMA_VERSION:
+        raise DatasetSchemaError(f"{run_id}: {owner}.repair_explainer_schema_version unsupported")
+    if diagnostic.get("report_only_diagnostic") is not True:
+        raise DatasetSchemaError(f"{run_id}: {owner}.report_only_diagnostic must be True")
+    if diagnostic.get("official_metric") is not False:
+        raise DatasetSchemaError(f"{run_id}: {owner}.official_metric must be False")
+    if int(diagnostic.get("official_metric_input_rows") or 0) != 0:
+        raise DatasetSchemaError(f"{run_id}: {owner}.official_metric_input_rows must be 0")
+    for key in (
+        "uses_expected_fields",
+        "uses_gold_fields",
+        "uses_qrels_or_labels",
+        "uses_ids_as_runtime_inputs",
+        "uses_file_workbook_title",
+        "uses_formula_or_normalized_value",
+        "evidence_gate_loosened",
+    ):
+        if diagnostic.get(key) is not False:
+            raise DatasetSchemaError(f"{run_id}: {owner}.{key} must be False")
+    count_keys = (
+        "candidate_count",
+        "inspected_candidate_count",
+        "repair_explained_candidate_count",
+        "missing_axis_candidate_count",
+        "safe_to_simulate_intent_removal_candidate_count",
+    )
+    counts = {
+        key: _required_non_negative_int(run_id, owner, diagnostic, key)
+        for key in count_keys
+    }
+    if locator is not None:
+        locator_candidate_count = int(locator.get("accepted_candidate_count") or 0) + int(
+            locator.get("rejected_candidate_count") or 0
+        )
+        if counts["candidate_count"] != locator_candidate_count:
+            raise DatasetSchemaError(f"{run_id}: {owner}.candidate_count mismatch")
+    if counts["inspected_candidate_count"] != counts["candidate_count"]:
+        raise DatasetSchemaError(f"{run_id}: {owner}.inspected_candidate_count mismatch")
+    if counts["repair_explained_candidate_count"] > counts["candidate_count"]:
+        raise DatasetSchemaError(f"{run_id}: {owner}.repair_explained_candidate_count mismatch")
+    family_counts = diagnostic.get("primary_failure_family_counts")
+    if not isinstance(family_counts, Mapping):
+        raise DatasetSchemaError(f"{run_id}: {owner}.primary_failure_family_counts must be present")
+    for family, count in family_counts.items():
+        if _clean(family) not in AGENTIC_XLSX_REPAIR_FAILURE_FAMILIES:
+            raise DatasetSchemaError(f"{run_id}: {owner}.primary_failure_family_counts unsupported")
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise DatasetSchemaError(f"{run_id}: {owner}.primary_failure_family_counts invalid")
+    secondary_counts = diagnostic.get("secondary_failure_family_counts")
+    if not isinstance(secondary_counts, Mapping):
+        raise DatasetSchemaError(f"{run_id}: {owner}.secondary_failure_family_counts must be present")
+    for family, count in secondary_counts.items():
+        if _clean(family) not in AGENTIC_XLSX_REPAIR_FAILURE_FAMILIES:
+            raise DatasetSchemaError(f"{run_id}: {owner}.secondary_failure_family_counts unsupported")
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise DatasetSchemaError(f"{run_id}: {owner}.secondary_failure_family_counts invalid")
+    missing_axis_counts = diagnostic.get("missing_axis_counts")
+    if not isinstance(missing_axis_counts, Mapping):
+        raise DatasetSchemaError(f"{run_id}: {owner}.missing_axis_counts must be present")
+    for axis, count in missing_axis_counts.items():
+        if _clean(axis) not in QUERY_EVIDENCE_AXIS_ORDER:
+            raise DatasetSchemaError(f"{run_id}: {owner}.missing_axis_counts unsupported")
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise DatasetSchemaError(f"{run_id}: {owner}.missing_axis_counts invalid")
+    summaries = diagnostic.get("candidate_summaries")
+    if not isinstance(summaries, Sequence) or isinstance(summaries, (str, bytes, bytearray)):
+        raise DatasetSchemaError(f"{run_id}: {owner}.candidate_summaries must be present")
+    if len(summaries) != counts["repair_explained_candidate_count"]:
+        raise DatasetSchemaError(f"{run_id}: {owner}.candidate_summaries count mismatch")
+    safe_count = 0
+    observed_primary_counts: Counter[str] = Counter()
+    observed_missing_axis_candidates = 0
+    for summary in summaries:
+        if not isinstance(summary, Mapping):
+            raise DatasetSchemaError(f"{run_id}: {owner}.candidate_summaries invalid")
+        for key in ("item_index", "candidate_index"):
+            _required_non_negative_int(run_id, f"{owner}.candidate_summaries", summary, key)
+        primary = _clean(summary.get("primary_failure_family"))
+        if primary not in AGENTIC_XLSX_REPAIR_FAILURE_FAMILIES:
+            raise DatasetSchemaError(f"{run_id}: {owner}.candidate_summaries primary unsupported")
+        observed_primary_counts[primary] += 1
+        secondary = summary.get("secondary_failure_families")
+        if not isinstance(secondary, Sequence) or isinstance(secondary, (str, bytes, bytearray)):
+            raise DatasetSchemaError(f"{run_id}: {owner}.candidate_summaries secondary invalid")
+        for family in secondary:
+            if _clean(family) not in AGENTIC_XLSX_REPAIR_FAILURE_FAMILIES:
+                raise DatasetSchemaError(f"{run_id}: {owner}.candidate_summaries secondary unsupported")
+        missing_axes = summary.get("missing_axes")
+        if not isinstance(missing_axes, Sequence) or isinstance(missing_axes, (str, bytes, bytearray)):
+            raise DatasetSchemaError(f"{run_id}: {owner}.candidate_summaries missing_axes invalid")
+        cleaned_missing_axes = [_clean(axis) for axis in missing_axes if _clean(axis)]
+        for axis in cleaned_missing_axes:
+            if axis not in QUERY_EVIDENCE_AXIS_ORDER:
+                raise DatasetSchemaError(f"{run_id}: {owner}.candidate_summaries missing_axes unsupported")
+        if cleaned_missing_axes:
+            observed_missing_axis_candidates += 1
+        safe_to_simulate = summary.get("safe_to_simulate_intent_removal")
+        if not isinstance(safe_to_simulate, bool):
+            raise DatasetSchemaError(f"{run_id}: {owner}.candidate_summaries safe flag invalid")
+        if cleaned_missing_axes and (primary == "intent_anchor_only" or safe_to_simulate):
+            raise DatasetSchemaError(f"{run_id}: {owner}.candidate_summaries missing axes cannot be solved by intent removal")
+        if safe_to_simulate:
+            safe_count += 1
+    if dict(sorted(observed_primary_counts.items())) != dict(sorted(family_counts.items())):
+        raise DatasetSchemaError(f"{run_id}: {owner}.primary_failure_family_counts mismatch")
+    if safe_count != counts["safe_to_simulate_intent_removal_candidate_count"]:
+        raise DatasetSchemaError(f"{run_id}: {owner}.safe_to_simulate_intent_removal_candidate_count mismatch")
+    if observed_missing_axis_candidates > counts["missing_axis_candidate_count"]:
+        raise DatasetSchemaError(f"{run_id}: {owner}.missing_axis_candidate_count mismatch")
+
+
 def validate_xlsx_locator_tool_execute_once(run_id: str, locator: Mapping[str, Any]) -> None:
     if locator.get("schema_version") != XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION:
         raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.schema_version unsupported")
@@ -12242,6 +12556,12 @@ def validate_xlsx_locator_tool_execute_once(run_id: str, locator: Mapping[str, A
             f"{run_id}: xlsx_locator_tool_execute_once.query_anchor_tool_acceptance_diagnostic must be present"
         )
     validate_xlsx_locator_query_anchor_tool_acceptance_diagnostic(run_id, diagnostic, locator=locator)
+    axis_repair_diagnostic = locator.get("agentic_xlsx_axis_repair_diagnostic")
+    if not isinstance(axis_repair_diagnostic, Mapping):
+        raise DatasetSchemaError(
+            f"{run_id}: xlsx_locator_tool_execute_once.agentic_xlsx_axis_repair_diagnostic must be present"
+        )
+    validate_agentic_xlsx_axis_repair_diagnostic(run_id, axis_repair_diagnostic, locator=locator)
     eligible_failed = int(locator.get("eligible_failed_row_count") or 0)
     tool_invocations = int(locator.get("tool_invocation_count") or 0)
     accepted = int(locator.get("accepted_candidate_count") or 0)
@@ -17677,7 +17997,11 @@ def validate_agentic_xlsx_repair_explainer_output(
             "missing_axes",
             _agentic_xlsx_record_value(axis_inspection, "missing_axes"),
         )
-        if missing_axes and safe_to_simulate and primary == "intent_anchor_only":
+        if missing_axes and primary == "intent_anchor_only":
+            raise DatasetSchemaError(
+                f"{run_id}: {tool_name}.missing axes cannot be reported as intent-only"
+            )
+        if missing_axes and safe_to_simulate:
             raise DatasetSchemaError(f"{run_id}: {tool_name}.missing axes cannot be solved by intent removal")
 
 
