@@ -17510,6 +17510,87 @@ def agentic_xlsx_protected_anchor_verifier_tool(
     return verification
 
 
+def _agentic_xlsx_query_anchor_taxonomy_summary(
+    taxonomy_records: Sequence[AgenticXlsxQueryAnchorTaxonomyRecord | Mapping[str, Any]],
+) -> dict[str, Any]:
+    validate_agentic_xlsx_query_anchor_taxonomy_output("agentic_xlsx", taxonomy_records)
+    category_counts = Counter(
+        _clean(_agentic_xlsx_record_value(record, "category"))
+        for record in taxonomy_records
+    )
+    removable_count = sum(
+        1
+        for record in taxonomy_records
+        if _agentic_xlsx_record_value(record, "is_removable_intent_token") is True
+    )
+    protected_count = sum(
+        1
+        for record in taxonomy_records
+        if _agentic_xlsx_record_value(record, "is_protected_anchor") is True
+    )
+    return {
+        "schema_version": AGENTIC_XLSX_QUERY_ANCHOR_TAXONOMY_SCHEMA_VERSION,
+        "token_count": len(taxonomy_records),
+        "category_counts": dict(sorted(category_counts.items())),
+        "removable_intent_token_count": removable_count,
+        "protected_anchor_count": protected_count,
+    }
+
+
+def _agentic_xlsx_protected_anchor_verifier_summary(
+    verification: AgenticXlsxProtectedAnchorVerifierRecord | Mapping[str, Any],
+    *,
+    taxonomy_records: Sequence[AgenticXlsxQueryAnchorTaxonomyRecord | Mapping[str, Any]],
+) -> dict[str, Any]:
+    validate_agentic_xlsx_protected_anchor_verifier_output(
+        "agentic_xlsx",
+        verification,
+        taxonomy_records=taxonomy_records,
+    )
+    reasons = _agentic_xlsx_record_value(verification, "protected_rejection_reasons")
+    return {
+        "schema_version": AGENTIC_XLSX_PROTECTED_ANCHOR_VERIFIER_SCHEMA_VERSION,
+        "proposed_removed_tokens": list(_agentic_xlsx_record_value(verification, "proposed_removed_tokens") or ()),
+        "approved_removed_tokens": list(_agentic_xlsx_record_value(verification, "approved_removed_tokens") or ()),
+        "rejected_removed_tokens": list(_agentic_xlsx_record_value(verification, "rejected_removed_tokens") or ()),
+        "protected_rejection_reasons": {
+            _clean(token): _clean(reason)
+            for token, reason in sorted(dict(reasons or {}).items())
+            if _clean(token) and _clean(reason)
+        },
+    }
+
+
+def _agentic_xlsx_verified_anchor_removal(
+    required_before: Sequence[str],
+    proposed_removed_tokens: Sequence[str],
+) -> tuple[list[str], list[str], dict[str, Any], dict[str, Any]]:
+    before_lookup = _normalized_anchor_lookup(required_before)
+    proposed: list[str] = []
+    seen: set[str] = set()
+    for token in proposed_removed_tokens:
+        normalized = normalize_answer_text(token)
+        anchor = before_lookup.get(normalized)
+        if not anchor or normalized in seen:
+            continue
+        proposed.append(anchor)
+        seen.add(normalized)
+    taxonomy_records = agentic_xlsx_query_anchor_taxonomy_tool(required_before)
+    verification = agentic_xlsx_protected_anchor_verifier_tool(
+        proposed_removed_tokens=proposed,
+        taxonomy_records=taxonomy_records,
+    )
+    return (
+        list(verification.approved_removed_tokens),
+        list(verification.rejected_removed_tokens),
+        _agentic_xlsx_query_anchor_taxonomy_summary(taxonomy_records),
+        _agentic_xlsx_protected_anchor_verifier_summary(
+            verification,
+            taxonomy_records=taxonomy_records,
+        ),
+    )
+
+
 def validate_agentic_xlsx_axis_inspector_output(
     run_id: str,
     inspection: AgenticXlsxAxisInspectionRecord | Mapping[str, Any],
@@ -17718,6 +17799,8 @@ def _query_anchor_classifier_summary(
     raw_response_sha256: str = "",
     blockers: Sequence[str] = (),
     error: str = "",
+    agentic_xlsx_anchor_taxonomy: Mapping[str, Any] | None = None,
+    agentic_xlsx_protected_anchor_verifier: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     after = list(required_after) if required_after is not None else list(required_before)
     result = {
@@ -17750,6 +17833,10 @@ def _query_anchor_classifier_summary(
         result["blockers"] = list(blockers)
     if error:
         result["error"] = error
+    if agentic_xlsx_anchor_taxonomy:
+        result["agentic_xlsx_anchor_taxonomy"] = dict(agentic_xlsx_anchor_taxonomy)
+    if agentic_xlsx_protected_anchor_verifier:
+        result["agentic_xlsx_protected_anchor_verifier"] = dict(agentic_xlsx_protected_anchor_verifier)
     return result
 
 
@@ -17819,27 +17906,13 @@ def classify_query_focus_anchors_with_local_llm(
             required_before=required_before,
             raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
         )
-    before_lookup = _normalized_anchor_lookup(required_before)
-    deterministic_numeric = _numeric_or_date_anchors(required_before)
-    protected_norms = set(_normalized_anchor_lookup(deterministic_numeric))
-    for structural_anchor in [*numeric_or_date, *entity, *measure]:
-        normalized = normalize_answer_text(structural_anchor)
-        if normalized in before_lookup:
-            protected_norms.add(normalized)
-    for anchor in required_before:
-        if _looks_like_measure_anchor(anchor):
-            protected_norms.add(normalize_answer_text(anchor))
     intent_norms = {normalize_answer_text(token) for token in intent_tokens if normalize_answer_text(token)}
-    removed: list[str] = []
-    protected_restored: list[str] = []
-    for normalized in sorted(intent_norms):
-        anchor = before_lookup.get(normalized)
-        if not anchor:
-            continue
-        if normalized in protected_norms or not _can_remove_llm_intent_anchor(anchor):
-            protected_restored.append(anchor)
-        else:
-            removed.append(anchor)
+    before_lookup = _normalized_anchor_lookup(required_before)
+    proposed_removed = [before_lookup[normalized] for normalized in sorted(intent_norms) if normalized in before_lookup]
+    removed, protected_restored, taxonomy_summary, verifier_summary = _agentic_xlsx_verified_anchor_removal(
+        required_before,
+        proposed_removed,
+    )
     required_after = sorted(anchor for anchor in required_before if anchor not in set(removed))
     if required_before and not required_after:
         return _query_anchor_classifier_summary(
@@ -17848,6 +17921,8 @@ def classify_query_focus_anchors_with_local_llm(
             config=config,
             required_before=required_before,
             raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+            agentic_xlsx_anchor_taxonomy=taxonomy_summary,
+            agentic_xlsx_protected_anchor_verifier=verifier_summary,
         )
     return _query_anchor_classifier_summary(
         query=clean_query,
@@ -17858,6 +17933,8 @@ def classify_query_focus_anchors_with_local_llm(
         removed_intent_tokens=sorted(removed),
         protected_intent_tokens_restored=sorted(protected_restored),
         raw_response_sha256=_clean((meta or {}).get("raw_response_sha256")),
+        agentic_xlsx_anchor_taxonomy=taxonomy_summary,
+        agentic_xlsx_protected_anchor_verifier=verifier_summary,
     )
 
 
@@ -18145,12 +18222,17 @@ def _query_anchor_matches_planner_axis(anchor: str, planner: Mapping[str, Any]) 
 
 def _query_anchor_classifier_from_planner(query: str, planner: Mapping[str, Any]) -> dict[str, Any]:
     required_before = sorted(_gate_query_focus_anchors(query))
-    required_after = sorted(
+    planner_required_after = sorted(
         anchor
         for anchor in required_before
         if _query_anchor_matches_planner_axis(anchor, planner)
     )
-    removed = sorted(anchor for anchor in required_before if anchor not in set(required_after))
+    proposed_removed = sorted(anchor for anchor in required_before if anchor not in set(planner_required_after))
+    removed, protected_restored, taxonomy_summary, verifier_summary = _agentic_xlsx_verified_anchor_removal(
+        required_before,
+        proposed_removed,
+    )
+    required_after = sorted(anchor for anchor in required_before if anchor not in set(removed))
     config = {
         "model": _clean(planner.get("model")),
         "backend": _clean(planner.get("backend")),
@@ -18163,7 +18245,10 @@ def _query_anchor_classifier_from_planner(query: str, planner: Mapping[str, Any]
         required_before=required_before,
         required_after=required_after,
         removed_intent_tokens=removed,
+        protected_intent_tokens_restored=protected_restored,
         raw_response_sha256=_clean(planner.get("raw_response_sha256")),
+        agentic_xlsx_anchor_taxonomy=taxonomy_summary,
+        agentic_xlsx_protected_anchor_verifier=verifier_summary,
     )
 
 

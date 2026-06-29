@@ -4812,6 +4812,113 @@ def test_llm_query_anchor_classifier_does_not_remove_entity_misclassified_as_int
     assert result["protected_intent_tokens_restored"] == ["해오름요양원"]
 
 
+def test_agentic_xlsx_classifier_verifier_preserves_diagnostic_structural_anchors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    unsafe_tokens = [
+        "일산선",
+        "수인선",
+        "신논현요양원",
+        "청운노인요양원",
+        "2020년",
+        "2024년",
+        "2월",
+        "1월",
+        "원달러",
+    ]
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "intent_tokens": ["무엇입니까", *unsafe_tokens],
+                "numeric_or_date_anchors": [],
+                "entity_anchors": [],
+                "measure_anchors": [],
+            },
+            {"raw_response_sha256": "sha256:unsafe-agentic-xlsx-classifier"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    result = actual_rag_eval.classify_query_focus_anchors_with_local_llm(
+        (
+            "2020년 2월 일산선과 2024년 1월 수인선의 원달러 금액을 비교하고 "
+            "신논현요양원 및 청운노인요양원 값은 무엇입니까?"
+        ),
+        skip_endpoint_check=True,
+    )
+
+    assert result["status"] == "classified_validated"
+    assert result["removed_intent_tokens"] == ["무엇입니까"]
+    assert set(unsafe_tokens).issubset(set(result["protected_intent_tokens_restored"]))
+    assert set(unsafe_tokens).issubset(set(result["required_anchor_after"]))
+    taxonomy = result["agentic_xlsx_anchor_taxonomy"]
+    assert taxonomy["schema_version"] == "actual_rag_eval.agentic_xlsx_query_anchor_taxonomy.v1"
+    assert taxonomy["category_counts"]["date_or_period"] >= 4
+    assert taxonomy["category_counts"]["route_or_line"] >= 2
+    assert taxonomy["category_counts"]["organization_or_facility"] >= 2
+    assert taxonomy["category_counts"]["numeric_or_unit"] >= 1
+    verifier = result["agentic_xlsx_protected_anchor_verifier"]
+    assert verifier["schema_version"] == "actual_rag_eval.agentic_xlsx_protected_anchor_verifier.v1"
+    assert verifier["approved_removed_tokens"] == ["무엇입니까"]
+    assert set(unsafe_tokens).issubset(set(verifier["rejected_removed_tokens"]))
+    assert all(verifier["protected_rejection_reasons"][token] for token in unsafe_tokens)
+    assert result["raw_payload_written"] is False
+    assert result["raw_prompt_payload_written"] is False
+    assert result["raw_response_payload_written"] is False
+    assert result["uses_gold_fields"] is False
+    assert result["uses_expected_fields"] is False
+    assert result["uses_qrels"] is False
+    assert result["uses_labels"] is False
+    assert result["uses_query_or_row_or_target_ids"] is False
+    assert result["uses_baseline_topk_or_legacy_outputs"] is False
+    encoded = json.dumps(result, ensure_ascii=False)
+    for forbidden in ("expected_answer", "expected_evidence", "row_id", "candidate_id"):
+        assert forbidden not in encoded
+
+
+def test_agentic_xlsx_query_anchor_classifier_from_planner_preserves_protected_anchors() -> None:
+    unsafe_tokens = [
+        "일산선",
+        "수인선",
+        "신논현요양원",
+        "청운노인요양원",
+        "2020년",
+        "2024년",
+        "2월",
+        "1월",
+        "원달러",
+    ]
+    planner = {
+        "planner_status": "planned_validated",
+        "model": "local-test",
+        "backend": "test",
+        "base_url": "http://localhost",
+        "raw_response_sha256": "sha256:planner-protected-anchors",
+        "validated_axis_values": {},
+    }
+
+    result = actual_rag_eval._query_anchor_classifier_from_planner(
+        (
+            "2020년 2월 일산선과 2024년 1월 수인선의 원달러 금액을 비교하고 "
+            "신논현요양원 및 청운노인요양원 값은 무엇입니까?"
+        ),
+        planner,
+    )
+
+    assert result["status"] == "classified_validated"
+    assert result["removed_intent_tokens"] == ["무엇입니까"]
+    assert set(unsafe_tokens).issubset(set(result["protected_intent_tokens_restored"]))
+    assert set(unsafe_tokens).issubset(set(result["required_anchor_after"]))
+    verifier = result["agentic_xlsx_protected_anchor_verifier"]
+    assert verifier["approved_removed_tokens"] == ["무엇입니까"]
+    assert set(unsafe_tokens).issubset(set(verifier["rejected_removed_tokens"]))
+
+
 def test_query_evidence_planner_validates_structured_xlsx_axes_and_excludes_question_words(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
