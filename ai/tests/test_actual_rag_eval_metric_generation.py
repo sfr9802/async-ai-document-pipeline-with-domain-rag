@@ -4425,6 +4425,339 @@ def test_llm_query_anchor_classifier_keeps_structural_anchors_and_drops_intent_o
     assert result["protected_intent_tokens_restored"] == ["2012년"]
 
 
+def test_agentic_xlsx_anchor_taxonomy_preserves_structural_anchors() -> None:
+    records = actual_rag_eval.agentic_xlsx_query_anchor_taxonomy_tool(
+        [
+            "2020년",
+            "2024년",
+            "2월",
+            "1월",
+            "일산선",
+            "수인선",
+            "신논현",
+            "신논현요양원",
+            "청운노인요양원",
+            "원달러",
+            "1,234,567명",
+            "15.2%",
+            "승차총승객수",
+            "기관별 상세주소",
+            "금액",
+            "비율",
+            "인구",
+            "낯선토큰",
+        ]
+    )
+    by_token = {record.token: record for record in records}
+
+    assert by_token["2020년"].category == "date_or_period"
+    assert by_token["2024년"].category == "date_or_period"
+    assert by_token["2월"].category == "date_or_period"
+    assert by_token["1월"].category == "date_or_period"
+    assert by_token["일산선"].category == "route_or_line"
+    assert by_token["수인선"].category == "route_or_line"
+    assert by_token["신논현"].category == "route_or_line"
+    assert by_token["신논현요양원"].category == "organization_or_facility"
+    assert by_token["청운노인요양원"].category == "organization_or_facility"
+    assert by_token["원달러"].category == "numeric_or_unit"
+    assert by_token["1,234,567명"].category == "numeric_or_unit"
+    assert by_token["15.2%"].category == "numeric_or_unit"
+    assert by_token["승차총승객수"].category == "measure_or_column"
+    assert by_token["기관별 상세주소"].category == "measure_or_column"
+    assert by_token["금액"].category == "measure_or_column"
+    assert by_token["비율"].category == "measure_or_column"
+    assert by_token["인구"].category == "measure_or_column"
+    assert by_token["낯선토큰"].category == "unknown_protected"
+    for record in by_token.values():
+        assert record.is_protected_anchor is True
+        assert record.is_removable_intent_token is False
+        assert record.reason
+
+
+def test_agentic_xlsx_anchor_taxonomy_drops_intent_only() -> None:
+    records = actual_rag_eval.agentic_xlsx_query_anchor_taxonomy_tool(
+        ["무엇입니까", "명입니까", "지정된", "알려주세요", "구하시오", "일산선", "확인되지않은토큰"]
+    )
+    by_token = {record.token: record for record in records}
+
+    for token in ("무엇입니까", "명입니까", "지정된", "알려주세요", "구하시오"):
+        assert by_token[token].category == "intent_token"
+        assert by_token[token].is_removable_intent_token is True
+        assert by_token[token].is_protected_anchor is False
+    assert by_token["일산선"].category == "route_or_line"
+    assert by_token["일산선"].is_removable_intent_token is False
+    assert by_token["일산선"].is_protected_anchor is True
+    assert by_token["확인되지않은토큰"].category == "unknown_protected"
+    assert by_token["확인되지않은토큰"].is_protected_anchor is True
+    assert by_token["확인되지않은토큰"].is_removable_intent_token is False
+
+
+def test_agentic_xlsx_protected_anchor_verifier_rejects_llm_structural_removal() -> None:
+    taxonomy = actual_rag_eval.agentic_xlsx_query_anchor_taxonomy_tool(
+        ["무엇입니까", "일산선", "2024년", "신논현요양원", "원달러", "승차총승객수", "낯선토큰"]
+    )
+
+    verification = actual_rag_eval.agentic_xlsx_protected_anchor_verifier_tool(
+        proposed_removed_tokens=["무엇입니까", "일산선", "2024년", "신논현요양원", "원달러", "승차총승객수", "낯선토큰"],
+        taxonomy_records=taxonomy,
+    )
+
+    assert verification.approved_removed_tokens == ("무엇입니까",)
+    assert verification.rejected_removed_tokens == (
+        "일산선",
+        "2024년",
+        "신논현요양원",
+        "원달러",
+        "승차총승객수",
+        "낯선토큰",
+    )
+    assert set(verification.protected_rejection_reasons) == {
+        "일산선",
+        "2024년",
+        "신논현요양원",
+        "원달러",
+        "승차총승객수",
+        "낯선토큰",
+    }
+    assert all(verification.protected_rejection_reasons[token] for token in verification.rejected_removed_tokens)
+
+
+@pytest.mark.parametrize(
+    ("record", "match"),
+    [
+        (
+            actual_rag_eval.AgenticXlsxQueryAnchorTaxonomyRecord(
+                token="일산선",
+                category="station_line",
+                is_removable_intent_token=False,
+                is_protected_anchor=True,
+                reason="unsupported category",
+            ),
+            "category unsupported",
+        ),
+        (
+            actual_rag_eval.AgenticXlsxQueryAnchorTaxonomyRecord(
+                token="무엇입니까",
+                category="intent_token",
+                is_removable_intent_token=True,
+                is_protected_anchor=True,
+                reason="intent tokens cannot be protected",
+            ),
+            "intent_token",
+        ),
+        (
+            actual_rag_eval.AgenticXlsxQueryAnchorTaxonomyRecord(
+                token="2020년",
+                category="date_or_period",
+                is_removable_intent_token=True,
+                is_protected_anchor=True,
+                reason="date cannot be removable",
+            ),
+            "only intent_token",
+        ),
+        (
+            actual_rag_eval.AgenticXlsxQueryAnchorTaxonomyRecord(
+                token="일산선",
+                category="route_or_line",
+                is_removable_intent_token=False,
+                is_protected_anchor=False,
+                reason="route must be protected",
+            ),
+            "non-intent",
+        ),
+        (
+            actual_rag_eval.AgenticXlsxQueryAnchorTaxonomyRecord(
+                token="",
+                category="unknown_protected",
+                is_removable_intent_token=False,
+                is_protected_anchor=True,
+                reason="empty token",
+            ),
+            "token must be non-empty",
+        ),
+        (
+            actual_rag_eval.AgenticXlsxQueryAnchorTaxonomyRecord(
+                token="낯선토큰",
+                category="unknown_protected",
+                is_removable_intent_token=False,
+                is_protected_anchor=True,
+                reason="",
+            ),
+            "reason must be non-empty",
+        ),
+    ],
+)
+def test_agentic_xlsx_tool_schema_validator_rejects_unknown_malformed_categories(
+    record: object,
+    match: str,
+) -> None:
+    with pytest.raises(DatasetSchemaError, match=match):
+        actual_rag_eval.validate_agentic_xlsx_query_anchor_taxonomy_output("cp01", (record,))
+
+
+def test_agentic_xlsx_repair_explainer_fails_closed_on_protected_removal() -> None:
+    malformed_taxonomy = (
+        actual_rag_eval.AgenticXlsxQueryAnchorTaxonomyRecord(
+            token="일산선",
+            category="route",
+            is_removable_intent_token=False,
+            is_protected_anchor=True,
+            reason="malformed category should fail closed",
+        ),
+    )
+    with pytest.raises(DatasetSchemaError, match="category unsupported"):
+        actual_rag_eval.validate_agentic_xlsx_query_anchor_taxonomy_output("cp01", malformed_taxonomy)
+
+    taxonomy = actual_rag_eval.agentic_xlsx_query_anchor_taxonomy_tool(["무엇입니까", "일산선"])
+    verification = actual_rag_eval.agentic_xlsx_protected_anchor_verifier_tool(
+        proposed_removed_tokens=["무엇입니까", "일산선"],
+        taxonomy_records=taxonomy,
+    )
+    explanation = actual_rag_eval.AgenticXlsxRepairExplanationRecord(
+        primary_failure_family="intent_anchor_only",
+        secondary_failure_families=(),
+        safe_to_simulate_intent_removal=True,
+        repair_recommendation="diagnostic-only intent removal simulation",
+        evidence_summary="LLM advisory proposed a protected route anchor removal.",
+    )
+
+    with pytest.raises(DatasetSchemaError, match="protected anchors were rejected"):
+        actual_rag_eval.validate_agentic_xlsx_repair_explainer_output(
+            "cp01",
+            explanation,
+            anchor_verification=verification,
+        )
+
+
+def test_agentic_xlsx_protected_anchor_verifier_fails_closed_without_taxonomy() -> None:
+    unsafe_verification = actual_rag_eval.AgenticXlsxProtectedAnchorVerifierRecord(
+        proposed_removed_tokens=("일산선",),
+        approved_removed_tokens=("일산선",),
+        rejected_removed_tokens=(),
+        protected_rejection_reasons={},
+    )
+
+    with pytest.raises(DatasetSchemaError, match="approved_removed_tokens missing taxonomy"):
+        actual_rag_eval.validate_agentic_xlsx_protected_anchor_verifier_output("cp01", unsafe_verification)
+
+    coordinator = actual_rag_eval.AgenticXlsxCoordinatorRecord(
+        taxonomy_records=(),
+        anchor_verification=unsafe_verification,
+    )
+    with pytest.raises(DatasetSchemaError, match="approved_removed_tokens missing taxonomy"):
+        actual_rag_eval.validate_agentic_xlsx_coordinator_output("cp01", coordinator)
+
+
+def test_agentic_xlsx_regated_simulator_rejects_unapproved_removed_tokens() -> None:
+    taxonomy = actual_rag_eval.agentic_xlsx_query_anchor_taxonomy_tool(["무엇입니까", "해오름요양원"])
+    verification = actual_rag_eval.agentic_xlsx_protected_anchor_verifier_tool(
+        proposed_removed_tokens=["무엇입니까", "해오름요양원"],
+        taxonomy_records=taxonomy,
+    )
+    simulation = actual_rag_eval.AgenticXlsxRegatedCandidateSimulationRecord(
+        original_rejection_reason="missing_query_anchor_after_tool",
+        simulated_rejection_reason="accepted_after_regating",
+        approved_removed_tokens=("무엇입니까", "해오름요양원"),
+        protected_tokens_preserved=("해오름요양원",),
+        axis_status_after_simulation={"missing_axes": []},
+        would_be_accepted_by_existing_gate=True,
+    )
+
+    with pytest.raises(DatasetSchemaError, match="approved_removed_tokens must be verifier-approved"):
+        actual_rag_eval.validate_agentic_xlsx_regated_candidate_simulator_output(
+            "cp01",
+            simulation,
+            anchor_verification=verification,
+        )
+
+
+def test_agentic_xlsx_axis_inspector_rejects_nested_forbidden_evidence_fields() -> None:
+    inspection = actual_rag_eval.AgenticXlsxAxisInspectionRecord(
+        has_required_period_axis=True,
+        has_required_entity_axis=True,
+        has_required_measure_axis=True,
+        has_display_value=True,
+        missing_axes=(),
+        source_owned_axis_evidence={
+            "period": "2020년",
+            "metadata": {"expected_answer": "protected oracle value"},
+        },
+    )
+
+    with pytest.raises(DatasetSchemaError, match="expected_answer"):
+        actual_rag_eval.validate_agentic_xlsx_axis_inspector_output("cp01", inspection)
+
+    non_scalar = actual_rag_eval.AgenticXlsxAxisInspectionRecord(
+        has_required_period_axis=True,
+        has_required_entity_axis=True,
+        has_required_measure_axis=True,
+        has_display_value=True,
+        missing_axes=(),
+        source_owned_axis_evidence={"period": 2020},
+    )
+    with pytest.raises(DatasetSchemaError, match="source_owned_axis_evidence.period"):
+        actual_rag_eval.validate_agentic_xlsx_axis_inspector_output("cp01", non_scalar)
+
+
+@pytest.mark.parametrize(
+    ("callable_validator", "match"),
+    [
+        (
+            lambda: actual_rag_eval.validate_agentic_xlsx_query_anchor_taxonomy_output(
+                "cp01",
+                (
+                    {
+                        "schema_version": actual_rag_eval.AGENTIC_XLSX_QUERY_ANCHOR_TAXONOMY_SCHEMA_VERSION,
+                        "token": 2020,
+                        "category": "date_or_period",
+                        "is_removable_intent_token": False,
+                        "is_protected_anchor": True,
+                        "reason": "numeric token should fail closed",
+                    },
+                ),
+            ),
+            "token must be a string",
+        ),
+        (
+            lambda: actual_rag_eval.validate_agentic_xlsx_protected_anchor_verifier_output(
+                "cp01",
+                {
+                    "schema_version": actual_rag_eval.AGENTIC_XLSX_PROTECTED_ANCHOR_VERIFIER_SCHEMA_VERSION,
+                    "proposed_removed_tokens": [123],
+                    "approved_removed_tokens": [],
+                    "rejected_removed_tokens": ["123"],
+                    "protected_rejection_reasons": {"123": "non-string proposed token"},
+                },
+            ),
+            "proposed_removed_tokens must contain strings",
+        ),
+        (
+            lambda: actual_rag_eval.validate_agentic_xlsx_regated_candidate_simulator_output(
+                "cp01",
+                {
+                    "schema_version": actual_rag_eval.AGENTIC_XLSX_REGATED_CANDIDATE_SIMULATOR_SCHEMA_VERSION,
+                    "original_rejection_reason": "missing_query_anchor_after_tool",
+                    "simulated_rejection_reason": "missing_validated_required_axes_after_tool",
+                    "approved_removed_tokens": [123],
+                    "protected_tokens_preserved": [],
+                    "axis_status_after_simulation": {},
+                    "would_be_accepted_by_existing_gate": False,
+                    "report_only_diagnostic": True,
+                    "official_metric": False,
+                },
+            ),
+            "approved_removed_tokens must contain strings",
+        ),
+    ],
+)
+def test_agentic_xlsx_validators_reject_non_string_tuple_payloads(
+    callable_validator: object,
+    match: str,
+) -> None:
+    with pytest.raises(DatasetSchemaError, match=match):
+        callable_validator()
+
+
 def test_llm_query_anchor_classifier_malformed_payload_falls_back_to_deterministic(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
