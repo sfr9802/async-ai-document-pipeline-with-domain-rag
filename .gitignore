@@ -168,10 +168,12 @@ ai/eval/datasets/samples/
 *.jsonl
 *.json
 *.md
+# Workspace docs are local-only by default. Already-tracked docs remain tracked
+# until explicitly removed from the index.
+/docs/
 !README.md
 !AGENTS.md
 !**/README.md
-!docs/THIRD_PARTY_DATA_LICENSES.md
 !frontend/app/package.json
 !frontend/app/components.json
 !frontend/app/tsconfig.json
@@ -181,7 +183,6 @@ ai/eval/datasets/samples/
 !ai/eval/configs/weaviate_full_index_nonprod_rollback.json
 !ai/eval/configs/weaviate_route_selected_candidate_surface_v1.json
 !ai/eval/configs/weaviate_route_selected_candidate_surface_v2.json
-!docs/agentops_trace_schema.json
 !reports/
 /reports/*
 # Root reports are tracked only through the small public allowlist below.
@@ -208,17 +209,9 @@ archive/
 !ai/eval/silver/
 !ai/eval/silver/answer_citation_silver_manifest_v1.json
 !ai/eval/silver/answer_citation_silver_readiness_v1.json
-# Human-facing rag-ingestion reports live in the append-only progress doc,
-# with measurements/triage as existing scoped ledgers under docs/.
+# Human-facing rag-ingestion reports may exist as already-tracked docs.
 # Machine-readable JSON/JSONL under reports/rag_eval/rag-ingestion/ is
-# generated/local-only. Keep the rolling docs as the tracked human-facing
-# record.
-!docs/rag-ingestion-progress.md
-!docs/rag-ingestion-measurements.md
-!docs/rag-ingestion-triage.md
-!docs/rag_eval/
-!docs/rag_eval/*.md
-!docs/codex-goals/rag-v7-e2e-evaluation-plan.md
+# generated/local-only.
 reports/rag_eval/rag-ingestion/**/*.json
 reports/rag_eval/rag-ingestion/**/*.jsonl
 reports/rag_eval/rag-ingestion/**/*.csv
