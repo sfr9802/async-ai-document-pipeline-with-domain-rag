@@ -4,8 +4,8 @@ v1 definition: "multimodal" here means an image / PDF input gets run
 through OCR + a visual-description provider, and the two signals are
 fused into a retrieval query + grounding context that feed the
 existing text RAG retriever and generator. This is explicitly NOT
-true multimodal retrieval — see `docs/architecture.md`
-"Multimodal v1 limitations" for the deferred items.
+true multimodal retrieval; the deferred items are captured by the v1
+scope notes in the capability module and tests.
 
 Public surface used by the rest of the worker:
 

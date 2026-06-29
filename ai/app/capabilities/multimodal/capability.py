@@ -39,8 +39,8 @@ Design choices for v1 that are NOT accidents:
 * **Retrieval is the existing text-RAG retriever, unchanged.** We do
   not build a separate multimodal vector DB, we do not wire CLIP /
   VLM retrieval indexes, and we do not touch `RagCapability`. This
-  is explicitly v1 scope — see `docs/architecture.md` "Multimodal v1
-  limitations" for the deferred items.
+  is explicitly v1 scope; deferred true multimodal retrieval items
+  are intentionally outside this capability contract.
 
 * **PDF page handling is now multi-page for vision.** OCR walks every
   page via `OcrProvider.ocr_pdf` (which already handles born-digital

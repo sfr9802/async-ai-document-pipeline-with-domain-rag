@@ -33,8 +33,37 @@ denominator 변경, 평가 점수 개선용 로직 변경을 포함하지 않습
 
 ## Actual RAG Eval Infrastructure
 
-`ai/eval/actual_rag_eval.py` and `python -m ai.scripts.rag_actual_eval`
-implement the current pragmatic actual-RAG evaluation loop:
+New experiment work should use the reusable eval backend modules first, then run
+them through the thin experiment runner entrypoint,
+`python -m ai.eval.experiment_runner.main`. The runner owns env/CLI inputs and
+run metadata; focused backend modules own retrieval, storage, and report
+behavior:
+
+```bash
+python -X utf8 -m ai.eval.experiment_runner.main \
+  --experiment actual-rag \
+  --run-id <run_id> \
+  --profile local \
+  --dry-run
+```
+
+For execution, pass `--dataset <eval-items.jsonl>` with
+`--output-mode report-json`. The runner rejects `--output-mode run-sqlite`
+until runstore wiring is promoted into this facade. It records the whitelisted
+`RAG_EXPERIMENT_*` environment snapshot, argv, git commit, report root, run id,
+profile, and output mode. Path-like argv/env values for dataset, context,
+output, and report-root inputs are stored as repo-relative paths or redacted
+outside the repo. Secret env vars are not copied into metadata.
+`ai/eval/actual_rag_eval.py` remains the legacy-compatible backend facade
+while reusable pieces live in smaller backend modules such as
+`ai/eval/actual_rag_dataset.py`, `ai/eval/actual_rag_judging.py`,
+`ai/eval/actual_rag_agentic_xlsx.py`, `ai/eval/xlsx_locator_run_store.py`,
+`ai/eval/actual_rag_core_base.py`, `ai/eval/actual_rag_core_xlsx.py`,
+`ai/eval/actual_rag_core_quality.py`, `ai/eval/actual_rag_runner.py`, and
+`ai/eval/actual_rag_cli.py`.
+
+`python -m ai.scripts.rag_actual_eval` still exposes the current pragmatic
+actual-RAG evaluation loop through that facade:
 
 ```text
 eval dataset -> retrieval surface selection -> BM25/vector/hybrid retrieval -> context assembly -> answer generation -> citation capture -> metrics -> report.json
@@ -315,10 +344,9 @@ diagnostics only. They do not promote strict, provisional, inferred-answerable,
 retrieval, vector, hybrid, or diagnostic metrics to official metric,
 product-success, promotion, or live-readiness evidence.
 
-Phase 0-2 source-native contracts are documented in
-`docs/rag_eval/roadmap_source_native.md`,
-`docs/rag_eval/metric_contract.md`, and
-`docs/rag_eval/failure_taxonomy.md`.
+Phase 0-2 source-native contracts are enforced through the registry, runner,
+loader, and tests. Local worker notes may keep extra narrative context, but
+fresh checkout behavior must not depend on those notes.
 
 ## 실제 질문·근거·응답 샘플
 
@@ -412,7 +440,7 @@ Phase 0-2 source-native contracts are documented in
 
 ## 정리와 보고 표면
 
-포트폴리오 제출 기준의 최신 RAG diagnostic pointer는 `reports/rag_eval/latest.json`과 `reports/rag_eval/latest_text_gold.json`입니다. 현재 두 pointer 모두 `actual_rag_eval_query_formulation_v3_agentic_guard_nonprod_20260614_v4`를 가리킵니다. `reports/rag_eval/rag-ingestion/**`의 machine report/status/run sidecar는 generated/local-only diagnostic evidence로 취급하고, 사람이 읽는 최신 상태와 정리 근거는 `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, `docs/rag-ingestion-triage.md`에 둡니다.
+포트폴리오 제출 기준의 최신 RAG diagnostic pointer는 `reports/rag_eval/latest.json`과 `reports/rag_eval/latest_text_gold.json`입니다. 현재 두 pointer 모두 `actual_rag_eval_query_formulation_v3_agentic_guard_nonprod_20260614_v4`를 가리킵니다. `reports/rag_eval/rag-ingestion/**`의 machine report/status/run sidecar는 generated/local-only diagnostic evidence로 취급하고, 실행 기준은 `ai/eval/rag_eval_registry.py`, `ai/scripts/rag_eval.py`, `ai/eval/report_paths.py`로 확인합니다. `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, `docs/rag-ingestion-triage.md`는 작업자가 직접 남기는 로컬 handoff 노트이며 fresh checkout source-of-truth가 아닙니다.
 
 보고서 경로는 `ai/eval/report_paths.py`에서 중앙화합니다. 새 actual-RAG run, latest pointer, Weaviate manifest는 ignored `reports/rag_eval/` 아래에 둡니다. v3-v7 diagnostic ladder의 current/status/short-key evidence는 ignored `reports/rag_eval/rag-ingestion/` 아래에 보존하며, 현재 diagnostic ladder alias는 `v6_9_answer_quality_gate_packet_nonprod`입니다. tracked `reports/`는 sanitized portfolio report와 sample trace allowlist만 사용합니다. 새 실험 스크립트는 이 세 namespace 중 하나를 명시적으로 선택해야 하며, 임의의 `docs/reports`, `ai/eval/reports/**` 또는 `ai/`에서 실행할 때의 `eval/reports/**`, root ad-hoc report path를 만들지 않습니다. 오래된 `ai/eval/reports/` 계열은 재생성되더라도 비어 있는 ignored compatibility guard로만 남아야 합니다.
 

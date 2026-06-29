@@ -27,8 +27,8 @@ Honest scope:
 
 The aggregator is pure Python: hand it a list of per-query
 ``LatencyMeasurement`` rows and it returns a ``LatencyAggregate``
-with mean / p50 / p90 / p99 per stage. The CLI in
-``scripts.run_phase7_latency_smoke`` wires the I/O.
+with mean / p50 / p90 / p99 per stage. I/O wiring belongs in the
+experiment runner or a dedicated adapter.
 """
 
 from __future__ import annotations
@@ -341,7 +341,7 @@ def measure_one_config(
     ``pool_rows`` is the deserialized candidate pool (one row per
     query), each row has ``query_id``, ``elapsed_ms``, and ``docs``.
     The function accepts ``RetrievalResult`` objects from the
-    ``scripts.phase7_human_gold_tune`` module, but does not depend on
+    ``eval.harness.phase7_human_gold_tune`` module, but does not depend on
     that import — anything with ``query_id``, ``elapsed_ms``, ``docs``
     works (duck-typed).
     """

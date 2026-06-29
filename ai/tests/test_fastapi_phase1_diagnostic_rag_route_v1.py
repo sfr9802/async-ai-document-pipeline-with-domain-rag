@@ -2852,10 +2852,9 @@ def test_diagnostic_xlsx_source_atom_validates_and_evidence_bundle_carries_displ
     assert "formula_text" not in metadata
 
 
-def test_v3_22_script_reuses_importable_phase1_runtime_contract() -> None:
-    script = ROOT / "ai" / "scripts" / "rag_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod.py"
-    text = script.read_text(encoding="utf-8")
+def test_phase1_runtime_contract_is_importable_without_legacy_script() -> None:
+    from app.capabilities.rag_orchestrator import phase1_diagnostic_runtime as runtime
 
-    assert "app.capabilities.rag_orchestrator.phase1_diagnostic_runtime" in text
-    assert "PHASE1_V3_22_RUN_ID" in text
-    assert "shared_range_shape" in text
+    assert runtime.range_shape("A1:B2") == (2, 2, 4)
+    assert runtime.range_shape("A1") == (1, 1, 1)
+    assert not list((ROOT / "ai" / "scripts").glob("rag_v3_*.py"))

@@ -14,8 +14,7 @@ proximity bonus) are also implemented but explicitly flagged in the
 strategy record as ``deployable=False`` so the report renderer cannot
 accidentally promote one of them.
 
-The CLI in ``scripts.run_phase7_section_aware_rerank`` wires this
-harness up to the cached candidate pool from Phase 7.5; the harness
+Runner/adapters can wire this harness up to cached candidate pools; the harness
 itself is pure-Python and depends only on the
 :class:`RetrievedDoc` type from ``eval.harness.phase7_human_gold_tune``.
 
@@ -23,7 +22,7 @@ Design contract:
 
   * **No production retriever code is imported here.** Reranking
     operates on pre-computed :class:`RetrievedDoc` lists; the live
-    FAISS / bge-m3 wiring lives in the CLI.
+    FAISS / bge-m3 wiring belongs in an adapter.
   * **Oracle-grounded variants are clearly labelled** so the report
     renderer cannot frame them as production-deployable. The
     ``deployable`` flag on :class:`SectionRerankSpec` is the source

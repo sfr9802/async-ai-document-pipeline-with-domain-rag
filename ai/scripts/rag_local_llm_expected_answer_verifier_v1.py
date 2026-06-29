@@ -22,8 +22,8 @@ from rag_question_quality_gate_v1 import classify_question  # noqa: E402
 
 
 REVIEW_DIR = AI_WORKER_ROOT / "eval" / "review"
-DEFAULT_PDF_CANDIDATES = REVIEW_DIR / "rag_pdf_gold_question_candidate_generation_v1.json"
-DEFAULT_XLSX_CANDIDATES = REVIEW_DIR / "rag_xlsx_gold_question_candidate_generation_v1.json"
+DEFAULT_PDF_CANDIDATES = REVIEW_DIR / "pdf_gold_question_candidates.json"
+DEFAULT_XLSX_CANDIDATES = REVIEW_DIR / "xlsx_gold_question_candidates.json"
 DEFAULT_OUTPUT_JSON = REVIEW_DIR / "rag_local_llm_expected_answer_verifier_v1.json"
 DEFAULT_OUTPUT_MD = REVIEW_DIR / "rag_local_llm_expected_answer_verifier_v1.md"
 

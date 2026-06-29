@@ -205,17 +205,17 @@ PDF 문서에서는 본문 텍스트뿐 아니라 표 안의 값이 답변 근�
 | [`frontend/app/`](frontend/app/) | React/Vite UI |
 | [`docker-compose.yml`](docker-compose.yml) | 로컬 PostgreSQL, Redis, 선택형 MinIO/LLM 인프라 구성 |
 | [`.env.example`](.env.example) | 로컬 실행 환경 변수 예시 |
-| [`docs/THIRD_PARTY_DATA_LICENSES.md`](docs/THIRD_PARTY_DATA_LICENSES.md) | 외부 데이터 및 라이선스 고지 |
+| `docs/THIRD_PARTY_DATA_LICENSES.md` | 로컬 전용 외부 데이터 및 라이선스 상세 노트, fresh checkout 기준 source-of-truth 아님 |
 
 ## 저장소 artifact 관리
 
 이 저장소는 코드와 진단 evidence를 의도적으로 분리합니다. `portfolio-freeze-v1` 기준 latest pointer는 `reports/rag_eval/latest.json`과 `reports/rag_eval/latest_text_gold.json`이며, 현재 둘 다 `actual_rag_eval_query_formulation_v3_agentic_guard_nonprod_20260614_v4`를 가리킵니다. `reports/rag_eval/rag-ingestion/**` 아래의 `report.json`, `status.jsonl`, run sidecar는 대부분 generated/local-only diagnostic artifact입니다.
 
-보고서 루트는 역할별로 나눕니다. `reports/`에는 작은 public portfolio artifact allowlist만 추적하고, `reports/rag_eval/`은 ignored actual-RAG machine report/latest namespace로 둡니다. `reports/rag_eval/rag-ingestion/`은 legacy/current diagnostic ladder와 short-key check evidence를 보존하는 ignored namespace이며, 현재 diagnostic ladder alias는 `v6_9_answer_quality_gate_packet_nonprod`입니다. 사람이 읽는 canonical 상태는 `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, `docs/rag-ingestion-triage.md`에 남깁니다. 새 스크립트는 이 경로를 직접 하드코딩하지 말고 `ai/eval/report_paths.py`의 상수를 사용합니다.
+보고서 루트는 역할별로 나눕니다. `reports/`에는 작은 public portfolio artifact allowlist만 추적하고, `reports/rag_eval/`은 ignored actual-RAG machine report/latest namespace로 둡니다. `reports/rag_eval/rag-ingestion/`은 legacy/current diagnostic ladder와 short-key check evidence를 보존하는 ignored namespace이며, 현재 diagnostic ladder alias는 `v6_9_answer_quality_gate_packet_nonprod`입니다. 실행 기준은 `ai/eval/rag_eval_registry.py`, `ai/scripts/rag_eval.py`, `ai/eval/report_paths.py`를 통해 확인하고, `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, `docs/rag-ingestion-triage.md`는 작업자가 직접 남기는 로컬 rolling handoff 노트로만 취급합니다.
 
 정리 기준은 보수적입니다. active source, 테스트, README/docs, registry/runner, gold/qrels/official denominator/eval query/source registry/index/silver 표면은 보존합니다. 삭제가 애매한 legacy 또는 diagnostic bundle은 hold로 남기며, 해시 검증된 외부 archive 없이 bulk-delete하지 않습니다. 안전 삭제 대상은 `.pytest_cache`, `__pycache__`, bytecode, `core-api/target`, `frontend/app/node_modules`, `frontend/app/dist`처럼 lockfile이나 빌드로 재생성 가능한 transient cache/dependency/build output으로 제한합니다.
 
-정리 근거는 [`docs/rag-ingestion-progress.md`](docs/rag-ingestion-progress.md), [`docs/rag-ingestion-measurements.md`](docs/rag-ingestion-measurements.md), [`docs/rag-ingestion-triage.md`](docs/rag-ingestion-triage.md)에 남깁니다. 2026-06-09 generated report `reports/rag_eval/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json`은 이전 cleanup inventory이며, 진행 중인 대형 cleanup은 로컬 checkpoint 원장 `docs/codex-goals/repo-cleanup-technical-debt-checkpoints.md`에 이어서 기록합니다.
+정리 근거의 source-of-truth는 code-owned registry/runner와 generated report namespace입니다. `docs/rag-ingestion-*.md` 및 `docs/codex-goals/*.md`는 세션 인수인계용 로컬 노트이며 fresh checkout이나 실험 실행이 의존하면 안 됩니다. 문서 rolling은 유지하지만 스크립트가 자동으로 읽거나 쓰지 않고, 작업자가 로컬 handoff로 남기는 방식입니다. 2026-06-09 generated report `reports/rag_eval/rag-ingestion/runs/repo_cleanup_20260609_diagnostic_inventory/report.json`은 이전 cleanup inventory입니다.
 
 ## 라이선스와 외부 데이터
 
@@ -223,4 +223,4 @@ PDF 문서에서는 본문 텍스트뿐 아니라 표 안의 값이 답변 근�
 
 단, 외부에서 수집한 PDF, XLSX, 이미지, OCR/MM annotation, 폰트, 공공데이터, Hugging Face dataset mirror, NamuWiki metadata 등은 이 저장소의 Apache-2.0 라이선스로 재허가되지 않습니다.
 
-원천별 이용조건과 내부 diagnostic usage gate는 [Third-party data license notice](docs/THIRD_PARTY_DATA_LICENSES.md)를 확인하세요.
+원천별 이용조건과 내부 diagnostic usage gate는 이 섹션과 코드/fixture별 allowlist를 기준으로 확인하세요. `docs/THIRD_PARTY_DATA_LICENSES.md`가 로컬에 있더라도 fresh checkout source-of-truth로 간주하지 않습니다.

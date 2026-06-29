@@ -26,9 +26,8 @@ Three things make this file different from the existing
 
 All scoring functions are pure — they take a ranked list of
 ``RetrievedDoc`` records and return a metric. The "actually run the
-retriever" wiring lives in the CLI (`scripts.phase7_human_gold_tune`),
-not here, so the test suite can exercise every path with synthetic
-top-k inputs.
+retriever" wiring belongs in a runner adapter, not here, so the test
+suite can exercise every path with synthetic top-k inputs.
 
 NOTE on the disclaimer language pinned by the report writer:
 this is a **subpage/section-level focus set** drawn from

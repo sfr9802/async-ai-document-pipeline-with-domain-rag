@@ -14,6 +14,12 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "ai"))
 
 
+def _agentops_trace_schema() -> dict[str, object]:
+    from app.capabilities.rag_orchestrator.agentops_runtime import agentops_trace_schema
+
+    return agentops_trace_schema()
+
+
 def _agentops_portfolio_smoke_trace_payload() -> dict[str, object]:
     from app.capabilities.rag_orchestrator.agentops_runtime import (
         AgentOpsRequestContext,
@@ -269,7 +275,7 @@ def test_agentops_runtime_blocks_malformed_request_context_before_tool_calls() -
     from jsonschema import Draft202012Validator
     from app.capabilities.rag_orchestrator.agentops_runtime import AgentOpsRequestContext, run_agentops_diagnostic
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     validator = Draft202012Validator(schema)
     trace = run_agentops_diagnostic(
         AgentOpsRequestContext(
@@ -320,7 +326,7 @@ def test_agentops_context_rejects_blank_run_id_before_trace_emit() -> None:
 def test_agentops_context_rejects_unsafe_run_id_before_trace_emit() -> None:
     from app.capabilities.rag_orchestrator.agentops_runtime import AgentOpsRequestContext
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     assert schema["properties"]["run_id"]["pattern"] == r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$"
 
     safe = AgentOpsRequestContext(
@@ -458,11 +464,12 @@ def test_agentops_runtime_emits_run_trace_without_opening_gold_labels() -> None:
 def test_agentops_trace_schema_and_sample_match_runtime_contract() -> None:
     from jsonschema import Draft202012Validator
     from app.capabilities.rag_orchestrator.agentops_runtime import (
+        AGENTOPS_TRACE_SCHEMA_ID,
         AgentOpsRequestContext,
         run_agentops_diagnostic,
     )
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     sample = json.loads((ROOT / "reports" / "agentops_sample_trace.json").read_text(encoding="utf-8"))
     payload = _agentops_portfolio_smoke_trace_payload()
     unsupported_tool_payload = run_agentops_diagnostic(
@@ -487,10 +494,7 @@ def test_agentops_trace_schema_and_sample_match_runtime_contract() -> None:
         source_registry={},
     ).to_dict()
 
-    assert schema["$id"] == (
-        "https://github.com/sfr9802/async-ai-document-pipeline-with-domain-rag/blob/main/"
-        "docs/agentops_trace_schema.json"
-    )
+    assert schema["$id"] == AGENTOPS_TRACE_SCHEMA_ID
     assert schema["properties"]["policy_decision"]["enum"] == ["allow_diagnostic", "fail_closed"]
     assert sample == payload
 
@@ -519,7 +523,7 @@ def test_agentops_trace_schema_rejects_policy_boundary_drift() -> None:
     from jsonschema import Draft202012Validator
     from app.capabilities.rag_orchestrator.agentops_runtime import AgentOpsRequestContext, run_agentops_diagnostic
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     payload = _agentops_portfolio_smoke_trace_payload()
     validator = Draft202012Validator(schema)
 
@@ -600,7 +604,7 @@ def test_agentops_trace_schema_rejects_policy_boundary_drift() -> None:
 def test_agentops_trace_schema_rejects_unknown_runtime_tool_names() -> None:
     from jsonschema import Draft202012Validator
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     payload = _agentops_portfolio_smoke_trace_payload()
     validator = Draft202012Validator(schema)
 
@@ -678,7 +682,7 @@ def test_agentops_trace_sanitizes_runtime_failure_category_before_persistence() 
                 abstained=True,
             )
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     validator = Draft202012Validator(schema)
     trace = run_agentops_diagnostic(
         AgentOpsRequestContext(
@@ -749,7 +753,7 @@ def test_agentops_runtime_contract_violation_forces_fail_closed_trace() -> None:
                 abstained=False,
             )
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     validator = Draft202012Validator(schema)
     trace = run_agentops_diagnostic(
         AgentOpsRequestContext(
@@ -791,7 +795,7 @@ def test_agentops_runtime_exception_fails_closed_without_raw_exception_leak() ->
         def invoke(self, request):  # type: ignore[no-untyped-def]
             raise RuntimeError("C:/Users/sfr99/AppData/Local/Temp/raw-runtime-exception.txt Book.xlsx Sheet1 A1")
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     validator = Draft202012Validator(schema)
     trace = run_agentops_diagnostic(
         AgentOpsRequestContext(
@@ -864,7 +868,7 @@ def test_agentops_trace_fails_closed_when_evidence_reference_count_exceeds_schem
                 abstained=False,
             )
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     assert schema["properties"]["evidence_ids"]["maxItems"] == 99
     validator = Draft202012Validator(schema)
     trace = run_agentops_diagnostic(
@@ -935,7 +939,7 @@ def test_agentops_trace_fails_closed_for_unknown_runtime_tool_call_names() -> No
                 abstained=False,
             )
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     validator = Draft202012Validator(schema)
     trace = run_agentops_diagnostic(
         AgentOpsRequestContext(
@@ -974,7 +978,7 @@ def test_agentops_trace_fails_closed_for_repeated_runtime_tool_call_names() -> N
                 tool_call_sequence=("rag.l0.query_routing",) * 10,
             )
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     validator = Draft202012Validator(schema)
     trace = run_agentops_diagnostic(
         AgentOpsRequestContext(
@@ -1015,7 +1019,7 @@ def test_agentops_trace_fails_closed_for_post_runtime_candidate_scope_drift() ->
                 tool_call_sequence=("rag.l0.query_routing", "rag.l4.sourceatom_hydration"),
             )
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     validator = Draft202012Validator(schema)
     trace = run_agentops_diagnostic(
         AgentOpsRequestContext(
@@ -1056,7 +1060,7 @@ def test_agentops_trace_blocks_unsafe_report_artifact_paths() -> None:
         run_agentops_diagnostic,
     )
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     validator = Draft202012Validator(schema)
     unsafe_paths = (
         "C:/Users/sfr99/AppData/Local/Temp/raw-agentops-report.md",
@@ -1279,7 +1283,7 @@ def test_agentops_runtime_blocks_invalid_candidate_scope_before_tool_calls() -> 
         run_agentops_diagnostic,
     )
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     validator = Draft202012Validator(schema)
     base_context = {
         "query": "Book.xlsx Sheet1 A1 값",
@@ -1357,7 +1361,7 @@ def test_agentops_runtime_blocks_malformed_source_registry_before_tool_calls() -
         run_agentops_diagnostic,
     )
 
-    schema = json.loads((ROOT / "docs" / "agentops_trace_schema.json").read_text(encoding="utf-8"))
+    schema = _agentops_trace_schema()
     validator = Draft202012Validator(schema)
     trace = run_agentops_diagnostic(
         AgentOpsRequestContext(
