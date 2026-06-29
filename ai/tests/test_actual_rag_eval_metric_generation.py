@@ -3763,6 +3763,21 @@ def test_xlsx_locator_tool_execute_once_runs_source_owned_candidate_and_regates(
     assert locator["candidate_confidence_tier_counts"] == {"high": 1}
     assert locator["candidate_rejection_reason_counts"] == {"accepted_for_regating": 1}
     assert locator["candidate_source_family_counts"] == {"XLSX": 1}
+    assert locator["query_anchor_tool_acceptance_diagnostic"]["source_family_hint_counts"] == {"unknown": 1}
+    assert locator["query_anchor_tool_acceptance_diagnostic"]["query_task_counts"] == {"unknown": 1}
+    assert locator["query_anchor_tool_acceptance_diagnostic"]["uses_expected_fields"] is False
+    assert locator["query_anchor_tool_acceptance_diagnostic"]["uses_gold_fields"] is False
+    assert locator["query_anchor_tool_acceptance_diagnostic"]["uses_qrels_or_labels"] is False
+    assert all(
+        "item_id" not in summary
+        for summary in locator["query_anchor_tool_acceptance_diagnostic"]["item_summaries"]
+    )
+    encoded_query_anchor_diagnostic = json.dumps(
+        locator["query_anchor_tool_acceptance_diagnostic"],
+        ensure_ascii=False,
+    )
+    assert '"item_id"' not in encoded_query_anchor_diagnostic
+    assert '"xlsx_locator_q"' not in encoded_query_anchor_diagnostic
     assert locator["official_metric_input_rows"] == 0
     assert locator["official_metric_input_rows_created"] == 0
     assert locator["official_metric_input_rows_consumed"] == 0
@@ -3838,6 +3853,13 @@ def test_xlsx_locator_tool_execute_once_runs_source_owned_candidate_and_regates(
         assert guardrail_summary["forbidden_input_fields_used"] == []
         run_record = json.loads(run["record_json"])
         assert run_record["tool_invocation_count"] == 1
+        assert run_record["tool_uses"][0]["source_family_hint"] == ""
+        assert run_record["tool_uses"][0]["query_task"] == ""
+        invocation_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info(tool_invocations)")
+        }
+        assert "source_family_hint" not in invocation_columns
+        assert "query_task" not in invocation_columns
         invocation = conn.execute(
             "SELECT execution_status, candidate_count, accepted_candidate_count FROM tool_invocations"
         ).fetchone()
@@ -3947,6 +3969,65 @@ def test_xlsx_locator_tool_execute_once_runs_source_owned_candidate_and_regates(
             "xlsx_locator_tool_execute_once",
             locator,
             run_store_path=sqlite_path,
+        )
+
+    bad_diagnostic_locator = json.loads(json.dumps(locator))
+    bad_diagnostic_locator["query_anchor_tool_acceptance_diagnostic"]["schema_version"] = "wrong"
+    with pytest.raises(DatasetSchemaError, match="query_anchor_tool_acceptance_diagnostic.schema_version"):
+        actual_rag_eval.validate_xlsx_locator_tool_execute_once("xlsx_locator_tool_execute_once", bad_diagnostic_locator)
+
+    metric_diagnostic_locator = json.loads(json.dumps(locator))
+    metric_diagnostic_locator["query_anchor_tool_acceptance_diagnostic"]["official_metric"] = True
+    with pytest.raises(DatasetSchemaError, match="query_anchor_tool_acceptance_diagnostic.official_metric"):
+        actual_rag_eval.validate_xlsx_locator_tool_execute_once(
+            "xlsx_locator_tool_execute_once",
+            metric_diagnostic_locator,
+        )
+
+    leaked_diagnostic_locator = json.loads(json.dumps(locator))
+    leaked_diagnostic_locator["query_anchor_tool_acceptance_diagnostic"]["item_summaries"][0][
+        "source_atom_id"
+    ] = "src-should-not-leak"
+    with pytest.raises(DatasetSchemaError, match="query_anchor_tool_acceptance_diagnostic.*source_atom_id"):
+        actual_rag_eval.validate_xlsx_locator_tool_execute_once(
+            "xlsx_locator_tool_execute_once",
+            leaked_diagnostic_locator,
+        )
+
+    nested_leaked_diagnostic_locator = json.loads(json.dumps(locator))
+    nested_leaked_diagnostic_locator["query_anchor_tool_acceptance_diagnostic"]["item_summaries"][0][
+        "debug"
+    ] = {"raw_prompt": "SECRET_PROMPT"}
+    with pytest.raises(DatasetSchemaError, match="query_anchor_tool_acceptance_diagnostic.*raw_prompt"):
+        actual_rag_eval.validate_xlsx_locator_tool_execute_once(
+            "xlsx_locator_tool_execute_once",
+            nested_leaked_diagnostic_locator,
+        )
+
+    top_level_leaked_diagnostic_locator = json.loads(json.dumps(locator))
+    top_level_leaked_diagnostic_locator["query_anchor_tool_acceptance_diagnostic"][
+        "candidate_id"
+    ] = "candidate-should-not-leak"
+    with pytest.raises(DatasetSchemaError, match="query_anchor_tool_acceptance_diagnostic.*candidate_id"):
+        actual_rag_eval.validate_xlsx_locator_tool_execute_once(
+            "xlsx_locator_tool_execute_once",
+            top_level_leaked_diagnostic_locator,
+        )
+
+    mismatched_diagnostic_locator = json.loads(json.dumps(locator))
+    mismatched_diagnostic_locator["query_anchor_tool_acceptance_diagnostic"]["tool_invocation_count"] = 999
+    with pytest.raises(DatasetSchemaError, match="query_anchor_tool_acceptance_diagnostic.tool_invocation_count"):
+        actual_rag_eval.validate_xlsx_locator_tool_execute_once(
+            "xlsx_locator_tool_execute_once",
+            mismatched_diagnostic_locator,
+        )
+
+    missing_required_diagnostic_locator = json.loads(json.dumps(locator))
+    del missing_required_diagnostic_locator["query_anchor_tool_acceptance_diagnostic"]["top_missing_query_anchors"]
+    with pytest.raises(DatasetSchemaError, match="query_anchor_tool_acceptance_diagnostic.top_missing_query_anchors"):
+        actual_rag_eval.validate_xlsx_locator_tool_execute_once(
+            "xlsx_locator_tool_execute_once",
+            missing_required_diagnostic_locator,
         )
 
     missing_store_locator = json.loads(json.dumps(locator))
@@ -7273,6 +7354,165 @@ def test_source_native_axis_provenance_reports_pdf_location_stages() -> None:
     assert axis_stages["final_citation"]["present"] == ["page_number"]
 
 
+def test_pdf_source_native_decomposition_reports_page_bbox_table_and_ocr_counts() -> None:
+    rows = [
+        {
+            "id": "pdf-decomposition-table-ocr",
+            "query": "2024년 영업이익 표의 값은 얼마야?",
+            "expected_answer": "SECRET_EXPECTED_NEVER_USED",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-pdf",
+                    "source_family": "PDF",
+                    "text": "2024년 영업이익 값은 12.3억원입니다.",
+                    "page_number": 7,
+                    "bbox": [10, 20, 200, 240],
+                    "table_caption": "영업이익 표",
+                    "ocr_confidence": 0.42,
+                }
+            ],
+            "evidence_gate": {
+                "retrieved_evidence_candidates": [
+                    {
+                        "doc_id": "doc-pdf",
+                        "source_family": "PDF",
+                        "text": "2024년 영업이익 값은 12.3억원입니다.",
+                        "page_number": 7,
+                        "bbox": [10, 20, 200, 240],
+                        "table_caption": "영업이익 표",
+                        "ocr_confidence": 0.42,
+                    }
+                ],
+                "selected_evidence": [],
+            },
+        },
+        {
+            "id": "pdf-decomposition-page-only",
+            "query": "보고서 2쪽의 문단은 무엇을 말하나요?",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-pdf-page",
+                    "source_family": "PDF",
+                    "text": "2쪽 문단 텍스트입니다.",
+                    "page": 2,
+                }
+            ],
+        },
+        {
+            "id": "pdf-decomposition-nested-locator",
+            "query": "부록 표의 OCR 근거는 어디인가요?",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-pdf-nested",
+                    "source_family": "PDF",
+                    "text": "부록 표 OCR 근거입니다.",
+                    "metadata": {"pageNumber": 9},
+                    "citation_locator": {"boundingBox": [1, 2, 30, 40]},
+                    "locator": {"tableId": "appendix-table-1"},
+                    "ocrConfidence": "42",
+                }
+            ],
+        },
+        {
+            "id": "xlsx-ignored",
+            "query": "XLSX 행 값은?",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-xlsx",
+                    "source_family": "XLSX",
+                    "text": "sheet=철도 | display_value=1",
+                }
+            ],
+        },
+    ]
+
+    decomposition = actual_rag_eval.build_pdf_source_native_decomposition(items=[], rows=rows)
+
+    assert decomposition == {
+        "schema_version": "actual_rag_eval.pdf_source_native_decomposition.v1",
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "pdf_query_count": 3,
+        "page_present_count": 3,
+        "bbox_present_count": 2,
+        "page_bbox_co_located_count": 2,
+        "section_or_table_axis_present_count": 2,
+        "ocr_confidence_present_count": 2,
+        "lower_trust_due_to_ocr_count": 2,
+        "uses_expected_fields": False,
+        "uses_gold_fields": False,
+        "uses_qrels": False,
+        "uses_labels": False,
+        "uses_ids": False,
+        "uses_raw_xlsx_or_pdf_query_time_parsing": False,
+    }
+    encoded = json.dumps(decomposition, ensure_ascii=False)
+    assert "SECRET_EXPECTED_NEVER_USED" not in encoded
+
+
+@pytest.mark.parametrize(
+    ("field", "value", "match"),
+    [
+        ("schema_version", "wrong", "pdf_source_native_decomposition.schema_version"),
+        ("official_metric", True, "pdf_source_native_decomposition.official_metric"),
+        ("official_metric_input_rows", 1, "pdf_source_native_decomposition.official_metric_input_rows"),
+        ("uses_ids", True, "pdf_source_native_decomposition.uses_ids"),
+    ],
+)
+def test_validate_actual_rag_guardrails_rejects_unsafe_pdf_source_native_decomposition(
+    field: str,
+    value: object,
+    match: str,
+) -> None:
+    summary = {
+        "run_id": "pdf-decomposition-guard",
+        "official_metric_input_rows": 0,
+        "official_metric_input_rows_created": 0,
+        "official_metric_input_rows_consumed": 0,
+        "protected_namespaces_touched": [],
+        "raw_prompt_payload_written": False,
+        "raw_response_payload_written": False,
+        "guardrails": {
+            "gold_mutation": False,
+            "qrels_mutation": False,
+            "label_mutation": False,
+            "answerability_label_mutation": False,
+            "expected_answer_mutation": False,
+            "expected_evidence_mutation": False,
+            "denominator_mutation": False,
+            "retriever_ranking_improvement": False,
+            "official_metric": False,
+            "promotion_evidence": False,
+            "product_success_evidence_allowed": False,
+            "live_readiness_claim": False,
+        },
+        "pdf_source_native_decomposition": {
+            "schema_version": "actual_rag_eval.pdf_source_native_decomposition.v1",
+            "report_only_diagnostic": True,
+            "official_metric": False,
+            "official_metric_input_rows": 0,
+            "pdf_query_count": 1,
+            "page_present_count": 1,
+            "bbox_present_count": 1,
+            "page_bbox_co_located_count": 1,
+            "section_or_table_axis_present_count": 1,
+            "ocr_confidence_present_count": 1,
+            "lower_trust_due_to_ocr_count": 0,
+            "uses_expected_fields": False,
+            "uses_gold_fields": False,
+            "uses_qrels": False,
+            "uses_labels": False,
+            "uses_ids": False,
+            "uses_raw_xlsx_or_pdf_query_time_parsing": False,
+        },
+    }
+    summary["pdf_source_native_decomposition"][field] = value
+
+    with pytest.raises(DatasetSchemaError, match=match):
+        validate_actual_rag_guardrails(summary)
+
+
 def test_xlsx_locator_projection_reports_candidate_budget_taxonomy() -> None:
     budget = actual_rag_eval.XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET
     tool_uses = (
@@ -7358,6 +7598,230 @@ def test_xlsx_locator_projection_reports_candidate_budget_taxonomy() -> None:
     assert budget_diagnostic["rejected_candidate_count_by_reason"] == {
         "missing_validated_required_axes_after_tool": budget * 2 - 1
     }
+
+
+def test_xlsx_locator_projection_reports_query_anchor_tool_acceptance_diagnostic() -> None:
+    tool_uses = (
+        actual_rag_eval.XlsxLocatorToolUseRecord(
+            item_index=0,
+            item_id="xlsx-query-anchor-blocked",
+            execution_status="skipped_missing_source_locator",
+            candidate_count=3,
+            accepted_candidate_count=0,
+            source_family_hint="xlsx",
+            query_task="date_filtered_lookup",
+            before_gate_status="block_answer",
+            after_gate_status="block_answer",
+            before_residual_class="selected_evidence_has_value_missing_axis",
+            after_residual_class="selected_evidence_has_value_missing_axis",
+            matched_query_anchors=("2019년", "5월"),
+            remaining_missing_query_anchors=("명입니까",),
+            matched_validated_required_axes=("period", "row_entity", "target_column", "display_value"),
+            remaining_missing_validated_required_axes=(),
+        ),
+        actual_rag_eval.XlsxLocatorToolUseRecord(
+            item_index=1,
+            item_id="xlsx-query-anchor-accepted",
+            execution_status="accepted_after_regating",
+            candidate_count=1,
+            accepted_candidate_count=1,
+            source_family_hint="xlsx",
+            query_task="date_filtered_lookup",
+            before_gate_status="block_answer",
+            after_gate_status="allow_answer",
+            before_residual_class="selected_evidence_has_value_missing_axis",
+            after_residual_class="no_residual",
+            matched_query_anchors=("2019년", "5월", "우이신설선"),
+            remaining_missing_query_anchors=(),
+            matched_validated_required_axes=("period", "row_entity", "target_column", "display_value"),
+            remaining_missing_validated_required_axes=(),
+        ),
+    )
+    candidates = (
+        actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+            item_index=0,
+            candidate_index=0,
+            source_family="XLSX",
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+            source_atom_id="src-blocked-0",
+            evidence_bundle_id="bundle-blocked-0",
+            doc_id="doc-blocked",
+            sheet="2019년 5월",
+            cell_range="A1:D4",
+            row_label="우이신설선",
+            target_column="승차총승객수",
+            display_value="15,446,522",
+            matched_query_anchors=("2019년", "5월"),
+            missing_query_anchors_after_tool=("명입니까",),
+            matched_validated_required_axes=("period", "row_entity", "target_column", "display_value"),
+            missing_validated_required_axes=(),
+            confidence_tier="high",
+            accepted_for_regating=False,
+            rejection_reason="missing_query_anchor_after_tool",
+        ),
+        actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+            item_index=0,
+            candidate_index=1,
+            source_family="XLSX",
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+            source_atom_id="src-blocked-1",
+            evidence_bundle_id="bundle-blocked-1",
+            doc_id="doc-blocked",
+            sheet="2019년 5월",
+            cell_range="A5:D8",
+            row_label="우이신설선",
+            target_column="승차총승객수",
+            display_value="15,446,522",
+            matched_query_anchors=("2019년",),
+            missing_query_anchors_after_tool=("5월", "명입니까"),
+            matched_validated_required_axes=("period", "row_entity", "target_column"),
+            missing_validated_required_axes=("display_value",),
+            confidence_tier="high",
+            accepted_for_regating=False,
+            rejection_reason="missing_query_anchor_after_tool",
+        ),
+        actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+            item_index=0,
+            candidate_index=2,
+            source_family="XLSX",
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+            source_atom_id="src-blocked-2",
+            evidence_bundle_id="bundle-blocked-2",
+            doc_id="doc-blocked",
+            sheet="",
+            cell_range="",
+            matched_query_anchors=(),
+            missing_query_anchors_after_tool=("명입니까",),
+            matched_validated_required_axes=(),
+            missing_validated_required_axes=(),
+            confidence_tier="low",
+            accepted_for_regating=False,
+            rejection_reason="missing_query_anchor_after_tool",
+        ),
+        actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+            item_index=1,
+            candidate_index=0,
+            source_family="XLSX",
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+            source_atom_id="src-accepted",
+            evidence_bundle_id="bundle-accepted",
+            doc_id="doc-accepted",
+            sheet="2019년 5월",
+            cell_range="A9:D12",
+            row_label="우이신설선",
+            target_column="승차총승객수",
+            display_value="15,446,522",
+            matched_query_anchors=("2019년", "5월", "우이신설선"),
+            missing_query_anchors_after_tool=(),
+            matched_validated_required_axes=("period", "row_entity", "target_column", "display_value"),
+            missing_validated_required_axes=(),
+            confidence_tier="high",
+            accepted_for_regating=True,
+            rejection_reason="",
+        ),
+    )
+    record = actual_rag_eval.XlsxLocatorRunRecord(
+        schema_version=actual_rag_eval.XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION,
+        enabled=True,
+        report_only_diagnostic=True,
+        official_metric=False,
+        tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+        eligible_failed_row_count=2,
+        tool_invocation_count=2,
+        accepted_candidate_count=1,
+        rejected_candidate_count=3,
+        gate_delta_record=actual_rag_eval.XlsxLocatorGateDeltaRecord(
+            gate_delta={"allowed_answer_count_delta": 1}
+        ),
+        guardrail_record=actual_rag_eval.XlsxLocatorGuardrailRecord(),
+        tool_uses=tool_uses,
+        candidates=candidates,
+    )
+
+    diagnostic = actual_rag_eval.project_xlsx_locator_run_record(record)[
+        "query_anchor_tool_acceptance_diagnostic"
+    ]
+
+    assert diagnostic["schema_version"] == "actual_rag_eval.xlsx_locator_query_anchor_tool_acceptance_diagnostic.v1"
+    assert diagnostic["report_only_diagnostic"] is True
+    assert diagnostic["official_metric"] is False
+    assert diagnostic["official_metric_input_rows"] == 0
+    assert diagnostic["candidate_count"] == 4
+    assert diagnostic["accepted_for_regating_candidate_count"] == 1
+    assert diagnostic["missing_query_anchor_after_tool_candidate_count"] == 3
+    assert diagnostic["missing_query_anchor_after_tool_item_count"] == 1
+    assert diagnostic["query_anchor_rejected_with_complete_axes_candidate_count"] == 1
+    assert diagnostic["query_anchor_rejected_with_missing_axes_candidate_count"] == 1
+    assert diagnostic["query_anchor_rejected_without_validated_axes_candidate_count"] == 1
+    assert diagnostic["source_family_hint_counts"] == {"xlsx": 2}
+    assert diagnostic["query_task_counts"] == {"date_filtered_lookup": 2}
+    assert diagnostic["gate_flip_direction_counts"] == {
+        "block_answer->allow_answer": 1,
+        "block_answer->block_answer": 1,
+    }
+    assert diagnostic["residual_transition_counts"] == {
+        "selected_evidence_has_value_missing_axis->no_residual": 1,
+        "selected_evidence_has_value_missing_axis->selected_evidence_has_value_missing_axis": 1,
+    }
+    assert diagnostic["top_missing_query_anchors"] == [
+        {"anchor": "명입니까", "candidate_count": 3},
+        {"anchor": "5월", "candidate_count": 1},
+    ]
+    assert diagnostic["source_owned_field_presence_on_query_anchor_rejected_candidates"] == {
+        "cell_range": 2,
+        "display_value": 2,
+        "row_label": 2,
+        "source_date_aliases": 0,
+        "target_column": 2,
+    }
+    assert diagnostic["item_summaries"] == [
+        {
+            "item_index": 0,
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "execution_status": "skipped_missing_source_locator",
+            "candidate_count": 3,
+            "accepted_candidate_count": 0,
+            "missing_query_anchor_after_tool_candidate_count": 3,
+            "remaining_missing_query_anchors": ["명입니까"],
+            "remaining_missing_validated_required_axes": [],
+            "gate_transition": "block_answer->block_answer",
+            "residual_transition": (
+                "selected_evidence_has_value_missing_axis->"
+                "selected_evidence_has_value_missing_axis"
+            ),
+        },
+        {
+            "item_index": 1,
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "execution_status": "accepted_after_regating",
+            "candidate_count": 1,
+            "accepted_candidate_count": 1,
+            "missing_query_anchor_after_tool_candidate_count": 0,
+            "remaining_missing_query_anchors": [],
+            "remaining_missing_validated_required_axes": [],
+            "gate_transition": "block_answer->allow_answer",
+            "residual_transition": "selected_evidence_has_value_missing_axis->no_residual",
+        },
+    ]
+    assert diagnostic["uses_expected_fields"] is False
+    assert diagnostic["uses_gold_fields"] is False
+    assert diagnostic["uses_qrels_or_labels"] is False
+    assert diagnostic["uses_ids_as_runtime_inputs"] is False
+    assert diagnostic["uses_file_workbook_title"] is False
+    assert diagnostic["uses_formula_or_normalized_value"] is False
+    assert diagnostic["evidence_gate_loosened"] is False
+    encoded = json.dumps(diagnostic, ensure_ascii=False)
+    assert "src-blocked" not in encoded
+    assert "bundle-blocked" not in encoded
+    assert "doc-blocked" not in encoded
+    assert "xlsx-query-anchor-blocked" not in encoded
+    assert "xlsx-query-anchor-accepted" not in encoded
 
 
 def test_evidence_gate_prefers_validated_required_axes_over_raw_date_anchor() -> None:
@@ -9620,6 +10084,24 @@ def test_weaviate_candidate_surface_complete_manifest_allows_metric_readiness(tm
     )
 
     adapter.validate_ready_for_run()
+    candidate_surface = adapter.active_path_report["candidate_surface_rebuild"]
+    metric_gate = candidate_surface["metric_gate"]
+    active_default_surface = adapter.active_path_report["weaviate_default_config"]["candidate_surface_rebuild"]
+    config_default_surface = adapter.config["weaviate_default_config"]["candidate_surface_rebuild"]
+
+    assert candidate_surface["surface_status"] == "ready"
+    assert candidate_surface["metric_blocked_until_complete_manifest"] is False
+    assert "metrics_blocked_reason" not in candidate_surface
+    assert metric_gate["complete_manifest_verified"] is True
+    assert metric_gate["surface_status"] == "ready"
+    assert metric_gate["metric_blocked_until_complete_manifest"] is False
+    assert "blocked_reason" not in metric_gate
+    assert active_default_surface["surface_status"] == "ready"
+    assert active_default_surface["metric_blocked_until_complete_manifest"] is False
+    assert "metrics_blocked_reason" not in active_default_surface
+    assert config_default_surface["surface_status"] == "ready"
+    assert config_default_surface["metric_blocked_until_complete_manifest"] is False
+    assert "metrics_blocked_reason" not in config_default_surface
 
 
 def test_weaviate_candidate_surface_complete_manifest_rejects_newer_partial_checkpoint(

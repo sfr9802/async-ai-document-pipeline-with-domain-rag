@@ -55,6 +55,7 @@ RESPONSE_QUALITY_INPUT_SUMMARY_SCHEMA_VERSION = "actual_rag_eval.response_qualit
 XLSX_PDF_RESIDUAL_BREAKDOWN_SCHEMA_VERSION = "actual_rag_eval.xlsx_pdf_residual_breakdown.v1"
 RESIDUAL_ANCHOR_MATRIX_SCHEMA_VERSION = "actual_rag_eval.residual_anchor_matrix.v1"
 SOURCE_NATIVE_AXIS_PROVENANCE_SCHEMA_VERSION = "actual_rag_eval.source_native_axis_provenance.v1"
+PDF_SOURCE_NATIVE_DECOMPOSITION_SCHEMA_VERSION = "actual_rag_eval.pdf_source_native_decomposition.v1"
 HEURISTIC_RISK_LEDGER_SCHEMA_VERSION = "actual_rag_eval.heuristic_risk_ledger.v1"
 METRIC_CONTINUITY_CHECKPOINT_SCHEMA_VERSION = "actual_rag_eval.metric_continuity_checkpoint.v1"
 AGENTIC_PLANNER_DRY_RUN_SCHEMA_VERSION = "actual_rag_eval.agentic_planner_dry_run.v1"
@@ -64,6 +65,9 @@ LLM_QUERY_ANCHOR_CLASSIFIER_INPUT_POLICY = "query_text_only_no_eval_fields_or_ba
 QUERY_EVIDENCE_PLANNER_PROMPT_VERSION = "query_evidence_planner_v1"
 QUERY_EVIDENCE_PLANNER_INPUT_POLICY = "query_text_only_no_eval_fields_or_baseline"
 XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION = "actual_rag_eval.xlsx_locator_tool_execute_once.v1"
+XLSX_LOCATOR_QUERY_ANCHOR_TOOL_ACCEPTANCE_DIAGNOSTIC_SCHEMA_VERSION = (
+    "actual_rag_eval.xlsx_locator_query_anchor_tool_acceptance_diagnostic.v1"
+)
 XLSX_LOCATOR_TOOL_NAME = "xlsx_locator_tool_v1"
 XLSX_LOCATOR_TOOL_POLICY = "source_owned_locator_only_no_raw_xlsx_query_time_parsing"
 XLSX_LOCATOR_TOOL_OUTPUT_POLICY = "selected_evidence_candidate_must_pass_unchanged_gate"
@@ -741,6 +745,12 @@ class XlsxLocatorToolUseRecord:
     execution_status: str
     candidate_count: int
     accepted_candidate_count: int
+    source_family_hint: str = ""
+    query_task: str = ""
+    before_gate_status: str = ""
+    after_gate_status: str = ""
+    before_residual_class: str = ""
+    after_residual_class: str = ""
     candidate_pool_count_before_budget: int = 0
     complete_validated_axis_candidate_count: int = 0
     validated_axis_split_across_candidates: bool = False
@@ -7481,6 +7491,9 @@ def validate_actual_rag_guardrails(summary: Mapping[str, Any]) -> None:
     xlsx_locator_execute_once = summary.get("xlsx_locator_tool_execute_once")
     if isinstance(xlsx_locator_execute_once, Mapping):
         validate_xlsx_locator_tool_execute_once(run_id, xlsx_locator_execute_once)
+    pdf_decomposition = summary.get("pdf_source_native_decomposition")
+    if isinstance(pdf_decomposition, Mapping):
+        validate_pdf_source_native_decomposition(run_id, pdf_decomposition)
     heuristic_risk_ledger = summary.get("heuristic_risk_ledger")
     if isinstance(heuristic_risk_ledger, Mapping):
         validate_heuristic_risk_ledger(run_id, heuristic_risk_ledger)
@@ -10118,6 +10131,12 @@ def _xlsx_locator_tool_use_record(
         remaining_missing_validated_required_axes=tuple(
             _clean(axis) for axis in _as_list(meta.get("remaining_missing_validated_required_axes")) if _clean(axis)
         ),
+        source_family_hint=_clean(meta.get("source_family_hint")),
+        query_task=_clean(meta.get("query_task")),
+        before_gate_status=_clean(meta.get("before_gate_status")),
+        after_gate_status=_clean(meta.get("after_gate_status")),
+        before_residual_class=_clean(meta.get("before_residual_class")),
+        after_residual_class=_clean(meta.get("after_residual_class")),
         input_policy=_clean(meta.get("input_policy")) or XLSX_LOCATOR_TOOL_POLICY,
         output_policy=_clean(meta.get("output_policy")) or XLSX_LOCATOR_TOOL_OUTPUT_POLICY,
     )
@@ -10322,7 +10341,24 @@ def _build_xlsx_locator_run_record(
             before_rows[item_index] if item_index < len(before_rows) else {},
             item_index,
         )
-        meta = decision.get("tool_use") if isinstance(decision.get("tool_use"), Mapping) else {}
+        before_row = before_rows[item_index] if item_index < len(before_rows) else {}
+        after_row = after_rows[item_index] if item_index < len(after_rows) else {}
+        before_residual = _classify_xlsx_pdf_residual_row(before_row) if isinstance(before_row, Mapping) else {}
+        after_residual = _classify_xlsx_pdf_residual_row(after_row) if isinstance(after_row, Mapping) else {}
+        before_gate = before_row.get("evidence_gate") if isinstance(before_row.get("evidence_gate"), Mapping) else {}
+        after_gate = after_row.get("evidence_gate") if isinstance(after_row.get("evidence_gate"), Mapping) else {}
+        planner_projection = _query_evidence_item_projection(before_row) if isinstance(before_row, Mapping) else {}
+        meta = dict(decision.get("tool_use")) if isinstance(decision.get("tool_use"), Mapping) else {}
+        meta.update(
+            {
+                "source_family_hint": _clean(planner_projection.get("source_family_hint")),
+                "query_task": _clean(planner_projection.get("query_task")),
+                "before_gate_status": _clean(before_gate.get("answer_gate_decision")),
+                "after_gate_status": _clean(after_gate.get("answer_gate_decision")),
+                "before_residual_class": _clean(before_residual.get("classification")),
+                "after_residual_class": _clean(after_residual.get("classification")),
+            }
+        )
         tool_uses.append(_xlsx_locator_tool_use_record(item_index=item_index, item_id=item_id, meta=meta))
         for candidate_index, candidate in enumerate(_as_list(decision.get("candidates"))):
             if isinstance(candidate, Mapping):
@@ -10370,6 +10406,275 @@ def _build_xlsx_locator_run_record(
         tool_uses=tuple(tool_uses),
         candidates=tuple(candidates),
     )
+
+
+def _xlsx_locator_transition(before: str, after: str) -> str:
+    return f"{_clean(before) or 'unknown'}->{_clean(after) or 'unknown'}"
+
+
+def _xlsx_locator_query_anchor_tool_acceptance_diagnostic(record: XlsxLocatorRunRecord) -> dict[str, Any]:
+    query_anchor_rejected = [
+        candidate
+        for candidate in record.candidates
+        if not candidate.accepted_for_regating
+        and candidate.rejection_reason == "missing_query_anchor_after_tool"
+    ]
+    query_anchor_rejected_item_indexes = {candidate.item_index for candidate in query_anchor_rejected}
+    missing_anchor_counts = Counter(
+        anchor
+        for candidate in query_anchor_rejected
+        for anchor in candidate.missing_query_anchors_after_tool
+        if _clean(anchor)
+    )
+    source_owned_field_presence = {
+        "cell_range": sum(1 for candidate in query_anchor_rejected if _clean(candidate.cell_range)),
+        "display_value": sum(1 for candidate in query_anchor_rejected if _clean(candidate.display_value)),
+        "row_label": sum(1 for candidate in query_anchor_rejected if _clean(candidate.row_label)),
+        "source_date_aliases": sum(1 for candidate in query_anchor_rejected if candidate.source_date_aliases),
+        "target_column": sum(1 for candidate in query_anchor_rejected if _clean(candidate.target_column)),
+    }
+    item_candidate_counts = Counter(candidate.item_index for candidate in query_anchor_rejected)
+    source_family_hint_counts = Counter(
+        _clean(tool_use.source_family_hint) or "unknown"
+        for tool_use in record.tool_uses
+    )
+    query_task_counts = Counter(
+        _clean(tool_use.query_task) or "unknown"
+        for tool_use in record.tool_uses
+    )
+    gate_transition_counts = Counter(
+        _xlsx_locator_transition(tool_use.before_gate_status, tool_use.after_gate_status)
+        for tool_use in record.tool_uses
+    )
+    residual_transition_counts = Counter(
+        _xlsx_locator_transition(tool_use.before_residual_class, tool_use.after_residual_class)
+        for tool_use in record.tool_uses
+    )
+    rejection_by_hint_task = Counter(
+        (
+            _clean(tool_use.source_family_hint) or "unknown",
+            _clean(tool_use.query_task) or "unknown",
+            "missing_query_anchor_after_tool" if tool_use.item_index in query_anchor_rejected_item_indexes else "other",
+        )
+        for tool_use in record.tool_uses
+    )
+    item_summaries = [
+        {
+            "item_index": tool_use.item_index,
+            "source_family_hint": _clean(tool_use.source_family_hint) or "unknown",
+            "query_task": _clean(tool_use.query_task) or "unknown",
+            "execution_status": tool_use.execution_status,
+            "candidate_count": tool_use.candidate_count,
+            "accepted_candidate_count": tool_use.accepted_candidate_count,
+            "missing_query_anchor_after_tool_candidate_count": item_candidate_counts.get(tool_use.item_index, 0),
+            "remaining_missing_query_anchors": list(tool_use.remaining_missing_query_anchors),
+            "remaining_missing_validated_required_axes": list(tool_use.remaining_missing_validated_required_axes),
+            "gate_transition": _xlsx_locator_transition(tool_use.before_gate_status, tool_use.after_gate_status),
+            "residual_transition": _xlsx_locator_transition(
+                tool_use.before_residual_class,
+                tool_use.after_residual_class,
+            ),
+        }
+        for tool_use in sorted(record.tool_uses, key=lambda use: use.item_index)
+    ]
+    return {
+        "schema_version": XLSX_LOCATOR_QUERY_ANCHOR_TOOL_ACCEPTANCE_DIAGNOSTIC_SCHEMA_VERSION,
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "tool_invocation_count": record.tool_invocation_count,
+        "candidate_count": len(record.candidates),
+        "accepted_for_regating_candidate_count": record.accepted_candidate_count,
+        "rejected_candidate_count": record.rejected_candidate_count,
+        "missing_query_anchor_after_tool_candidate_count": len(query_anchor_rejected),
+        "missing_query_anchor_after_tool_item_count": len(query_anchor_rejected_item_indexes),
+        "query_anchor_rejected_with_complete_axes_candidate_count": sum(
+            1
+            for candidate in query_anchor_rejected
+            if candidate.matched_validated_required_axes and not candidate.missing_validated_required_axes
+        ),
+        "query_anchor_rejected_with_missing_axes_candidate_count": sum(
+            1 for candidate in query_anchor_rejected if candidate.missing_validated_required_axes
+        ),
+        "query_anchor_rejected_without_validated_axes_candidate_count": sum(
+            1
+            for candidate in query_anchor_rejected
+            if not candidate.matched_validated_required_axes and not candidate.missing_validated_required_axes
+        ),
+        "source_family_hint_counts": dict(sorted(source_family_hint_counts.items())),
+        "query_task_counts": dict(sorted(query_task_counts.items())),
+        "gate_flip_direction_counts": dict(sorted(gate_transition_counts.items())),
+        "residual_transition_counts": dict(sorted(residual_transition_counts.items())),
+        "missing_query_anchor_after_tool_by_source_family_hint_query_task": [
+            {
+                "source_family_hint": source_family_hint,
+                "query_task": query_task,
+                "bucket": bucket,
+                "item_count": count,
+            }
+            for (source_family_hint, query_task, bucket), count in sorted(rejection_by_hint_task.items())
+        ],
+        "top_missing_query_anchors": [
+            {"anchor": anchor, "candidate_count": count}
+            for anchor, count in sorted(missing_anchor_counts.items(), key=lambda item: (-item[1], item[0]))[:20]
+        ],
+        "source_owned_field_presence_on_query_anchor_rejected_candidates": source_owned_field_presence,
+        "item_summaries": item_summaries,
+        "uses_expected_fields": False,
+        "uses_gold_fields": False,
+        "uses_qrels_or_labels": False,
+        "uses_ids_as_runtime_inputs": False,
+        "uses_file_workbook_title": False,
+        "uses_formula_or_normalized_value": False,
+        "evidence_gate_loosened": record.guardrail_record.evidence_gate_loosened,
+    }
+
+
+XLSX_LOCATOR_QUERY_ANCHOR_DIAGNOSTIC_FORBIDDEN_KEYS = frozenset(
+    {
+        *XLSX_PDF_RESIDUAL_FORBIDDEN_SHORTCUT_FIELDS,
+        "candidate_id",
+        "chunk_id",
+        "doc_id",
+        "document_id",
+        "evidence_bundle_id",
+        "file_name",
+        "file_path",
+        "filename",
+        "gold_locator",
+        "item_id",
+        "path",
+        "prompt_payload",
+        "raw_payload",
+        "raw_prompt",
+        "raw_prompt_payload",
+        "raw_response",
+        "raw_response_payload",
+        "raw_tool_payload",
+        "response_payload",
+        "source_atom_id",
+        "source_file_name",
+        "source_id",
+        "source_path",
+        "source_title",
+        "source_workbook",
+        "source_workbook_title",
+        "supporting_evidence",
+        "title",
+        "tool_payload",
+        "workbook",
+        "workbook_id",
+        "workbook_name",
+        "workbook_title",
+        "workbook_version_id",
+    }
+)
+XLSX_LOCATOR_QUERY_ANCHOR_DIAGNOSTIC_REQUIRED_KEYS = frozenset(
+    {
+        "schema_version",
+        "report_only_diagnostic",
+        "official_metric",
+        "official_metric_input_rows",
+        "tool_invocation_count",
+        "candidate_count",
+        "accepted_for_regating_candidate_count",
+        "rejected_candidate_count",
+        "missing_query_anchor_after_tool_candidate_count",
+        "missing_query_anchor_after_tool_item_count",
+        "query_anchor_rejected_with_complete_axes_candidate_count",
+        "query_anchor_rejected_with_missing_axes_candidate_count",
+        "query_anchor_rejected_without_validated_axes_candidate_count",
+        "source_family_hint_counts",
+        "query_task_counts",
+        "gate_flip_direction_counts",
+        "residual_transition_counts",
+        "missing_query_anchor_after_tool_by_source_family_hint_query_task",
+        "top_missing_query_anchors",
+        "source_owned_field_presence_on_query_anchor_rejected_candidates",
+        "item_summaries",
+        "uses_expected_fields",
+        "uses_gold_fields",
+        "uses_qrels_or_labels",
+        "uses_ids_as_runtime_inputs",
+        "uses_file_workbook_title",
+        "uses_formula_or_normalized_value",
+        "evidence_gate_loosened",
+    }
+)
+
+
+def _collect_xlsx_locator_query_anchor_diagnostic_forbidden_keys(value: Any) -> set[str]:
+    seen: set[str] = set()
+    if isinstance(value, Mapping):
+        for key, nested in value.items():
+            key_text = _canonical_xlsx_locator_field_name(key)
+            if key_text in XLSX_LOCATOR_QUERY_ANCHOR_DIAGNOSTIC_FORBIDDEN_KEYS:
+                seen.add(key_text)
+            if isinstance(nested, (Mapping, list, tuple)):
+                seen.update(_collect_xlsx_locator_query_anchor_diagnostic_forbidden_keys(nested))
+    elif isinstance(value, (list, tuple)):
+        for nested in value:
+            if isinstance(nested, (Mapping, list, tuple)):
+                seen.update(_collect_xlsx_locator_query_anchor_diagnostic_forbidden_keys(nested))
+    return seen
+
+
+def _required_non_negative_int(run_id: str, owner: str, mapping: Mapping[str, Any], key: str) -> int:
+    if key not in mapping:
+        raise DatasetSchemaError(f"{run_id}: {owner}.{key} must be present")
+    value = mapping.get(key)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise DatasetSchemaError(f"{run_id}: {owner}.{key} must be an integer")
+    if value < 0:
+        raise DatasetSchemaError(f"{run_id}: {owner}.{key} must be non-negative")
+    return value
+
+
+def validate_pdf_source_native_decomposition(run_id: str, decomposition: Mapping[str, Any]) -> None:
+    owner = "pdf_source_native_decomposition"
+    if decomposition.get("schema_version") != PDF_SOURCE_NATIVE_DECOMPOSITION_SCHEMA_VERSION:
+        raise DatasetSchemaError(f"{run_id}: {owner}.schema_version unsupported")
+    if decomposition.get("report_only_diagnostic") is not True:
+        raise DatasetSchemaError(f"{run_id}: {owner}.report_only_diagnostic must be True")
+    if decomposition.get("official_metric") is not False:
+        raise DatasetSchemaError(f"{run_id}: {owner}.official_metric must be False")
+    if _required_non_negative_int(run_id, owner, decomposition, "official_metric_input_rows") != 0:
+        raise DatasetSchemaError(f"{run_id}: {owner}.official_metric_input_rows must be 0")
+    for key in (
+        "uses_expected_fields",
+        "uses_gold_fields",
+        "uses_qrels",
+        "uses_labels",
+        "uses_ids",
+        "uses_raw_xlsx_or_pdf_query_time_parsing",
+    ):
+        if decomposition.get(key) is not False:
+            raise DatasetSchemaError(f"{run_id}: {owner}.{key} must be False")
+    counts = {
+        key: _required_non_negative_int(run_id, owner, decomposition, key)
+        for key in (
+            "pdf_query_count",
+            "page_present_count",
+            "bbox_present_count",
+            "page_bbox_co_located_count",
+            "section_or_table_axis_present_count",
+            "ocr_confidence_present_count",
+            "lower_trust_due_to_ocr_count",
+        )
+    }
+    pdf_query_count = counts["pdf_query_count"]
+    for key in (
+        "page_present_count",
+        "bbox_present_count",
+        "section_or_table_axis_present_count",
+        "ocr_confidence_present_count",
+    ):
+        if counts[key] > pdf_query_count:
+            raise DatasetSchemaError(f"{run_id}: {owner}.{key} exceeds pdf_query_count")
+    if counts["page_bbox_co_located_count"] > min(counts["page_present_count"], counts["bbox_present_count"]):
+        raise DatasetSchemaError(f"{run_id}: {owner}.page_bbox_co_located_count exceeds page/bbox counts")
+    if counts["lower_trust_due_to_ocr_count"] > counts["ocr_confidence_present_count"]:
+        raise DatasetSchemaError(f"{run_id}: {owner}.lower_trust_due_to_ocr_count exceeds ocr confidence count")
 
 
 def _xlsx_locator_candidate_budget_diagnostic(record: XlsxLocatorRunRecord) -> dict[str, Any]:
@@ -10456,6 +10761,7 @@ def project_xlsx_locator_run_record(
         1 for tool_use in record.tool_uses if tool_use.validated_axis_split_across_candidates
     )
     candidate_budget_diagnostic = _xlsx_locator_candidate_budget_diagnostic(record)
+    query_anchor_tool_acceptance_diagnostic = _xlsx_locator_query_anchor_tool_acceptance_diagnostic(record)
     projection = {
         "schema_version": record.schema_version,
         "enabled": record.enabled,
@@ -10481,6 +10787,7 @@ def project_xlsx_locator_run_record(
         "candidate_rejection_reason_counts": dict(sorted(candidate_rejection_counts.items())),
         "candidate_source_family_counts": dict(sorted(candidate_source_family_counts.items())),
         "candidate_budget_diagnostic": candidate_budget_diagnostic,
+        "query_anchor_tool_acceptance_diagnostic": query_anchor_tool_acceptance_diagnostic,
         "zero_candidate_row_count": candidate_budget_diagnostic["zero_candidate_row_count"],
         "candidate_budget_exhaustion_count": candidate_budget_diagnostic["candidate_budget_exhaustion_count"],
         "at_budget_row_count": candidate_budget_diagnostic["at_budget_row_count"],
@@ -11565,6 +11872,198 @@ def validate_agentic_planner_execute_once(run_id: str, planner: Mapping[str, Any
             )
 
 
+def validate_xlsx_locator_query_anchor_tool_acceptance_diagnostic(
+    run_id: str,
+    diagnostic: Mapping[str, Any],
+    *,
+    locator: Mapping[str, Any] | None = None,
+) -> None:
+    missing_required = sorted(XLSX_LOCATOR_QUERY_ANCHOR_DIAGNOSTIC_REQUIRED_KEYS - set(diagnostic))
+    if missing_required:
+        raise DatasetSchemaError(
+            f"{run_id}: query_anchor_tool_acceptance_diagnostic.{missing_required[0]} must be present"
+        )
+    forbidden_keys = sorted(_collect_xlsx_locator_query_anchor_diagnostic_forbidden_keys(diagnostic))
+    if forbidden_keys:
+        raise DatasetSchemaError(
+            f"{run_id}: query_anchor_tool_acceptance_diagnostic contains forbidden field {forbidden_keys[0]}"
+        )
+    if diagnostic.get("schema_version") != XLSX_LOCATOR_QUERY_ANCHOR_TOOL_ACCEPTANCE_DIAGNOSTIC_SCHEMA_VERSION:
+        raise DatasetSchemaError(
+            f"{run_id}: query_anchor_tool_acceptance_diagnostic.schema_version unsupported"
+        )
+    if diagnostic.get("report_only_diagnostic") is not True:
+        raise DatasetSchemaError(
+            f"{run_id}: query_anchor_tool_acceptance_diagnostic.report_only_diagnostic must be True"
+        )
+    if diagnostic.get("official_metric") is not False:
+        raise DatasetSchemaError(
+            f"{run_id}: query_anchor_tool_acceptance_diagnostic.official_metric must be False"
+        )
+    if int(diagnostic.get("official_metric_input_rows") or 0) != 0:
+        raise DatasetSchemaError(
+            f"{run_id}: query_anchor_tool_acceptance_diagnostic.official_metric_input_rows must be 0"
+        )
+    for key in (
+        "uses_expected_fields",
+        "uses_gold_fields",
+        "uses_qrels_or_labels",
+        "uses_ids_as_runtime_inputs",
+        "uses_file_workbook_title",
+        "uses_formula_or_normalized_value",
+        "evidence_gate_loosened",
+    ):
+        if diagnostic.get(key) is not False:
+            raise DatasetSchemaError(f"{run_id}: query_anchor_tool_acceptance_diagnostic.{key} must be False")
+    count_keys = (
+        "tool_invocation_count",
+        "candidate_count",
+        "accepted_for_regating_candidate_count",
+        "rejected_candidate_count",
+        "missing_query_anchor_after_tool_candidate_count",
+        "missing_query_anchor_after_tool_item_count",
+        "query_anchor_rejected_with_complete_axes_candidate_count",
+        "query_anchor_rejected_with_missing_axes_candidate_count",
+        "query_anchor_rejected_without_validated_axes_candidate_count",
+    )
+    counts = {
+        key: _required_non_negative_int(run_id, "query_anchor_tool_acceptance_diagnostic", diagnostic, key)
+        for key in count_keys
+    }
+    if locator is not None:
+        for diagnostic_key, locator_key in (
+            ("tool_invocation_count", "tool_invocation_count"),
+            ("candidate_count", None),
+            ("accepted_for_regating_candidate_count", "accepted_candidate_count"),
+            ("rejected_candidate_count", "rejected_candidate_count"),
+        ):
+            locator_count = (
+                int(locator.get("accepted_candidate_count") or 0) + int(locator.get("rejected_candidate_count") or 0)
+                if locator_key is None
+                else int(locator.get(locator_key) or 0)
+            )
+            if counts[diagnostic_key] != locator_count:
+                raise DatasetSchemaError(
+                    f"{run_id}: query_anchor_tool_acceptance_diagnostic.{diagnostic_key} mismatch"
+                )
+    if counts["accepted_for_regating_candidate_count"] + counts["rejected_candidate_count"] != counts["candidate_count"]:
+        raise DatasetSchemaError(f"{run_id}: query_anchor_tool_acceptance_diagnostic candidate count mismatch")
+    if counts["missing_query_anchor_after_tool_candidate_count"] > counts["rejected_candidate_count"]:
+        raise DatasetSchemaError(
+            f"{run_id}: query_anchor_tool_acceptance_diagnostic missing-query-anchor count mismatch"
+        )
+    axis_bucket_total = (
+        counts["query_anchor_rejected_with_complete_axes_candidate_count"]
+        + counts["query_anchor_rejected_with_missing_axes_candidate_count"]
+        + counts["query_anchor_rejected_without_validated_axes_candidate_count"]
+    )
+    if axis_bucket_total != counts["missing_query_anchor_after_tool_candidate_count"]:
+        raise DatasetSchemaError(f"{run_id}: query_anchor_tool_acceptance_diagnostic axis bucket count mismatch")
+    allowed_source_hints = set(QUERY_EVIDENCE_SOURCE_FAMILY_HINTS) | {"unknown"}
+    source_hint_counts = diagnostic.get("source_family_hint_counts")
+    if not isinstance(source_hint_counts, Mapping):
+        raise DatasetSchemaError(
+            f"{run_id}: query_anchor_tool_acceptance_diagnostic.source_family_hint_counts must be present"
+        )
+    for hint in source_hint_counts:
+        if _clean(hint) not in allowed_source_hints:
+            raise DatasetSchemaError(
+                f"{run_id}: query_anchor_tool_acceptance_diagnostic.source_family_hint_counts invalid"
+            )
+    query_task_counts = diagnostic.get("query_task_counts")
+    if not isinstance(query_task_counts, Mapping):
+        raise DatasetSchemaError(f"{run_id}: query_anchor_tool_acceptance_diagnostic.query_task_counts must be present")
+    for task in query_task_counts:
+        if _clean(task) not in QUERY_EVIDENCE_TASKS | {"unknown"}:
+            raise DatasetSchemaError(f"{run_id}: query_anchor_tool_acceptance_diagnostic.query_task_counts invalid")
+    for transition_counts_key in ("gate_flip_direction_counts", "residual_transition_counts"):
+        transition_counts = diagnostic.get(transition_counts_key)
+        if not isinstance(transition_counts, Mapping):
+            raise DatasetSchemaError(
+                f"{run_id}: query_anchor_tool_acceptance_diagnostic.{transition_counts_key} must be present"
+            )
+        for count in transition_counts.values():
+            if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+                raise DatasetSchemaError(
+                    f"{run_id}: query_anchor_tool_acceptance_diagnostic.{transition_counts_key} counts invalid"
+                )
+    field_presence = diagnostic.get("source_owned_field_presence_on_query_anchor_rejected_candidates")
+    if not isinstance(field_presence, Mapping):
+        raise DatasetSchemaError(
+            f"{run_id}: query_anchor_tool_acceptance_diagnostic.source_owned_field_presence_on_query_anchor_rejected_candidates must be present"
+        )
+    for value in field_presence.values():
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise DatasetSchemaError(
+                f"{run_id}: query_anchor_tool_acceptance_diagnostic.source_owned_field_presence_on_query_anchor_rejected_candidates counts invalid"
+            )
+    top_missing = diagnostic.get("top_missing_query_anchors")
+    if not isinstance(top_missing, Sequence) or isinstance(top_missing, (str, bytes)):
+        raise DatasetSchemaError(
+            f"{run_id}: query_anchor_tool_acceptance_diagnostic.top_missing_query_anchors must be present"
+        )
+    for entry in top_missing:
+        if not isinstance(entry, Mapping) or "anchor" not in entry:
+            raise DatasetSchemaError(f"{run_id}: query_anchor_tool_acceptance_diagnostic.top_missing_query_anchors invalid")
+        _required_non_negative_int(run_id, "query_anchor_tool_acceptance_diagnostic.top_missing_query_anchors", entry, "candidate_count")
+    breakdown = diagnostic.get("missing_query_anchor_after_tool_by_source_family_hint_query_task")
+    if not isinstance(breakdown, Sequence) or isinstance(breakdown, (str, bytes)):
+        raise DatasetSchemaError(
+            f"{run_id}: query_anchor_tool_acceptance_diagnostic.missing_query_anchor_after_tool_by_source_family_hint_query_task must be present"
+        )
+    for entry in breakdown:
+        if not isinstance(entry, Mapping):
+            raise DatasetSchemaError(
+                f"{run_id}: query_anchor_tool_acceptance_diagnostic.missing_query_anchor_after_tool_by_source_family_hint_query_task invalid"
+            )
+        source_family_hint = _clean(entry.get("source_family_hint"))
+        query_task = _clean(entry.get("query_task"))
+        bucket = _clean(entry.get("bucket"))
+        if source_family_hint not in allowed_source_hints:
+            raise DatasetSchemaError(
+                f"{run_id}: query_anchor_tool_acceptance_diagnostic.missing_query_anchor_after_tool_by_source_family_hint_query_task source_family_hint invalid"
+            )
+        if query_task not in QUERY_EVIDENCE_TASKS | {"unknown"}:
+            raise DatasetSchemaError(
+                f"{run_id}: query_anchor_tool_acceptance_diagnostic.missing_query_anchor_after_tool_by_source_family_hint_query_task query_task invalid"
+            )
+        if bucket not in {"missing_query_anchor_after_tool", "other"}:
+            raise DatasetSchemaError(
+                f"{run_id}: query_anchor_tool_acceptance_diagnostic.missing_query_anchor_after_tool_by_source_family_hint_query_task bucket invalid"
+            )
+        _required_non_negative_int(
+            run_id,
+            "query_anchor_tool_acceptance_diagnostic.missing_query_anchor_after_tool_by_source_family_hint_query_task",
+            entry,
+            "item_count",
+        )
+    item_summaries = diagnostic.get("item_summaries")
+    if not isinstance(item_summaries, Sequence) or isinstance(item_summaries, (str, bytes)):
+        raise DatasetSchemaError(f"{run_id}: query_anchor_tool_acceptance_diagnostic.item_summaries must be present")
+    for summary in item_summaries:
+        if not isinstance(summary, Mapping):
+            raise DatasetSchemaError(f"{run_id}: query_anchor_tool_acceptance_diagnostic.item_summaries invalid")
+        for key in (
+            "item_index",
+            "candidate_count",
+            "accepted_candidate_count",
+            "missing_query_anchor_after_tool_candidate_count",
+        ):
+            _required_non_negative_int(run_id, "query_anchor_tool_acceptance_diagnostic.item_summaries", summary, key)
+        source_family_hint = _clean(summary.get("source_family_hint"))
+        query_task = _clean(summary.get("query_task"))
+        if source_family_hint not in allowed_source_hints:
+            raise DatasetSchemaError(f"{run_id}: query_anchor_tool_acceptance_diagnostic.item_summaries source_family_hint invalid")
+        if query_task not in QUERY_EVIDENCE_TASKS | {"unknown"}:
+            raise DatasetSchemaError(f"{run_id}: query_anchor_tool_acceptance_diagnostic.item_summaries query_task invalid")
+        for list_key in ("remaining_missing_query_anchors", "remaining_missing_validated_required_axes"):
+            values = summary.get(list_key)
+            if not isinstance(values, Sequence) or isinstance(values, (str, bytes)):
+                raise DatasetSchemaError(
+                    f"{run_id}: query_anchor_tool_acceptance_diagnostic.item_summaries.{list_key} invalid"
+                )
+
+
 def validate_xlsx_locator_tool_execute_once(run_id: str, locator: Mapping[str, Any]) -> None:
     if locator.get("schema_version") != XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION:
         raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.schema_version unsupported")
@@ -11634,6 +12133,12 @@ def validate_xlsx_locator_tool_execute_once(run_id: str, locator: Mapping[str, A
         raise DatasetSchemaError(
             f"{run_id}: xlsx_locator_tool_execute_once.gold_or_qrels_or_label_or_expected_used must be False"
         )
+    diagnostic = locator.get("query_anchor_tool_acceptance_diagnostic")
+    if not isinstance(diagnostic, Mapping):
+        raise DatasetSchemaError(
+            f"{run_id}: xlsx_locator_tool_execute_once.query_anchor_tool_acceptance_diagnostic must be present"
+        )
+    validate_xlsx_locator_query_anchor_tool_acceptance_diagnostic(run_id, diagnostic, locator=locator)
     eligible_failed = int(locator.get("eligible_failed_row_count") or 0)
     tool_invocations = int(locator.get("tool_invocation_count") or 0)
     accepted = int(locator.get("accepted_candidate_count") or 0)
@@ -19509,6 +20014,152 @@ def build_xlsx_pdf_residual_breakdown(
     }
 
 
+PDF_DECOMPOSITION_PAGE_FIELDS = ("page_number", "page", "pageNumber", "physical_page_index")
+PDF_DECOMPOSITION_BBOX_FIELDS = ("bbox", "bounding_box", "boundingBox")
+PDF_DECOMPOSITION_SECTION_OR_TABLE_FIELDS = (
+    "section_title",
+    "sectionTitle",
+    "table_caption",
+    "tableCaption",
+    "table_id",
+    "tableId",
+    "region_type",
+    "regionType",
+)
+PDF_DECOMPOSITION_OCR_CONFIDENCE_FIELDS = (
+    "ocr_confidence",
+    "ocrConfidence",
+    "ocr_confidence_avg",
+    "ocrConfidenceAvg",
+    "ocr_confidence_mean",
+    "ocrConfidenceMean",
+)
+PDF_DECOMPOSITION_OCR_LOWER_TRUST_THRESHOLD = 0.8
+
+
+def _pdf_decomposition_candidate_sources(row: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    gate = row.get("evidence_gate") if isinstance(row.get("evidence_gate"), Mapping) else {}
+    return [
+        *_residual_contexts(row, gate, "retrieved_evidence_candidates"),
+        *_residual_contexts(row, gate, "selected_evidence"),
+        *_row_contexts(row, "retrieved_contexts"),
+        *_row_contexts(row, "citations"),
+    ]
+
+
+def _pdf_decomposition_nested_sources(source: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    nested: list[Mapping[str, Any]] = [source]
+    for key in ("metadata", "raw_locator", "citation_locator", "locator", "track_locator"):
+        value = source.get(key)
+        if isinstance(value, Mapping):
+            nested.append(value)
+    return nested
+
+
+def _pdf_decomposition_has_any(source: Mapping[str, Any], fields: Sequence[str]) -> bool:
+    return any(
+        _source_value_present(candidate.get(field))
+        for candidate in _pdf_decomposition_nested_sources(source)
+        for field in fields
+    )
+
+
+def _pdf_decomposition_normalize_ocr_confidence(raw_value: Any) -> float | None:
+    if isinstance(raw_value, (int, float)):
+        value = float(raw_value)
+    else:
+        text = _clean(raw_value).rstrip("%")
+        if not text:
+            return None
+        try:
+            value = float(text)
+        except ValueError:
+            return None
+    if 1.0 < value <= 100.0:
+        return value / 100.0
+    return value
+
+
+def _pdf_decomposition_ocr_confidences(source: Mapping[str, Any]) -> list[float]:
+    values: list[float] = []
+    for candidate in _pdf_decomposition_nested_sources(source):
+        for field in PDF_DECOMPOSITION_OCR_CONFIDENCE_FIELDS:
+            value = _pdf_decomposition_normalize_ocr_confidence(candidate.get(field))
+            if value is not None:
+                values.append(value)
+    return values
+
+
+def build_pdf_source_native_decomposition(
+    *,
+    items: Sequence[EvalItem],
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    del items
+    pdf_query_count = 0
+    page_present_count = 0
+    bbox_present_count = 0
+    page_bbox_co_located_count = 0
+    section_or_table_axis_present_count = 0
+    ocr_confidence_present_count = 0
+    lower_trust_due_to_ocr_count = 0
+
+    for row in rows:
+        sources = [
+            source
+            for source in _pdf_decomposition_candidate_sources(row)
+            if _clean(source.get("source_family")).upper() == "PDF"
+        ]
+        if not sources:
+            continue
+        pdf_query_count += 1
+        source_has_page = [
+            _pdf_decomposition_has_any(source, PDF_DECOMPOSITION_PAGE_FIELDS)
+            for source in sources
+        ]
+        source_has_bbox = [
+            _pdf_decomposition_has_any(source, PDF_DECOMPOSITION_BBOX_FIELDS)
+            for source in sources
+        ]
+        if any(source_has_page):
+            page_present_count += 1
+        if any(source_has_bbox):
+            bbox_present_count += 1
+        if any(has_page and has_bbox for has_page, has_bbox in zip(source_has_page, source_has_bbox)):
+            page_bbox_co_located_count += 1
+        if any(_pdf_decomposition_has_any(source, PDF_DECOMPOSITION_SECTION_OR_TABLE_FIELDS) for source in sources):
+            section_or_table_axis_present_count += 1
+        ocr_confidences = [
+            confidence
+            for source in sources
+            for confidence in _pdf_decomposition_ocr_confidences(source)
+        ]
+        if ocr_confidences:
+            ocr_confidence_present_count += 1
+        if any(confidence < PDF_DECOMPOSITION_OCR_LOWER_TRUST_THRESHOLD for confidence in ocr_confidences):
+            lower_trust_due_to_ocr_count += 1
+
+    return {
+        "schema_version": PDF_SOURCE_NATIVE_DECOMPOSITION_SCHEMA_VERSION,
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "pdf_query_count": pdf_query_count,
+        "page_present_count": page_present_count,
+        "bbox_present_count": bbox_present_count,
+        "page_bbox_co_located_count": page_bbox_co_located_count,
+        "section_or_table_axis_present_count": section_or_table_axis_present_count,
+        "ocr_confidence_present_count": ocr_confidence_present_count,
+        "lower_trust_due_to_ocr_count": lower_trust_due_to_ocr_count,
+        "uses_expected_fields": False,
+        "uses_gold_fields": False,
+        "uses_qrels": False,
+        "uses_labels": False,
+        "uses_ids": False,
+        "uses_raw_xlsx_or_pdf_query_time_parsing": False,
+    }
+
+
 SOURCE_NATIVE_AXIS_PROVENANCE_FIELDS = (
     "sheet",
     "cell_range",
@@ -23251,6 +23902,7 @@ def run_eval_from_paths(
             ),
             "residual_anchor_matrix": build_residual_anchor_matrix(items=items, rows=raw_outputs),
             "source_native_axis_provenance": build_source_native_axis_provenance(items=items, rows=raw_outputs),
+            "pdf_source_native_decomposition": build_pdf_source_native_decomposition(items=items, rows=raw_outputs),
             "xlsx_pdf_residual_breakdown": build_xlsx_pdf_residual_breakdown(items=items, rows=raw_outputs),
             "corpus_coverage_audit": corpus_coverage_audit,
             "source_native_index_build": dict(source_native_index_build or {}),

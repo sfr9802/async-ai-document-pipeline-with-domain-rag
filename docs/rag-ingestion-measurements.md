@@ -1,3 +1,85 @@
+<!-- agentic_rag_xlsx_v2_query_anchor_rerun_repair_selection_20260629:measurements-entry:start -->
+### agentic_rag_xlsx_v2_query_anchor_rerun_repair_selection_20260629
+
+- Scope: fresh non-production V2 query-anchor diagnostic rerun and morphology-safe repair selection. No V2 recreate, no latest/current/runs/status pointer movement, no source-registry/gold/qrels/labels/expected/denominator mutation, no gate threshold relaxation.
+- Preconditions: current V2 readiness validator passed for `ai/eval/configs/weaviate_route_selected_candidate_surface_v2.json`; live Weaviate aggregate count for `SourceAtomNonprodRouteSelectedCandidateSurfaceV2` was `136299`; manifest SHA-256 stayed `21571A6CB8ECE0198F30434E5491E207715A7988EFD56C373D78B3192E9335E5`; checkpoint SHA-256 stayed `086DA43512D1869159159203490ACAFB9CBDCDF61979B472033952BCF5CB877C`. Fresh reports project every reader-facing `candidate_surface_rebuild` snapshot as `surface_status=ready`, `metric_blocked_until_complete_manifest=false`, and `complete_manifest_verified=true` in the metric gate.
+- Deterministic report: `reports/rag_eval/actual_rag_eval_gold29_xlsx_locator_query_anchor_diagnostic_rerun_v2_nonprod_20260629/report.json` (`sha256:81981CF5FFA818483B0E267AA5580B081C3BCD0AD0816EF4066FC24B1EF18ACF`).
+- Deterministic RunStore: `reports/rag_eval/actual_rag_eval_gold29_xlsx_locator_query_anchor_diagnostic_rerun_v2_nonprod_20260629/run.sqlite` (`sha256:7B0036B3614188E45B23C9324B5029681D47433B776A9099F35BE0D095351D66`).
+- LLM-classifier ablation report: `reports/rag_eval/actual_rag_eval_gold29_xlsx_locator_query_anchor_classifier_ablation_v2_nonprod_20260629/report.json` (`sha256:CAD5B112166F8B9346BD625AE30D8ED19884B0F6C58C883EC2898F8D19EF590B`).
+- LLM-classifier ablation RunStore: `reports/rag_eval/actual_rag_eval_gold29_xlsx_locator_query_anchor_classifier_ablation_v2_nonprod_20260629/run.sqlite` (`sha256:FA87E0D159B3246C6531C7637ED61F9E5D9ED205A11F959E521B8B50B267F624`).
+
+| measurement | deterministic query-anchor diagnostic | LLM query-anchor classifier ablation |
+| --- | ---: | ---: |
+| official_metric / official_metric_input_rows | `false / 0` | `false / 0` |
+| gate sufficient / insufficient | `12 / 17` | `20 / 9` |
+| evidence_recall@10 | `22/29=0.758621` | `22/29=0.758621` |
+| citation precision | `21/35=0.6` | `21/37=0.567568` |
+| citation recall | `21/28=0.75` | `21/28=0.75` |
+| exact/alias answer correctness | `0/29=0.0` | `0/29=0.0` |
+| strict E2E | `0/29=0.0` | `0/29=0.0` |
+| locator invocations / candidates / accepted | `18 / 72 / 6` | `2 / 7 / 0` |
+| rejected reason | `missing_query_anchor_after_tool=66` | `missing_validated_required_axes_after_tool=7` |
+| query-anchor rejected complete / missing / absent axes | `0 / 0 / 66` | `0 / 0 / 0` |
+| raw classifier payload written | N/A | `false` |
+
+- Deterministic top missing anchors on rejected candidates: `명입니까=39`, `지정된=27`, `무엇입니까=20`, `2018년=11`, `5월=11`, `2019년=9`, `3월=8`, `11월=7`, `언제입니까=7`, `12월=6`, `4월=6`, `6월=6`.
+- Deterministic source-owned field presence on query-anchor rejected candidates: `cell_range=66`, `source_date_aliases=47`, `display_value=38`, `row_label=38`, `target_column=38`.
+- LLM classifier removed generic intent endings that explain much of the deterministic failure (`명입니까=11`, `지정된=8`, `무엇입니까=6`, `기관별=4`, `언제입니까=2`, `얼마인가요=2`), but it also removed structural tokens in live output, including individual examples such as `일산선`, `수인선`, `신논현요양원`, `청운노인요양원`, `2020년`, `2024년`, `2월`, `1월`, and `원달러`. Therefore the ablation is evidence for the repair class, not an acceptable runtime repair as-is.
+- Measurement conclusion: morphology-sensitive query anchors are a real bottleneck candidate, because query-anchor classifier ablation moved gate sufficiency `12/17 -> 20/9`. It still did not move strict answer quality (`0/29`) and it introduced unsafe structural-anchor removal risk. The selected next repair is a bounded deterministic morphology-only intent-token classifier with preservation tests for numeric/date/entity/measure/line/organization anchors, not the current unrestricted LLM classifier and not gate relaxation.
+<!-- agentic_rag_xlsx_v2_query_anchor_rerun_repair_selection_20260629:measurements-entry:end -->
+
+<!-- agentic_rag_xlsx_v2_successor_query_anchor_tool_acceptance_diagnostics_20260629:measurements-entry:start -->
+### agentic_rag_xlsx_v2_successor_query_anchor_tool_acceptance_diagnostics_20260629
+
+- Scope: report-only successor diagnostic for XLSX locator query-anchor/tool acceptance. No V2 recreate, no gold/silver/live RunStore rerun, no latest/current/runs/status movement, no source-registry/gold/qrels/labels/expected/denominator mutation.
+- Frozen measured source: `reports/rag_eval/actual_rag_eval_gold29_xlsx_locator_runstore_v2_generalization_checkpoint_nonprod_20260622/run.sqlite` (`sha256:76816CD18AB431FF21A0D091EA4950DED52BE886C755CFCE3234FBE3507A0BB3`).
+
+| measurement | value |
+| --- | --- |
+| tool invocations | `18` |
+| tool candidates | `72` |
+| accepted for regating | `6` |
+| rejected candidates | `66` |
+| rejected reason | `missing_query_anchor_after_tool=66` |
+| source family in candidates | `XLSX=72` |
+| CP02 planner source_family_hint/query_task | blank for all rows; future projection reports this as `unknown` and does not infer `xlsx` |
+| tool status | `accepted_after_regating=6` rows / `25` candidates / `6` accepted; `skipped_missing_source_locator=12` rows / `47` candidates / `0` accepted |
+| top missing anchors on rejected candidates | `명입니까=39`, `지정된=27`, `무엇입니까=20`, `2018년=11`, `5월=11`, `2019년=9`, `3월=8`, `11월=7`, `언제입니까=7` |
+
+- New code measurement: `query_anchor_tool_acceptance_diagnostic` is embedded in `xlsx_locator_tool_execute_once` compact projections for future reports. It records `report_only_diagnostic=true`, `official_metric=false`, `official_metric_input_rows=0`, candidate/accepted/rejected counts, `missing_query_anchor_after_tool` candidate/item counts, complete/missing/absent validated-axis buckets, source-family/query-task counts, gate/residual transition counts, bounded top missing anchors, and source-owned field presence counts on query-anchor rejected candidates. Row identity and candidate/source/doc IDs stay in RunStore/typed internals and are not emitted in the compact diagnostic.
+- Verification:
+  - RED: `test_xlsx_locator_projection_reports_query_anchor_tool_acceptance_diagnostic` first failed with `TypeError: XlsxLocatorToolUseRecord.__init__() got an unexpected keyword argument 'source_family_hint'`.
+  - GREEN: the same test passed after implementation.
+  - Reviewer RED: malformed nested diagnostics were accepted before validator coverage; follow-up reviewer failure found compact `item_id` leakage and shallow forbidden-key checks. The integration tests now reject wrong schema, `official_metric=true`, forbidden source/doc/raw-payload/id fields recursively, parent/nested count mismatch, and missing required diagnostic sections.
+  - PDF diagnostic guardrail validator now rejects unsafe `pdf_source_native_decomposition` schema, official metric, nonzero metric rows, and `uses_ids=true`.
+  - Focused locator/query-anchor/PDF diagnostic slice passed: `56 passed, 271 deselected, 1 warning`.
+  - RunStore integration confirms `record_json.tool_uses` can retain diagnostic dimensions while the SQLite `tool_invocations` table remains compatible with the existing schema and does not add `source_family_hint` or `query_task` columns under the old schema string.
+- Measurement conclusion: this is observability for the next repair decision, not a quality gain. CP02 still has strict E2E `0/29`, exact/alias answer correctness `0/29`, and silver/generalization remains weak from Checkpoint 03 evidence. The next live measurement should use this projection to decide whether query-anchor normalization/router work is safe, without gate threshold changes or shortcut fields.
+<!-- agentic_rag_xlsx_v2_successor_query_anchor_tool_acceptance_diagnostics_20260629:measurements-entry:end -->
+
+<!-- agentic_rag_xlsx_v2_checkpoint03_source_native_repairs_20260629:measurements-entry:start -->
+### agentic_rag_xlsx_v2_checkpoint03_source_native_repairs_20260629
+
+- Scope: diagnostic-only source-native repair closeout after Checkpoint 02. No new gold/silver/RunStore metric lane was rerun for this checkpoint, and no latest/current/runs/status pointer was moved. The measured evidence remains Checkpoint 02 plus focused tests for the new report-only PDF decomposition block.
+- Gold Checkpoint 02 artifact: `reports/rag_eval/actual_rag_eval_gold29_xlsx_pdf_candidate_surface_v2_generalization_checkpoint_det_nonprod_20260622/report.json` (`sha256:77BAE341C797CA51AB6220BA0A242EAE53A2344FFDCE728EEDF603015336A5FF`). It records `official_metric=false`, `official_metric_input_rows=0`, gate allowed/insufficient `6/23`, evidence_recall@10 `22/29=0.758621`, citation precision `21/35=0.6`, citation recall `21/28=0.75`, exact/alias answer correctness `0/29=0.0`, strict E2E `0/29=0.0`, and residual `selected_evidence_has_value_missing_axis=22`.
+- Silver Checkpoint 02 artifact: `reports/rag_eval/actual_rag_eval_silver500_xlsx_candidate_surface_v2_generalization_checkpoint_det_nonprod_20260622/report.json` (`sha256:26F74668B4F616D51F54A39E56566F34AB99DCD7DD7AA9A4AB845C1E7EB9A777`). It records `official_metric=false`, `official_metric_input_rows=0`, gate allowed/insufficient `8/492`, strict metrics `0/0=None`, and residual `selected_evidence_has_value_missing_axis=479`.
+- RunStore Checkpoint 02 artifact: `reports/rag_eval/actual_rag_eval_gold29_xlsx_locator_runstore_v2_generalization_checkpoint_nonprod_20260622/run.sqlite` (`sha256:76816CD18AB431FF21A0D091EA4950DED52BE886C755CFCE3234FBE3507A0BB3`). It records `official_metric=0`, `official_metric_input_rows=0`, `report_only_diagnostic=1`, `accepted_for_regating=6`, `66` candidates rejected as `missing_query_anchor_after_tool`, `complete_validated_axis_candidate_count=0`, and `validated_axis_split_across_candidates=0`.
+- Checkpoint 03 code measurement: `pdf_source_native_decomposition` is now emitted in new single-report runs with schema `actual_rag_eval.pdf_source_native_decomposition.v1`, `report_only_diagnostic=true`, `official_metric=false`, `official_metric_input_rows=0`, `pdf_query_count`, `page_present_count`, `bbox_present_count`, `page_bbox_co_located_count`, `section_or_table_axis_present_count`, `ocr_confidence_present_count`, and `lower_trust_due_to_ocr_count`. The helper test proves page/bbox/table/OCR counters from source-owned report rows and proves expected/gold/qrels/labels/ids/raw parsing flags remain false.
+
+| verification | result |
+| --- | --- |
+| RED test | `test_pdf_source_native_decomposition_reports_page_bbox_table_and_ocr_counts` first failed because `build_pdf_source_native_decomposition` was absent |
+| GREEN test | same test passed after implementation |
+| XLSX focused tests | `13 passed, 309 deselected` |
+| PDF focused tests | `39 passed, 298 deselected` |
+| candidate-surface/XLSX regression | `68 passed, 254 deselected` |
+| selected-evidence/evidence-gate regression | `88 passed, 299 deselected` |
+| protected diff | empty for eval queries, source registry, silver, latest pointers, runs registry, rag-ingestion status, and portfolio Typst |
+| raw-payload/secret scan | no matches in the Checkpoint 02 report/RunStore directories |
+
+- Measurement conclusion: evidence recall movement is not a standalone success criterion. Strict E2E remains `0/29`, exact/alias answer correctness remains `0/29`, silver/generalization remains weak (`8/500` allowed), and the XLSX locator is still dominated by `missing_query_anchor_after_tool`. Checkpoint 03 improves the report contract for future PDF diagnostics while keeping release, operations, training, and broad quality claims closed.
+<!-- agentic_rag_xlsx_v2_checkpoint03_source_native_repairs_20260629:measurements-entry:end -->
+
 <!-- xlsx_pdf_source_native_candidate_surface_rebuild_v2_20260621:measurements-entry:start -->
 ### xlsx_pdf_source_native_candidate_surface_rebuild_v2_20260621
 

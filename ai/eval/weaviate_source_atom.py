@@ -3287,6 +3287,8 @@ class WeaviateSourceAtomAdapter:
         if upserted_count_this_run != indexed_count:
             report["blocked_reason"] = "candidate_surface_complete_manifest_upserted_indexed_count_mismatch"
             return report
+        report["surface_status"] = "ready"
+        report["metric_blocked_until_complete_manifest"] = False
         report["complete_manifest_verified"] = True
         return report
 
@@ -3295,6 +3297,31 @@ class WeaviateSourceAtomAdapter:
         blocked_reason = _clean(gate_report.get("blocked_reason"))
         if blocked_reason:
             raise WeaviateUnavailableError(f"weaviate_unavailable: {blocked_reason}")
+
+    def _reader_facing_default_config_report(
+        self,
+        *,
+        candidate_surface_gate: Mapping[str, Any] | None = None,
+        candidate_surface_report: Mapping[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        default_config = dict(self.default_config_report)
+        candidate_surface = default_config.get("candidate_surface_rebuild")
+        if not isinstance(candidate_surface, Mapping):
+            return default_config
+        candidate_surface_snapshot = dict(candidate_surface)
+        if isinstance(candidate_surface_report, Mapping):
+            candidate_surface_snapshot.update(candidate_surface_report)
+        gate_report = (
+            candidate_surface_gate
+            if isinstance(candidate_surface_gate, Mapping)
+            else self._candidate_surface_metric_gate_report()
+        )
+        if gate_report.get("complete_manifest_verified") is True:
+            candidate_surface_snapshot["surface_status"] = "ready"
+            candidate_surface_snapshot["metric_blocked_until_complete_manifest"] = False
+            candidate_surface_snapshot.pop("metrics_blocked_reason", None)
+        default_config["candidate_surface_rebuild"] = candidate_surface_snapshot
+        return default_config
 
     def _indexed_object_count(self) -> int:
         manifest = self._load_index_manifest()
@@ -3433,7 +3460,7 @@ class WeaviateSourceAtomAdapter:
 
     @property
     def config(self) -> dict[str, Any]:
-        default_config = dict(self.default_config_report)
+        default_config = self._reader_facing_default_config_report()
         return {
             "adapter": "weaviate_source_atom_retrieval",
             "surface": "source_native",
@@ -3460,8 +3487,8 @@ class WeaviateSourceAtomAdapter:
         latency_hybrid = _latency_distribution_ms(self._latencies["hybrid"])
         indexed_object_count = self._indexed_object_count()
         manifest = self._load_index_manifest()
-        default_config = dict(self.default_config_report)
-        rollback_config = dict(default_config.get("rollback") or {})
+        base_default_config = dict(self.default_config_report)
+        rollback_config = dict(base_default_config.get("rollback") or {})
         route_filters_sent = dict(self._last_filter_policy.get("filters") or self._base_filters())
         promotion_blockers: list[str] = []
         if self.retrieval_route_mode != "route_selected":
@@ -3522,12 +3549,16 @@ class WeaviateSourceAtomAdapter:
             )
         )
         candidate_surface_rebuild = (
-            dict(default_config.get("candidate_surface_rebuild") or {})
-            if isinstance(default_config.get("candidate_surface_rebuild"), Mapping)
+            dict(base_default_config.get("candidate_surface_rebuild") or {})
+            if isinstance(base_default_config.get("candidate_surface_rebuild"), Mapping)
             else {}
         )
         candidate_surface_gate = self._candidate_surface_metric_gate_report()
         if candidate_surface_rebuild:
+            if candidate_surface_gate.get("complete_manifest_verified") is True:
+                candidate_surface_rebuild["surface_status"] = "ready"
+                candidate_surface_rebuild["metric_blocked_until_complete_manifest"] = False
+                candidate_surface_rebuild.pop("metrics_blocked_reason", None)
             manifest_path = Path(self.config_obj.index_manifest_path)
             manifest_fingerprint = (
                 f"sha256:{_sha256_file_bytes(manifest_path)}"
@@ -3555,6 +3586,10 @@ class WeaviateSourceAtomAdapter:
                     },
                 }
             )
+        default_config = self._reader_facing_default_config_report(
+            candidate_surface_gate=candidate_surface_gate,
+            candidate_surface_report=candidate_surface_rebuild,
+        )
         return {
             "active_retrieval_backend": self.selected_backend,
             "active_retrieval_service_boundary": "weaviate",
