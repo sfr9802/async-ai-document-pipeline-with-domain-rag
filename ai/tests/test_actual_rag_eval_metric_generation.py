@@ -4701,6 +4701,61 @@ def test_agentic_xlsx_regated_simulator_rejects_unapproved_removed_tokens() -> N
         )
 
 
+def test_agentic_xlsx_regated_simulator_preserves_protected_tokens_and_axis_gap() -> None:
+    candidate = actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+        item_index=0,
+        candidate_index=0,
+        source_family="XLSX",
+        tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+        tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+        source_atom_id="src-regated-sim",
+        evidence_bundle_id="bundle-regated-sim",
+        doc_id="doc-regated-sim",
+        sheet="2020년 2월",
+        cell_range="A1:D4",
+        row_label="일산선",
+        target_column="수송인원",
+        matched_query_anchors=("2020년", "2월"),
+        missing_query_anchors_after_tool=("무엇입니까", "일산선"),
+        matched_validated_required_axes=("period", "row_entity", "target_column"),
+        missing_validated_required_axes=("display_value",),
+        confidence_tier="high",
+        accepted_for_regating=False,
+        rejection_reason="missing_query_anchor_after_tool",
+    )
+    axis_inspection = actual_rag_eval.agentic_xlsx_axis_inspector_tool(candidate)
+    verification = actual_rag_eval.AgenticXlsxProtectedAnchorVerifierRecord(
+        proposed_removed_tokens=("무엇입니까", "일산선"),
+        approved_removed_tokens=("무엇입니까",),
+        rejected_removed_tokens=("일산선",),
+        protected_rejection_reasons={"일산선": "route or line anchor must be preserved"},
+    )
+
+    simulation = actual_rag_eval.agentic_xlsx_regated_candidate_simulator_tool(
+        candidate,
+        approved_removed_tokens=("무엇입니까",),
+        protected_tokens_preserved=("일산선",),
+        axis_inspection=axis_inspection,
+    )
+
+    assert simulation.original_rejection_reason == "missing_query_anchor_after_tool"
+    assert simulation.simulated_rejection_reason == "missing_query_anchor_after_tool"
+    assert simulation.approved_removed_tokens == ("무엇입니까",)
+    assert simulation.protected_tokens_preserved == ("일산선",)
+    assert simulation.axis_status_after_simulation == {
+        "missing_axes": ["display_value"],
+        "remaining_missing_query_anchors": ["일산선"],
+    }
+    assert simulation.would_be_accepted_by_existing_gate is False
+    assert simulation.report_only_diagnostic is True
+    assert simulation.official_metric is False
+    actual_rag_eval.validate_agentic_xlsx_regated_candidate_simulator_output(
+        "cp04",
+        simulation,
+        anchor_verification=verification,
+    )
+
+
 def test_agentic_xlsx_axis_inspector_rejects_nested_forbidden_evidence_fields() -> None:
     inspection = actual_rag_eval.AgenticXlsxAxisInspectionRecord(
         has_required_period_axis=True,
@@ -8458,6 +8513,167 @@ def test_xlsx_locator_projection_reports_agentic_axis_repair_diagnostic() -> Non
         "bundle-axis-repair",
         "doc-axis-repair",
         "xlsx-axis-repair-blocked",
+        "expected_answer",
+        "expected_evidence",
+        "row_id",
+        "candidate_id",
+    ):
+        assert forbidden not in encoded
+
+
+def test_xlsx_locator_projection_reports_agentic_regated_simulation_diagnostic() -> None:
+    candidates = (
+        actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+            item_index=0,
+            candidate_index=0,
+            source_family="XLSX",
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+            source_atom_id="src-regated-projection-0",
+            evidence_bundle_id="bundle-regated-projection-0",
+            doc_id="doc-regated-projection",
+            sheet="2020년 2월",
+            cell_range="A1:D4",
+            row_label="일산선",
+            target_column="수송인원",
+            display_value="123명",
+            matched_query_anchors=("2020년", "2월"),
+            missing_query_anchors_after_tool=("무엇입니까",),
+            matched_validated_required_axes=("period", "row_entity", "target_column", "display_value"),
+            missing_validated_required_axes=(),
+            confidence_tier="high",
+            accepted_for_regating=False,
+            rejection_reason="missing_query_anchor_after_tool",
+        ),
+        actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+            item_index=0,
+            candidate_index=1,
+            source_family="XLSX",
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+            source_atom_id="src-regated-projection-1",
+            evidence_bundle_id="bundle-regated-projection-1",
+            doc_id="doc-regated-projection",
+            sheet="2020년 2월",
+            cell_range="A5:D8",
+            row_label="일산선",
+            target_column="수송인원",
+            matched_query_anchors=("2020년", "2월"),
+            missing_query_anchors_after_tool=("무엇입니까",),
+            matched_validated_required_axes=("period", "row_entity", "target_column"),
+            missing_validated_required_axes=("display_value",),
+            confidence_tier="high",
+            accepted_for_regating=False,
+            rejection_reason="missing_query_anchor_after_tool",
+        ),
+        actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+            item_index=0,
+            candidate_index=2,
+            source_family="XLSX",
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+            source_atom_id="src-regated-projection-2",
+            evidence_bundle_id="bundle-regated-projection-2",
+            doc_id="doc-regated-projection",
+            sheet="2020년 2월",
+            cell_range="A9:D12",
+            row_label="일산선",
+            target_column="수송인원",
+            display_value="123명",
+            matched_query_anchors=("2020년", "2월"),
+            missing_query_anchors_after_tool=("일산선",),
+            matched_validated_required_axes=("period", "row_entity", "target_column", "display_value"),
+            missing_validated_required_axes=(),
+            confidence_tier="high",
+            accepted_for_regating=False,
+            rejection_reason="missing_query_anchor_after_tool",
+        ),
+    )
+    record = actual_rag_eval.XlsxLocatorRunRecord(
+        schema_version=actual_rag_eval.XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION,
+        enabled=True,
+        report_only_diagnostic=True,
+        official_metric=False,
+        tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+        eligible_failed_row_count=1,
+        tool_invocation_count=1,
+        accepted_candidate_count=0,
+        rejected_candidate_count=3,
+        gate_delta_record=actual_rag_eval.XlsxLocatorGateDeltaRecord(),
+        guardrail_record=actual_rag_eval.XlsxLocatorGuardrailRecord(),
+        required_anchor_summary={
+            "removed_intent_tokens": ["무엇입니까"],
+            "protected_intent_tokens_restored": ["일산선", "2020년"],
+        },
+        candidates=candidates,
+    )
+
+    diagnostic = actual_rag_eval.project_xlsx_locator_run_record(record)[
+        "agentic_xlsx_axis_repair_diagnostic"
+    ]
+    simulation = diagnostic["regated_simulation_summary"]
+
+    assert simulation["schema_version"] == "actual_rag_eval.agentic_xlsx_regated_candidate_simulator.v1"
+    assert simulation["report_only_diagnostic"] is True
+    assert simulation["official_metric"] is False
+    assert simulation["official_metric_input_rows"] == 0
+    assert simulation["approved_removed_tokens"] == ["무엇입니까"]
+    assert simulation["protected_tokens_preserved"] == ["일산선", "2020년"]
+    assert simulation["simulated_rejection_reason_counts"] == {
+        "accepted_after_regating": 1,
+        "missing_query_anchor_after_tool": 1,
+        "missing_validated_required_axes_after_tool": 1,
+    }
+    assert simulation["would_be_accepted_by_existing_gate_candidate_count"] == 1
+    assert simulation["query_anchor_to_axis_materialization_candidate_count"] == 1
+    assert simulation["query_anchor_to_accepted_candidate_count"] == 1
+    assert simulation["quality_delta_claim_supported"] is False
+    assert simulation["simulations"] == [
+        {
+            "item_index": 0,
+            "candidate_index": 0,
+            "original_rejection_reason": "missing_query_anchor_after_tool",
+            "simulated_rejection_reason": "accepted_after_regating",
+            "approved_removed_tokens": ["무엇입니까"],
+            "protected_tokens_preserved": ["일산선", "2020년"],
+            "axis_status_after_simulation": {
+                "missing_axes": [],
+                "remaining_missing_query_anchors": [],
+            },
+            "would_be_accepted_by_existing_gate": True,
+        },
+        {
+            "item_index": 0,
+            "candidate_index": 1,
+            "original_rejection_reason": "missing_query_anchor_after_tool",
+            "simulated_rejection_reason": "missing_validated_required_axes_after_tool",
+            "approved_removed_tokens": ["무엇입니까"],
+            "protected_tokens_preserved": ["일산선", "2020년"],
+            "axis_status_after_simulation": {
+                "missing_axes": ["display_value"],
+                "remaining_missing_query_anchors": [],
+            },
+            "would_be_accepted_by_existing_gate": False,
+        },
+        {
+            "item_index": 0,
+            "candidate_index": 2,
+            "original_rejection_reason": "missing_query_anchor_after_tool",
+            "simulated_rejection_reason": "missing_query_anchor_after_tool",
+            "approved_removed_tokens": ["무엇입니까"],
+            "protected_tokens_preserved": ["일산선", "2020년"],
+            "axis_status_after_simulation": {
+                "missing_axes": [],
+                "remaining_missing_query_anchors": ["일산선"],
+            },
+            "would_be_accepted_by_existing_gate": False,
+        },
+    ]
+    encoded = json.dumps(simulation, ensure_ascii=False)
+    for forbidden in (
+        "src-regated-projection",
+        "bundle-regated-projection",
+        "doc-regated-projection",
         "expected_answer",
         "expected_evidence",
         "row_id",

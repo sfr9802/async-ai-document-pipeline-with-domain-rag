@@ -10756,6 +10756,119 @@ def agentic_xlsx_candidate_repair_explainer_tool(
     return explanation
 
 
+def agentic_xlsx_regated_candidate_simulator_tool(
+    candidate: XlsxLocatorEvidenceCandidateRecord | Mapping[str, Any],
+    *,
+    approved_removed_tokens: Sequence[str],
+    protected_tokens_preserved: Sequence[str],
+    axis_inspection: AgenticXlsxAxisInspectionRecord | Mapping[str, Any],
+) -> AgenticXlsxRegatedCandidateSimulationRecord:
+    validate_agentic_xlsx_axis_inspector_output("agentic_xlsx", axis_inspection)
+    approved = _agentic_xlsx_optional_clean_tuple(approved_removed_tokens)
+    preserved = _agentic_xlsx_optional_clean_tuple(protected_tokens_preserved)
+    missing_axes = list(
+        _agentic_xlsx_ordered_axes(
+            _agentic_xlsx_record_value(axis_inspection, "missing_axes") or ()
+        )
+    )
+    missing_query_anchors = [
+        anchor
+        for anchor in _agentic_xlsx_optional_clean_tuple(
+            _agentic_xlsx_record_value(candidate, "missing_query_anchors_after_tool")
+        )
+        if anchor not in set(approved)
+    ]
+    if missing_query_anchors:
+        simulated_rejection_reason = "missing_query_anchor_after_tool"
+    elif missing_axes:
+        simulated_rejection_reason = "missing_validated_required_axes_after_tool"
+    else:
+        simulated_rejection_reason = "accepted_after_regating"
+    simulation = AgenticXlsxRegatedCandidateSimulationRecord(
+        original_rejection_reason=_clean(_agentic_xlsx_record_value(candidate, "rejection_reason"))
+        or "accepted_for_regating",
+        simulated_rejection_reason=simulated_rejection_reason,
+        approved_removed_tokens=approved,
+        protected_tokens_preserved=preserved,
+        axis_status_after_simulation={
+            "missing_axes": missing_axes,
+            "remaining_missing_query_anchors": missing_query_anchors,
+        },
+        would_be_accepted_by_existing_gate=simulated_rejection_reason == "accepted_after_regating",
+    )
+    validate_agentic_xlsx_regated_candidate_simulator_output("agentic_xlsx", simulation)
+    return simulation
+
+
+def _agentic_xlsx_regated_simulation_summary(
+    record: XlsxLocatorRunRecord,
+) -> dict[str, Any]:
+    approved_removed_tokens = tuple(
+        _clean(token)
+        for token in _as_list(dict(record.required_anchor_summary).get("removed_intent_tokens"))
+        if _clean(token)
+    )
+    protected_tokens_preserved = tuple(
+        _clean(token)
+        for token in _as_list(dict(record.required_anchor_summary).get("protected_intent_tokens_restored"))
+        if _clean(token)
+    )
+    simulations: list[dict[str, Any]] = []
+    simulated_rejection_counts: Counter[str] = Counter()
+    for candidate in record.candidates:
+        if candidate.accepted_for_regating or candidate.rejection_reason != "missing_query_anchor_after_tool":
+            continue
+        axis_inspection = agentic_xlsx_axis_inspector_tool(candidate)
+        simulation = agentic_xlsx_regated_candidate_simulator_tool(
+            candidate,
+            approved_removed_tokens=approved_removed_tokens,
+            protected_tokens_preserved=protected_tokens_preserved,
+            axis_inspection=axis_inspection,
+        )
+        simulated_rejection_counts[simulation.simulated_rejection_reason] += 1
+        simulations.append(
+            {
+                "item_index": candidate.item_index,
+                "candidate_index": candidate.candidate_index,
+                "original_rejection_reason": simulation.original_rejection_reason,
+                "simulated_rejection_reason": simulation.simulated_rejection_reason,
+                "approved_removed_tokens": list(simulation.approved_removed_tokens),
+                "protected_tokens_preserved": list(simulation.protected_tokens_preserved),
+                "axis_status_after_simulation": dict(simulation.axis_status_after_simulation),
+                "would_be_accepted_by_existing_gate": simulation.would_be_accepted_by_existing_gate,
+            }
+        )
+    summary = {
+        "schema_version": AGENTIC_XLSX_REGATED_CANDIDATE_SIMULATOR_SCHEMA_VERSION,
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "official_metric_input_rows": 0,
+        "approved_removed_tokens": list(approved_removed_tokens),
+        "protected_tokens_preserved": list(protected_tokens_preserved),
+        "simulated_candidate_count": len(simulations),
+        "would_be_accepted_by_existing_gate_candidate_count": sum(
+            1 for simulation in simulations if simulation["would_be_accepted_by_existing_gate"] is True
+        ),
+        "query_anchor_to_axis_materialization_candidate_count": sum(
+            1
+            for simulation in simulations
+            if simulation["original_rejection_reason"] == "missing_query_anchor_after_tool"
+            and simulation["simulated_rejection_reason"] == "missing_validated_required_axes_after_tool"
+        ),
+        "query_anchor_to_accepted_candidate_count": sum(
+            1
+            for simulation in simulations
+            if simulation["original_rejection_reason"] == "missing_query_anchor_after_tool"
+            and simulation["simulated_rejection_reason"] == "accepted_after_regating"
+        ),
+        "simulated_rejection_reason_counts": dict(sorted(simulated_rejection_counts.items())),
+        "quality_delta_claim_supported": False,
+        "simulations": simulations,
+    }
+    validate_agentic_xlsx_regated_simulation_summary("agentic_xlsx", summary)
+    return summary
+
+
 def _agentic_xlsx_axis_repair_diagnostic(record: XlsxLocatorRunRecord) -> dict[str, Any]:
     inspected: list[tuple[XlsxLocatorEvidenceCandidateRecord, AgenticXlsxAxisInspectionRecord]] = [
         (candidate, agentic_xlsx_axis_inspector_tool(candidate))
@@ -10806,6 +10919,7 @@ def _agentic_xlsx_axis_repair_diagnostic(record: XlsxLocatorRunRecord) -> dict[s
         "secondary_failure_family_counts": dict(sorted(secondary_counts.items())),
         "missing_axis_counts": dict(sorted(missing_axis_counts.items())),
         "candidate_summaries": candidate_summaries,
+        "regated_simulation_summary": _agentic_xlsx_regated_simulation_summary(record),
         "uses_expected_fields": False,
         "uses_gold_fields": False,
         "uses_qrels_or_labels": False,
@@ -12479,6 +12593,99 @@ def validate_agentic_xlsx_axis_repair_diagnostic(
         raise DatasetSchemaError(f"{run_id}: {owner}.safe_to_simulate_intent_removal_candidate_count mismatch")
     if observed_missing_axis_candidates > counts["missing_axis_candidate_count"]:
         raise DatasetSchemaError(f"{run_id}: {owner}.missing_axis_candidate_count mismatch")
+    validate_agentic_xlsx_regated_simulation_summary(
+        run_id,
+        diagnostic.get("regated_simulation_summary"),
+    )
+
+
+def validate_agentic_xlsx_regated_simulation_summary(run_id: str, summary: Mapping[str, Any]) -> None:
+    owner = "regated_simulation_summary"
+    if not isinstance(summary, Mapping):
+        raise DatasetSchemaError(f"{run_id}: {owner} must be present")
+    forbidden_keys = sorted(_collect_xlsx_locator_query_anchor_diagnostic_forbidden_keys(summary))
+    if forbidden_keys:
+        raise DatasetSchemaError(f"{run_id}: {owner} contains forbidden field {forbidden_keys[0]}")
+    if summary.get("schema_version") != AGENTIC_XLSX_REGATED_CANDIDATE_SIMULATOR_SCHEMA_VERSION:
+        raise DatasetSchemaError(f"{run_id}: {owner}.schema_version unsupported")
+    if summary.get("report_only_diagnostic") is not True:
+        raise DatasetSchemaError(f"{run_id}: {owner}.report_only_diagnostic must be True")
+    if summary.get("official_metric") is not False:
+        raise DatasetSchemaError(f"{run_id}: {owner}.official_metric must be False")
+    if int(summary.get("official_metric_input_rows") or 0) != 0:
+        raise DatasetSchemaError(f"{run_id}: {owner}.official_metric_input_rows must be 0")
+    if summary.get("quality_delta_claim_supported") is not False:
+        raise DatasetSchemaError(f"{run_id}: {owner}.quality_delta_claim_supported must be False")
+    for key in (
+        "simulated_candidate_count",
+        "would_be_accepted_by_existing_gate_candidate_count",
+        "query_anchor_to_axis_materialization_candidate_count",
+        "query_anchor_to_accepted_candidate_count",
+    ):
+        _required_non_negative_int(run_id, owner, summary, key)
+    approved = _agentic_xlsx_optional_clean_tuple(summary.get("approved_removed_tokens"))
+    protected = _agentic_xlsx_optional_clean_tuple(summary.get("protected_tokens_preserved"))
+    if set(approved) & set(protected):
+        raise DatasetSchemaError(f"{run_id}: {owner}.approved_removed_tokens overlap protected tokens")
+    reason_counts = summary.get("simulated_rejection_reason_counts")
+    if not isinstance(reason_counts, Mapping):
+        raise DatasetSchemaError(f"{run_id}: {owner}.simulated_rejection_reason_counts must be present")
+    for reason, count in reason_counts.items():
+        if not _clean(reason):
+            raise DatasetSchemaError(f"{run_id}: {owner}.simulated_rejection_reason_counts invalid")
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise DatasetSchemaError(f"{run_id}: {owner}.simulated_rejection_reason_counts invalid")
+    simulations = summary.get("simulations")
+    if not isinstance(simulations, Sequence) or isinstance(simulations, (str, bytes, bytearray)):
+        raise DatasetSchemaError(f"{run_id}: {owner}.simulations must be present")
+    if len(simulations) != int(summary.get("simulated_candidate_count") or 0):
+        raise DatasetSchemaError(f"{run_id}: {owner}.simulated_candidate_count mismatch")
+    observed_reason_counts: Counter[str] = Counter()
+    accepted_count = 0
+    axis_shift_count = 0
+    accepted_shift_count = 0
+    for simulation in simulations:
+        if not isinstance(simulation, Mapping):
+            raise DatasetSchemaError(f"{run_id}: {owner}.simulations invalid")
+        for key in ("item_index", "candidate_index"):
+            _required_non_negative_int(run_id, f"{owner}.simulations", simulation, key)
+        original = _clean(simulation.get("original_rejection_reason"))
+        simulated = _clean(simulation.get("simulated_rejection_reason"))
+        if not original or not simulated:
+            raise DatasetSchemaError(f"{run_id}: {owner}.simulations rejection reasons invalid")
+        observed_reason_counts[simulated] += 1
+        sim_approved = _agentic_xlsx_optional_clean_tuple(simulation.get("approved_removed_tokens"))
+        sim_protected = _agentic_xlsx_optional_clean_tuple(simulation.get("protected_tokens_preserved"))
+        if set(sim_approved) & set(sim_protected):
+            raise DatasetSchemaError(f"{run_id}: {owner}.simulations approved/protected overlap")
+        if not set(sim_approved).issubset(set(approved)) or not set(protected).issubset(set(sim_protected)):
+            raise DatasetSchemaError(f"{run_id}: {owner}.simulations token mismatch")
+        axis_status = simulation.get("axis_status_after_simulation")
+        if not isinstance(axis_status, Mapping):
+            raise DatasetSchemaError(f"{run_id}: {owner}.simulations axis status missing")
+        missing_axes = _agentic_xlsx_optional_clean_tuple(axis_status.get("missing_axes"))
+        remaining_anchors = _agentic_xlsx_optional_clean_tuple(axis_status.get("remaining_missing_query_anchors"))
+        if any(axis not in QUERY_EVIDENCE_AXIS_ORDER for axis in missing_axes):
+            raise DatasetSchemaError(f"{run_id}: {owner}.simulations missing axes unsupported")
+        would_accept = simulation.get("would_be_accepted_by_existing_gate")
+        if not isinstance(would_accept, bool):
+            raise DatasetSchemaError(f"{run_id}: {owner}.simulations accept flag invalid")
+        if would_accept:
+            accepted_count += 1
+            if missing_axes or remaining_anchors or simulated != "accepted_after_regating":
+                raise DatasetSchemaError(f"{run_id}: {owner}.simulations acceptance invalid")
+        if original == "missing_query_anchor_after_tool" and simulated == "missing_validated_required_axes_after_tool":
+            axis_shift_count += 1
+        if original == "missing_query_anchor_after_tool" and simulated == "accepted_after_regating":
+            accepted_shift_count += 1
+    if dict(sorted(observed_reason_counts.items())) != dict(sorted(reason_counts.items())):
+        raise DatasetSchemaError(f"{run_id}: {owner}.simulated_rejection_reason_counts mismatch")
+    if accepted_count != int(summary.get("would_be_accepted_by_existing_gate_candidate_count") or 0):
+        raise DatasetSchemaError(f"{run_id}: {owner}.accepted count mismatch")
+    if axis_shift_count != int(summary.get("query_anchor_to_axis_materialization_candidate_count") or 0):
+        raise DatasetSchemaError(f"{run_id}: {owner}.axis shift count mismatch")
+    if accepted_shift_count != int(summary.get("query_anchor_to_accepted_candidate_count") or 0):
+        raise DatasetSchemaError(f"{run_id}: {owner}.accepted shift count mismatch")
 
 
 def validate_xlsx_locator_tool_execute_once(run_id: str, locator: Mapping[str, Any]) -> None:
