@@ -48,33 +48,11 @@ REQUIRED_FALSE_KEYS = (
     "live_db_index_cache_readiness",
 )
 
-LEGACY_ENTRYPOINT_SCRIPTS: dict[str, Path] = {
-    "v3_9_2": Path("ai/scripts/rag_v3_9_2_overfit_risk_audit_and_blind_holdout_reset.py"),
-    "v3_10": Path("ai/scripts/rag_v3_10_fresh_real_holdout_and_xlsx_table_axis_nonprod_rematerialization.py"),
-    "v3_11": Path("ai/scripts/rag_v3_11_layered_retrieval_diagnostic.py"),
-    "v3_12": Path("ai/scripts/rag_v3_12_xlsx_structural_locator_nonprod_improvement.py"),
-    "v3_13": Path("ai/scripts/rag_v3_13_pdf_file_identity_structural_locator_nonprod_alignment.py"),
-    "v3_14": Path("ai/scripts/rag_v3_14_layered_retrieval_runtime_adapter_nonprod.py"),
-    "v3_15": Path("ai/scripts/rag_v3_15_xlsx_l3_table_range_locator_nonprod_improvement.py"),
-    "v3_16": Path("ai/scripts/rag_v3_16_pdf_xlsx_final_llm_answer_quality_review_nonprod.py"),
-    "v3_17": Path("ai/scripts/rag_v3_17_user_locator_and_rough_query_answer_quality_nonprod.py"),
-    "v3_18": Path("ai/scripts/rag_v3_18_agent_runtime_tool_invocation_contract_nonprod.py"),
-    "v3_19": Path("ai/scripts/rag_v3_19_locator_ambiguity_and_deictic_query_fail_closed_response_policy_nonprod.py"),
-    "v3_20": Path("ai/scripts/rag_v3_20_live_runtime_like_db_index_cache_smoke_nonprod.py"),
-}
-SAFE_LEGACY_CHECK_ALIASES: dict[str, Path] = {
-    key: script
-    for key, script in LEGACY_ENTRYPOINT_SCRIPTS.items()
-    if key not in {"v3_16", "v3_17"}
-}
-SAFE_LEGACY_CHECK_ALIASES.update(
-    {
-        "v3_21": Path("ai/scripts/rag_v3_21_agent_runtime_llm_io_observability_packet_nonprod.py"),
-        "v3_22": Path("ai/scripts/rag_v3_22_xlsx_value_formatting_and_cell_range_answer_rendering_nonprod.py"),
-    }
-)
-SAFE_RUNNER_ALIASES_BEFORE = ("v3_21", "v3_22")
+LEGACY_ENTRYPOINT_SCRIPTS: dict[str, Path] = {}
+SAFE_LEGACY_CHECK_ALIASES: dict[str, Path] = {}
+SAFE_RUNNER_ALIASES_BEFORE: tuple[str, ...] = ()
 SAFE_RUNNER_ALIASES_ADDED = tuple(key for key in SAFE_LEGACY_CHECK_ALIASES if key not in SAFE_RUNNER_ALIASES_BEFORE)
+DELETED_LEGACY_CHECK_ALIASES = ("v3_18", "v3_19", "v3_20", "v3_21", "v3_22")
 LEGACY_CHECK_TIMEOUT_SECONDS = 120
 
 TEXT_SCAN_DIRS = ("ai/tests", "ai/scripts", "ai/eval", "docs")
@@ -828,6 +806,7 @@ def build_report(*, root: Path, execute: bool, sync_surfaces: bool = False, gene
         "safe_runner_check_alias_count_before": len(SAFE_RUNNER_ALIASES_BEFORE),
         "safe_runner_check_alias_count_after": len(SAFE_LEGACY_CHECK_ALIASES),
         "safe_runner_aliases_added": list(SAFE_RUNNER_ALIASES_ADDED),
+        "deleted_legacy_check_aliases": list(DELETED_LEGACY_CHECK_ALIASES),
         "legacy_entrypoints_verified": verified_entrypoints,
         "legacy_entrypoints_held": held_entrypoints,
         "scripts_converted_to_wrappers_count": 0,
@@ -853,17 +832,19 @@ def build_report(*, root: Path, execute: bool, sync_surfaces: bool = False, gene
         "script_consolidation": {
             "stable_runner": "ai/scripts/rag_eval.py",
             "safe_check_aliases": list(SAFE_LEGACY_CHECK_ALIASES),
+            "deleted_check_aliases": list(DELETED_LEGACY_CHECK_ALIASES),
+            "legacy_alias_policy": "deleted aliases intentionally unsupported; use archived reports or current runner keys",
             "held_legacy_entrypoints": {
                 row["alias"]: row["hold_reason"] for row in held_entrypoints
             },
             "new_per_run_script_created": False,
             "retrieval_promotion_scripts_folded_into_current": False,
-            "runner_scope": "check-only aliases for individually verified legacy diagnostics; v4_7_8 write stays cleanup-only",
+            "runner_scope": "current and registry-backed report keys only; deleted v3 script aliases fail closed",
         },
         "dry_run": not execute,
         "residual_risks": [
             "retained documented review packets still require user-owned provenance preservation",
-            "v3_16 and v3_17 remain direct fail-closed entrypoints until local LLM readiness is available or wrappers are narrowed",
+            "deleted v3 script aliases are intentionally unsupported; use archived report evidence for historical reproduction",
             "metrics remain cleanup counters only, not answer quality, retrieval quality, or official metric evidence",
         ],
     }
@@ -906,15 +887,22 @@ def check_report(report: Mapping[str, Any]) -> None:
         raise ValueError("v4_7_8 ambiguous generated holds remain above target")
     if int(report.get("v3_legacy_manual_hold_count", 0)) > 120:
         raise ValueError("v4_7_8 manual hold count remains above target")
-    if int(report.get("safe_runner_check_alias_count_after", 0)) < 5:
-        raise ValueError("v4_7_8 safe runner alias target not met")
+    is_post_cleanup_policy = "deleted_legacy_check_aliases" in report
+    if is_post_cleanup_policy and int(report.get("safe_runner_check_alias_count_after", -1)) != 0:
+        raise ValueError("v4_7_8 deleted legacy aliases must stay unsupported")
+    if not is_post_cleanup_policy and int(report.get("safe_runner_check_alias_count_after", 0)) < 5:
+        raise ValueError("v4_7_8 historical safe runner alias target not met")
     if report.get("documented_review_packet_hold_count_after") != report.get("documented_review_packet_hold_count_before"):
         raise ValueError("v4_7_8 documented review packet hold count changed unexpectedly")
     aliases = set(report.get("script_consolidation", {}).get("safe_check_aliases", ()))
-    for alias in ("v3_18", "v3_19", "v3_20", "v3_21", "v3_22"):
+    if is_post_cleanup_policy:
+        if aliases:
+            raise ValueError(f"v4_7_8 deleted aliases unexpectedly exposed: {sorted(aliases)}")
+        deleted_aliases = set(report.get("script_consolidation", {}).get("deleted_check_aliases", ()))
+        for alias in DELETED_LEGACY_CHECK_ALIASES:
+            if alias not in deleted_aliases:
+                raise ValueError(f"v4_7_8 deleted alias not recorded: {alias}")
+        return
+    for alias in DELETED_LEGACY_CHECK_ALIASES:
         if alias not in aliases:
-            raise ValueError(f"v4_7_8 safe alias missing: {alias}")
-    held = report.get("script_consolidation", {}).get("held_legacy_entrypoints", {})
-    for alias in ("v3_16", "v3_17"):
-        if alias not in held:
-            raise ValueError(f"v4_7_8 held legacy entrypoint missing: {alias}")
+            raise ValueError(f"v4_7_8 historical safe alias missing: {alias}")

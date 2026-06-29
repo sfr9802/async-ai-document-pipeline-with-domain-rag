@@ -20,6 +20,10 @@ from app.capabilities.rag_orchestrator.agent_runtime import (
 )
 
 AGENTOPS_TRACE_SCHEMA_VERSION = "agentops_run_trace_v1"
+AGENTOPS_TRACE_SCHEMA_ID = (
+    "https://github.com/sfr9802/async-ai-document-pipeline-with-domain-rag/blob/main/"
+    "ai/app/capabilities/rag_orchestrator/agentops_runtime.py#agentops-trace-schema-v1"
+)
 AGENTOPS_RUN_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$")
 MAX_TRACE_EVIDENCE_REFS = 99
 DEFAULT_INDEXING_SCOPE = "nonprod_source_derived_read_only"
@@ -285,6 +289,192 @@ def build_agentops_tool_registry() -> tuple[AgentOpsToolSpec, ...]:
             mapped_runtime_layers=("report.json", "status.jsonl"),
         ),
     )
+
+
+def agentops_trace_schema() -> dict[str, Any]:
+    """Return the code-owned JSON Schema for persisted AgentOps run traces."""
+
+    tool_names = [spec.name for spec in build_agentops_tool_registry()]
+    source_families = [*SUPPORTED_SOURCE_FAMILIES, UNSUPPORTED_SOURCE_FAMILY_TRACE_VALUE]
+    namespaces = [*NONPROD_RETRIEVAL_NAMESPACES, *REPORT_NAMESPACES, UNSUPPORTED_NAMESPACE_TRACE_VALUE]
+    allowed_namespaces = [*NONPROD_RETRIEVAL_NAMESPACES, *REPORT_NAMESPACES]
+    failure_categories = list(TRACE_FAILURE_CATEGORIES)
+    runtime_tool_calls = list(TRACE_RUNTIME_TOOL_CALLS)
+
+    return {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "$id": AGENTOPS_TRACE_SCHEMA_ID,
+        "title": "AgentOps Run Trace",
+        "type": "object",
+        "required": [
+            "schema_version",
+            "run_id",
+            "query",
+            "request_context",
+            "selected_tools",
+            "tools_called",
+            "retrieval_namespace",
+            "indexing_scope",
+            "evidence_ids",
+            "answerability_label",
+            "answerability_label_source",
+            "relevance_label",
+            "relevance_label_source",
+            "policy_decision",
+            "diagnostic_only",
+            "retry_repair_fallback",
+            "failure_category",
+            "final_decision",
+            "report_artifact_path",
+        ],
+        "properties": {
+            "schema_version": {"const": AGENTOPS_TRACE_SCHEMA_VERSION},
+            "run_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 128,
+                "pattern": AGENTOPS_RUN_ID_RE.pattern,
+                "description": (
+                    "Safe trace run identifier; local paths, whitespace, and control characters are rejected before persistence."
+                ),
+            },
+            "query": {
+                "type": "string",
+                "pattern": "^query_ref:[0-9a-f]{16}$",
+                "description": "Opaque run-level query reference; raw prompts and content-derived prompt hashes are not persisted.",
+            },
+            "request_context": {
+                "type": "object",
+                "required": [
+                    "source_family",
+                    "namespace",
+                    "indexing_scope",
+                    "answer_format_requirement",
+                    "official_requested",
+                ],
+                "properties": {
+                    "source_family": {"enum": source_families},
+                    "namespace": {"enum": namespaces},
+                    "indexing_scope": {
+                        "enum": [*ALLOWED_INDEXING_SCOPES, UNSUPPORTED_INDEXING_SCOPE_TRACE_VALUE],
+                    },
+                    "answer_format_requirement": {
+                        "enum": [*ALLOWED_ANSWER_FORMAT_REQUIREMENTS, UNSUPPORTED_ANSWER_FORMAT_TRACE_VALUE],
+                    },
+                    "official_requested": {"type": "boolean"},
+                },
+                "additionalProperties": False,
+            },
+            "selected_tools": {
+                "type": "array",
+                "maxItems": len(tool_names),
+                "uniqueItems": True,
+                "description": (
+                    "Schema-known AgentOps tools selected for the trace; unsupported-tool fail-closed traces clear this list "
+                    "instead of persisting requested tool names."
+                ),
+                "items": {"enum": tool_names},
+            },
+            "tools_called": {
+                "type": "array",
+                "maxItems": MAX_TRACE_TOOL_CALLS,
+                "uniqueItems": True,
+                "items": {"enum": runtime_tool_calls},
+                "description": "Schema-known runtime tool call names; unknown tool names are not persisted in valid traces.",
+            },
+            "retrieval_namespace": {"enum": namespaces},
+            "indexing_scope": {"enum": [*ALLOWED_INDEXING_SCOPES, UNSUPPORTED_INDEXING_SCOPE_TRACE_VALUE]},
+            "evidence_ids": {
+                "type": "array",
+                "maxItems": MAX_TRACE_EVIDENCE_REFS,
+                "items": {
+                    "type": "string",
+                    "pattern": "^evidence_ref:[0-9]{2}$",
+                },
+                "description": (
+                    "Opaque EvidenceBundle references scoped to this trace; raw bundle/source atom ids and locators are not persisted."
+                ),
+            },
+            "answerability_label": {
+                "enum": [
+                    "diagnostic_answerable_from_bounds",
+                    "diagnostic_unanswerable_from_bounds",
+                ],
+            },
+            "answerability_label_source": {"const": "machine_policy_not_gold"},
+            "relevance_label": {"type": "string", "maxLength": 0},
+            "relevance_label_source": {"const": "not_evaluated_without_user_gold"},
+            "policy_decision": {"enum": ["allow_diagnostic", "fail_closed"]},
+            "diagnostic_only": {"const": True},
+            "retry_repair_fallback": {
+                "type": "object",
+                "required": [
+                    "max_retry_count",
+                    "retry_attempted",
+                    "retry_requires_new_allowed_signal",
+                    "repair_attempted",
+                    "fallback_decision",
+                    "diagnostic_only_on_ambiguous_answerability",
+                    "unbounded_retry_allowed",
+                    "failure_category",
+                ],
+                "properties": {
+                    "max_retry_count": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 1,
+                    },
+                    "retry_attempted": {"type": "boolean"},
+                    "retry_requires_new_allowed_signal": {"const": True},
+                    "repair_attempted": {"type": "boolean"},
+                    "fallback_decision": {"enum": ["not_needed", "fail_closed"]},
+                    "diagnostic_only_on_ambiguous_answerability": {"const": True},
+                    "unbounded_retry_allowed": {"const": False},
+                    "failure_category": {"enum": failure_categories},
+                },
+                "additionalProperties": False,
+            },
+            "failure_category": {"enum": failure_categories},
+            "final_decision": {
+                "enum": [
+                    "diagnostic_only_answer",
+                    "diagnostic_only_handoff",
+                    "fail_closed",
+                ],
+            },
+            "report_artifact_path": {
+                "const": DEFAULT_REPORT_ARTIFACT_PATH,
+                "description": (
+                    "Canonical portfolio report artifact path; local absolute paths, parent traversal, and ad-hoc report paths "
+                    "are not persisted."
+                ),
+            },
+        },
+        "allOf": [
+            {
+                "if": {
+                    "properties": {"policy_decision": {"const": "allow_diagnostic"}},
+                    "required": ["policy_decision"],
+                },
+                "then": {
+                    "properties": {
+                        "request_context": {
+                            "properties": {
+                                "source_family": {"enum": list(SUPPORTED_SOURCE_FAMILIES)},
+                                "namespace": {"enum": allowed_namespaces},
+                                "indexing_scope": {"const": DEFAULT_INDEXING_SCOPE},
+                                "answer_format_requirement": {"const": ALLOWED_ANSWER_FORMAT_REQUIREMENTS[0]},
+                                "official_requested": {"const": False},
+                            },
+                        },
+                        "retrieval_namespace": {"enum": allowed_namespaces},
+                        "indexing_scope": {"const": DEFAULT_INDEXING_SCOPE},
+                    },
+                },
+            },
+        ],
+        "additionalProperties": False,
+    }
 
 
 def _tool_specs_by_name() -> dict[str, AgentOpsToolSpec]:

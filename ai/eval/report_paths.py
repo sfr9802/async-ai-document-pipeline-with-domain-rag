@@ -8,7 +8,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 AI_ROOT = REPO_ROOT / "ai"
 
 # Active actual-RAG eval runs and latest pointers. This tree is generated and
-# ignored; public-facing claims should point to docs, not to committing these.
+# ignored; executable checks should resolve through the registry/runner instead
+# of depending on ad-hoc Markdown or JSON files as source-of-truth inputs.
 ACTUAL_RAG_REPORT_ROOT = REPO_ROOT / "reports" / "rag_eval"
 ACTUAL_RAG_RUN_REGISTRY = ACTUAL_RAG_REPORT_ROOT / "runs.jsonl"
 ACTUAL_RAG_LATEST_POINTER = ACTUAL_RAG_REPORT_ROOT / "latest.json"
@@ -19,12 +20,6 @@ LEGACY_RAG_INGESTION_REPORT_ROOT = ACTUAL_RAG_REPORT_ROOT / "rag-ingestion"
 LEGACY_RAG_INGESTION_RUNS_ROOT = LEGACY_RAG_INGESTION_REPORT_ROOT / "runs"
 LEGACY_RAG_INGESTION_STATUS_JSONL = LEGACY_RAG_INGESTION_REPORT_ROOT / "status.jsonl"
 LEGACY_RAG_INGESTION_ARCHIVE_MANIFEST = LEGACY_RAG_INGESTION_REPORT_ROOT / "archive_manifest.jsonl"
-
-# Human-facing ledgers. These are the canonical tracked summaries for portfolio
-# and repo hygiene state.
-RAG_INGESTION_PROGRESS_DOC = REPO_ROOT / "docs" / "rag-ingestion-progress.md"
-RAG_INGESTION_MEASUREMENTS_DOC = REPO_ROOT / "docs" / "rag-ingestion-measurements.md"
-RAG_INGESTION_TRIAGE_DOC = REPO_ROOT / "docs" / "rag-ingestion-triage.md"
 
 # Tracked root reports are intentionally limited to small public portfolio
 # artifacts. Machine RAG reports live under ACTUAL_RAG_REPORT_ROOT instead.
@@ -68,9 +63,9 @@ REPORT_NAMESPACES = (
     ),
     ReportNamespace(
         name="rag_ingestion_ledgers",
-        root=RAG_INGESTION_PROGRESS_DOC.parent,
-        git_policy="tracked human-facing ledgers",
-        role="append-only progress, measurements, and triage summaries",
+        root=LEGACY_RAG_INGESTION_REPORT_ROOT,
+        git_policy="ignored local handoff notes",
+        role="optional append-only progress, measurements, and triage notes; not execution source of truth",
     ),
 )
 

@@ -162,7 +162,7 @@ def test_v69_boundaries_and_protected_surfaces_stay_closed(report: dict[str, obj
     assert protected["protected_namespaces_touched"] == []
 
 
-def test_v69_single_primary_report_status_docs_and_hash_contract(
+def test_v69_single_primary_report_status_handoff_and_hash_contract(
     tmp_path: Path,
     v69_module,
     report: dict[str, object],
@@ -191,11 +191,94 @@ def test_v69_single_primary_report_status_docs_and_hash_contract(
     assert status_rows[-1]["human_owned_decisions_filled"] is False
     assert status_rows[-1]["official_metric"] is False
 
-    for doc_name in ("rag-ingestion-progress.md", "rag-ingestion-measurements.md", "rag-ingestion-triage.md"):
-        text = (tmp_path / "docs" / doc_name).read_text(encoding="utf-8")
-        assert RUN_KEY in text
-        assert "human-owned" in text
-        assert "no official/product/promotion/live-readiness claim" in text.lower()
+    assert not (tmp_path / "docs").exists()
+    handoff = json.loads(
+        (tmp_path / "reports/rag_eval/rag-ingestion/worker-handoff" / f"{RUN_KEY}.json").read_text(encoding="utf-8")
+    )
+    assert handoff["code_writes_local_docs"] is False
+    assert handoff["worker_authored_rolling_notes_expected"] is True
+    assert handoff["logical_run_key"] == RUN_KEY
+    assert RUN_KEY in handoff["fragments"]["progress"]
+    assert "human-owned" in handoff["fragments"]["progress"]
+    assert "no official/product/promotion/live-readiness claim" in handoff["fragments"]["triage"].lower()
+
+
+def test_rag_eval_write_v69_emits_worker_handoff_without_docs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    import ai.scripts.rag_eval as runner
+
+    calls: list[str] = []
+    report = {
+        "status": STATUS,
+        "current_resolves_to": RUN_KEY,
+        "artifact_paths": {"report_json": f"reports/rag_eval/rag-ingestion/runs/{RUN_KEY}/report.json"},
+    }
+
+    class FakeV69:
+        @staticmethod
+        def build_report(*, root: Path) -> dict[str, object]:
+            calls.append(f"build:{root}")
+            return dict(report)
+
+        @staticmethod
+        def check_report(checked: dict[str, object], *, root: Path) -> None:
+            calls.append(f"check:{checked['status']}:{root}")
+
+        @staticmethod
+        def write_report_bundle(root: Path, written: dict[str, object]) -> tuple[dict[str, object], dict[str, str]]:
+            calls.append(f"write:{root}")
+            return written, {"report_json_sha256": "fake-report-sha256"}
+
+        @staticmethod
+        def update_docs(root: Path, written: dict[str, object]) -> None:
+            calls.append(f"handoff:{root}")
+            handoff_root = root / "reports/rag_eval/rag-ingestion/worker-handoff"
+            handoff_root.mkdir(parents=True, exist_ok=True)
+            (handoff_root / f"{RUN_KEY}.json").write_text(
+                json.dumps(
+                    {
+                        "logical_run_key": RUN_KEY,
+                        "code_writes_local_docs": False,
+                        "worker_authored_rolling_notes_expected": True,
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+        @staticmethod
+        def append_status(
+            root: Path,
+            written: dict[str, object],
+            *,
+            artifact_hashes: dict[str, str],
+        ) -> None:
+            calls.append(f"status:{artifact_hashes['report_json_sha256']}:{root}")
+
+    monkeypatch.setattr(runner, "ROOT", tmp_path)
+    monkeypatch.setattr(runner, "v69", FakeV69)
+
+    assert runner.main([RUN_KEY, "--write"]) == 0
+
+    output = json.loads(capsys.readouterr().out)
+    assert output["run_key"] == RUN_KEY
+
+    assert not (tmp_path / "docs").exists()
+    handoff_path = tmp_path / "reports/rag_eval/rag-ingestion/worker-handoff" / f"{RUN_KEY}.json"
+    handoff = json.loads(handoff_path.read_text(encoding="utf-8"))
+    assert handoff["code_writes_local_docs"] is False
+    assert handoff["worker_authored_rolling_notes_expected"] is True
+    assert handoff["logical_run_key"] == RUN_KEY
+    assert calls == [
+        f"build:{tmp_path}",
+        f"check:{STATUS}:{tmp_path}",
+        f"write:{tmp_path}",
+        f"check:{STATUS}:{tmp_path}",
+        f"handoff:{tmp_path}",
+        f"status:fake-report-sha256:{tmp_path}",
+    ]
 
 
 def test_protected_namespace_git_status_is_clean_for_v69() -> None:

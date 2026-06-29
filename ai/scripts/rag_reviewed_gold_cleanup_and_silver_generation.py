@@ -1160,8 +1160,8 @@ def describe_inputs(context: Mapping[str, Any]) -> list[str]:
 
 def tuning_readiness_summary() -> dict[str, Any]:
     active_yaml = AI_WORKER_ROOT / "eval" / "experiments" / "active.yaml"
-    phase7_tune = AI_WORKER_ROOT / "scripts" / "phase7_human_gold_tune.py"
-    standard_command_found = phase7_tune.exists()
+    runner = AI_WORKER_ROOT / "eval" / "experiment_runner" / "main.py"
+    standard_command_found = runner.exists()
     active_tuning_sweep_allowed = False
     disabled_reason = "no active.yaml found"
     if active_yaml.exists():
@@ -1175,12 +1175,12 @@ def tuning_readiness_summary() -> dict[str, Any]:
         "status": "READY_FOR_DOCUMENTED_SILVER_ONLY_TUNING_STEP" if standard_command_found else "NO_STANDARD_COMMAND_FOUND",
         "expensive_tuning_run": False,
         "standard_command_found": standard_command_found,
-        "standard_command": "python scripts\\phase7_human_gold_tune.py --help" if standard_command_found else "",
+        "standard_command": "python -m ai.eval.experiment_runner.main --experiment actual-rag --dry-run" if standard_command_found else "",
         "active_tuning_sweep_allowed": active_tuning_sweep_allowed,
         "disabled_reason": disabled_reason,
         "recommended_next_step": (
-            "review the generated silver manifest, then create an explicit silver-only tuning config before running "
-            "`python scripts\\phase7_human_gold_tune.py`; evaluate only on frozen cleaned gold candidates after that."
+            "review the generated silver manifest, then route any follow-up tuning/eval through "
+            "`python -m ai.eval.experiment_runner.main` with an explicit config; do not revive Phase 7 source CLIs."
         ),
     }
 

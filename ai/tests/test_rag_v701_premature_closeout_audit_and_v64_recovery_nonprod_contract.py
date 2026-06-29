@@ -253,7 +253,7 @@ def test_v701_links_v64_recovery_and_preserves_diagnostic_boundaries(report: dic
     assert protected["production_index_namespace_clean"] is True
 
 
-def test_report_bundle_writes_one_primary_report_status_docs_and_plan(
+def test_report_bundle_writes_one_primary_report_status_and_worker_handoff(
     tmp_path: Path,
     v701_module,
     v64_report: dict[str, object],
@@ -290,20 +290,26 @@ def test_report_bundle_writes_one_primary_report_status_docs_and_plan(
     assert status_rows[-1]["historical_recovery_current_moved_to"] == V6_4_RUN_KEY
     assert status_rows[-1]["artifact_sha256"]["report_json_sha256"] == written["artifact_sha256"]["report_json_sha256"]
 
-    plan_text = (tmp_path / "docs/codex-goals/rag-v7-e2e-evaluation-plan.md").read_text(encoding="utf-8")
+    assert not (tmp_path / "docs").exists()
+    handoff = json.loads(
+        (tmp_path / "reports/rag_eval/rag-ingestion/worker-handoff" / f"{RUN_KEY}.json").read_text(encoding="utf-8")
+    )
+    assert handoff["code_writes_local_docs"] is False
+    assert handoff["worker_authored_rolling_notes_expected"] is True
+    assert handoff["logical_run_key"] == RUN_KEY
+    plan_text = handoff["plan_text"]
     assert "v7_0 is preserved as diagnostic audit evidence only" in plan_text
     assert V6_4_RUN_KEY in plan_text
     assert "v6_5_retrieval_metric_unlock_packet_nonprod" in plan_text
     assert "v6_9_answer_quality_gate_packet_nonprod" in plan_text
     assert "Do not claim v7 completion from v7_0" in plan_text
 
-    for doc_name in ("rag-ingestion-progress.md", "rag-ingestion-measurements.md", "rag-ingestion-triage.md"):
-        text = (tmp_path / "docs" / doc_name).read_text(encoding="utf-8")
-        assert RUN_KEY in text
-        assert "premature closeout marker" in text
-        assert f"live current resolves to `{V6_9_RUN_KEY}`" in text
-        assert f"Historical recovery movement from `{V7_0_RUN_KEY}` to `{V6_4_RUN_KEY}`" in text
-        assert "no official/product/promotion/live-readiness claim" in text.lower()
+    joined = "\n".join(handoff["fragments"].values())
+    assert RUN_KEY in joined
+    assert "premature closeout marker" in joined
+    assert f"live current resolves to `{V6_9_RUN_KEY}`" in joined
+    assert f"Historical recovery movement from `{V7_0_RUN_KEY}` to `{V6_4_RUN_KEY}`" in joined
+    assert "no official/product/promotion/live-readiness claim" in joined.lower()
 
 
 def test_no_raw_prompt_response_or_tool_to_rag_leakage(report: dict[str, object]) -> None:

@@ -63,7 +63,8 @@ capability is expected to use codes from the table when the failure
 is a known class; free-form codes from an underlying provider are
 preserved (prefixed by the capability name) without being blocked.
 
-See `docs/architecture.md` for the full table + example payloads.
+The constants in this module are the executable registry for the table;
+tests cover representative payloads.
 """
 
 from __future__ import annotations

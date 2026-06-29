@@ -34,7 +34,6 @@ from rag_pdf_gold_evidence_lineage_audit_v1 import (  # noqa: E402
     is_locator_text,
     parse_bbox,
 )
-from rag_pdf_gold_question_candidate_generation_v1 import content_nearby_paragraphs  # noqa: E402
 from rag_question_quality_gate_v1 import classify_question  # noqa: E402
 
 
@@ -84,6 +83,18 @@ def parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser.add_argument("--include-prior-review-rows", action="store_true", help="Deprecated no-op; prior rows are included by default.")
     parser.add_argument("--exclude-prior-review-rows", action="store_true")
     return parser.parse_args(argv)
+
+
+def content_nearby_paragraphs(row: Mapping[str, Any]) -> list[str]:
+    values: list[str] = []
+    for item in list_value(row.get("nearby_paragraphs")):
+        text = clean(item)
+        if not text:
+            continue
+        if " > p." in text and "bbox" in text:
+            continue
+        values.append(text)
+    return values
 
 
 def run_canary(

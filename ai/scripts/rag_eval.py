@@ -68,9 +68,6 @@ from ai.eval.report_paths import (
     LEGACY_RAG_INGESTION_ARCHIVE_MANIFEST,
     LEGACY_RAG_INGESTION_REPORT_ROOT,
     LEGACY_RAG_INGESTION_STATUS_JSONL,
-    RAG_INGESTION_MEASUREMENTS_DOC,
-    RAG_INGESTION_PROGRESS_DOC,
-    RAG_INGESTION_TRIAGE_DOC,
 )
 
 
@@ -79,9 +76,6 @@ SAFE_LEGACY_CHECK_ALIASES = dict(v478.SAFE_LEGACY_CHECK_ALIASES)
 REPORT_ROOT = LEGACY_RAG_INGESTION_REPORT_ROOT
 STATUS_JSONL = LEGACY_RAG_INGESTION_STATUS_JSONL
 ARCHIVE_MANIFEST = LEGACY_RAG_INGESTION_ARCHIVE_MANIFEST
-PROGRESS_DOC = RAG_INGESTION_PROGRESS_DOC
-MEASUREMENTS_DOC = RAG_INGESTION_MEASUREMENTS_DOC
-TRIAGE_DOC = RAG_INGESTION_TRIAGE_DOC
 README = ROOT / "README.md"
 EVAL_README = ROOT / "ai" / "eval" / "README.md"
 SCRIPTS_README = ROOT / "ai" / "scripts" / "README.md"
@@ -89,9 +83,6 @@ TEXT_INVENTORY_PATHS = (
     README,
     EVAL_README,
     SCRIPTS_README,
-    PROGRESS_DOC,
-    MEASUREMENTS_DOC,
-    TRIAGE_DOC,
 )
 
 
@@ -132,7 +123,6 @@ def repo_relative(path: Path) -> str:
 
 def inventory_text_couplings() -> dict[str, int]:
     files = list(TEXT_INVENTORY_PATHS)
-    files.extend((ROOT / "ai" / "scripts").glob("rag_v4_7*.py"))
     files.extend((ROOT / "ai" / "tests").glob("test_rag*_v4_7*.py"))
     long_path_literal_count = 0
     direct_report_path_dependency_count = 0
@@ -230,195 +220,6 @@ def write_archive_manifest() -> list[dict[str, Any]]:
     return records
 
 
-def _upsert_block(text: str, *, start_marker: str, end_marker: str, block: str, after_anchor: str | None = None) -> str:
-    wrapped = f"{start_marker}\n{block.rstrip()}\n{end_marker}"
-    pattern = re.compile(re.escape(start_marker) + r".*?" + re.escape(end_marker), re.S)
-    if pattern.search(text):
-        return pattern.sub(wrapped, text, count=1)
-    if after_anchor and after_anchor in text:
-        return text.replace(after_anchor, after_anchor + "\n\n" + wrapped, 1)
-    return wrapped + "\n" + text
-
-
-def update_progress_doc(report: Mapping[str, Any]) -> None:
-    metrics = report["evidence_repair_metrics"]
-    before = metrics["before"]
-    after = metrics["after"]
-    start = f"<!-- {v475.SHORT_RUN_ID}:progress-entry:start -->"
-    end = f"<!-- {v475.SHORT_RUN_ID}:progress-entry:end -->"
-    block = (
-        f"- {v475.SHORT_RUN_ID} is {v475.STATUS}. Artifact: `{v475.SHORT_REPORT_PATH}`. "
-        f"EvidenceBundle v2 replays the v4_7_4 PDF survivor 58 rows only: "
-        f"evidence_window_sufficient_proxy {before['evidence_window_sufficient_proxy_count']} -> "
-        f"{after['evidence_window_sufficient_proxy_count']}, weak_evidence_window "
-        f"{before['weak_evidence_window_count']} -> {after['weak_evidence_window_count']}, "
-        f"missing_neighbor_context {before['missing_neighbor_context_count']} -> "
-        f"{after['missing_neighbor_context_count']}, table_or_figure_structure_repaired "
-        f"{after['table_or_figure_structure_repaired_count']}, prior answer-ready regressions "
-        f"{after['regression_count_for_prior_answer_ready_rows']}. Artifact compaction uses the short run path, "
-        f"keeps the v4_7_4 long path as a resolver alias, records generated ignored artifacts in "
-        f"`{v475.ARCHIVE_MANIFEST_PATH}`, and skips physical cleanup until an external archive target is explicit. "
-        "This remains diagnostic-only: not official metric, not gold/qrels, not labels, not expected/supporting evidence "
-        "approval, not training data, not promotion evidence, not product-success evidence, and not live readiness."
-    )
-    text = PROGRESS_DOC.read_text(encoding="utf-8")
-    text = re.sub(r"Last updated: .*? KST\.", "Last updated: 2026-05-30 KST.", text, count=1)
-    anchor = (
-        "for behavior-changing runs or explicit forensic evidence requirements.\n"
-    )
-    text = _upsert_block(text, start_marker=start, end_marker=end, block=block, after_anchor=anchor)
-    text = re.sub(r"Overall status: `[^`]+`;", f"Overall status: `{v475.STATUS}`;", text, count=1)
-    PROGRESS_DOC.write_text(text, encoding="utf-8")
-
-
-def update_measurements_doc(report: Mapping[str, Any]) -> None:
-    metrics = report["evidence_repair_metrics"]
-    before = metrics["before"]
-    after = metrics["after"]
-    delta = metrics["delta"]
-    start = f"<!-- {v475.SHORT_RUN_ID}:measurements-entry:start -->"
-    end = f"<!-- {v475.SHORT_RUN_ID}:measurements-entry:end -->"
-    rows = "\n".join(
-        f"| {key} | {before[key]} | {after[key]} | {delta[key]} |"
-        for key in (
-            "evidence_window_sufficient_proxy_count",
-            "weak_evidence_window_count",
-            "missing_neighbor_context_count",
-            "answer_ready_evidence_bundle_count",
-            "fail_closed_before_llm_count",
-            "generated_response_count",
-            "parsed_final_answer_present_count",
-            "citation_rendered_count",
-            "claim_support_verifier_pass_count",
-            "claim_support_verifier_fail_count",
-            "unsupported_claim_risk_count",
-            "evidence_underuse_flag_count",
-            "non_korean_answer_flag_count",
-            "table_or_figure_structure_repaired_count",
-            "regression_count_for_prior_answer_ready_rows",
-        )
-    )
-    block = f"""### v4_7_5 PDF Evidence Repair And Eval Surface Compaction
-
-- Run key: `{v475.SHORT_RUN_ID}`
-- Primary artifact: `{v475.SHORT_REPORT_PATH}`
-- Interpretation: diagnostic proxy before/after over the v4_7_4 PDF survivor 58 rows only. No official metric, gold/qrels, expected answers, supporting evidence approval, labels, training data, promotion evidence, product-success evidence, or live readiness is opened.
-
-| Counter | Before v4_7_4 | After v4_7_5 | Delta |
-|---|---:|---:|---:|
-{rows}
-"""
-    text = MEASUREMENTS_DOC.read_text(encoding="utf-8")
-    text = _upsert_block(text, start_marker=start, end_marker=end, block=block)
-    text = text.replace(
-        f"- Primary artifact: `reports/rag_eval/rag-ingestion/quality/{v475.SOURCE_RUN_ID}/report.json`; row-level replay detail is embedded in `report.json` only.",
-        "- Resolver key: `v4_7_4`; legacy long-path alias remains supported by `ai/eval/rag_eval_registry.py`. Row-level replay detail is embedded in `report.json` only.",
-    )
-    MEASUREMENTS_DOC.write_text(text, encoding="utf-8")
-
-
-def update_triage_doc(report: Mapping[str, Any]) -> None:
-    metrics = report["evidence_repair_metrics"]
-    after_taxonomy = metrics["failure_taxonomy_after"]
-    start = f"<!-- {v475.SHORT_RUN_ID}:triage-entry:start -->"
-    end = f"<!-- {v475.SHORT_RUN_ID}:triage-entry:end -->"
-    block = f"""### v4_7_5 PDF Evidence Repair Failure Taxonomy And Cleanup Boundary
-
-- Run key: `{v475.SHORT_RUN_ID}`
-- Primary artifact: `{v475.SHORT_REPORT_PATH}`
-- Evidence boundary: SourceAtom/EvidenceBundle remains evidence truth; SearchView/vector payload remains candidate-only. Query-time raw PDF parsing, broad SourceAtom scans, hidden target/gold locators, expected/supporting gold text, and source-file title shortcuts remain disabled.
-- Failure taxonomy after repair: RIGHT_PAGE_WEAK_WINDOW {after_taxonomy['RIGHT_PAGE_WEAK_WINDOW']}; CONTEXT_NEIGHBOR_MISSING {after_taxonomy['CONTEXT_NEIGHBOR_MISSING']}; TABLE_OR_FIGURE_STRUCTURE_LOST {after_taxonomy['TABLE_OR_FIGURE_STRUCTURE_LOST']}; UNSUPPORTED_CLAIM_RISK {after_taxonomy['UNSUPPORTED_CLAIM_RISK']}; ANSWER_READY {after_taxonomy['ANSWER_READY']}; CONTRACT_FAIL_CLOSED {after_taxonomy['CONTRACT_FAIL_CLOSED']}.
-- Cleanup boundary: generated ignored artifacts are inventoried in `{v475.ARCHIVE_MANIFEST_PATH}` with hashes and classifications. Physical cleanup is skipped because the external archive target was not revalidated in this slice. Protected namespaces, raw user CSV/uploaded review evidence, source manifests, and current-profile v4_7_2/v4_7_3/v4_7_4/v4_7_5 evidence remain preserved.
-- XLSX remains parked because v4_7_3 passed XLSX count is 0. This is not official metric, product-success evidence, promotion evidence, FT-A execution, fine-tuning, training data, or live DB/index/cache readiness.
-"""
-    text = TRIAGE_DOC.read_text(encoding="utf-8")
-    text = _upsert_block(text, start_marker=start, end_marker=end, block=block)
-    TRIAGE_DOC.write_text(text, encoding="utf-8")
-
-
-def update_readme(report: Mapping[str, Any]) -> None:
-    metrics = report["evidence_repair_metrics"]
-    before = metrics["before"]
-    after = metrics["after"]
-    snapshot = f"""## Current RAG Diagnostic Status
-
-- Current RAG status: `{v475.STATUS}`.
-- Phase: v4_7 remains pre-official. `{v475.SHORT_RUN_ID}` repairs the v4_7_4 PDF survivor EvidenceBundle window diagnostics at `{v475.SHORT_REPORT_PATH}`; XLSX remains parked because v4_7_3 passed XLSX count is 0.
-- v4_7_2 supersedes the abstract v4_7_1 Korean review packet with source-grounded Korean query candidates; hydrated rows 204, PDF 100, XLSX 104, and non-empty `질의문` 204. v4_7_3 applies the user-reviewed Korean query candidate CSV with `미검수=통과`; v4_7_4 replays only the 58 user-passed PDF survivor candidates.
-- EvidenceBundle v2 counters: PDF survivor 58, evidence_window_sufficient_proxy {before['evidence_window_sufficient_proxy_count']} -> {after['evidence_window_sufficient_proxy_count']}, weak_evidence_window {before['weak_evidence_window_count']} -> {after['weak_evidence_window_count']}, missing_neighbor_context {before['missing_neighbor_context_count']} -> {after['missing_neighbor_context_count']}, table_or_figure_structure_repaired {after['table_or_figure_structure_repaired_count']}, prior answer-ready regressions {after['regression_count_for_prior_answer_ready_rows']}.
-- Eval surface compaction: current run output uses the short `runs/v4_7_5/report.json` path and `ai/scripts/rag_eval.py`; legacy v4_7_4 long path remains a resolver alias for compatibility.
-- Rolling evidence docs: `docs/rag-ingestion-progress.md`, `docs/rag-ingestion-measurements.md`, and `docs/rag-ingestion-triage.md` remain the canonical human-readable status ledgers; this replay is not production promotion evidence.
-- Hard boundary: not official metric, not gold/qrels, not relevance/answerability labels, not expected answer/evidence approval, not product-success evidence, not promotion evidence, not FT-A execution, not fine-tuning, not training data, and not live DB/index/cache readiness. Locked flags remain `official_metric=false`, `official_metric_input_rows=0`, `promotion_evidence=false`, `product_success_evidence_allowed=false`, `ft_a_execution=false`, `fine_tuning=false`, `fine_tuning_executed=false`, and `live_db_index_cache_readiness=false`.
-"""
-    text = README.read_text(encoding="utf-8")
-    text = re.sub(
-        r"## Current RAG Diagnostic Status\n.*?(?=\n## 전체 구조)",
-        snapshot.rstrip() + "\n\n",
-        text,
-        count=1,
-        flags=re.S,
-    )
-    if "python -X utf8 -m py_compile ai\\scripts\\rag_eval.py" not in text:
-        text = text.replace(
-            "python -X utf8 -m py_compile ai\\scripts\\rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod.py\n",
-            "python -X utf8 -m py_compile ai\\scripts\\rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod.py\n"
-            "python -X utf8 -m py_compile ai\\scripts\\rag_eval.py\n",
-            1,
-        )
-    if "python -X utf8 ai\\scripts\\rag_eval.py v4_7_5 --check" not in text:
-        text = text.replace(
-            "python -X utf8 ai\\scripts\\rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod.py --check\n",
-            "python -X utf8 ai\\scripts\\rag_v4_7_4_pdf_survivor_retrieval_evidence_answer_quality_replay_nonprod.py --check\n"
-            "python -X utf8 ai\\scripts\\rag_eval.py v4_7_5 --check\n",
-            1,
-        )
-    README.write_text(text, encoding="utf-8")
-
-
-def update_eval_readme(report: Mapping[str, Any]) -> None:
-    metrics = report["evidence_repair_metrics"]
-    before = metrics["before"]
-    after = metrics["after"]
-    text = EVAL_README.read_text(encoding="utf-8")
-    text = re.sub(r"- Current RAG status: `[^`]+`", f"- Current RAG status: `{v475.STATUS}`", text, count=1)
-    legacy_v474 = (
-        "v4_7_4 replays only the 58 user-passed PDF survivor candidates. It separates file-identity proxy, page/block locator proxy, "
-        "EvidenceBundle sufficiency proxy, local-LLM answer replay, citation support proxy, and context-understanding failure buckets. "
-        "Current counters include evidence_window_sufficient_proxy 35, weak_evidence_window 23, and generated_response_count 33."
-    )
-    replacement = (
-        legacy_v474
-        + "\n\n"
-        f"v4_7_5 (`{v475.SHORT_RUN_ID}`) repairs the v4_7_4 PDF survivor EvidenceBundle diagnostics at "
-        f"`{v475.SHORT_REPORT_PATH}`. It keeps the PDF survivor scope at 58 rows and XLSX at 0, while moving "
-        f"evidence_window_sufficient_proxy {before['evidence_window_sufficient_proxy_count']} -> "
-        f"{after['evidence_window_sufficient_proxy_count']}, weak_evidence_window {before['weak_evidence_window_count']} -> "
-        f"{after['weak_evidence_window_count']}, and missing_neighbor_context {before['missing_neighbor_context_count']} -> "
-        f"{after['missing_neighbor_context_count']}. The run is diagnostic-only and does not open official metric, "
-        "gold/qrels, labels, training data, promotion evidence, product-success evidence, or live readiness."
-    )
-    if "v4_7_5 (`" not in text:
-        text = text.replace(
-            "v4_7_4 replays only the 58 user-passed PDF survivor candidates. It separates file-identity proxy, page/block locator proxy, EvidenceBundle sufficiency proxy, local-LLM answer replay, citation support proxy, and context-understanding failure buckets. Current counters include evidence_window_sufficient_proxy 35, weak_evidence_window 23, and generated_response_count 33.",
-            replacement,
-            1,
-        )
-    elif legacy_v474 not in text:
-        text = text.replace("v4_7_5 (`", legacy_v474 + "\n\nv4_7_5 (`", 1)
-    EVAL_README.write_text(text, encoding="utf-8")
-
-
-def update_scripts_readme() -> None:
-    text = SCRIPTS_README.read_text(encoding="utf-8")
-    row = (
-        "| `rag_eval.py` | Stable short-key dispatcher for current RAG diagnostic checks and writes; "
-        f"`{v475.SHORT_RUN_ID}` writes `{v475.SHORT_REPORT_PATH}` while legacy long paths stay resolver aliases. |"
-    )
-    if row not in text:
-        text = text.replace("| Script | Role |\n|---|---|\n", "| Script | Role |\n|---|---|\n" + row + "\n", 1)
-    SCRIPTS_README.write_text(text, encoding="utf-8")
-
-
 def update_status(report: Mapping[str, Any]) -> None:
     report_path = ROOT / report["artifact_paths"]["report_json"]
     event = {
@@ -478,19 +279,6 @@ def write_v475() -> dict[str, Any]:
     before_inventory = inventory_text_couplings()
     archive_records = write_archive_manifest()
     source_report = registry.load_report("v4_7_4", root=ROOT)
-    provisional = v475.build_report_from_v474_report(
-        source_report=source_report,
-        inventory_before=before_inventory,
-        inventory_after=before_inventory,
-        obsolete_artifact_inventory_count=sum(1 for row in archive_records if row["classification"] == "external_archive_candidate"),
-        archive_manifest_path=v475.ARCHIVE_MANIFEST_PATH,
-    )
-    update_progress_doc(provisional)
-    update_measurements_doc(provisional)
-    update_triage_doc(provisional)
-    update_readme(provisional)
-    update_eval_readme(provisional)
-    update_scripts_readme()
     after_inventory = inventory_text_couplings()
     report = v475.build_report_from_v474_report(
         source_report=source_report,
@@ -944,10 +732,10 @@ def build_parser() -> argparse.ArgumentParser:
         "run_key",
         nargs="?",
         default=DEFAULT_RUN_KEY,
-        help="logical key such as v6_9_1_retrieval_smoke_pre_review_packet_nonprod, v6_9_answer_quality_gate_packet_nonprod, v6_8_metric_gated_retrieval_quality_engineering_nonprod, v6_7_agentic_retry_fail_closed_policy_nonprod, v6_6_structured_tool_operation_taxonomy_nonprod, v6_5_1_gold29_actual_response_smoke_nonprod, v6_5_retrieval_metric_unlock_packet_nonprod, v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod, v6_4_e2e_coverage_and_failure_taxonomy_nonprod, v7_0_e2e_eval_architecture_closeout_nonprod, v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report, v6_2_source_derived_materialization_scaleout_and_denominator_reality_check, v6_1_true_rag_corpus_expansion_and_metric_split_hardening, v6_0_agentic_true_rag_and_tool_loop_rewrite, v6_0_true_rag_retrieval_rewrite, v5_8_retrieval_metric_evaluation_framework, v5_7_2_live_retrieval_denominator_and_row_expansion, v5_7_1_retrieval_metric_integrity_audit, v5_7_vector_llm_candidate_routing, v5_6_full_packet_route_retrieval_comparison, v5_6_refactor_comparison, v5_6_3, v5_6_2, v5_6, v5_5, v5_4, v5_3, v5_2, v5_1, v5_0, v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, v3_20, v3_22, current",
+        help="logical key such as v6_9_1_retrieval_smoke_pre_review_packet_nonprod, v6_9_answer_quality_gate_packet_nonprod, v6_8_metric_gated_retrieval_quality_engineering_nonprod, v6_7_agentic_retry_fail_closed_policy_nonprod, v6_6_structured_tool_operation_taxonomy_nonprod, v6_5_1_gold29_actual_response_smoke_nonprod, v6_5_retrieval_metric_unlock_packet_nonprod, v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod, v6_4_e2e_coverage_and_failure_taxonomy_nonprod, v7_0_e2e_eval_architecture_closeout_nonprod, v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report, v6_2_source_derived_materialization_scaleout_and_denominator_reality_check, v6_1_true_rag_corpus_expansion_and_metric_split_hardening, v6_0_agentic_true_rag_and_tool_loop_rewrite, v6_0_true_rag_retrieval_rewrite, v5_8_retrieval_metric_evaluation_framework, v5_7_2_live_retrieval_denominator_and_row_expansion, v5_7_1_retrieval_metric_integrity_audit, v5_7_vector_llm_candidate_routing, v5_6_full_packet_route_retrieval_comparison, v5_6_refactor_comparison, v5_6_3, v5_6_2, v5_6, v5_5, v5_4, v5_3, v5_2, v5_1, v5_0, v4_7_18, v4_7_17, v4_7_16, v4_7_15, v4_7_14, v4_7_13, v4_7_12, v4_7_11, v4_7_10, v4_7_9, v4_7_8, v4_7_7, v4_7_6, v4_7_5, current. Deleted v3 script aliases are intentionally unsupported.",
     )
     parser.add_argument("--check", action="store_true", help="validate an existing report")
-    parser.add_argument("--write", action="store_true", help="write the selected diagnostic report and sync docs/status")
+    parser.add_argument("--write", action="store_true", help="write the selected diagnostic report and status")
     return parser
 
 
@@ -990,7 +778,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             answer_packet_sha256 = v4711.write_answer_review_packet(ROOT, report)
             write_json(ROOT / v4711.SHORT_REPORT_PATH, report)
             v4711.check_report(report)
-            v4711.update_docs(ROOT, report)
             v4711.append_status(
                 ROOT,
                 report,
@@ -1001,222 +788,189 @@ def main(argv: Sequence[str] | None = None) -> int:
             report = v4712.build_report(root=ROOT, execute=True, sync_surfaces=True)
             report, artifact_hashes = v4712.write_report_bundle(ROOT, report)
             v4712.check_report(report)
-            v4712.update_docs(ROOT, report)
             v4712.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v4_7_13":
             report = v4713.build_report(root=ROOT, execute=True, sync_surfaces=True)
             report, artifact_hashes = v4713.write_report_bundle(ROOT, report)
             v4713.check_report(report)
-            v4713.update_docs(ROOT, report)
             v4713.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v4_7_14":
             report = v4714.build_report(root=ROOT)
             report, artifact_hashes = v4714.write_report_bundle(ROOT, report)
             v4714.check_report(report)
-            v4714.update_docs(ROOT, report)
             v4714.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v4_7_15":
             report = v4715.build_report(root=ROOT)
             report, artifact_hashes = v4715.write_report_bundle(ROOT, report)
             v4715.check_report(report)
-            v4715.update_docs(ROOT, report)
             v4715.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v4_7_16":
             report = v4716.build_report(root=ROOT)
             report, artifact_hashes = v4716.write_report_bundle(ROOT, report)
             v4716.check_report(report)
-            v4716.update_docs(ROOT, report)
             v4716.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v4_7_17":
             report = v4717.build_report(root=ROOT, source_report=check_run("v4_7_16"))
             report, artifact_hashes = v4717.write_report_bundle(ROOT, report)
             v4717.check_report(report)
-            v4717.update_docs(ROOT, report)
             v4717.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v4_7_18":
             report = v4718.build_report(root=ROOT, source_report=check_run("v4_7_17"))
             report, artifact_hashes = v4718.write_report_bundle(ROOT, report)
             v4718.check_report(report)
-            v4718.update_docs(ROOT, report)
             v4718.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_0":
             report = v500.build_report(root=ROOT, source_report=check_run("v4_7_18"))
             report, artifact_hashes = v500.write_report_bundle(ROOT, report)
             v500.check_report(report)
-            v500.update_docs(ROOT, report)
             v500.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_1":
             report = v510.build_report(root=ROOT, source_report=check_run("v5_0"))
             report, artifact_hashes = v510.write_report_bundle(ROOT, report)
             v510.check_report(report)
-            v510.update_docs(ROOT, report)
             v510.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_2":
             report = v520.build_report(root=ROOT, source_report=check_run("v5_1"))
             report, artifact_hashes = v520.write_report_bundle(ROOT, report)
             v520.check_report(report)
-            v520.update_docs(ROOT, report)
             v520.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_3":
             report = v530.build_report(root=ROOT, source_report=check_run("v5_2"))
             v530.check_report(report)
             report, artifact_hashes = v530.write_report_bundle(ROOT, report)
             v530.check_report(report)
-            v530.update_docs(ROOT, report)
             v530.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_4":
             report = v540.build_report(root=ROOT, source_report=check_run("v5_3"))
             v540.check_report(report)
             report, artifact_hashes = v540.write_report_bundle(ROOT, report)
             v540.check_report(report)
-            v540.update_docs(ROOT, report)
             v540.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_5":
             report = v550.build_report(root=ROOT, source_report=check_run("v5_4"))
             v550.check_report(report)
             report, artifact_hashes = v550.write_report_bundle(ROOT, report)
             v550.check_report(report, root=ROOT)
-            v550.update_docs(ROOT, report)
             v550.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_6":
             report = v560.build_report(root=ROOT, source_report=check_run("v5_5"), execute=True)
             v560.check_report(report)
             report, artifact_hashes = v560.write_report_bundle(ROOT, report)
             v560.check_report(report, root=ROOT)
-            v560.update_docs(ROOT, report)
             v560.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_6_2":
             report = v562.build_report(root=ROOT, source_report=check_run("v5_5"), execute=True)
             v562.check_report(report)
             report, artifact_hashes = v562.write_report_bundle(ROOT, report)
             v562.check_report(report, root=ROOT)
-            v562.update_docs(ROOT, report)
             v562.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_6_3":
             report = v563.build_report(root=ROOT, source_report=check_run("v5_5"), execute=True)
             v563.check_report(report)
             report, artifact_hashes = v563.write_report_bundle(ROOT, report)
             v563.check_report(report, root=ROOT)
-            v563.update_docs(ROOT, report)
             v563.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_6_refactor_comparison":
             report = v56compare.build_report(root=ROOT)
             v56compare.check_report(report)
             report, artifact_hashes = v56compare.write_report_bundle(ROOT, report)
             v56compare.check_report(report, root=ROOT)
-            v56compare.update_docs(ROOT, report)
             v56compare.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_6_full_packet_route_retrieval_comparison":
             report = v56compare.build_full_packet_report(root=ROOT)
             v56compare.check_full_packet_report(report)
             report, artifact_hashes = v56compare.write_full_packet_report_bundle(ROOT, report)
             v56compare.check_full_packet_report(report, root=ROOT)
-            v56compare.update_full_packet_docs(ROOT, report)
             v56compare.append_full_packet_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_7_vector_llm_candidate_routing":
             report = v57.build_report(root=ROOT)
             v57.check_report(report)
             report, artifact_hashes = v57.write_report_bundle(ROOT, report)
             v57.check_report(report, root=ROOT)
-            v57.update_docs(ROOT, report)
             v57.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_7_1_retrieval_metric_integrity_audit":
             report = v571.build_report(root=ROOT)
             v571.check_report(report)
             report, artifact_hashes = v571.write_report_bundle(ROOT, report)
             v571.check_report(report, root=ROOT)
-            v571.update_docs(ROOT, report)
             v571.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_7_2_live_retrieval_denominator_and_row_expansion":
             report = v572.build_report(root=ROOT)
             v572.check_report(report)
             report, artifact_hashes = v572.write_report_bundle(ROOT, report)
             v572.check_report(report, root=ROOT)
-            v572.update_docs(ROOT, report)
             v572.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v5_8_retrieval_metric_evaluation_framework":
             report = v58.build_report(root=ROOT)
             v58.check_report(report)
             report, artifact_hashes = v58.write_report_bundle(ROOT, report)
             v58.check_report(report, root=ROOT)
-            v58.update_docs(ROOT, report)
             v58.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v6_0_true_rag_retrieval_rewrite":
             report = v60.build_report(root=ROOT)
             v60.check_report(report)
             report, artifact_hashes = v60.write_report_bundle(ROOT, report)
             v60.check_report(report, root=ROOT)
-            v60.update_docs(ROOT, report)
             v60.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v6_0_agentic_true_rag_and_tool_loop_rewrite":
             report = v60a.build_report(root=ROOT)
             v60a.check_report(report, root=ROOT)
             report, artifact_hashes = v60a.write_report_bundle(ROOT, report)
             v60a.check_report(report, root=ROOT)
-            v60a.update_docs(ROOT, report)
             v60a.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v6_1_true_rag_corpus_expansion_and_metric_split_hardening":
             report = v61.build_report(root=ROOT)
             v61.check_report(report, root=ROOT)
             report, artifact_hashes = v61.write_report_bundle(ROOT, report)
             v61.check_report(report, root=ROOT)
-            v61.update_docs(ROOT, report)
             v61.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v6_2_source_derived_materialization_scaleout_and_denominator_reality_check":
             report = v62.build_report(root=ROOT)
             v62.check_report(report, root=ROOT)
             report, artifact_hashes = v62.write_report_bundle(ROOT, report)
             v62.check_report(report, root=ROOT)
-            v62.update_docs(ROOT, report)
             v62.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report":
             report = v63.build_report(root=ROOT)
             v63.check_report(report, root=ROOT)
             report, artifact_hashes = v63.write_report_bundle(ROOT, report)
             v63.check_report(report, root=ROOT)
-            v63.update_docs(ROOT, report)
             v63.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v6_4_e2e_coverage_and_failure_taxonomy_nonprod":
             report = v64.build_report(root=ROOT)
             v64.check_report(report, root=ROOT)
             report, artifact_hashes = v64.write_report_bundle(ROOT, report)
             v64.check_report(report, root=ROOT)
-            v64.update_docs(ROOT, report)
             v64.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v6_5_retrieval_metric_unlock_packet_nonprod":
             report = v65.build_report(root=ROOT)
             v65.check_report(report, root=ROOT)
             report, artifact_hashes = v65.write_report_bundle(ROOT, report)
             v65.check_report(report, root=ROOT)
-            v65.update_docs(ROOT, report)
             v65.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v6_5_1_gold29_actual_response_smoke_nonprod":
             report = v651.build_report(root=ROOT)
             v651.check_report(report, root=ROOT)
             report, artifact_hashes = v651.write_report_bundle(ROOT, report)
             v651.check_report(report, root=ROOT)
-            v651.update_docs(ROOT, report)
             v651.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v6_6_structured_tool_operation_taxonomy_nonprod":
             report = v66.build_report(root=ROOT)
             v66.check_report(report, root=ROOT)
             report, artifact_hashes = v66.write_report_bundle(ROOT, report)
             v66.check_report(report, root=ROOT)
-            v66.update_docs(ROOT, report)
             v66.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v6_7_agentic_retry_fail_closed_policy_nonprod":
             report = v67.build_report(root=ROOT)
             v67.check_report(report, root=ROOT)
             report, artifact_hashes = v67.write_report_bundle(ROOT, report)
             v67.check_report(report, root=ROOT)
-            v67.update_docs(ROOT, report)
             v67.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v6_8_metric_gated_retrieval_quality_engineering_nonprod":
             report = v68.build_report(root=ROOT)
             v68.check_report(report, root=ROOT)
             report, artifact_hashes = v68.write_report_bundle(ROOT, report)
             v68.check_report(report, root=ROOT)
-            v68.update_docs(ROOT, report)
             v68.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v6_9_answer_quality_gate_packet_nonprod":
             report = v69.build_report(root=ROOT)
@@ -1230,7 +984,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             v691.check_report(report, root=ROOT)
             report, artifact_hashes = v691.write_report_bundle(ROOT, report)
             v691.check_report(report, root=ROOT)
-            v691.update_docs(ROOT, report)
             v691.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         elif run_key == "v7_0_e2e_eval_architecture_closeout_nonprod":
             report = v70.build_report(root=ROOT, source_report=check_run("v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report"))
@@ -1255,7 +1008,6 @@ def main(argv: Sequence[str] | None = None) -> int:
             nec2026.check_report(report)
             report, artifact_hashes = nec2026.write_report_bundle(ROOT, report)
             nec2026.check_report(report)
-            nec2026.update_docs(ROOT, report)
             nec2026.append_status(ROOT, report, artifact_hashes=artifact_hashes)
         else:
             raise SystemExit("--write is currently supported only for v4_7_5, v4_7_6, v4_7_7, v4_7_8, v4_7_9, v4_7_10, v4_7_11, v4_7_12, v4_7_13, v4_7_14, v4_7_15, v4_7_16, v4_7_17, v4_7_18, v5_0, v5_1, v5_2, v5_3, v5_4, v5_5, v5_6, v5_6_2, v5_6_3, v5_6_refactor_comparison, v5_6_full_packet_route_retrieval_comparison, v5_7_vector_llm_candidate_routing, v5_7_1_retrieval_metric_integrity_audit, v5_7_2_live_retrieval_denominator_and_row_expansion, v5_8_retrieval_metric_evaluation_framework, v6_0_true_rag_retrieval_rewrite, v6_0_agentic_true_rag_and_tool_loop_rewrite, v6_1_true_rag_corpus_expansion_and_metric_split_hardening, v6_2_source_derived_materialization_scaleout_and_denominator_reality_check, v6_3_e2e_bge_m3_faiss_agentic_rag_smoke_single_report, v6_4_e2e_coverage_and_failure_taxonomy_nonprod, v6_5_retrieval_metric_unlock_packet_nonprod, v6_5_1_gold29_actual_response_smoke_nonprod, v6_6_structured_tool_operation_taxonomy_nonprod, v6_7_agentic_retry_fail_closed_policy_nonprod, v6_8_metric_gated_retrieval_quality_engineering_nonprod, v6_9_answer_quality_gate_packet_nonprod, v6_9_1_retrieval_smoke_pre_review_packet_nonprod, v7_0_e2e_eval_architecture_closeout_nonprod, v7_0_1_premature_closeout_audit_and_v6_4_recovery_nonprod, and nec_2026_local_election_xlsx")

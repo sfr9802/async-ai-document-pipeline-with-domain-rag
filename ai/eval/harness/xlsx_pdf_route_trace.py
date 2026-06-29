@@ -506,14 +506,14 @@ def base_payload(
         "protected_artifact_diff": protected,
         "commands": {
             "route_trace": (
-                "python scripts\\rag_xlsx_pdf_route_trace_diagnostic.py "
-                f"--date {config.date} --max-xlsx-queries {config.max_xlsx_queries} "
-                f"--max-pdf-queries {config.max_pdf_queries}"
+                "direct legacy wrapper removed; call "
+                "eval.harness.xlsx_pdf_route_trace.build_route_trace_report "
+                "from a focused backend or add an experiment_runner backend mode"
             ),
             "agentic_loop": (
-                "python scripts\\rag_xlsx_pdf_agentic_route_loop_diagnostic.py "
-                f"--date {config.date} --max-xlsx-queries {config.max_xlsx_queries} "
-                f"--max-pdf-queries {config.max_pdf_queries} --max-retries {config.max_retries}"
+                "direct legacy wrapper removed; call "
+                "eval.harness.xlsx_pdf_route_trace.build_agentic_loop_report "
+                "from a focused backend or add an experiment_runner backend mode"
             ),
         },
         "conservative_assumptions": [

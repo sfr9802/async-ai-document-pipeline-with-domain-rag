@@ -36,7 +36,7 @@ REQUIRED_CURRENT_PROFILE_SENTINELS = frozenset(
         "ai/tests/test_rag_v68_metric_gated_retrieval_quality_engineering_nonprod_contract.py::test_v68_schema_current_and_rollback",
         "ai/tests/test_rag_v68_metric_gated_retrieval_quality_engineering_nonprod_contract.py::test_v68_single_primary_report_status_docs_and_hash_contract",
         "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_schema_current_and_rollback",
-        "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_single_primary_report_status_docs_and_hash_contract",
+        "ai/tests/test_rag_v69_answer_quality_gate_packet_nonprod_contract.py::test_v69_single_primary_report_status_handoff_and_hash_contract",
         "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_v70_registers_explicitly_and_v64_recovery_is_current",
         "ai/tests/test_rag_v70_e2e_eval_architecture_closeout_nonprod_contract.py::test_required_fields_and_protected_surfaces_stay_closed",
         "ai/tests/test_rag_v701_premature_closeout_audit_and_v64_recovery_nonprod_contract.py::test_v701_registers_explicitly_and_preserves_live_current_v69",
@@ -104,8 +104,8 @@ def test_current_profile_excludes_missing_artifact_noise_from_default_current_lo
     historical = "ai/tests/test_rag_answer_recovery_bridge.py::test_diagnostic_harness_emits_reports_and_trace"
     optional = "ai/tests/test_eval_harness.py::TestCommittedSampleDatasets::test_rag_sample_parses"
     stale_broad_historical = (
-        "ai/tests/test_rag_answer_citation_silver_manifest_v1.py::"
-        "test_v4_6_10_external_holdout_manifest_gate_replay_blocks_without_manifest_policy_and_holdout"
+        "ai/tests/test_rag_canonical_artifact_audit_v1.py::"
+        "test_canonical_artifacts_have_expected_schema_and_boundaries"
     )
 
     assert not rag_conftest.is_rag_current_required_nodeid(historical)
@@ -129,9 +129,6 @@ def test_ai_tests_directory_classifies_current_and_historical_profile_files() ->
     assert {
         "ai/tests/test_rag_eval_v475_contract.py",
         "ai/tests/test_rag_eval_v476_cleanup_contract.py",
-        "ai/tests/test_rag_eval_v477_archive_aware_short_key_contract.py",
-        "ai/tests/test_rag_diagnostic_status_sync.py",
-        "ai/tests/test_rag_answer_citation_silver_manifest_v1.py",
         "ai/tests/test_fastapi_phase1_diagnostic_rag_route_v1.py",
         "ai/tests/test_rag_v61_true_rag_corpus_expansion_and_metric_split_hardening_contract.py",
     } <= rag_conftest.NON_CURRENT_RAG_TEST_FILES
@@ -162,7 +159,7 @@ def test_rag_current_collect_only_matches_exact_nodeid_allowlist() -> None:
     }
 
     assert collected == rag_conftest.CURRENT_RAG_TEST_NODEIDS
-    assert "test_rag_answer_citation_silver_manifest_v1.py" not in result.stdout
+    assert "test_rag_canonical_artifact_audit_v1.py" not in result.stdout
 
 
 def test_current_profile_accepts_collected_prefixes_and_windows_nodeids() -> None:

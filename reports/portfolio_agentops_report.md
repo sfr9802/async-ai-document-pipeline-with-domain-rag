@@ -36,7 +36,7 @@ Existing repo foundations:
 | Deterministic runtime loop | `ai/app/capabilities/rag_orchestrator/agent_runtime.py` |
 | L0-L8 tool specs | `ai/app/capabilities/rag_orchestrator/tool_registry.py` |
 | Portfolio AgentOps adapter | `ai/app/capabilities/rag_orchestrator/agentops_runtime.py` |
-| Evaluation/report governance | `ai/eval/rag_eval_registry.py`, `ai/scripts/rag_eval.py`, `docs/rag-ingestion-*.md` |
+| Evaluation/report governance | `ai/eval/rag_eval_registry.py`, `ai/scripts/rag_eval.py`; worker-authored local handoff notes stay outside the public code contract |
 
 ## Portfolio Snapshot
 
@@ -136,8 +136,9 @@ version names as the main reader-facing message.
 
 ## Trace Schema
 
-Schema: `docs/agentops_trace_schema.json`; its JSON Schema `$id` points to
-the same tracked docs path instead of an untracked `/schemas/...` location.
+Schema: `ai/app/capabilities/rag_orchestrator/agentops_runtime.py` via
+`agentops_trace_schema()`; its JSON Schema `$id` points to the code-owned
+contract instead of a local handoff document.
 
 Sample trace: `reports/agentops_sample_trace.json`
 
@@ -221,8 +222,8 @@ Current verification run:
 |---|---|
 | `python -X utf8 -m pytest ai/tests/test_agentops_portfolio_runtime_contract.py -q` | 28 passed, 1 warning |
 | `python -X utf8 -m py_compile ai/app/capabilities/rag_orchestrator/agentops_runtime.py` | passed |
-| `python -X utf8 -m json.tool docs/agentops_trace_schema.json` and `python -X utf8 -m json.tool reports/agentops_sample_trace.json` | passed |
-| success and fail-closed trace drift guards against `docs/agentops_trace_schema.json` and `run_agentops_diagnostic(...)` | covered by `test_agentops_trace_schema_and_sample_match_runtime_contract` |
+| `python -X utf8 -m json.tool reports/agentops_sample_trace.json` and `agentops_trace_schema()` validator checks | passed |
+| success and fail-closed trace drift guards against `agentops_trace_schema()` and `run_agentops_diagnostic(...)` | covered by `test_agentops_trace_schema_and_sample_match_runtime_contract` |
 | allowed/fail-closed trace policy-boundary drift guard | covered by `test_agentops_trace_schema_rejects_policy_boundary_drift` |
 | unknown runtime tool-name schema guard | covered by `test_agentops_trace_schema_rejects_unknown_runtime_tool_names` |
 | safe run-id and query-id schema/runtime guard | covered by `test_agentops_context_rejects_unsafe_run_id_before_trace_emit` |
@@ -275,7 +276,7 @@ Documented architecture:
 | Item | Artifact |
 |---|---|
 | portfolio positioning | `README.md` |
-| schema contract | `docs/agentops_trace_schema.json` |
+| schema contract | `ai/app/capabilities/rag_orchestrator/agentops_runtime.py::agentops_trace_schema` |
 | sample trace | `reports/agentops_sample_trace.json` |
 | role-fit report | this file |
 

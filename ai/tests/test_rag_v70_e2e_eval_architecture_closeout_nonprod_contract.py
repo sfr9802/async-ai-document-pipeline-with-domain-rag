@@ -213,7 +213,7 @@ def test_build_report_fails_closed_when_v63_rollback_artifact_is_missing(
         v70_module.build_report(root=tmp_path, generated_at="2026-06-07T00:00:00Z")
 
 
-def test_report_bundle_writes_single_report_status_docs_and_plan(
+def test_report_bundle_writes_single_report_status_and_worker_handoff(
     tmp_path: Path,
     v70_module,
     source_v63_report: dict[str, object],
@@ -249,19 +249,26 @@ def test_report_bundle_writes_single_report_status_docs_and_plan(
     assert status_rows[-1]["rollback_key"] == ROLLBACK_KEY
     assert status_rows[-1]["artifact_sha256"]["report_json_sha256"] == written["artifact_sha256"]["report_json_sha256"]
 
-    plan_text = (tmp_path / "docs/codex-goals/rag-v7-e2e-evaluation-plan.md").read_text(encoding="utf-8")
+    assert not (tmp_path / "docs").exists()
+    handoff = json.loads(
+        (tmp_path / "reports/rag_eval/rag-ingestion/worker-handoff" / f"{RUN_KEY}.json").read_text(encoding="utf-8")
+    )
+    assert handoff["code_writes_local_docs"] is False
+    assert handoff["worker_authored_rolling_notes_expected"] is True
+    assert handoff["logical_run_key"] == RUN_KEY
+    plan_text = handoff["plan_text"]
     assert "v7_0_e2e_eval_architecture_closeout_nonprod" in plan_text
     assert "checkpoint by checkpoint" in plan_text
     assert "No gold, qrels, expected evidence" in plan_text
 
-    for doc_name in ("rag-ingestion-progress.md", "rag-ingestion-measurements.md", "rag-ingestion-triage.md"):
-        text = (tmp_path / "docs" / doc_name).read_text(encoding="utf-8")
-        assert RUN_KEY in text
-        assert f"current resolves to `{V6_9_RUN_KEY}`" in text or f"`{V6_9_RUN_KEY}` supersedes it as current" in text
-        assert f"`{ROLLBACK_KEY}` to `{RUN_KEY}`" in text
-        assert f"rollback key is `{ROLLBACK_KEY}`" in text
-        assert "diagnostic-only" in text
-        assert "no official/product/promotion/live-readiness claim" in text.lower()
+    fragments = handoff["fragments"]
+    joined = "\n".join(fragments.values())
+    assert RUN_KEY in joined
+    assert f"current resolves to `{V6_9_RUN_KEY}`" in joined or f"`{V6_9_RUN_KEY}` supersedes it as current" in joined
+    assert f"`{ROLLBACK_KEY}` to `{RUN_KEY}`" in joined
+    assert f"rollback key is `{ROLLBACK_KEY}`" in joined
+    assert "diagnostic-only" in joined
+    assert "no official/product/promotion/live-readiness claim" in joined.lower()
 
 
 def test_required_fields_and_protected_surfaces_stay_closed(report: dict[str, object]) -> None:

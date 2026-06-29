@@ -1143,8 +1143,8 @@ def build_manifest(
         "strict_wrapper_config_hash": sha256_text(json_dumps(preconditions.get("strict_wrapper"))),
         "corpus_index_version": XLSX_CANDIDATE_NAMESPACE,
         "validation_command_summaries": [
-            "python scripts\\rag_xlsx_silver_generation.py --date 20260507",
-            "python -m pytest tests\\test_rag_xlsx_silver_generation.py tests\\test_rag_xlsx_pre_silver_risk_closure.py -q",
+            "direct legacy wrapper removed; call eval.harness.xlsx_silver_generation.run_generation from a focused backend",
+            "add an experiment_runner backend mode before reviving this lane",
         ],
         "official_denominator_count_before_after": [preconditions.get("official_denominator_before"), 23],
         "answer_denominator_count_before_after": [preconditions.get("answer_denominator_before"), 0],

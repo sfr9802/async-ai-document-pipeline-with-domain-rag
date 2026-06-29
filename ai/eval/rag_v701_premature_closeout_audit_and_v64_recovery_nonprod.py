@@ -27,10 +27,8 @@ REPORT_ROOT = Path("reports/rag_eval/rag-ingestion")
 RUN_ROOT = REPORT_ROOT / "runs" / LOGICAL_RUN_KEY
 REPORT_PATH = RUN_ROOT / "report.json"
 STATUS_JSONL_PATH = REPORT_ROOT / "status.jsonl"
-PROGRESS_DOC = Path("docs/rag-ingestion-progress.md")
-MEASUREMENTS_DOC = Path("docs/rag-ingestion-measurements.md")
-TRIAGE_DOC = Path("docs/rag-ingestion-triage.md")
-CODEX_GOAL_PLAN_DOC = Path("docs/codex-goals/rag-v7-e2e-evaluation-plan.md")
+WORKER_HANDOFF_ROOT = REPORT_ROOT / "worker-handoff"
+WORKER_HANDOFF_PATH = WORKER_HANDOFF_ROOT / f"{LOGICAL_RUN_KEY}.json"
 
 ARTIFACT_PATHS = {
     "report_json": REPORT_PATH.as_posix(),
@@ -228,7 +226,7 @@ def _v7_audit(root: Path, v7_0_report: Mapping[str, Any], v6_4_report: Mapping[s
         "all_required_predecessors_satisfied_or_skipped": predecessor_audit["all_required_predecessors_satisfied_or_skipped"],
     }
     return {
-        "source_plan_path": CODEX_GOAL_PLAN_DOC.as_posix(),
+        "source_plan_policy": "worker_handoff_payload_only",
         "source_v7_0_run_key": V7_0_RUN_KEY,
         "summary": summary,
         "predecessor_checkpoint_audit": rows,
@@ -529,11 +527,11 @@ def _doc_fragments(report: Mapping[str, Any]) -> tuple[str, str, str]:
     return progress, measurements, triage
 
 
-def _upsert_doc(root: Path, path: Path, *, start: str, end: str, block: str) -> None:
-    full_path = root / path
-    text = full_path.read_text(encoding="utf-8") if full_path.exists() else ""
+def _write_worker_handoff(root: Path, payload: Mapping[str, Any]) -> Path:
+    full_path = root / WORKER_HANDOFF_PATH
     full_path.parent.mkdir(parents=True, exist_ok=True)
-    full_path.write_text(common.upsert_block_at_top(text, start_marker=start, end_marker=end, block=block), encoding="utf-8")
+    full_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return full_path
 
 
 def _plan_doc(report: Mapping[str, Any]) -> str:
@@ -599,27 +597,18 @@ Recover from the premature `v7_0_e2e_eval_architecture_closeout_nonprod` closeou
 def update_docs(root: Path | str, report: Mapping[str, Any]) -> None:
     repo_root = Path(root)
     progress, measurements, triage = _doc_fragments(report)
-    _upsert_doc(
+    _write_worker_handoff(
         repo_root,
-        PROGRESS_DOC,
-        start=f"<!-- {SHORT_RUN_ID}:progress-entry:start -->",
-        end=f"<!-- {SHORT_RUN_ID}:progress-entry:end -->",
-        block=progress,
+        {
+            "schema_version": "rag_worker_handoff_payload.v1",
+            "logical_run_key": LOGICAL_RUN_KEY,
+            "code_writes_local_docs": False,
+            "worker_authored_rolling_notes_expected": True,
+            "fragments": {
+                "progress": progress,
+                "measurements": measurements,
+                "triage": triage,
+            },
+            "plan_text": _plan_doc(report),
+        },
     )
-    _upsert_doc(
-        repo_root,
-        MEASUREMENTS_DOC,
-        start=f"<!-- {SHORT_RUN_ID}:measurements-entry:start -->",
-        end=f"<!-- {SHORT_RUN_ID}:measurements-entry:end -->",
-        block=measurements,
-    )
-    _upsert_doc(
-        repo_root,
-        TRIAGE_DOC,
-        start=f"<!-- {SHORT_RUN_ID}:triage-entry:start -->",
-        end=f"<!-- {SHORT_RUN_ID}:triage-entry:end -->",
-        block=triage,
-    )
-    plan_path = repo_root / CODEX_GOAL_PLAN_DOC
-    plan_path.parent.mkdir(parents=True, exist_ok=True)
-    plan_path.write_text(_plan_doc(report), encoding="utf-8")

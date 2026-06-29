@@ -46,10 +46,9 @@ This module is the *confirm sweep* layer on top of
     not a candidate for promotion.
 
 All scoring functions are pure: they take ``GoldSummary`` /
-``SilverSummary`` / ``RetrievedDoc`` lists and return rankings. The
-"actually run the retriever" wiring lives in
-``scripts.run_phase7_mmr_confirm_sweep`` so tests can exercise the
-selection logic without touching FAISS / bge-m3.
+``SilverSummary`` / ``RetrievedDoc`` lists and return rankings. Any
+"actually run the retriever" wiring belongs in a runner adapter so tests can
+exercise the selection logic without touching FAISS / bge-m3.
 """
 
 from __future__ import annotations

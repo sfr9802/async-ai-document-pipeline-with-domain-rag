@@ -877,9 +877,10 @@ def policy_payload(config: Mapping[str, Any]) -> dict[str, Any]:
 
 def standard_command_note() -> str:
     return (
-        "phase7_human_gold_tune.py remains the older gold-50/silver-500 CLI. "
-        "This pass uses the explicit silver_only_tuning_config.yaml so frozen "
-        "cleaned gold candidates are evaluated only after silver profile selection."
+        "Legacy Phase 7 source CLIs are no longer tracked. This pass uses the "
+        "explicit silver_only_tuning_config.yaml so frozen cleaned gold "
+        "candidates are evaluated only after silver profile selection, and any "
+        "follow-up execution should go through the experiment runner facade."
     )
 
 
