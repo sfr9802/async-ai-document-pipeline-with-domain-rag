@@ -4785,6 +4785,536 @@ def test_agentic_xlsx_validators_reject_non_string_tuple_payloads(
         callable_validator()
 
 
+def _require_cp09_materializer_symbol(name: str) -> object:
+    if not hasattr(actual_rag_eval, name):
+        pytest.fail(
+            f"CP09 RED: missing {name} for xlsx_required_axis_materializer_tool contract"
+        )
+    return getattr(actual_rag_eval, name)
+
+
+def test_xlsx_required_axis_materializer_contract_materializes_same_row_period_without_acceptance() -> None:
+    record_cls = _require_cp09_materializer_symbol("AgenticXlsxRequiredAxisMaterializerRecord")
+    validate_output = _require_cp09_materializer_symbol(
+        "validate_agentic_xlsx_required_axis_materializer_output"
+    )
+    tool = _require_cp09_materializer_symbol("xlsx_required_axis_materializer_tool")
+
+    answer_candidate = {
+        "source_family": "XLSX",
+        "doc_id": "doc-care",
+        "source_atom_id": "src-care-address",
+        "sheet": "일반현황",
+        "cell_range": "A5002:J5051",
+        "row_index_1based": "5002",
+        "row_label": "장기요양기관이름=부여효요양원",
+        "target_column": "기관별 상세주소",
+        "display_value": "충청남도 부여군 석성면 왕릉로 773",
+        "matched_validated_required_axes": ["row_entity", "target_column", "display_value"],
+        "missing_validated_required_axes": ["period"],
+    }
+    same_row_date_context = {
+        "source_family": "XLSX",
+        "doc_id": "doc-care",
+        "source_atom_id": "src-care-date",
+        "sheet": "일반현황",
+        "cell_range": "A5002:J5051",
+        "row_index_1based": "5002",
+        "row_label": "장기요양기관이름=부여효요양원",
+        "target_column": "지정일자",
+        "display_value": "2015-06-12",
+        "text": "target_column=지정일자 | 지정일자=2015-06-12",
+    }
+    broad_range_date_context = {
+        "source_family": "XLSX",
+        "doc_id": "doc-care",
+        "source_atom_id": "src-care-range-date",
+        "sheet": "일반현황",
+        "cell_range": "A1:J9999",
+        "target_column": "지정일자",
+        "display_value": "2015-06-12",
+        "text": "sheet=일반현황 | target_column=지정일자 | 지정일자=2015-06-12",
+    }
+
+    materialized = tool(
+        answer_candidate=answer_candidate,
+        query_focus_contract={
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2015-06", "2015년 6월"],
+                "row_entity": ["부여효요양원"],
+                "target_column": ["기관별 상세주소"],
+                "display_value": [],
+            },
+        },
+        source_owned_contexts=[same_row_date_context, broad_range_date_context],
+    )
+
+    assert isinstance(materialized, record_cls)
+    validate_output("cp09_materializer_contract", materialized)
+    assert materialized.tool_name == "xlsx_required_axis_materializer_tool"
+    assert materialized.report_only_diagnostic is True
+    assert materialized.official_metric is False
+    assert materialized.materialized_axes == ("period",)
+    assert materialized.rejected_context_count == 1
+    assert materialized.scope_proof == {
+        "doc_id": "doc-care",
+        "sheet": "일반현황",
+        "cell_range": "A5002:J5051",
+        "row_index_1based": "5002",
+        "row_label": "장기요양기관이름=부여효요양원",
+    }
+    assert materialized.axis_packages["period"]["aliases"] == ["2015년 6월", "2015년", "6월"]
+    assert materialized.axis_packages["period"]["provenance_policy"] == (
+        "source_owned_same_row_period_alias_v1"
+    )
+    assert materialized.accepted_for_regating is False
+    encoded = json.dumps(materialized.axis_packages, ensure_ascii=False)
+    for forbidden in (
+        "expected_answer",
+        "expected_evidence",
+        "qrels",
+        "labels",
+        "file_name",
+        "title",
+        "formula",
+        "NORMALIZED_VALUE",
+        "normalized_value",
+    ):
+        assert forbidden not in encoded
+
+
+def test_xlsx_required_axis_materializer_runstore_contract_stays_separate_from_locator_acceptance(
+    tmp_path: Path,
+) -> None:
+    action_record_cls = _require_cp09_materializer_symbol(
+        "XlsxRequiredAxisMaterializerActionRecord"
+    )
+    run_record_cls = _require_cp09_materializer_symbol(
+        "XlsxRequiredAxisMaterializerRunRecord"
+    )
+    run_store_cls = _require_cp09_materializer_symbol("XlsxRequiredAxisMaterializerRunStore")
+    validate_run_store = _require_cp09_materializer_symbol(
+        "validate_xlsx_required_axis_materializer_run_store"
+    )
+
+    action = action_record_cls(
+        item_index=0,
+        candidate_index=0,
+        tool_name="xlsx_required_axis_materializer_tool",
+        execution_status="materialized_axis_package",
+        materialized_axes=("period",),
+        missing_axes_before=("period",),
+        missing_axes_after=(),
+        scope_proof={
+            "doc_id": "doc-care",
+            "sheet": "일반현황",
+            "cell_range": "A5002:J5051",
+            "row_index_1based": "5002",
+        },
+        axis_packages={"period": {"aliases": ["2015년 6월", "2015년", "6월"]}},
+        report_only_diagnostic=True,
+        official_metric=False,
+        accepted_for_regating=False,
+    )
+    record = run_record_cls(
+        schema_version="actual_rag_eval.xlsx_required_axis_materializer.v1",
+        enabled=True,
+        report_only_diagnostic=True,
+        official_metric=False,
+        tool_name="xlsx_required_axis_materializer_tool",
+        action_count=1,
+        materialized_action_count=1,
+        accepted_candidate_count=0,
+        actions=(action,),
+    )
+    run_store_path = tmp_path / "run.sqlite"
+
+    run_store_cls(run_store_path).write_run_record(
+        run_id="cp09_xlsx_required_axis_materializer",
+        dataset_slug="unit",
+        collection="unit",
+        record=record,
+    )
+
+    with sqlite3.connect(run_store_path) as conn:
+        conn.row_factory = sqlite3.Row
+        tables = {
+            row["name"]
+            for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+        }
+        assert "axis_materializer_actions" in tables
+        row = conn.execute(
+            "SELECT tool_name, materialized_axes_json, accepted_for_regating, "
+            "report_only_diagnostic, official_metric, axis_packages_json "
+            "FROM axis_materializer_actions"
+        ).fetchone()
+        assert row is not None
+        assert row["tool_name"] == "xlsx_required_axis_materializer_tool"
+        assert json.loads(row["materialized_axes_json"]) == ["period"]
+        assert row["accepted_for_regating"] == 0
+        assert row["report_only_diagnostic"] == 1
+        assert row["official_metric"] == 0
+        assert json.loads(row["axis_packages_json"]) == {
+            "period": {"aliases": ["2015년 6월", "2015년", "6월"]}
+        }
+
+    validate_run_store(
+        "cp09_xlsx_required_axis_materializer",
+        run_store_path=run_store_path,
+    )
+
+
+def test_xlsx_required_axis_materializer_runstore_rejects_authoritative_or_forbidden_payloads(
+    tmp_path: Path,
+) -> None:
+    action_record_cls = _require_cp09_materializer_symbol(
+        "XlsxRequiredAxisMaterializerActionRecord"
+    )
+    run_record_cls = _require_cp09_materializer_symbol(
+        "XlsxRequiredAxisMaterializerRunRecord"
+    )
+    run_store_cls = _require_cp09_materializer_symbol("XlsxRequiredAxisMaterializerRunStore")
+    validate_run_store = _require_cp09_materializer_symbol(
+        "validate_xlsx_required_axis_materializer_run_store"
+    )
+
+    authoritative_path = tmp_path / "authoritative.sqlite"
+    run_store_cls(authoritative_path).write_run_record(
+        run_id="cp10_authoritative_materializer",
+        dataset_slug="unit",
+        collection="unit",
+        record=run_record_cls(
+            schema_version="actual_rag_eval.xlsx_required_axis_materializer.v1",
+            enabled=True,
+            report_only_diagnostic=True,
+            official_metric=False,
+            tool_name="xlsx_required_axis_materializer_tool",
+            action_count=0,
+            materialized_action_count=0,
+            accepted_candidate_count=1,
+            actions=(),
+        ),
+    )
+    with pytest.raises(ValueError, match="accepted_candidate_count"):
+        validate_run_store(
+            "cp10_authoritative_materializer",
+            run_store_path=authoritative_path,
+        )
+
+    forbidden_path = tmp_path / "forbidden.sqlite"
+    action = action_record_cls(
+        item_index=0,
+        candidate_index=0,
+        tool_name="xlsx_required_axis_materializer_tool",
+        execution_status="materialized_axis_package",
+        materialized_axes=("period",),
+        missing_axes_before=("period",),
+        missing_axes_after=(),
+        scope_proof={"doc_id": "doc-care", "sheet": "일반현황", "cell_range": "A5002:J5051"},
+        axis_packages={
+            "period": {
+                "aliases": ["2015년 6월"],
+                "provenance_policy": "source_owned_same_row_period_alias_v1",
+                "raw_tool_payload": {"expected_answer": "oracle shortcut"},
+            }
+        },
+        report_only_diagnostic=True,
+        official_metric=False,
+        accepted_for_regating=False,
+    )
+    run_store_cls(forbidden_path).write_run_record(
+        run_id="cp10_forbidden_materializer",
+        dataset_slug="unit",
+        collection="unit",
+        record=run_record_cls(
+            schema_version="actual_rag_eval.xlsx_required_axis_materializer.v1",
+            enabled=True,
+            report_only_diagnostic=True,
+            official_metric=False,
+            tool_name="xlsx_required_axis_materializer_tool",
+            action_count=1,
+            materialized_action_count=1,
+            accepted_candidate_count=0,
+            actions=(action,),
+        ),
+    )
+    with pytest.raises(ValueError, match="forbidden"):
+        validate_run_store(
+            "cp10_forbidden_materializer",
+            run_store_path=forbidden_path,
+        )
+
+
+def test_xlsx_required_axis_materializer_runtime_hook_feeds_locator_without_direct_acceptance(
+    tmp_path: Path,
+) -> None:
+    query = "2015년 6월에 지정된 부여효요양원의 기관별 상세주소는 무엇입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2015-06", "facility_name": "부여효요양원"},
+            "target_axis": {"column": "기관별 상세주소", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2015-06", "2015년 6월"],
+                "row_entity": ["부여효요양원"],
+                "target_column": ["기관별 상세주소"],
+                "display_value": [],
+            },
+        },
+    )
+    answer_context = {
+        "doc_id": "doc-care-materializer-runtime",
+        "chunk_id": "chunk-care-address",
+        "source_atom_id": "src-care-address",
+        "evidence_bundle_id": "bundle-care-address",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": (
+            "sheet=일반현황 | range=A5002:J5051 | row_label=장기요양기관이름=부여효요양원 | "
+            "target_column=기관별 상세주소 | display_value=충청남도 부여군 석성면 왕릉로 773"
+        ),
+        "sheet": "일반현황",
+        "cell_range": "A5002:J5051",
+        "cell": "J5002",
+        "row_index_1based": "5002",
+        "row_label": "장기요양기관이름=부여효요양원",
+        "column_label": "기관별 상세주소",
+        "target_column": "기관별 상세주소",
+        "display_value": "충청남도 부여군 석성면 왕릉로 773",
+    }
+    same_row_date_context = {
+        "doc_id": "doc-care-materializer-runtime",
+        "chunk_id": "chunk-care-date",
+        "source_atom_id": "src-care-date",
+        "evidence_bundle_id": "bundle-care-date",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": "target_column=지정일자 | 지정일자=2015-06-12",
+        "sheet": "일반현황",
+        "cell_range": "A5002:J5051",
+        "cell": "B5002",
+        "row_label": "장기요양기관이름=부여효요양원",
+        "column_label": "지정일자",
+        "target_column": "지정일자",
+        "display_value": "2015-06-12",
+    }
+    broad_range_date_context = {
+        "doc_id": "doc-care-materializer-runtime",
+        "chunk_id": "chunk-care-range-date",
+        "source_atom_id": "src-care-range-date",
+        "evidence_bundle_id": "bundle-care-range-date",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": "sheet=일반현황 | range=A1:J9999 | target_column=지정일자 | 지정일자=2015-06-12",
+        "sheet": "일반현황",
+        "cell_range": "A1:J9999",
+        "target_column": "지정일자",
+        "display_value": "2015-06-12",
+    }
+    before_row = {
+        "id": "xlsx-required-axis-materializer-runtime",
+        "query": query,
+        "answerability": "answerable",
+        "track": "xlsx_business_structured",
+        "generated_answer": "부여효요양원의 기관별 상세주소는 충청남도 부여군 석성면 왕릉로 773입니다.",
+        "answer_gate_decision": "block_unsupported_answer",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [answer_context, same_row_date_context, broad_range_date_context],
+        "citations": [],
+        "evidence_gate": {
+            "evidence_package_status": "insufficient",
+            "answer_gate_decision": "block_unsupported_answer",
+            "validation_reasons": ["missing_validated_required_axes"],
+            "retrieved_evidence_candidates": [answer_context, same_row_date_context, broad_range_date_context],
+            "selected_evidence": [],
+        },
+    }
+
+    after_rows, record = actual_rag_eval.apply_xlsx_locator_tool_execute_once_to_outputs(
+        [before_row],
+        evidence_gate_mode="enforce",
+        citation_format="evidence-id",
+        composer_provider="selected-evidence-deterministic-v1",
+        local_llm_model="gemma4-e2b-local",
+        skip_local_llm_endpoint_check=True,
+    )
+    run_store_path = tmp_path / "run.sqlite"
+    actual_rag_eval.XlsxLocatorRunStore(run_store_path).write_run_record(
+        run_id="xlsx_required_axis_materializer_runtime",
+        dataset_slug="unit",
+        collection="unit",
+        record=record,
+        before_rows=[before_row],
+        after_rows=after_rows,
+    )
+
+    tool_use = after_rows[0]["xlsx_locator_tool_use"]
+    assert tool_use["execution_status"] == "accepted_after_regating"
+    selected = after_rows[0]["evidence_gate"]["selected_evidence"][0]
+    assert selected["source_atom_id"] == "src-care-address"
+    assert selected["xlsx_required_axis_materializer_tool_output"] is True
+    assert selected["xlsx_required_axis_materializer_tool_name"] == "xlsx_required_axis_materializer_tool"
+    assert selected["xlsx_required_axis_materializer_report_only_diagnostic"] is True
+    assert selected["xlsx_required_axis_materializer_official_metric"] is False
+    assert selected["xlsx_required_axis_materializer_accepted_for_regating"] is False
+    assert selected["xlsx_required_axis_materializer_execution_status"] == "materialized_axis_package"
+    assert selected["xlsx_required_axis_materializer_materialized_axes"] == ["period"]
+    assert selected["source_owned_same_candidate_package_policy"] == "source_owned_same_row_period_alias_v1"
+    assert selected["accepted_for_regating"] is True
+    assert selected["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert selected["missing_validated_required_axes"] == []
+
+    with sqlite3.connect(run_store_path) as conn:
+        conn.row_factory = sqlite3.Row
+        candidate = conn.execute(
+            "SELECT source_date_aliases_json, input_fields_used_json, accepted_for_regating, "
+            "rejection_reason, matched_validated_required_axes_json, missing_validated_required_axes_json "
+            "FROM tool_candidates WHERE source_atom_id = 'src-care-address' "
+            "AND accepted_for_regating = 1"
+        ).fetchone()
+        assert candidate is not None
+        assert json.loads(candidate["source_date_aliases_json"]) == ["2015년 6월", "2015년", "6월"]
+        input_fields_used = json.loads(candidate["input_fields_used_json"])
+        assert "source_date_aliases" in input_fields_used
+        assert "xlsx_required_axis_materializer_tool" in input_fields_used
+        assert candidate["accepted_for_regating"] == 1
+        assert candidate["rejection_reason"] == ""
+        assert json.loads(candidate["matched_validated_required_axes_json"]) == [
+            "period",
+            "row_entity",
+            "target_column",
+            "display_value",
+        ]
+        assert json.loads(candidate["missing_validated_required_axes_json"]) == []
+        run_row = conn.execute("SELECT record_json FROM runs").fetchone()
+        run_record = json.loads(run_row["record_json"])
+        materialized_candidate = next(
+            item
+            for item in run_record["candidates"]
+            if item["source_atom_id"] == "src-care-address"
+        )
+        assert materialized_candidate["source_owned_same_candidate_package"] is True
+        assert materialized_candidate["source_owned_same_candidate_package_policy"] == (
+            "source_owned_same_row_period_alias_v1"
+        )
+        assert materialized_candidate["xlsx_required_axis_materializer_tool_output"] is True
+        assert materialized_candidate["xlsx_required_axis_materializer_tool_name"] == (
+            "xlsx_required_axis_materializer_tool"
+        )
+        assert materialized_candidate["xlsx_required_axis_materializer_execution_status"] == (
+            "materialized_axis_package"
+        )
+        assert materialized_candidate["xlsx_required_axis_materializer_materialized_axes"] == ["period"]
+        assert materialized_candidate["xlsx_required_axis_materializer_rejected_context_count"] == 2
+        assert materialized_candidate["xlsx_required_axis_materializer_report_only_diagnostic"] is True
+        assert materialized_candidate["xlsx_required_axis_materializer_official_metric"] is False
+        assert materialized_candidate["xlsx_required_axis_materializer_accepted_for_regating"] is False
+        locator = actual_rag_eval.project_xlsx_locator_run_record(record, run_store_path=run_store_path)
+        materializer_diagnostic = locator["xlsx_required_axis_materializer_runtime_diagnostic"]
+        assert materializer_diagnostic["action_count"] == 1
+        assert materializer_diagnostic["materialized_action_count"] == 1
+        assert materializer_diagnostic["materializer_accepted_candidate_count"] == 0
+        assert materializer_diagnostic["locator_accepted_after_materialization_count"] == 1
+        assert materializer_diagnostic["execution_status_counts"] == {"materialized_axis_package": 1}
+        assert materializer_diagnostic["materialized_axes_counts"] == {"period": 1}
+        assert materializer_diagnostic["rejected_context_count"] == 2
+        assert materializer_diagnostic["source_owned_same_candidate_package_policy_counts"] == {
+            "source_owned_same_row_period_alias_v1": 1
+        }
+        actual_rag_eval.validate_xlsx_locator_run_store(
+            "xlsx_required_axis_materializer_runtime",
+            locator,
+            run_store_path=run_store_path,
+        )
+
+    selected_encoded = json.dumps(selected, ensure_ascii=False)
+    for forbidden in (
+        "expected_answer",
+        "expected_evidence",
+        "qrels",
+        "labels",
+        "file_name",
+        "title",
+        "formula",
+        "NORMALIZED_VALUE",
+        "normalized_value",
+    ):
+        assert forbidden not in selected_encoded
+
+
+def test_xlsx_required_axis_materializer_runtime_records_rejected_attempt() -> None:
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query="2020년 9월 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까?",
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2020-09", "facility_name": "해뜨는요양원2"},
+            "target_axis": {"column": "시도 시군구 법정동명", "value_type": "text"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+        },
+    )
+    answer_candidate = {
+        "source_family": "XLSX",
+        "source_atom_id": "src-no-date",
+        "doc_id": "doc-no-date",
+        "sheet": "일반현황",
+        "cell_range": "A42:J42",
+        "row_index_1based": "42",
+        "row_label": "장기요양기관이름=해뜨는요양원2",
+        "target_column": "시도 시군구 법정동명",
+        "display_value": "대구광역시 북구 복현동",
+        "text": "row_label=장기요양기관이름=해뜨는요양원2 | target_column=시도 시군구 법정동명 | display_value=대구광역시 북구 복현동",
+        "matched_validated_required_axes": ["row_entity", "target_column", "display_value"],
+        "missing_validated_required_axes": ["period"],
+        "accepted_for_regating": False,
+        "rejection_reason": "missing_validated_required_axes_after_tool",
+        "input_fields_used": ["doc_id", "sheet", "cell_range", "row_label", "target_column", "display_value"],
+    }
+    row = {
+        "query": "2020년 9월 해뜨는요양원2의 시도 시군구 법정동명은 무엇입니까?",
+        "query_evidence_planner": planner,
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-no-date",
+                "sheet": "일반현황",
+                "cell_range": "A1:J9999",
+                "target_column": "지정일자",
+                "display_value": "2020-09-01",
+                "text": "broad range date context only",
+            }
+        ],
+    }
+
+    candidates = actual_rag_eval._xlsx_locator_apply_required_axis_materializer_actions(
+        row=row,
+        candidates=[answer_candidate],
+    )
+
+    candidate = candidates[0]
+    assert candidate["xlsx_required_axis_materializer_tool_output"] is True
+    assert candidate["xlsx_required_axis_materializer_execution_status"] == (
+        "rejected_no_source_owned_same_row_period_alias"
+    )
+    assert candidate["xlsx_required_axis_materializer_materialized_axes"] == []
+    assert candidate["xlsx_required_axis_materializer_accepted_for_regating"] is False
+    assert candidate["accepted_for_regating"] is False
+    assert "xlsx_required_axis_materializer_tool" in candidate["input_fields_used"]
+
+
 def test_llm_query_anchor_classifier_malformed_payload_falls_back_to_deterministic(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -7691,6 +8221,64 @@ def test_xlsx_locator_rejects_explicit_locator_text_with_source_path_or_workbook
     assert candidate["accepted_for_regating"] is False
     assert candidate["rejection_reason"] == "forbidden_input_fields_present"
     assert {"source_path", "workbook_id", "workbook_version_id"} <= set(candidate["forbidden_input_fields_used_for_candidate"])
+
+
+def test_xlsx_axis_materialization_rejects_title_file_formula_normalized_value_shortcuts() -> None:
+    query = "2019년 2월 안산선의 수송인원은 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2019-02", "line_name": "안산선"},
+            "target_axis": {"column": "수송인원", "value_type": "number"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-02", "2019년 2월"],
+                "row_entity": ["안산선"],
+                "target_column": ["수송인원"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-forbidden-axis-shortcuts",
+        "query": query,
+        "generated_answer": "999명",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+    }
+    context = {
+        "doc_id": "doc-xlsx-forbidden-axis-shortcuts",
+        "chunk_id": "chunk-xlsx-forbidden-axis-shortcuts",
+        "source_atom_id": "src-xlsx-forbidden-axis-shortcuts",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": "sheet=철도 | range=A302:D351 | target_column=수송인원",
+        "sheet": "철도",
+        "cell_range": "A302:D351",
+        "target_column": "수송인원",
+        "title": "2019년 2월 안산선 수송인원 999명",
+        "workbook": "2019년 2월 안산선.xlsx",
+        "file_name": "2019-02-ansan-ridership.xlsx",
+        "source_path": "D:/private/2019-02-ansan-ridership.xlsx",
+        "formula": "=999",
+        "normalized_value": "999",
+    }
+
+    candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
+
+    assert candidate is not None
+    assert candidate["accepted_for_regating"] is False
+    assert candidate["rejection_reason"] == "forbidden_input_fields_present"
+    assert candidate["matched_validated_required_axes"] == ["target_column"]
+    assert candidate["missing_validated_required_axes"] == ["period", "row_entity", "display_value"]
+    forbidden_seen = set(candidate["forbidden_input_fields_seen"])
+    assert {"source_path", "formula", "normalized_value"} <= forbidden_seen
+    assert "title" not in candidate["input_fields_used"]
+    assert "file_name" not in candidate["input_fields_used"]
 
 
 def test_public_report_sanitizer_strips_raw_tool_payload_keys() -> None:

@@ -50,6 +50,7 @@ from ai.eval.actual_rag_agentic_xlsx import (
     AGENTIC_XLSX_PROTECTED_ANCHOR_VERIFIER_SCHEMA_VERSION,
     AGENTIC_XLSX_QUERY_ANCHOR_TAXONOMY_SCHEMA_VERSION,
     AGENTIC_XLSX_REGATED_CANDIDATE_SIMULATOR_SCHEMA_VERSION,
+    AGENTIC_XLSX_REQUIRED_AXIS_MATERIALIZER_SCHEMA_VERSION,
     AGENTIC_XLSX_REPAIR_EXPLAINER_SCHEMA_VERSION,
     AGENTIC_XLSX_REPAIR_FAILURE_FAMILIES,
     AGENTIC_XLSX_TOOL_SEQUENCE,
@@ -58,6 +59,7 @@ from ai.eval.actual_rag_agentic_xlsx import (
     AgenticXlsxProtectedAnchorVerifierRecord,
     AgenticXlsxQueryAnchorTaxonomyRecord,
     AgenticXlsxRegatedCandidateSimulationRecord,
+    AgenticXlsxRequiredAxisMaterializerRecord,
     AgenticXlsxRepairExplanationRecord,
     _agentic_xlsx_bool,
     _agentic_xlsx_clean_tuple,
@@ -95,10 +97,14 @@ from ai.eval.xlsx_locator_run_store import (
     XlsxLocatorEvidenceCandidateRecord,
     XlsxLocatorGateDeltaRecord,
     XlsxLocatorGuardrailRecord,
+    XlsxRequiredAxisMaterializerActionRecord,
+    XlsxRequiredAxisMaterializerRunRecord,
+    XlsxRequiredAxisMaterializerRunStore,
     XlsxLocatorRunRecord,
     XlsxLocatorRunStore as _XlsxLocatorRunStoreBase,
     XlsxLocatorRunStoreDependencies,
     XlsxLocatorToolUseRecord,
+    validate_xlsx_required_axis_materializer_run_store,
 )
 from app.capabilities.rag.generation import ExtractiveGenerator, RetrievedChunk
 from ai.eval.weaviate_source_atom import (

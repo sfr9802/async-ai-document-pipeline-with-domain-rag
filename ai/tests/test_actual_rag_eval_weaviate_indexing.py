@@ -4169,7 +4169,7 @@ def test_source_native_corpus_loader_synthesizes_candidate_surface_xlsx_row_valu
     assert "D:/private/Budget.xlsx" not in serialized_record
 
 
-def test_source_native_corpus_loader_keeps_source_date_aliases_in_xlsx_row_value_bundle_text(
+def test_xlsx_row_value_bundle_preserves_same_candidate_axis_contract(
     tmp_path: Path,
 ) -> None:
     manifest = tmp_path / "search_view_manifest.jsonl"
@@ -4244,6 +4244,16 @@ def test_source_native_corpus_loader_keeps_source_date_aliases_in_xlsx_row_value
     serialized_record = json.dumps(record, ensure_ascii=False)
 
     assert bundle["metadata"]["source_date_aliases"] == ["2019년 2월", "2019년", "2월"]
+    assert bundle["metadata"]["sheet"] == "철도"
+    assert bundle["metadata"]["cell_range"] == "A302:D351"
+    assert bundle["metadata"]["row_label"] == "노선명=안산선"
+    assert bundle["metadata"]["target_column"] == "수송인원"
+    assert bundle["metadata"]["display_value"] == "999명"
+    assert "sheet=철도" in bundle["text"]
+    assert "range=A302:D351" in bundle["text"]
+    assert "row_label=노선명=안산선" in bundle["text"]
+    assert "target_column=수송인원" in bundle["text"]
+    assert "display_value=999명" in bundle["text"]
     assert "source_date_alias=2019년 2월" in bundle["text"]
     assert "source_date_alias=2019년" in bundle["text"]
     assert "source_date_alias=2월" in bundle["text"]
@@ -4254,6 +4264,219 @@ def test_source_native_corpus_loader_keeps_source_date_aliases_in_xlsx_row_value
     assert "normalized_value" not in serialized_record
     assert "formula" not in serialized_record
     assert "source_path" not in serialized_record
+
+
+def test_weaviate_source_atom_v2_preserves_xlsx_axis_contract_from_bundle(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-axis-contract",
+                "evidence_bundle_id": "bundle-xlsx-axis-contract",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-axis-contract",
+                "bm25_text": (
+                    "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | 년월=201902 | "
+                    "target_column=수송인원\n"
+                    "snapshot=철도 A302: 노선명=안산선 | 년월=201902 | 수송인원=999명"
+                ),
+                "embedding_text": "안산선 201902 수송인원",
+                "source_identity": "safe-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            }
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-axis-contract",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-axis-contract",
+                    "sheet": "철도",
+                    "range": "A302:D351",
+                    "cell": "D302",
+                    "row_index_1based": 302,
+                    "row_label": "노선명=안산선",
+                    "column_label": "수송인원",
+                    "target_column": "수송인원",
+                    "normalized_value": "999",
+                    "formula": "=SUM(D1:D2)",
+                    "source_path": "D:/private/ridership.xlsx",
+                },
+            }
+        ],
+    )
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+    )
+    bundle = next(
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+
+    record = source_atom_record_from_mapping(bundle, config)
+
+    assert record["sheet"] == "철도"
+    assert record["cell_range"] == "A302:D351"
+    assert record["row_index_1based"] == "302"
+    assert record["row_label"] == "노선명=안산선"
+    assert record["target_column"] == "수송인원"
+    assert record["display_value"] == "999명"
+    assert record["candidate_surface_materialization"] == "xlsx_row_value_bundle_v1"
+    assert record["candidate_surface_materialization_policy"] == (
+        "source_owned_manifest_snapshot_no_gold_qrels_labels_or_normalized_fields_v1"
+    )
+    assert json.loads(record["source_date_aliases_json"]) == ["2019년 2월", "2019년", "2월"]
+    assert json.loads(record["source_atom_ids_json"]) == ["srcatom-xlsx-axis-contract"]
+
+    encoded = json.dumps(record, ensure_ascii=False)
+    assert "normalized_value" not in encoded
+    assert "formula" not in encoded
+    assert "D:/private/ridership.xlsx" not in encoded
+
+
+def test_xlsx_locator_accepts_only_same_candidate_complete_axis_package(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-locator-contract",
+                "evidence_bundle_id": "bundle-xlsx-locator-contract",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-locator-contract",
+                "bm25_text": (
+                    "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | 년월=201902 | "
+                    "target_column=수송인원\n"
+                    "snapshot=철도 A302: 노선명=안산선 | 년월=201902 | 수송인원=999명"
+                ),
+                "embedding_text": "안산선 201902 수송인원",
+                "source_identity": "safe-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            }
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-locator-contract",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-locator-contract",
+                    "sheet": "철도",
+                    "range": "A302:D351",
+                    "cell": "D302",
+                    "row_index_1based": 302,
+                    "row_label": "노선명=안산선",
+                    "column_label": "수송인원",
+                    "target_column": "수송인원",
+                },
+            }
+        ],
+    )
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+    )
+    bundle = next(
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    context = source_atom_record_from_mapping(bundle, config)
+    query = "2019년 2월 안산선의 수송인원은 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2019-02", "line_name": "안산선"},
+            "target_axis": {"column": "수송인원", "value_type": "number"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-02", "2019년 2월"],
+                "row_entity": ["안산선"],
+                "target_column": ["수송인원"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-row-value-bundle-source-atom-contract",
+        "query": query,
+        "generated_answer": "999명",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+    }
+
+    candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
+
+    assert candidate is not None
+    assert candidate["source_owned_same_candidate_package"] is True
+    assert candidate["accepted_for_regating"] is True
+    assert candidate["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert candidate["missing_validated_required_axes"] == []
+
+    split_context = dict(context)
+    split_context["source_atom_id"] = "srcatom-xlsx-locator-contract-split"
+    split_context["text"] = (
+        "sheet=철도 | range=A302:D351 | 년월=201902 | "
+        "target_column=수송인원 | display_value=999명"
+    )
+    split_context.pop("row_index_1based", None)
+    split_context.pop("row_label", None)
+
+    split_candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, split_context)
+
+    assert split_candidate is not None
+    assert split_candidate.get("source_owned_same_candidate_package") is not True
+    assert split_candidate["accepted_for_regating"] is False
+    assert "row_entity" in split_candidate["missing_validated_required_axes"]
 
 
 def test_source_native_corpus_loader_adds_same_row_date_aliases_to_xlsx_value_bundle(

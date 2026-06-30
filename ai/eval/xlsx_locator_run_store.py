@@ -23,6 +23,27 @@ XLSX_LOCATOR_RUN_STORE_TABLES = (
 )
 XLSX_LOCATOR_TOOL_POLICY = "source_owned_locator_only_no_raw_xlsx_query_time_parsing"
 XLSX_LOCATOR_TOOL_OUTPUT_POLICY = "selected_evidence_candidate_must_pass_unchanged_gate"
+XLSX_REQUIRED_AXIS_MATERIALIZER_FORBIDDEN_KEY_CANONICALS = frozenset(
+    "candidateid caseid expectedanswer expectedevidence filename filepath formula goldlocator itemid labels normalizedvalue path promptpayload qrels queryid rawpayload rawprompt rawresponse rawtoolpayload responsepayload rowid sourceatomid sourceid sourcepath sourcetitle sourceworkbook targetlocator title toolpayload workbook workbookid workbookname workbooktitle workbookversionid".split()
+)
+
+
+def _canonical_materializer_key(key: Any) -> str:
+    return "".join(ch for ch in str(key).strip().lower() if ch.isalnum())
+
+
+def _collect_materializer_forbidden_keys(value: Any) -> set[str]:
+    seen: set[str] = set()
+    if isinstance(value, Mapping):
+        for key, nested in value.items():
+            canonical = _canonical_materializer_key(key)
+            if canonical in XLSX_REQUIRED_AXIS_MATERIALIZER_FORBIDDEN_KEY_CANONICALS:
+                seen.add(str(key))
+            seen.update(_collect_materializer_forbidden_keys(nested))
+    elif isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        for nested in value:
+            seen.update(_collect_materializer_forbidden_keys(nested))
+    return seen
 
 @dataclass(frozen=True)
 class XlsxLocatorToolUseRecord:
@@ -86,6 +107,16 @@ class XlsxLocatorEvidenceCandidateRecord:
     accepted_for_regating: bool = False
     rejection_reason: str = ""
     input_fields_used: tuple[str, ...] = ()
+    source_owned_same_candidate_package: bool = False
+    source_owned_same_candidate_package_policy: str = ""
+    xlsx_required_axis_materializer_tool_output: bool = False
+    xlsx_required_axis_materializer_tool_name: str = ""
+    xlsx_required_axis_materializer_execution_status: str = ""
+    xlsx_required_axis_materializer_materialized_axes: tuple[str, ...] = ()
+    xlsx_required_axis_materializer_rejected_context_count: int = 0
+    xlsx_required_axis_materializer_report_only_diagnostic: bool = False
+    xlsx_required_axis_materializer_official_metric: bool = False
+    xlsx_required_axis_materializer_accepted_for_regating: bool = False
 
 
 @dataclass(frozen=True)
@@ -133,6 +164,35 @@ class XlsxLocatorRunRecord:
     query_planner_summary: Mapping[str, Any] = field(default_factory=dict)
     tool_uses: tuple[XlsxLocatorToolUseRecord, ...] = ()
     candidates: tuple[XlsxLocatorEvidenceCandidateRecord, ...] = ()
+
+
+@dataclass(frozen=True)
+class XlsxRequiredAxisMaterializerActionRecord:
+    item_index: int
+    candidate_index: int
+    tool_name: str
+    execution_status: str
+    materialized_axes: tuple[str, ...] = ()
+    missing_axes_before: tuple[str, ...] = ()
+    missing_axes_after: tuple[str, ...] = ()
+    scope_proof: Mapping[str, str] = field(default_factory=dict)
+    axis_packages: Mapping[str, Any] = field(default_factory=dict)
+    report_only_diagnostic: bool = True
+    official_metric: bool = False
+    accepted_for_regating: bool = False
+
+
+@dataclass(frozen=True)
+class XlsxRequiredAxisMaterializerRunRecord:
+    schema_version: str
+    enabled: bool
+    report_only_diagnostic: bool
+    official_metric: bool
+    tool_name: str
+    action_count: int
+    materialized_action_count: int
+    accepted_candidate_count: int
+    actions: tuple[XlsxRequiredAxisMaterializerActionRecord, ...] = ()
 
 
 
@@ -801,3 +861,137 @@ class XlsxLocatorRunStore:
                 "INSERT INTO guardrails (key, value_json) VALUES (?, ?)",
                 (key, self._sqlite_json(value)),
             )
+
+
+class XlsxRequiredAxisMaterializerRunStore:
+    """SQLite store for diagnostic-only XLSX required-axis materializer actions."""
+
+    def __init__(self, path: Path | str) -> None:
+        self.path = Path(path)
+
+    def _sqlite_json(self, value: Any) -> str:
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
+
+    def write_run_record(
+        self,
+        *,
+        run_id: str,
+        dataset_slug: str,
+        collection: str,
+        record: XlsxRequiredAxisMaterializerRunRecord,
+    ) -> None:
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        if self.path.exists():
+            self.path.unlink()
+        with sqlite3.connect(self.path) as conn:
+            conn.executescript(
+                """
+                CREATE TABLE runs (
+                    run_id TEXT PRIMARY KEY,
+                    dataset_slug TEXT NOT NULL,
+                    collection TEXT NOT NULL,
+                    schema_version TEXT NOT NULL,
+                    tool_name TEXT NOT NULL,
+                    enabled INTEGER NOT NULL,
+                    report_only_diagnostic INTEGER NOT NULL,
+                    official_metric INTEGER NOT NULL,
+                    action_count INTEGER NOT NULL,
+                    materialized_action_count INTEGER NOT NULL,
+                    accepted_candidate_count INTEGER NOT NULL,
+                    record_json TEXT NOT NULL
+                );
+                CREATE TABLE axis_materializer_actions (
+                    item_index INTEGER NOT NULL,
+                    candidate_index INTEGER NOT NULL,
+                    tool_name TEXT NOT NULL,
+                    execution_status TEXT NOT NULL,
+                    materialized_axes_json TEXT NOT NULL,
+                    missing_axes_before_json TEXT NOT NULL,
+                    missing_axes_after_json TEXT NOT NULL,
+                    scope_proof_json TEXT NOT NULL,
+                    axis_packages_json TEXT NOT NULL,
+                    report_only_diagnostic INTEGER NOT NULL,
+                    official_metric INTEGER NOT NULL,
+                    accepted_for_regating INTEGER NOT NULL,
+                    PRIMARY KEY (item_index, candidate_index)
+                );
+                """
+            )
+            conn.execute(
+                """
+                INSERT INTO runs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    run_id,
+                    dataset_slug,
+                    collection,
+                    record.schema_version,
+                    record.tool_name,
+                    _sqlite_bool(record.enabled),
+                    _sqlite_bool(record.report_only_diagnostic),
+                    _sqlite_bool(record.official_metric),
+                    int(record.action_count),
+                    int(record.materialized_action_count),
+                    int(record.accepted_candidate_count),
+                    self._sqlite_json(asdict(record)),
+                ),
+            )
+            for action in record.actions:
+                conn.execute(
+                    """
+                    INSERT INTO axis_materializer_actions VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        int(action.item_index),
+                        int(action.candidate_index),
+                        action.tool_name,
+                        action.execution_status,
+                        self._sqlite_json(action.materialized_axes),
+                        self._sqlite_json(action.missing_axes_before),
+                        self._sqlite_json(action.missing_axes_after),
+                        self._sqlite_json(dict(action.scope_proof)),
+                        self._sqlite_json(dict(action.axis_packages)),
+                        _sqlite_bool(action.report_only_diagnostic),
+                        _sqlite_bool(action.official_metric),
+                        _sqlite_bool(action.accepted_for_regating),
+                    ),
+                )
+
+
+def validate_xlsx_required_axis_materializer_run_store(run_id: str, *, run_store_path: Path | str) -> None:
+    path = Path(run_store_path)
+    if not path.is_file():
+        raise ValueError(f"{run_id}: xlsx required-axis materializer RunStore missing")
+    with sqlite3.connect(path) as conn:
+        conn.row_factory = sqlite3.Row
+        tables = {
+            row["name"]
+            for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")
+        }
+        if "axis_materializer_actions" not in tables or "runs" not in tables:
+            raise ValueError(f"{run_id}: xlsx required-axis materializer RunStore missing table")
+        run = conn.execute("SELECT * FROM runs").fetchone()
+        if run is None or run["report_only_diagnostic"] != 1 or run["official_metric"] != 0:
+            raise ValueError(f"{run_id}: xlsx required-axis materializer run flags invalid")
+        if int(run["accepted_candidate_count"] or 0) != 0:
+            raise ValueError(f"{run_id}: xlsx required-axis materializer accepted_candidate_count must be 0")
+        accepted = conn.execute(
+            "SELECT COUNT(*) AS count FROM axis_materializer_actions WHERE accepted_for_regating != 0"
+        ).fetchone()["count"]
+        official = conn.execute(
+            "SELECT COUNT(*) AS count FROM axis_materializer_actions WHERE official_metric != 0"
+        ).fetchone()["count"]
+        not_report_only = conn.execute(
+            "SELECT COUNT(*) AS count FROM axis_materializer_actions WHERE report_only_diagnostic != 1"
+        ).fetchone()["count"]
+        if accepted or official or not_report_only:
+            raise ValueError(f"{run_id}: xlsx required-axis materializer actions must stay diagnostic-only")
+        for action in conn.execute("SELECT scope_proof_json, axis_packages_json FROM axis_materializer_actions"):
+            forbidden = sorted(
+                {
+                    *_collect_materializer_forbidden_keys(json.loads(action["scope_proof_json"])),
+                    *_collect_materializer_forbidden_keys(json.loads(action["axis_packages_json"])),
+                }
+            )
+            if forbidden:
+                raise ValueError(f"{run_id}: xlsx required-axis materializer forbidden key {forbidden[0]}")
