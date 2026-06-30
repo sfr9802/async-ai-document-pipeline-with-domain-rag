@@ -76,6 +76,10 @@ WEAVIATE_SOURCE_ATOM_V2_EXTRA_PROPERTIES = (
     "header_path",
     "table_id",
     "display_value",
+    "candidate_surface_materialization",
+    "candidate_surface_materialization_policy",
+    "source_date_aliases_json",
+    "source_atom_ids_json",
     "page_number",
     "physical_page_index",
     "block_index",
@@ -110,6 +114,7 @@ WEAVIATE_FILTERABLE_PROPERTIES = frozenset(
         "header_path",
         "table_id",
         "display_value",
+        "candidate_surface_materialization",
         "page_number",
         "physical_page_index",
         "block_index",
@@ -383,6 +388,40 @@ def _clean(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def _clean_text_list_json(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        text = _clean(value)
+        if not text:
+            return ""
+        try:
+            parsed = json.loads(text)
+        except (TypeError, ValueError):
+            values: Iterable[Any] = (text,)
+        else:
+            if isinstance(parsed, Sequence) and not isinstance(parsed, (str, bytes, bytearray)):
+                values = parsed
+            else:
+                values = (parsed,)
+    elif isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
+        values = value
+    else:
+        values = (value,)
+
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for item in values:
+        text = _clean(item)
+        if not text or text in seen:
+            continue
+        cleaned.append(text)
+        seen.add(text)
+    if not cleaned:
+        return ""
+    return json.dumps(cleaned, ensure_ascii=False)
 
 
 def _source_owned_axis_term_parts(value: Any) -> list[str]:
@@ -1490,6 +1529,8 @@ def source_atom_record_from_mapping(row: Mapping[str, Any], config: WeaviateSour
             "header_path",
             "table_id",
             "display_value",
+            "candidate_surface_materialization",
+            "candidate_surface_materialization_policy",
             "page_number",
             "physical_page_index",
             "block_index",
@@ -1503,6 +1544,22 @@ def source_atom_record_from_mapping(row: Mapping[str, Any], config: WeaviateSour
             value = _clean(row.get(key) or metadata.get(key) or source_owned_text_tags.get(key))
             if value:
                 record[key] = value
+        source_date_aliases_json = _clean_text_list_json(
+            row.get("source_date_aliases_json")
+            or metadata.get("source_date_aliases_json")
+            or row.get("source_date_aliases")
+            or metadata.get("source_date_aliases")
+        )
+        if source_date_aliases_json:
+            record["source_date_aliases_json"] = source_date_aliases_json
+        source_atom_ids_json = _clean_text_list_json(
+            row.get("source_atom_ids_json")
+            or metadata.get("source_atom_ids_json")
+            or row.get("source_atom_ids")
+            or metadata.get("source_atom_ids")
+        )
+        if source_atom_ids_json:
+            record["source_atom_ids_json"] = source_atom_ids_json
     _require_source_atom_record(record)
     return record
 

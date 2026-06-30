@@ -2000,6 +2000,30 @@ def _xlsx_locator_candidate_record(
         accepted_for_regating=candidate.get("accepted_for_regating") is True,
         rejection_reason=_clean(candidate.get("rejection_reason")),
         input_fields_used=tuple(_clean(field) for field in _as_list(candidate.get("input_fields_used")) if _clean(field)),
+        source_owned_same_candidate_package=candidate.get("source_owned_same_candidate_package") is True,
+        source_owned_same_candidate_package_policy=_clean(candidate.get("source_owned_same_candidate_package_policy")),
+        xlsx_required_axis_materializer_tool_output=candidate.get("xlsx_required_axis_materializer_tool_output") is True,
+        xlsx_required_axis_materializer_tool_name=_clean(candidate.get("xlsx_required_axis_materializer_tool_name")),
+        xlsx_required_axis_materializer_execution_status=_clean(
+            candidate.get("xlsx_required_axis_materializer_execution_status")
+        ),
+        xlsx_required_axis_materializer_materialized_axes=tuple(
+            _clean(axis)
+            for axis in _as_list(candidate.get("xlsx_required_axis_materializer_materialized_axes"))
+            if _clean(axis)
+        ),
+        xlsx_required_axis_materializer_rejected_context_count=int(
+            candidate.get("xlsx_required_axis_materializer_rejected_context_count") or 0
+        ),
+        xlsx_required_axis_materializer_report_only_diagnostic=(
+            candidate.get("xlsx_required_axis_materializer_report_only_diagnostic") is True
+        ),
+        xlsx_required_axis_materializer_official_metric=(
+            candidate.get("xlsx_required_axis_materializer_official_metric") is True
+        ),
+        xlsx_required_axis_materializer_accepted_for_regating=(
+            candidate.get("xlsx_required_axis_materializer_accepted_for_regating") is True
+        ),
     )
 
 
@@ -2495,6 +2519,214 @@ def agentic_xlsx_regated_candidate_simulator_tool(
     return simulation
 
 
+def _xlsx_required_axis_materializer_scope(candidate: Mapping[str, Any]) -> dict[str, str]:
+    proof: dict[str, str] = {}
+    for field in ("doc_id", "sheet", "cell_range", "row_index_1based", "row_label"):
+        value = _clean(candidate.get(field))
+        if value:
+            proof[field] = value
+    return proof
+
+
+def _xlsx_required_axis_materializer_same_row(
+    answer_candidate: Mapping[str, Any],
+    context: Mapping[str, Any],
+) -> bool:
+    for field in ("doc_id", "sheet", "cell_range"):
+        if _clean(answer_candidate.get(field)) != _clean(context.get(field)):
+            return False
+    row_index_matches = _clean(answer_candidate.get("row_index_1based")) and (
+        _clean(answer_candidate.get("row_index_1based")) == _clean(context.get("row_index_1based"))
+    )
+    row_label_matches = _clean(answer_candidate.get("row_label")) and (
+        _clean(answer_candidate.get("row_label")) == _clean(context.get("row_label"))
+    )
+    return bool(row_index_matches or row_label_matches)
+
+
+def _xlsx_required_axis_materializer_period_aliases(context: Mapping[str, Any]) -> list[str]:
+    aliases = [
+        alias
+        for alias in _xlsx_locator_date_aliases(_gate_row_text(context))
+        if not alias.endswith("일")
+    ]
+    return list(dict.fromkeys(aliases))
+
+
+def validate_agentic_xlsx_required_axis_materializer_output(
+    run_id: str,
+    materializer: AgenticXlsxRequiredAxisMaterializerRecord | Mapping[str, Any],
+) -> None:
+    tool_name = "xlsx_required_axis_materializer_tool"
+    if not isinstance(materializer, (AgenticXlsxRequiredAxisMaterializerRecord, Mapping)):
+        raise DatasetSchemaError(f"{run_id}: {tool_name} must be a materializer record")
+    if _agentic_xlsx_record_value(materializer, "schema_version") != AGENTIC_XLSX_REQUIRED_AXIS_MATERIALIZER_SCHEMA_VERSION:
+        raise DatasetSchemaError(f"{run_id}: {tool_name}.schema_version unsupported")
+    if _agentic_xlsx_record_value(materializer, "tool_name") != tool_name:
+        raise DatasetSchemaError(f"{run_id}: {tool_name}.tool_name unsupported")
+    if _agentic_xlsx_record_value(materializer, "report_only_diagnostic") is not True:
+        raise DatasetSchemaError(f"{run_id}: {tool_name}.report_only_diagnostic must be True")
+    if _agentic_xlsx_record_value(materializer, "official_metric") is not False:
+        raise DatasetSchemaError(f"{run_id}: {tool_name}.official_metric must be False")
+    if _agentic_xlsx_record_value(materializer, "accepted_for_regating") is not False:
+        raise DatasetSchemaError(f"{run_id}: {tool_name}.accepted_for_regating must be False")
+    axes = _agentic_xlsx_clean_tuple(
+        run_id,
+        tool_name,
+        "materialized_axes",
+        _agentic_xlsx_record_value(materializer, "materialized_axes"),
+    )
+    axis_packages = _agentic_xlsx_record_value(materializer, "axis_packages")
+    scope_proof = _agentic_xlsx_record_value(materializer, "scope_proof")
+    if not isinstance(axis_packages, Mapping) or not isinstance(scope_proof, Mapping):
+        raise DatasetSchemaError(f"{run_id}: {tool_name}.axis_packages and scope_proof must be present")
+    forbidden = sorted(_collect_xlsx_locator_forbidden_input_fields(axis_packages))
+    if forbidden:
+        raise DatasetSchemaError(f"{run_id}: {tool_name}.axis_packages contains forbidden field {forbidden[0]}")
+    for axis in axes:
+        package = axis_packages.get(axis)
+        if not isinstance(package, Mapping) or not _as_list(package.get("aliases")):
+            raise DatasetSchemaError(f"{run_id}: {tool_name}.axis_packages.{axis} missing aliases")
+        if _clean(package.get("provenance_policy")) != "source_owned_same_row_period_alias_v1":
+            raise DatasetSchemaError(f"{run_id}: {tool_name}.axis_packages.{axis}.provenance_policy unsupported")
+    if axes:
+        for field in ("doc_id", "sheet", "cell_range"):
+            if not _clean(scope_proof.get(field)):
+                raise DatasetSchemaError(f"{run_id}: {tool_name}.scope_proof.{field} required")
+
+
+def xlsx_required_axis_materializer_tool(
+    *,
+    answer_candidate: Mapping[str, Any],
+    query_focus_contract: Mapping[str, Any],
+    source_owned_contexts: Sequence[Mapping[str, Any]],
+) -> AgenticXlsxRequiredAxisMaterializerRecord:
+    missing_axes = set(_agentic_xlsx_optional_clean_tuple(answer_candidate.get("missing_validated_required_axes")))
+    required_axes = set(_agentic_xlsx_optional_clean_tuple(query_focus_contract.get("validated_required_axes")))
+    if "period" not in missing_axes or "period" not in required_axes:
+        materializer = AgenticXlsxRequiredAxisMaterializerRecord()
+        validate_agentic_xlsx_required_axis_materializer_output("agentic_xlsx", materializer)
+        return materializer
+    rejected_count = 0
+    materialized_aliases: list[str] | None = None
+    for context in source_owned_contexts:
+        if not isinstance(context, Mapping):
+            rejected_count += 1
+            continue
+        if _collect_xlsx_locator_forbidden_input_fields(context):
+            rejected_count += 1
+            continue
+        aliases = _xlsx_required_axis_materializer_period_aliases(context)
+        if not aliases or not _xlsx_required_axis_materializer_same_row(answer_candidate, context):
+            rejected_count += 1
+            continue
+        if materialized_aliases is None:
+            materialized_aliases = aliases
+    if materialized_aliases is not None:
+        materializer = AgenticXlsxRequiredAxisMaterializerRecord(
+            materialized_axes=("period",),
+            axis_packages={
+                "period": {
+                    "aliases": materialized_aliases,
+                    "provenance_policy": "source_owned_same_row_period_alias_v1",
+                }
+            },
+            scope_proof=_xlsx_required_axis_materializer_scope(answer_candidate),
+            rejected_context_count=rejected_count,
+        )
+        validate_agentic_xlsx_required_axis_materializer_output("agentic_xlsx", materializer)
+        return materializer
+    materializer = AgenticXlsxRequiredAxisMaterializerRecord(rejected_context_count=rejected_count)
+    validate_agentic_xlsx_required_axis_materializer_output("agentic_xlsx", materializer)
+    return materializer
+
+
+def _xlsx_locator_apply_required_axis_materializer_actions(
+    *,
+    row: Mapping[str, Any],
+    candidates: Sequence[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    if any(candidate.get("accepted_for_regating") is True for candidate in candidates):
+        return list(candidates)
+    query_focus_contract = _query_evidence_planner_for_row(row)
+    if not query_focus_contract:
+        return list(candidates)
+    raw_source_contexts = _as_list(row.get(INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY)) or _as_list(
+        row.get("retrieved_contexts")
+    )
+    source_contexts = [context for context in raw_source_contexts if isinstance(context, Mapping)]
+    for candidate in candidates:
+        if "period" not in _as_list(candidate.get("missing_validated_required_axes")):
+            continue
+        materializer = xlsx_required_axis_materializer_tool(
+            answer_candidate=candidate,
+            query_focus_contract=query_focus_contract,
+            source_owned_contexts=source_contexts,
+        )
+        candidate.update(
+            {
+                "xlsx_required_axis_materializer_tool_output": True,
+                "xlsx_required_axis_materializer_tool_name": materializer.tool_name,
+                "xlsx_required_axis_materializer_report_only_diagnostic": materializer.report_only_diagnostic,
+                "xlsx_required_axis_materializer_official_metric": materializer.official_metric,
+                "xlsx_required_axis_materializer_accepted_for_regating": materializer.accepted_for_regating,
+                "xlsx_required_axis_materializer_materialized_axes": list(materializer.materialized_axes),
+                "xlsx_required_axis_materializer_rejected_context_count": materializer.rejected_context_count,
+            }
+        )
+        candidate["input_fields_used"] = tuple(
+            dict.fromkeys([*_as_list(candidate.get("input_fields_used")), "xlsx_required_axis_materializer_tool"])
+        )
+        if "period" not in materializer.materialized_axes:
+            candidate["xlsx_required_axis_materializer_execution_status"] = (
+                "rejected_no_source_owned_same_row_period_alias"
+            )
+            continue
+        period_package = materializer.axis_packages.get("period")
+        aliases = _as_list(period_package.get("aliases")) if isinstance(period_package, Mapping) else []
+        aliases = list(dict.fromkeys(_clean(alias) for alias in aliases if _clean(alias)))
+        if not aliases:
+            candidate["xlsx_required_axis_materializer_execution_status"] = "rejected_empty_materialized_aliases"
+            continue
+        text = _clean(candidate.get("text"))
+        normalized_text = normalize_answer_text(text)
+        alias_parts = [
+            f"source_date_alias={alias}"
+            for alias in aliases
+            if normalize_answer_text(alias) not in normalized_text
+        ]
+        if alias_parts:
+            text = " | ".join(part for part in (text, *alias_parts) if part)
+            candidate["text"] = text
+        candidate.update(
+            {
+                "source_date_aliases": aliases,
+                "source_owned_same_candidate_package": True,
+                "source_owned_same_candidate_package_policy": "source_owned_same_row_period_alias_v1",
+                "xlsx_required_axis_materializer_execution_status": "materialized_axis_package",
+            }
+        )
+        locator_text_fields_used = tuple(
+            dict.fromkeys(
+                [
+                    *_as_list(candidate.get("input_fields_used")),
+                    "source_date_aliases",
+                    "xlsx_required_axis_materializer_tool",
+                ]
+            )
+        )
+        _xlsx_locator_refresh_candidate_decision(
+            row=row,
+            context=candidate,
+            candidate=candidate,
+            locator_text=text,
+            locator_text_source=_clean(candidate.get("locator_text_source")) or "source_owned_support_text",
+            locator_text_fields_used=locator_text_fields_used,
+            extra_input_fields_used=("xlsx_required_axis_materializer_tool",),
+        )
+    return list(candidates)
+
+
 def _agentic_xlsx_regated_simulation_summary(
     record: XlsxLocatorRunRecord,
 ) -> dict[str, Any]:
@@ -2837,6 +3069,33 @@ def _xlsx_locator_candidate_budget_diagnostic(record: XlsxLocatorRunRecord) -> d
     }
 
 
+def _xlsx_required_axis_materializer_runtime_diagnostic(record: XlsxLocatorRunRecord) -> dict[str, Any]:
+    candidates = [c for c in record.candidates if c.xlsx_required_axis_materializer_tool_output]
+    status_counts = Counter(c.xlsx_required_axis_materializer_execution_status or "unknown" for c in candidates)
+    axes_counts = Counter(axis for c in candidates for axis in c.xlsx_required_axis_materializer_materialized_axes)
+    policy_counts = Counter(
+        c.source_owned_same_candidate_package_policy or "unknown"
+        for c in candidates
+        if c.source_owned_same_candidate_package and c.xlsx_required_axis_materializer_materialized_axes
+    )
+    return {
+        "schema_version": "actual_rag_eval.xlsx_required_axis_materializer_runtime.v1",
+        "tool_name": "xlsx_required_axis_materializer_tool",
+        "report_only_diagnostic": True,
+        "official_metric": False,
+        "action_count": len(candidates),
+        "materialized_action_count": sum(int(bool(c.xlsx_required_axis_materializer_materialized_axes)) for c in candidates),
+        "materializer_accepted_candidate_count": sum(
+            int(c.xlsx_required_axis_materializer_accepted_for_regating) for c in candidates
+        ),
+        "locator_accepted_after_materialization_count": sum(int(c.accepted_for_regating) for c in candidates),
+        "rejected_context_count": sum(c.xlsx_required_axis_materializer_rejected_context_count for c in candidates),
+        "execution_status_counts": dict(sorted(status_counts.items())),
+        "materialized_axes_counts": dict(sorted(axes_counts.items())),
+        "source_owned_same_candidate_package_policy_counts": dict(sorted(policy_counts.items())),
+    }
+
+
 def project_xlsx_locator_run_record(
     record: XlsxLocatorRunRecord,
     *,
@@ -2860,6 +3119,7 @@ def project_xlsx_locator_run_record(
     candidate_budget_diagnostic = _xlsx_locator_candidate_budget_diagnostic(record)
     query_anchor_tool_acceptance_diagnostic = _xlsx_locator_query_anchor_tool_acceptance_diagnostic(record)
     axis_repair_diagnostic = _agentic_xlsx_axis_repair_diagnostic(record)
+    materializer_runtime_diagnostic = _xlsx_required_axis_materializer_runtime_diagnostic(record)
     projection = {
         "schema_version": record.schema_version,
         "enabled": record.enabled,
@@ -2887,6 +3147,7 @@ def project_xlsx_locator_run_record(
         "candidate_budget_diagnostic": candidate_budget_diagnostic,
         "query_anchor_tool_acceptance_diagnostic": query_anchor_tool_acceptance_diagnostic,
         "agentic_xlsx_axis_repair_diagnostic": axis_repair_diagnostic,
+        "xlsx_required_axis_materializer_runtime_diagnostic": materializer_runtime_diagnostic,
         "zero_candidate_row_count": candidate_budget_diagnostic["zero_candidate_row_count"],
         "candidate_budget_exhaustion_count": candidate_budget_diagnostic["candidate_budget_exhaustion_count"],
         "at_budget_row_count": candidate_budget_diagnostic["at_budget_row_count"],
@@ -2975,6 +3236,7 @@ def apply_xlsx_locator_tool_execute_once_to_outputs(
             continue
         query = _clean(row.get("query"))
         candidates = _xlsx_locator_tool_candidates(row)
+        candidates = _xlsx_locator_apply_required_axis_materializer_actions(row=row, candidates=candidates)
         accepted_candidates = [candidate for candidate in candidates if candidate.get("accepted_for_regating") is True]
         forbidden_seen = sorted(
             {

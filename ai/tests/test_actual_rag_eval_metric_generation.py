@@ -15,6 +15,12 @@ import pytest
 
 from ai.eval import actual_rag_eval
 from ai.eval.actual_rag_eval import (
+    AgenticXlsxAxisInspectionRecord,
+    AgenticXlsxCoordinatorRecord,
+    AgenticXlsxProtectedAnchorVerifierRecord,
+    AgenticXlsxQueryAnchorTaxonomyRecord,
+    AgenticXlsxRegatedCandidateSimulationRecord,
+    AgenticXlsxRepairExplanationRecord,
     DatasetSchemaError,
     ExpectedEvidenceResolver,
     EvidenceResolutionConfig,
@@ -24,6 +30,8 @@ from ai.eval.actual_rag_eval import (
     SourceNativeCorpusLoader,
     SourceNativeHybridAdapter,
     append_actual_rag_status_event,
+    agentic_xlsx_protected_anchor_verifier_tool,
+    agentic_xlsx_query_anchor_taxonomy_tool,
     build_backend_comparison_metrics,
     build_parser,
     build_corpus_coverage_audit_report,
@@ -48,6 +56,12 @@ from ai.eval.actual_rag_eval import (
     select_composer_evidence,
     validate_evidence_package_for_gate,
     validate_actual_rag_guardrails,
+    validate_agentic_xlsx_axis_inspector_output,
+    validate_agentic_xlsx_coordinator_output,
+    validate_agentic_xlsx_protected_anchor_verifier_output,
+    validate_agentic_xlsx_query_anchor_taxonomy_output,
+    validate_agentic_xlsx_regated_candidate_simulator_output,
+    validate_agentic_xlsx_repair_explainer_output,
     write_source_native_legacy_cleanup_report,
     write_latest_pointers,
 )
@@ -5000,6 +5014,447 @@ def test_actual_rag_guardrail_validation_rejects_forbidden_guardrail_flags(field
 
     with pytest.raises(DatasetSchemaError, match=field):
         validate_actual_rag_guardrails(summary)
+
+
+def test_agentic_xlsx_anchor_taxonomy_preserves_structural_anchors() -> None:
+    records = agentic_xlsx_query_anchor_taxonomy_tool(
+        [
+            "일산선",
+            "2020년",
+            "신논현요양원",
+            "원달러",
+            "승객수",
+            "컬럼",
+            "opaqueanchor",
+        ]
+    )
+    by_token = {record.token: record for record in records}
+
+    assert by_token["일산선"].category == "route_or_line"
+    assert by_token["2020년"].category == "date_or_period"
+    assert by_token["신논현요양원"].category == "organization_or_facility"
+    assert by_token["원달러"].category == "numeric_or_unit"
+    assert by_token["승객수"].category == "measure_or_column"
+    assert by_token["컬럼"].category == "unknown_protected"
+    assert by_token["opaqueanchor"].category == "unknown_protected"
+    for record in records:
+        assert record.is_protected_anchor is True
+        assert record.is_removable_intent_token is False
+
+
+def test_agentic_xlsx_anchor_taxonomy_validator_accepts_explicit_column_anchor() -> None:
+    record = AgenticXlsxQueryAnchorTaxonomyRecord(
+        token="컬럼",
+        category="measure_or_column",
+        is_removable_intent_token=False,
+        is_protected_anchor=True,
+        reason="caller supplied column taxonomy; validator keeps it protected",
+    )
+
+    validate_agentic_xlsx_query_anchor_taxonomy_output("agentic_xlsx_test", [record])
+
+
+def test_agentic_xlsx_anchor_taxonomy_drops_intent_only() -> None:
+    records = agentic_xlsx_query_anchor_taxonomy_tool(["무엇입니까", "명입니까", "지정된", "알려주세요", "구하시오"])
+
+    assert {record.category for record in records} == {"intent_token"}
+    assert all(record.is_removable_intent_token is True for record in records)
+    assert all(record.is_protected_anchor is False for record in records)
+
+
+def test_agentic_xlsx_anchor_taxonomy_validator_rejects_malformed_category() -> None:
+    malformed = AgenticXlsxQueryAnchorTaxonomyRecord(
+        token="일산선",
+        category="route",
+        is_removable_intent_token=False,
+        is_protected_anchor=True,
+        reason="malformed category should fail closed",
+    )
+
+    with pytest.raises(DatasetSchemaError, match="category unsupported"):
+        validate_agentic_xlsx_query_anchor_taxonomy_output("agentic_xlsx_test", [malformed])
+
+
+def test_agentic_xlsx_protected_anchor_verifier_rejects_llm_structural_removal() -> None:
+    taxonomy = agentic_xlsx_query_anchor_taxonomy_tool(
+        ["무엇입니까", "일산선", "수인선", "신논현요양원", "2024년", "2월", "원달러", "컬럼"]
+    )
+
+    verification = agentic_xlsx_protected_anchor_verifier_tool(
+        proposed_removed_tokens=["무엇입니까", "일산선", "수인선", "신논현요양원", "2024년", "2월", "원달러", "컬럼"],
+        taxonomy_records=taxonomy,
+    )
+
+    assert verification.approved_removed_tokens == ("무엇입니까",)
+    assert set(verification.rejected_removed_tokens) == {
+        "일산선",
+        "수인선",
+        "신논현요양원",
+        "2024년",
+        "2월",
+        "원달러",
+        "컬럼",
+    }
+    assert set(verification.protected_rejection_reasons) == set(verification.rejected_removed_tokens)
+    validate_agentic_xlsx_protected_anchor_verifier_output(
+        "agentic_xlsx_test",
+        verification,
+        taxonomy_records=taxonomy,
+    )
+
+
+def test_agentic_xlsx_repair_explainer_fails_closed_on_protected_removal() -> None:
+    anchor_verification = AgenticXlsxProtectedAnchorVerifierRecord(
+        proposed_removed_tokens=("일산선",),
+        approved_removed_tokens=(),
+        rejected_removed_tokens=("일산선",),
+        protected_rejection_reasons={"일산선": "route or line anchor must be preserved"},
+    )
+    explanation = AgenticXlsxRepairExplanationRecord(
+        primary_failure_family="intent_anchor_only",
+        secondary_failure_families=(),
+        safe_to_simulate_intent_removal=True,
+        repair_recommendation="reject protected-anchor removal",
+        evidence_summary="LLM advisory attempted to remove a route anchor",
+    )
+
+    with pytest.raises(DatasetSchemaError, match="safe_to_simulate_intent_removal"):
+        validate_agentic_xlsx_repair_explainer_output(
+            "agentic_xlsx_test",
+            explanation,
+            anchor_verification=anchor_verification,
+        )
+
+
+def test_agentic_xlsx_axis_inspector_validator_rejects_oracle_evidence() -> None:
+    valid = AgenticXlsxAxisInspectionRecord(
+        has_required_period_axis=True,
+        has_required_entity_axis=True,
+        has_required_measure_axis=True,
+        has_display_value=True,
+        missing_axes=(),
+        source_owned_axis_evidence={"target_column": "승객수", "display_value": "123"},
+    )
+    validate_agentic_xlsx_axis_inspector_output("agentic_xlsx_test", valid)
+
+    bad = AgenticXlsxAxisInspectionRecord(
+        has_required_period_axis=True,
+        has_required_entity_axis=True,
+        has_required_measure_axis=True,
+        has_display_value=True,
+        missing_axes=(),
+        source_owned_axis_evidence={"expected_answer": "oracle value"},
+    )
+    with pytest.raises(DatasetSchemaError, match="expected_answer"):
+        validate_agentic_xlsx_axis_inspector_output("agentic_xlsx_test", bad)
+
+
+def test_agentic_xlsx_regated_simulator_requires_report_only_verifier_approval() -> None:
+    taxonomy = agentic_xlsx_query_anchor_taxonomy_tool(["무엇입니까", "일산선"])
+    verification = agentic_xlsx_protected_anchor_verifier_tool(
+        proposed_removed_tokens=["무엇입니까", "일산선"],
+        taxonomy_records=taxonomy,
+    )
+    valid = AgenticXlsxRegatedCandidateSimulationRecord(
+        original_rejection_reason="missing_query_anchor_after_tool",
+        simulated_rejection_reason="missing_validated_required_axes_after_tool",
+        approved_removed_tokens=("무엇입니까",),
+        protected_tokens_preserved=("일산선",),
+        axis_status_after_simulation={"missing_axes": ("period",), "remaining_missing_query_anchors": ()},
+        would_be_accepted_by_existing_gate=False,
+    )
+    validate_agentic_xlsx_regated_candidate_simulator_output(
+        "agentic_xlsx_test",
+        valid,
+        anchor_verification=verification,
+    )
+
+    not_report_only = AgenticXlsxRegatedCandidateSimulationRecord(
+        original_rejection_reason="missing_query_anchor_after_tool",
+        simulated_rejection_reason="missing_validated_required_axes_after_tool",
+        approved_removed_tokens=("무엇입니까",),
+        protected_tokens_preserved=("일산선",),
+        axis_status_after_simulation={"missing_axes": ("period",), "remaining_missing_query_anchors": ()},
+        would_be_accepted_by_existing_gate=False,
+        report_only_diagnostic=False,
+    )
+    with pytest.raises(DatasetSchemaError, match="report_only_diagnostic"):
+        validate_agentic_xlsx_regated_candidate_simulator_output(
+            "agentic_xlsx_test",
+            not_report_only,
+            anchor_verification=verification,
+        )
+
+    official = AgenticXlsxRegatedCandidateSimulationRecord(
+        original_rejection_reason="missing_query_anchor_after_tool",
+        simulated_rejection_reason="missing_validated_required_axes_after_tool",
+        approved_removed_tokens=("무엇입니까",),
+        protected_tokens_preserved=("일산선",),
+        axis_status_after_simulation={"missing_axes": ("period",), "remaining_missing_query_anchors": ()},
+        would_be_accepted_by_existing_gate=False,
+        official_metric=True,
+    )
+    with pytest.raises(DatasetSchemaError, match="official_metric"):
+        validate_agentic_xlsx_regated_candidate_simulator_output(
+            "agentic_xlsx_test",
+            official,
+            anchor_verification=verification,
+        )
+
+    unapproved = AgenticXlsxRegatedCandidateSimulationRecord(
+        original_rejection_reason="missing_query_anchor_after_tool",
+        simulated_rejection_reason="accepted_after_regating",
+        approved_removed_tokens=("일산선",),
+        protected_tokens_preserved=(),
+        axis_status_after_simulation={"missing_axes": (), "remaining_missing_query_anchors": ()},
+        would_be_accepted_by_existing_gate=True,
+    )
+    with pytest.raises(DatasetSchemaError, match="approved_removed_tokens"):
+        validate_agentic_xlsx_regated_candidate_simulator_output(
+            "agentic_xlsx_test",
+            unapproved,
+            anchor_verification=verification,
+        )
+
+
+def test_agentic_xlsx_coordinator_validates_fixed_sequence_and_diagnostic_flags() -> None:
+    valid = AgenticXlsxCoordinatorRecord()
+    validate_agentic_xlsx_coordinator_output("agentic_xlsx_test", valid)
+
+    wrong_sequence = AgenticXlsxCoordinatorRecord(tool_sequence=("ProtectedAnchorVerifierTool",))
+    with pytest.raises(DatasetSchemaError, match="tool_sequence"):
+        validate_agentic_xlsx_coordinator_output("agentic_xlsx_test", wrong_sequence)
+
+    not_report_only = AgenticXlsxCoordinatorRecord(report_only_diagnostic=False)
+    with pytest.raises(DatasetSchemaError, match="report_only_diagnostic"):
+        validate_agentic_xlsx_coordinator_output("agentic_xlsx_test", not_report_only)
+
+    official = AgenticXlsxCoordinatorRecord(official_metric=True)
+    with pytest.raises(DatasetSchemaError, match="official_metric"):
+        validate_agentic_xlsx_coordinator_output("agentic_xlsx_test", official)
+
+
+def test_agentic_xlsx_llm_query_anchor_classifier_and_planner_keep_protected_advisory_tokens(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    unsafe_tokens = [
+        "일산선",
+        "수인선",
+        "신논현요양원",
+        "청운노인요양원",
+        "2020년",
+        "2024년",
+        "2월",
+        "1월",
+        "원달러",
+    ]
+    query = (
+        "2020년 2월 일산선과 2024년 1월 수인선의 원달러 금액을 비교하고 "
+        "신논현요양원 및 청운노인요양원 값은 무엇입니까?"
+    )
+
+    def assert_verifier_guarded(result: dict) -> None:
+        assert result["status"] == "classified_validated"
+        assert result["removed_intent_tokens"] == ["무엇입니까"]
+        assert set(unsafe_tokens).issubset(set(result["protected_intent_tokens_restored"]))
+        assert set(unsafe_tokens).issubset(set(result["required_anchor_after"]))
+        verifier = result["agentic_xlsx_protected_anchor_verifier"]
+        assert verifier["approved_removed_tokens"] == ["무엇입니까"]
+        assert set(unsafe_tokens).issubset(set(verifier["rejected_removed_tokens"]))
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "intent_tokens": ["무엇입니까", *unsafe_tokens],
+                "numeric_or_date_anchors": [],
+                "entity_anchors": [],
+                "measure_anchors": [],
+            },
+            {"raw_response_sha256": "sha256:unsafe-agentic-xlsx-classifier"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    llm_result = actual_rag_eval.classify_query_focus_anchors_with_local_llm(
+        query,
+        skip_endpoint_check=True,
+    )
+    assert_verifier_guarded(llm_result)
+    assert llm_result["raw_payload_written"] is False
+    assert llm_result["raw_prompt_payload_written"] is False
+    assert llm_result["raw_response_payload_written"] is False
+    assert llm_result["uses_gold_fields"] is False
+    assert llm_result["uses_expected_fields"] is False
+    assert llm_result["uses_qrels"] is False
+    assert llm_result["uses_labels"] is False
+    assert llm_result["uses_query_or_row_or_target_ids"] is False
+    assert llm_result["uses_baseline_topk_or_legacy_outputs"] is False
+
+    planner_result = actual_rag_eval._query_anchor_classifier_from_planner(
+        query,
+        {
+            "planner_status": "planned_validated",
+            "model": "local-test",
+            "backend": "test",
+            "base_url": "http://localhost",
+            "raw_response_sha256": "sha256:planner-protected-anchors",
+            "validated_axis_values": {},
+        },
+    )
+    assert_verifier_guarded(planner_result)
+
+    encoded = json.dumps({"llm": llm_result, "planner": planner_result}, ensure_ascii=False)
+    for forbidden in ("expected_answer", "expected_evidence", "row_id", "candidate_id"):
+        assert forbidden not in encoded
+
+
+def test_agentic_xlsx_xlsx_locator_projection_reports_axis_gap_and_regated_simulation() -> None:
+    def candidate(
+        index: int,
+        *,
+        suffix: str,
+        missing_query_anchors: tuple[str, ...],
+        matched_axes: tuple[str, ...],
+        missing_axes: tuple[str, ...],
+        rejection_reason: str,
+        display_value: str = "123명",
+        matched_query_anchors: tuple[str, ...] = ("2020년", "2월"),
+    ) -> actual_rag_eval.XlsxLocatorEvidenceCandidateRecord:
+        return actual_rag_eval.XlsxLocatorEvidenceCandidateRecord(
+            item_index=0,
+            candidate_index=index,
+            source_family="XLSX",
+            tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+            tool_policy=actual_rag_eval.XLSX_LOCATOR_TOOL_POLICY,
+            source_atom_id=f"src-agentic-{suffix}",
+            evidence_bundle_id=f"bundle-agentic-{suffix}",
+            doc_id="doc-agentic",
+            sheet="2020년 2월",
+            cell_range=f"A{index * 4 + 1}:D{index * 4 + 4}",
+            row_label="일산선",
+            target_column="수송인원",
+            display_value=display_value,
+            matched_query_anchors=matched_query_anchors,
+            missing_query_anchors_after_tool=missing_query_anchors,
+            matched_validated_required_axes=matched_axes,
+            missing_validated_required_axes=missing_axes,
+            confidence_tier="high",
+            accepted_for_regating=False,
+            rejection_reason=rejection_reason,
+        )
+
+    complete_axes = ("period", "row_entity", "target_column", "display_value")
+    missing_value_axes = ("period", "row_entity", "target_column")
+    candidates = (
+        candidate(
+            0,
+            suffix="accepted",
+            missing_query_anchors=("무엇입니까",),
+            matched_axes=complete_axes,
+            missing_axes=(),
+            rejection_reason="missing_query_anchor_after_tool",
+        ),
+        candidate(
+            1,
+            suffix="axis-gap",
+            missing_query_anchors=("무엇입니까",),
+            matched_axes=missing_value_axes,
+            missing_axes=("display_value",),
+            rejection_reason="missing_query_anchor_after_tool",
+            display_value="",
+        ),
+        candidate(
+            2,
+            suffix="protected",
+            missing_query_anchors=("일산선",),
+            matched_axes=complete_axes,
+            missing_axes=(),
+            rejection_reason="missing_query_anchor_after_tool",
+        ),
+        candidate(
+            3,
+            suffix="axis-only",
+            missing_query_anchors=(),
+            matched_axes=missing_value_axes,
+            missing_axes=("display_value",),
+            rejection_reason="missing_validated_required_axes_after_tool",
+            display_value="",
+            matched_query_anchors=("2020년", "2월", "일산선"),
+        ),
+    )
+    record = actual_rag_eval.XlsxLocatorRunRecord(
+        schema_version=actual_rag_eval.XLSX_LOCATOR_TOOL_EXECUTE_ONCE_SCHEMA_VERSION,
+        enabled=True,
+        report_only_diagnostic=True,
+        official_metric=False,
+        tool_name=actual_rag_eval.XLSX_LOCATOR_TOOL_NAME,
+        eligible_failed_row_count=1,
+        tool_invocation_count=1,
+        accepted_candidate_count=0,
+        rejected_candidate_count=len(candidates),
+        gate_delta_record=actual_rag_eval.XlsxLocatorGateDeltaRecord(),
+        guardrail_record=actual_rag_eval.XlsxLocatorGuardrailRecord(),
+        required_anchor_summary={
+            "removed_intent_tokens": ["무엇입니까"],
+            "protected_intent_tokens_restored": ["일산선", "2020년"],
+        },
+        candidates=candidates,
+    )
+
+    diagnostic = actual_rag_eval.project_xlsx_locator_run_record(record)[
+        "agentic_xlsx_axis_repair_diagnostic"
+    ]
+    assert diagnostic["report_only_diagnostic"] is True
+    assert diagnostic["official_metric"] is False
+    assert diagnostic["official_metric_input_rows"] == 0
+    assert diagnostic["candidate_count"] == 4
+    assert diagnostic["missing_axis_candidate_count"] == 2
+    assert diagnostic["primary_failure_family_counts"] == {
+        "axis_materialization_gap": 1,
+        "intent_anchor_only": 2,
+        "query_anchor_and_axis_missing": 1,
+    }
+    assert diagnostic["candidate_summaries"][1]["primary_failure_family"] == "query_anchor_and_axis_missing"
+    assert diagnostic["candidate_summaries"][1]["safe_to_simulate_intent_removal"] is False
+    assert diagnostic["candidate_summaries"][3]["primary_failure_family"] == "axis_materialization_gap"
+    assert diagnostic["candidate_summaries"][3]["safe_to_simulate_intent_removal"] is False
+
+    simulation = diagnostic["regated_simulation_summary"]
+    assert simulation["report_only_diagnostic"] is True
+    assert simulation["official_metric"] is False
+    assert simulation["official_metric_input_rows"] == 0
+    assert simulation["quality_delta_claim_supported"] is False
+    assert simulation["approved_removed_tokens"] == ["무엇입니까"]
+    assert simulation["protected_tokens_preserved"] == ["일산선", "2020년"]
+    assert simulation["simulated_rejection_reason_counts"] == {
+        "accepted_after_regating": 1,
+        "missing_query_anchor_after_tool": 1,
+        "missing_validated_required_axes_after_tool": 1,
+    }
+    assert simulation["query_anchor_to_axis_materialization_candidate_count"] == 1
+    assert simulation["query_anchor_to_accepted_candidate_count"] == 1
+    assert simulation["would_be_accepted_by_existing_gate_candidate_count"] == 1
+    assert simulation["simulations"][1]["simulated_rejection_reason"] == "missing_validated_required_axes_after_tool"
+    assert simulation["simulations"][2]["axis_status_after_simulation"] == {
+        "missing_axes": [],
+        "remaining_missing_query_anchors": ["일산선"],
+    }
+
+    encoded = json.dumps(diagnostic, ensure_ascii=False)
+    for forbidden in (
+        "src-agentic",
+        "bundle-agentic",
+        "doc-agentic",
+        "expected_answer",
+        "expected_evidence",
+        "row_id",
+        "candidate_id",
+    ):
+        assert forbidden not in encoded
 
 
 def test_run_comparison_handles_deltas_missing_metrics_and_denominator_changes() -> None:

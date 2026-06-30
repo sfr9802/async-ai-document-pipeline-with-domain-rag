@@ -21,6 +21,9 @@ AGENTIC_XLSX_REGATED_CANDIDATE_SIMULATOR_SCHEMA_VERSION = (
     "actual_rag_eval.agentic_xlsx_regated_candidate_simulator.v1"
 )
 AGENTIC_XLSX_COORDINATOR_SCHEMA_VERSION = "actual_rag_eval.agentic_xlsx_coordinator.v1"
+AGENTIC_XLSX_REQUIRED_AXIS_MATERIALIZER_SCHEMA_VERSION = (
+    "actual_rag_eval.xlsx_required_axis_materializer.v1"
+)
 AGENTIC_XLSX_ANCHOR_TAXONOMY_CATEGORIES = (
     "intent_token",
     "date_or_period",
@@ -100,6 +103,19 @@ class AgenticXlsxRegatedCandidateSimulationRecord:
     report_only_diagnostic: bool = True
     official_metric: bool = False
     schema_version: str = AGENTIC_XLSX_REGATED_CANDIDATE_SIMULATOR_SCHEMA_VERSION
+
+
+@dataclass(frozen=True)
+class AgenticXlsxRequiredAxisMaterializerRecord:
+    tool_name: str = "xlsx_required_axis_materializer_tool"
+    materialized_axes: tuple[str, ...] = ()
+    axis_packages: Mapping[str, Any] = field(default_factory=dict)
+    scope_proof: Mapping[str, str] = field(default_factory=dict)
+    rejected_context_count: int = 0
+    accepted_for_regating: bool = False
+    report_only_diagnostic: bool = True
+    official_metric: bool = False
+    schema_version: str = AGENTIC_XLSX_REQUIRED_AXIS_MATERIALIZER_SCHEMA_VERSION
 
 
 @dataclass(frozen=True)
