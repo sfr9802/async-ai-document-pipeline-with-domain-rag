@@ -320,6 +320,59 @@ XLSX_PDF_RESIDUAL_FORBIDDEN_SHORTCUT_FIELDS = frozenset(
         "target_locator",
     }
 )
+SOURCE_DERIVED_EVIDENCE_METADATA_FIELDS = (
+    "source_family",
+    "sheet",
+    "cell",
+    "cell_range",
+    "row_index_1based",
+    "row_label",
+    "column_label",
+    "target_column",
+    "header_path",
+    "header",
+    "table_id",
+    "display_value",
+    "page_number",
+    "page",
+    "physical_page_index",
+    "block_index",
+    "bbox",
+    "region_type",
+    "section_title",
+    "table_caption",
+    "locator_fingerprint",
+)
+SOURCE_DERIVED_EVIDENCE_FORBIDDEN_FIELDS = frozenset(
+    {
+        "title",
+        "source_title",
+        "workbook",
+        "workbook_title",
+        "workbook_name",
+        "source_workbook",
+        "source_workbook_title",
+        "source_path",
+        "path",
+        "file_path",
+        "source_file_name",
+        "file_name",
+        "filename",
+        "workbook_id",
+        "workbook_version_id",
+        "normalized_value",
+        "formula",
+        "expected_answer",
+        "expected_evidence",
+        "qrels",
+        "label",
+        "labels",
+        "answerability",
+        "query_id",
+        "row_id",
+        "target_id",
+    }
+)
 XLSX_LOCATOR_FORBIDDEN_TEXT_MARKERS = (
     "answerability",
     "answerability_label",
@@ -355,6 +408,413 @@ XLSX_LOCATOR_FORBIDDEN_TEXT_MARKERS = (
     "workbook_id",
     "workbook_version_id",
 )
+
+
+def _canonical_xlsx_locator_field_name(value: Any) -> str:
+    text = _clean(value)
+    if not text:
+        return ""
+    text = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", text)
+    text = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", "_", text)
+    canonical = re.sub(r"[^A-Za-z0-9]+", "_", text).strip("_").casefold()
+    aliases = {
+        "baseline_top_k": "baseline_topk",
+        "file": "file_name",
+        "filename": "file_name",
+        "source_filename": "source_file_name",
+    }
+    return aliases.get(canonical, canonical)
+
+
+def _xlsx_locator_text_marker_aliases(marker: str) -> set[str]:
+    canonical = _canonical_xlsx_locator_field_name(marker)
+    parts = [part for part in canonical.split("_") if part]
+    camel = parts[0] + "".join(part[:1].upper() + part[1:] for part in parts[1:]) if parts else canonical
+    pascal = "".join(part[:1].upper() + part[1:] for part in parts)
+    aliases = {
+        canonical,
+        canonical.replace("_", ""),
+        canonical.replace("_", "-"),
+        camel,
+        pascal,
+    }
+    if canonical == "file_name":
+        aliases.update({"filename", "fileName", "FileName", "source_file_name", "sourceFileName", "SourceFileName"})
+    if canonical == "source_file_name":
+        aliases.update({"file_name", "fileName", "filename"})
+    if canonical == "baseline_topk":
+        aliases.update({"baseline_top_k", "baselineTopK", "BaselineTopK"})
+    return {alias for alias in aliases if alias}
+
+
+def _xlsx_locator_forbidden_text_fields(value: Any) -> set[str]:
+    text = _clean(value).casefold()
+    if not text:
+        return set()
+    seen: set[str] = set()
+    for marker in XLSX_LOCATOR_FORBIDDEN_TEXT_MARKERS:
+        for alias in _xlsx_locator_text_marker_aliases(marker):
+            normalized = alias.casefold()
+            if (
+                re.search(rf"(?<![a-z0-9_]){re.escape(normalized)}\s*[:=]", text)
+                or f'"{normalized}"' in text
+                or f"'{normalized}'" in text
+            ):
+                seen.add(_canonical_xlsx_locator_field_name(marker))
+                break
+    return seen
+
+
+def _collect_xlsx_locator_forbidden_input_fields(value: Any) -> set[str]:
+    seen: set[str] = set()
+    forbidden_keys = set(XLSX_PDF_RESIDUAL_FORBIDDEN_SHORTCUT_FIELDS)
+    forbidden_keys.update(SOURCE_DERIVED_EVIDENCE_FORBIDDEN_FIELDS)
+    forbidden_keys.update(
+        {
+            "raw_prompt",
+            "raw_response",
+            "prompt_payload",
+            "raw_prompt_payload",
+            "raw_response_payload",
+            "raw_tool_payload",
+            "source_path",
+            "tool_payload",
+            "workbook_id",
+            "workbook_version_id",
+        }
+    )
+    if isinstance(value, Mapping):
+        for key, nested in value.items():
+            key_text = _canonical_xlsx_locator_field_name(key)
+            if key_text in forbidden_keys:
+                seen.add(key_text)
+            if key_text in {"forbidden_input_fields_seen", "forbidden_input_fields_used"}:
+                seen.update(
+                    canonical
+                    for canonical in (_canonical_xlsx_locator_field_name(field) for field in _as_list(nested))
+                    if canonical in forbidden_keys
+                )
+            if isinstance(nested, str):
+                seen.update(_xlsx_locator_forbidden_text_fields(nested))
+            elif isinstance(nested, (Mapping, list, tuple)):
+                seen.update(_collect_xlsx_locator_forbidden_input_fields(nested))
+    elif isinstance(value, (list, tuple)):
+        for nested in value:
+            if isinstance(nested, str):
+                seen.update(_xlsx_locator_forbidden_text_fields(nested))
+            elif isinstance(nested, (Mapping, list, tuple)):
+                seen.update(_collect_xlsx_locator_forbidden_input_fields(nested))
+    elif isinstance(value, str):
+        seen.update(_xlsx_locator_forbidden_text_fields(value))
+    return seen
+
+
+def _xlsx_locator_metadata_sources(context: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    sources: list[Mapping[str, Any]] = [context]
+    for container_key in (
+        "metadata",
+        "raw_locator",
+        "location_json",
+        "xlsx_locator_metadata",
+        "xlsx_locator",
+        "locator_metadata",
+    ):
+        parsed = _parse_jsonish(context.get(container_key))
+        if isinstance(parsed, Mapping):
+            sources.append(parsed)
+    return sources
+
+
+def _xlsx_locator_source_owned_value(context: Mapping[str, Any], field: str) -> str:
+    if field in SOURCE_DERIVED_EVIDENCE_FORBIDDEN_FIELDS:
+        return ""
+    for source in _xlsx_locator_metadata_sources(context):
+        value = _clean(source.get(field))
+        if value:
+            return value
+    return ""
+
+
+def _xlsx_locator_source_owned_text(context: Mapping[str, Any]) -> tuple[str, tuple[str, ...]]:
+    values: list[str] = []
+    fields: list[str] = []
+    for field in (
+        "sheet",
+        "cell_range",
+        "cell",
+        "row_index_1based",
+        "row_label",
+        "column_label",
+        "target_column",
+        "header",
+        "header_path",
+        "table_id",
+        "synthetic_table_id",
+        "display_value",
+    ):
+        value = _xlsx_locator_source_owned_value(context, field)
+        if not value:
+            continue
+        values.append(f"{field}={value}")
+        fields.append(field)
+    return " | ".join(values), tuple(fields)
+
+
+def _strip_xlsx_locator_forbidden_text_segments(text: str) -> str:
+    clean_text = _clean(text)
+    if not clean_text:
+        return ""
+    safe_parts: list[str] = []
+    for part in re.split(r"\s+\|\s+", clean_text):
+        segment = _clean(part)
+        if not segment:
+            continue
+        if _xlsx_locator_forbidden_text_fields(segment):
+            continue
+        safe_parts.append(segment)
+    return " | ".join(safe_parts)
+
+
+def _xlsx_locator_candidate_text(context: Mapping[str, Any]) -> tuple[str, str, tuple[str, ...]]:
+    preserved_locator_text = _clean(context.get("xlsx_locator_text"))
+    preserved_locator_text_source = _clean(context.get("locator_text_source"))
+    if preserved_locator_text and preserved_locator_text_source:
+        fields_used = tuple(
+            _clean(field)
+            for field in _as_list(context.get("locator_text_fields_used"))
+            if _clean(field)
+        )
+        if not fields_used:
+            fields_used = ("xlsx_locator_text",)
+        return preserved_locator_text, preserved_locator_text_source, fields_used
+    for field in (
+        "xlsx_cell_or_table_text",
+        "xlsx_locator_text",
+        "cell_text",
+        "table_text",
+        "row_text",
+        "tool_text",
+    ):
+        locator_text = _clean(context.get(field))
+        if locator_text:
+            return locator_text, "explicit_locator_text", (field,)
+    source_owned_text, source_owned_fields = _xlsx_locator_source_owned_text(context)
+    row_text = _strip_xlsx_locator_forbidden_text_segments(_gate_row_text(context))
+    support_text = " | ".join(part for part in (source_owned_text, row_text) if part)
+    if support_text and source_owned_fields:
+        text_fields = [
+            field
+            for field in ("text", "citation_text", "display_text", "embedding_text", "bm25_text")
+            if _clean(context.get(field))
+        ]
+        return support_text, "source_owned_support_text", tuple([*source_owned_fields, *text_fields[:1]])
+    return "", "", ()
+
+
+def _xlsx_locator_date_aliases(text: str) -> list[str]:
+    aliases: list[str] = []
+    seen: set[str] = set()
+
+    def valid_year(value: str) -> bool:
+        try:
+            year = int(value)
+        except ValueError:
+            return False
+        return 1900 <= year <= 2099
+
+    def add(value: str) -> None:
+        clean_value = _clean(value)
+        if clean_value and clean_value not in seen:
+            aliases.append(clean_value)
+            seen.add(clean_value)
+
+    for match in re.finditer(r"\b(\d{4})[-./](0?[1-9]|1[0-2])(?:[-./](0?[1-9]|[12]\d|3[01]))?\b", text):
+        year = match.group(1)
+        if not valid_year(year):
+            continue
+        month = str(int(match.group(2)))
+        day = str(int(match.group(3))) if match.group(3) else ""
+        add(f"{year}년 {month}월")
+        add(f"{year}년")
+        add(f"{month}월")
+        if day:
+            add(f"{day}일")
+    compact_period_pattern = re.compile(
+        r"(?:년월|연월|기간|period|date|지정일자|설치신고일자)\s*[:=]?\s*(\d{4})(0[1-9]|1[0-2])\b",
+        re.IGNORECASE,
+    )
+    for match in compact_period_pattern.finditer(text):
+        year = match.group(1)
+        if not valid_year(year):
+            continue
+        month = str(int(match.group(2)))
+        add(f"{year}년 {month}월")
+        add(f"{year}년")
+        add(f"{month}월")
+    return aliases
+
+
+def _parse_source_owned_xlsx_date(value: Any) -> datetime | None:
+    text = _clean(value)
+    if not text:
+        return None
+    match = re.match(
+        r"^\s*(\d{4})[-./](0?[1-9]|1[0-2])[-./](0?[1-9]|[12]\d|3[01])(?:[T\s].*)?\s*$",
+        text,
+    )
+    if not match:
+        return None
+    try:
+        return datetime(int(match.group(1)), int(match.group(2)), int(match.group(3)))
+    except ValueError:
+        return None
+
+
+def _xlsx_same_row_period_cell_packet(
+    *,
+    source_atom_id: str,
+    doc_id: str,
+    sheet: str,
+    cell_range: str,
+    cell: str,
+    row_index_1based: str,
+    row_label: str,
+    column_label: str,
+    raw_value: str,
+) -> dict[str, Any] | None:
+    parsed = _parse_source_owned_xlsx_date(raw_value)
+    if parsed is None:
+        return None
+    source_atom_id = _clean(source_atom_id)
+    doc_id = _clean(doc_id)
+    sheet = _clean(sheet)
+    cell_range = _clean(cell_range)
+    cell = _clean(cell).upper()
+    row_index_1based = _clean(row_index_1based)
+    row_label = _clean(row_label)
+    column_label = _clean(column_label)
+    raw_value = _clean(raw_value)
+    if not (
+        source_atom_id
+        and doc_id
+        and sheet
+        and cell_range
+        and cell
+        and row_index_1based
+        and column_label
+        and raw_value
+    ):
+        return None
+    return {
+        "schema_version": "actual_rag_eval.xlsx.same_row_period_cell.v1",
+        "provenance_policy": "source_owned_same_row_period_cell_v1",
+        "source_atom_id": source_atom_id,
+        "doc_id": doc_id,
+        "sheet": sheet,
+        "cell_range": cell_range,
+        "cell": cell,
+        "row_index_1based": row_index_1based,
+        "row_label": row_label,
+        "column_label": column_label,
+        "raw_value": raw_value,
+        "parsed_date": parsed.date().isoformat(),
+        "year": parsed.year,
+        "month": parsed.month,
+        "day": parsed.day,
+    }
+
+
+def _xlsx_locator_source_date_alias_candidate_values(value: Any) -> list[str]:
+    parsed = _parse_jsonish(value)
+    raw_values = parsed if isinstance(parsed, list) else [parsed]
+    aliases: list[str] = []
+    seen: set[str] = set()
+    for raw_value in raw_values:
+        alias = _clean(raw_value)
+        if not alias:
+            continue
+        if not (
+            re.fullmatch(r"\d{4}년", alias)
+            or re.fullmatch(r"\d{1,2}월", alias)
+            or re.fullmatch(r"\d{1,2}일", alias)
+            or re.fullmatch(r"\d{4}년 \d{1,2}월", alias)
+        ):
+            continue
+        if alias not in seen:
+            aliases.append(alias)
+            seen.add(alias)
+    return aliases
+
+
+def _xlsx_locator_source_context_snapshot(context: Mapping[str, Any]) -> dict[str, Any] | None:
+    if _clean(context.get("source_family")).upper() not in {"XLSX", "XLS", "SPREADSHEET"}:
+        return None
+    locator_text, locator_text_source, locator_text_fields_used = _xlsx_locator_candidate_text(context)
+    if not locator_text:
+        return None
+    snapshot: dict[str, Any] = {
+        "source_family": _clean(context.get("source_family")) or "XLSX",
+        "text": _clean(context.get("text")),
+        "xlsx_locator_text": locator_text,
+        "locator_text_source": locator_text_source,
+        "locator_text_fields_used": list(locator_text_fields_used),
+    }
+    for key in (
+        "chunk_id",
+        "source_atom_id",
+        "evidence_bundle_id",
+        "doc_id",
+        "granularity",
+        "rank",
+    ):
+        value = context.get(key)
+        if _source_value_present(value):
+            snapshot[key] = value
+    for field in XLSX_LOCATOR_SOURCE_OWNED_FIELDS:
+        value = _xlsx_locator_source_owned_value(context, field)
+        if value:
+            snapshot[field] = value
+    metadata = context.get("metadata") if isinstance(context.get("metadata"), Mapping) else {}
+    materialization = _clean(
+        context.get("candidate_surface_materialization")
+        or metadata.get("candidate_surface_materialization")
+    )
+    if materialization == "xlsx_row_value_bundle_v1":
+        aliases: list[str] = []
+        seen_aliases: set[str] = set()
+        for source in (context, metadata):
+            for field in ("source_date_aliases", "source_date_aliases_json", "source_date_alias"):
+                for alias in _xlsx_locator_source_date_alias_candidate_values(source.get(field)):
+                    if alias not in seen_aliases:
+                        aliases.append(alias)
+                        seen_aliases.add(alias)
+        snapshot["candidate_surface_materialization"] = materialization
+        if aliases:
+            snapshot["source_date_aliases"] = aliases
+        period_cells = _parse_jsonish(
+            context.get("same_row_period_cells_json") or metadata.get("same_row_period_cells_json")
+        )
+        if isinstance(period_cells, list) and period_cells:
+            snapshot["same_row_period_cells_json"] = json.dumps(
+                [cell for cell in period_cells if isinstance(cell, Mapping)],
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+    period_cells = _parse_jsonish(
+        context.get("same_row_period_cells_json") or metadata.get("same_row_period_cells_json")
+    )
+    if isinstance(period_cells, list) and period_cells:
+        snapshot["same_row_period_cells_json"] = json.dumps(
+            [cell for cell in period_cells if isinstance(cell, Mapping)],
+            ensure_ascii=False,
+            sort_keys=True,
+        )
+    forbidden_seen = sorted(_collect_xlsx_locator_forbidden_input_fields(context))
+    if forbidden_seen:
+        snapshot["forbidden_input_fields_seen"] = forbidden_seen
+    return snapshot
+
+
 HEURISTIC_RISK_ALLOWED_CLASSIFICATIONS = (
     "global_normalization",
     "source_derived_index_feature",
@@ -1088,6 +1548,14 @@ def _parse_jsonish(value: Any) -> Any:
         return value
 
 
+def _source_value_present(value: Any) -> bool:
+    if isinstance(value, Mapping):
+        return bool(value)
+    if isinstance(value, (list, tuple, set)):
+        return bool(value)
+    return bool(_clean(value))
+
+
 def _jsonable(value: Any) -> Any:
     return json.loads(json.dumps(value, ensure_ascii=False))
 
@@ -1244,6 +1712,100 @@ def _is_forbidden_public_payload_key(key: Any) -> bool:
     return False
 
 
+SAME_ROW_PERIOD_CELL_PACKET_FIELDS = frozenset(
+    {
+        "schema_version",
+        "provenance_policy",
+        "source_atom_id",
+        "doc_id",
+        "sheet",
+        "cell_range",
+        "cell",
+        "row_index_1based",
+        "row_label",
+        "column_label",
+        "raw_value",
+        "parsed_date",
+        "year",
+        "month",
+        "day",
+    }
+)
+
+
+def _safe_same_row_period_cells_json(value: Any) -> str:
+    parsed = _parse_jsonish(value)
+    if not isinstance(parsed, list):
+        return ""
+    cells: list[dict[str, Any]] = []
+    for cell in parsed:
+        if not isinstance(cell, Mapping):
+            return ""
+        keys = {str(key) for key in cell if _clean(key)}
+        if keys != SAME_ROW_PERIOD_CELL_PACKET_FIELDS:
+            return ""
+        if _clean(cell.get("schema_version")) != "actual_rag_eval.xlsx.same_row_period_cell.v1":
+            return ""
+        if _clean(cell.get("provenance_policy")) != "source_owned_same_row_period_cell_v1":
+            return ""
+        required = (
+            "source_atom_id",
+            "doc_id",
+            "sheet",
+            "cell_range",
+            "cell",
+            "row_index_1based",
+            "column_label",
+            "raw_value",
+            "parsed_date",
+            "year",
+            "month",
+            "day",
+        )
+        if any(not _clean(cell.get(field)) for field in required):
+            return ""
+        raw_value = _clean(cell.get("raw_value"))
+        parsed_date = _clean(cell.get("parsed_date"))
+        string_fields = {
+            "source_atom_id": _clean(cell.get("source_atom_id")),
+            "doc_id": _clean(cell.get("doc_id")),
+            "sheet": _clean(cell.get("sheet")),
+            "cell_range": _clean(cell.get("cell_range")),
+            "cell": _clean(cell.get("cell")),
+            "row_index_1based": _clean(cell.get("row_index_1based")),
+            "row_label": _clean(cell.get("row_label")),
+            "column_label": _clean(cell.get("column_label")),
+            "raw_value": raw_value,
+            "parsed_date": parsed_date,
+        }
+        if any(
+            _source_native_runtime_forbidden_text_segment(field_value) or _looks_like_local_path(field_value)
+            for field_value in string_fields.values()
+        ):
+            return ""
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", parsed_date):
+            return ""
+        try:
+            year = int(cell.get("year"))
+            month = int(cell.get("month"))
+            day = int(cell.get("day"))
+        except (TypeError, ValueError):
+            return ""
+        if parsed_date != f"{year:04d}-{month:02d}-{day:02d}":
+            return ""
+        cells.append(
+            {
+                "schema_version": "actual_rag_eval.xlsx.same_row_period_cell.v1",
+                "provenance_policy": "source_owned_same_row_period_cell_v1",
+                **string_fields,
+                "year": year,
+                "month": month,
+                "day": day,
+            }
+        )
+    return json.dumps(cells, ensure_ascii=False, sort_keys=True) if cells else ""
+
+
 def _sanitize_public_report_value(value: Any, *, source_native_context: bool = False) -> Any:
     if isinstance(value, Mapping):
         active_source_native_context = source_native_context or _source_native_context_requires_runtime_text_sanitization(value)
@@ -1256,6 +1818,11 @@ def _sanitize_public_report_value(value: Any, *, source_native_context: bool = F
             canonical_key = _canonical_xlsx_locator_field_name(key)
             if active_source_native_context and canonical_key in SOURCE_NATIVE_RUNTIME_TEXT_FIELDS:
                 sanitized[str(key)] = _strip_source_native_runtime_forbidden_text_segments(_clean(nested_value))
+                continue
+            if active_source_native_context and canonical_key == "same_row_period_cells_json":
+                period_cells_json = _safe_same_row_period_cells_json(nested_value)
+                if period_cells_json:
+                    sanitized[str(key)] = period_cells_json
                 continue
             if active_source_native_context and _source_native_runtime_forbidden_scalar(nested_value):
                 continue
@@ -3775,10 +4342,12 @@ class SourceNativeCorpusLoader:
         search_view_manifest_path: Path | str = SOURCE_NATIVE_SEARCH_VIEW_MANIFEST_PATH,
         source_atom_registry_path: Path | str = SOURCE_NATIVE_SOURCE_REGISTRY_PATH,
         synthesize_xlsx_row_value_bundles: bool = False,
+        xlsx_workbook_snapshot_paths: Sequence[Path | str] | None = None,
     ) -> None:
         self.search_view_manifest_path = Path(search_view_manifest_path)
         self.source_atom_registry_path = Path(source_atom_registry_path)
         self.synthesize_xlsx_row_value_bundles = bool(synthesize_xlsx_row_value_bundles)
+        self.xlsx_workbook_snapshot_paths = tuple(Path(path) for path in (xlsx_workbook_snapshot_paths or ()))
         self._source_atom_registry_structural_metadata: dict[str, dict[str, str]] | None = None
 
     @property
@@ -3799,6 +4368,18 @@ class SourceNativeCorpusLoader:
             "source_atom_registry_path_hash": f"sha256:{_sha256_text(self.source_atom_registry_path.as_posix())}",
             "source_atom_registry_available": self.source_atom_registry_path.exists(),
             "synthesize_xlsx_row_value_bundles": self.synthesize_xlsx_row_value_bundles,
+            "xlsx_workbook_snapshot_path_count": len(self.xlsx_workbook_snapshot_paths),
+            "xlsx_workbook_snapshot_available_count": sum(
+                1 for path in self.xlsx_workbook_snapshot_paths if path.exists()
+            ),
+            "xlsx_workbook_snapshot_path_hashes": [
+                f"sha256:{_sha256_text(path.as_posix())}" for path in self.xlsx_workbook_snapshot_paths
+            ],
+            "xlsx_workbook_snapshot_policy": (
+                "explicit_index_time_hidden_safe_workbook_json_no_query_time_raw_xlsx_v1"
+                if self.xlsx_workbook_snapshot_paths
+                else ""
+            ),
             "xlsx_row_value_bundle_policy": "source_owned_manifest_snapshot_no_gold_qrels_labels_or_normalized_fields_v1"
             if self.synthesize_xlsx_row_value_bundles
             else "",
@@ -3938,6 +4519,11 @@ class SourceNativeCorpusLoader:
                 raw_locator.get("document_version_id"),
                 citation.get("document_version_id"),
             ),
+            "source_content_sha256": first(
+                row.get("source_content_sha256"),
+                raw_locator.get("source_content_sha256"),
+                citation.get("source_content_sha256"),
+            ),
             "sheet": first(raw_locator.get("sheet"), citation.get("sheet"), track_locator.get("sheet")),
             "cell_range": first(raw_locator.get("range"), citation.get("range"), track_locator.get("range")),
             "cell": first(raw_locator.get("cell"), citation.get("cell"), track_locator.get("cell")),
@@ -4045,7 +4631,7 @@ class SourceNativeCorpusLoader:
 
         for segment in re.split(r"\s+\|\s+|\r?\n+", display_text):
             key, separator, value = _clean(segment).partition("=")
-            if not separator or not same_key(key, target):
+            if not separator or not (same_key(key, target) or same_key(key, "display_value")):
                 continue
             if forbidden_axis_name(key):
                 continue
@@ -4106,6 +4692,7 @@ class SourceNativeCorpusLoader:
         structural = {
             "workbook_id": first(row.get("workbook_id"), row.get("workbookId")),
             "workbook_version_id": first(row.get("workbook_version_id"), row.get("workbookVersionId")),
+            "source_content_sha256": first(row.get("source_content_sha256"), row.get("sourceContentSha256")),
             "sheet": first(row.get("sheet"), row.get("sheet_name"), regex(r"\bsheet=([^|]+)", display_text)),
             "cell_range": first(row.get("cell_range"), row.get("range"), regex(r"\brange=([^|]+)", display_text)),
             "cell": first(row.get("cell"), regex(r"\bcell=([A-Z]{1,3}\d+)\b", display_text)),
@@ -4134,15 +4721,42 @@ class SourceNativeCorpusLoader:
         seen: set[str] = set()
         same_row_date_aliases: dict[tuple[str, ...], list[str]] = {}
         same_row_date_alias_source_ids: dict[tuple[str, ...], list[str]] = {}
+        same_row_period_cells: dict[tuple[str, ...], list[dict[str, Any]]] = {}
 
-        def same_row_key(unit: Mapping[str, Any], metadata: Mapping[str, Any]) -> tuple[str, ...]:
-            return (
-                _clean(unit.get("doc_id")),
-                _clean(metadata.get("sheet")),
-                _clean(metadata.get("cell_range")),
-                _clean(metadata.get("row_index_1based")),
-                _clean(metadata.get("row_label")),
-            )
+        def same_row_keys(unit: Mapping[str, Any], metadata: Mapping[str, Any]) -> list[tuple[str, ...]]:
+            doc_id = _clean(unit.get("doc_id"))
+            sheet = _clean(metadata.get("sheet"))
+            cell_range = _clean(metadata.get("cell_range"))
+            row_index = _clean(metadata.get("row_index_1based"))
+            row_label = _clean(metadata.get("row_label"))
+            if not (doc_id and sheet and cell_range and (row_index or row_label)):
+                return []
+            keys: list[tuple[str, ...]] = []
+            if row_index and row_label:
+                keys.append((doc_id, sheet, cell_range, row_index, row_label))
+            if row_index:
+                keys.append((doc_id, sheet, cell_range, row_index, ""))
+            if row_label:
+                keys.append((doc_id, sheet, cell_range, "", row_label))
+            return list(dict.fromkeys(keys))
+
+        def collect_for_keys(
+            store: Mapping[tuple[str, ...], Sequence[Any]],
+            row_keys: Sequence[tuple[str, ...]],
+        ) -> list[Any]:
+            values: list[Any] = []
+            seen_values: set[str] = set()
+            for row_key in row_keys:
+                for value in store.get(row_key, ()):
+                    if isinstance(value, Mapping):
+                        value_key = json.dumps(value, ensure_ascii=False, sort_keys=True)
+                    else:
+                        value_key = _clean(value)
+                    if not value_key or value_key in seen_values:
+                        continue
+                    values.append(value)
+                    seen_values.add(value_key)
+            return values
 
         def add_alias(row_key: tuple[str, ...], alias: str, source_atom_id: str) -> None:
             clean_alias = _clean(alias)
@@ -4155,17 +4769,62 @@ class SourceNativeCorpusLoader:
             if source_atom_id and source_atom_id not in source_ids:
                 source_ids.append(source_atom_id)
 
+        def add_period_cell(row_key: tuple[str, ...], packet: Mapping[str, Any] | None) -> None:
+            if packet is None or not all(row_key[:3]) or not (row_key[3] or row_key[4]):
+                return
+            packets = same_row_period_cells.setdefault(row_key, [])
+            packet_key = (
+                _clean(packet.get("source_atom_id")),
+                _clean(packet.get("cell")),
+                _clean(packet.get("raw_value")),
+            )
+            if not all(packet_key):
+                return
+            existing_keys = {
+                (
+                    _clean(existing.get("source_atom_id")),
+                    _clean(existing.get("cell")),
+                    _clean(existing.get("raw_value")),
+                )
+                for existing in packets
+            }
+            if packet_key not in existing_keys:
+                packets.append(dict(packet))
+
         for unit in units:
             if _clean(unit.get("source_family")).upper() != "XLSX":
                 continue
             metadata = unit.get("metadata") if isinstance(unit.get("metadata"), Mapping) else {}
-            row_key = same_row_key(unit, metadata)
+            row_keys = same_row_keys(unit, metadata)
             source_atom_id = _clean(unit.get("source_atom_id"))
             source_text = _strip_xlsx_locator_forbidden_text_segments(
                 _clean(unit.get("text") or unit.get("bm25_text") or unit.get("embedding_text"))
             )
             for alias in _xlsx_locator_date_aliases(source_text):
+                for row_key in row_keys:
+                    add_alias(row_key, alias, source_atom_id)
+            period_label = _clean(metadata.get("column_label") or metadata.get("target_column") or metadata.get("header"))
+            raw_period_value = _clean(metadata.get("display_value"))
+            if self._xlsx_snapshot_header_is_period_source(period_label) and raw_period_value:
+                packet = _xlsx_same_row_period_cell_packet(
+                    source_atom_id=source_atom_id,
+                    doc_id=_clean(unit.get("doc_id")),
+                    sheet=_clean(metadata.get("sheet")),
+                    cell_range=_clean(metadata.get("cell_range")),
+                    cell=_clean(metadata.get("cell")),
+                    row_index_1based=_clean(metadata.get("row_index_1based")),
+                    row_label=_clean(metadata.get("row_label")),
+                    column_label=period_label,
+                    raw_value=raw_period_value,
+                )
+                for row_key in row_keys:
+                    add_period_cell(row_key, packet)
+        for row_key, alias_sources in self._xlsx_workbook_snapshot_date_aliases_by_row_key(units).items():
+            for alias, source_atom_id in alias_sources:
                 add_alias(row_key, alias, source_atom_id)
+        for row_key, packets in self._xlsx_workbook_snapshot_period_cells_by_row_key(units).items():
+            for packet in packets:
+                add_period_cell(row_key, packet)
         for unit in units:
             if _clean(unit.get("source_family")).upper() != "XLSX":
                 continue
@@ -4199,7 +4858,7 @@ class SourceNativeCorpusLoader:
                 continue
             seen.add(digest)
             bundle_id = f"srcatom_xlsx_row_value_bundle_{digest}"
-            row_key = same_row_key(unit, metadata)
+            row_keys = same_row_keys(unit, metadata)
             source_date_aliases = list(
                 dict.fromkeys(
                     [
@@ -4208,7 +4867,7 @@ class SourceNativeCorpusLoader:
                                 _clean(unit.get("text") or unit.get("bm25_text") or unit.get("embedding_text"))
                             )
                         ),
-                        *same_row_date_aliases.get(row_key, []),
+                        *collect_for_keys(same_row_date_aliases, row_keys),
                     ]
                 )
             )
@@ -4228,6 +4887,18 @@ class SourceNativeCorpusLoader:
                 if value
             ]
             text_parts.extend(f"source_date_alias={alias}" for alias in source_date_aliases)
+            period_cells = [
+                dict(packet)
+                for packet in collect_for_keys(same_row_period_cells, row_keys)
+                if isinstance(packet, Mapping)
+            ]
+            text_parts.extend(
+                (
+                    "source_period_cell="
+                    f"{_clean(packet.get('cell'))}:{_clean(packet.get('column_label'))}={_clean(packet.get('raw_value'))}"
+                )
+                for packet in period_cells
+            )
             bundle_metadata = {
                 key: value
                 for key, value in metadata.items()
@@ -4249,6 +4920,12 @@ class SourceNativeCorpusLoader:
             }
             if source_date_aliases:
                 bundle_metadata["source_date_aliases"] = source_date_aliases
+            if period_cells:
+                bundle_metadata["same_row_period_cells_json"] = json.dumps(
+                    period_cells,
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
             bundle_metadata.update(
                 {
                     "candidate_surface_materialization": "xlsx_row_value_bundle_v1",
@@ -4256,7 +4933,17 @@ class SourceNativeCorpusLoader:
                         "source_owned_manifest_snapshot_no_gold_qrels_labels_or_normalized_fields_v1"
                     ),
                     "source_atom_ids": list(
-                        dict.fromkeys([source_atom_id, *same_row_date_alias_source_ids.get(row_key, [])])
+                        dict.fromkeys(
+                            [
+                                source_atom_id,
+                                *collect_for_keys(same_row_date_alias_source_ids, row_keys),
+                                *(
+                                    _clean(packet.get("source_atom_id"))
+                                    for packet in period_cells
+                                    if _clean(packet.get("source_atom_id"))
+                                ),
+                            ]
+                        )
                     ),
                     "source_registry_mutated": False,
                     "raw_local_paths_exposed": False,
@@ -4283,6 +4970,390 @@ class SourceNativeCorpusLoader:
                 }
             )
         return bundles
+
+    @staticmethod
+    def _xlsx_snapshot_document_version_id(payload: Mapping[str, Any]) -> str:
+        for value in (
+            payload.get("documentVersionId"),
+            payload.get("document_version_id"),
+            payload.get("workbookVersionId"),
+            payload.get("workbook_version_id"),
+        ):
+            text = _clean(value)
+            if text:
+                return text
+        metadata = payload.get("metadata") if isinstance(payload.get("metadata"), Mapping) else {}
+        for value in (
+            metadata.get("documentVersionId"),
+            metadata.get("document_version_id"),
+            metadata.get("workbookVersionId"),
+            metadata.get("workbook_version_id"),
+        ):
+            text = _clean(value)
+            if text:
+                return text
+        return ""
+
+    @staticmethod
+    def _xlsx_snapshot_canonical_sha256(value: Any) -> str:
+        text = _clean(value)
+        if text.casefold().startswith("sha256:"):
+            text = text.split(":", 1)[1]
+        if not re.fullmatch(r"[0-9a-fA-F]{64}", text):
+            return ""
+        return text.lower()
+
+    @classmethod
+    def _xlsx_snapshot_raw_sha256(cls, payload: Mapping[str, Any]) -> str:
+        for value in (
+            payload.get("rawXlsxSha256"),
+            payload.get("raw_xlsx_sha256"),
+            payload.get("sourceContentSha256"),
+            payload.get("source_content_sha256"),
+        ):
+            text = cls._xlsx_snapshot_canonical_sha256(value)
+            if text:
+                return text
+        metadata = payload.get("metadata") if isinstance(payload.get("metadata"), Mapping) else {}
+        for value in (
+            metadata.get("rawXlsxSha256"),
+            metadata.get("raw_xlsx_sha256"),
+            metadata.get("sourceContentSha256"),
+            metadata.get("source_content_sha256"),
+        ):
+            text = cls._xlsx_snapshot_canonical_sha256(value)
+            if text:
+                return text
+        return ""
+
+    @staticmethod
+    def _xlsx_snapshot_unsafe_warnings(payload: Mapping[str, Any], sheet: Mapping[str, Any]) -> bool:
+        warning_text = " | ".join(
+            _clean(warning)
+            for warning in [*_as_list(payload.get("warnings")), *_as_list(sheet.get("warnings"))]
+        ).casefold()
+        return bool(
+            "formula scan skipped" in warning_text
+            or "truncated" in warning_text
+            or "stopped at safety" in warning_text
+            or "could not be verified" in warning_text
+        )
+
+    @staticmethod
+    def _xlsx_column_number(value: Any) -> int:
+        text = _clean(value).upper()
+        if text.isdigit():
+            return int(text)
+        total = 0
+        for char in text:
+            if char < "A" or char > "Z":
+                return 0
+            total = total * 26 + (ord(char) - ord("A") + 1)
+        return total
+
+    @classmethod
+    def _xlsx_cell_ref_parts(cls, value: Any) -> tuple[int, int]:
+        match = re.match(r"^([A-Z]{1,3})(\d+)$", _clean(value).upper())
+        if not match:
+            return 0, 0
+        return int(match.group(2)), cls._xlsx_column_number(match.group(1))
+
+    @classmethod
+    def _xlsx_cell_in_range(cls, cell_ref: str, cell_range: str) -> bool:
+        row, column = cls._xlsx_cell_ref_parts(cell_ref)
+        match = re.match(r"^([A-Z]{1,3}\d+):([A-Z]{1,3}\d+)$", _clean(cell_range).upper())
+        if not row or not column or not match:
+            return False
+        start_row, start_column = cls._xlsx_cell_ref_parts(match.group(1))
+        end_row, end_column = cls._xlsx_cell_ref_parts(match.group(2))
+        if not all((start_row, start_column, end_row, end_column)):
+            return False
+        min_row, max_row = sorted((start_row, end_row))
+        min_column, max_column = sorted((start_column, end_column))
+        return min_row <= row <= max_row and min_column <= column <= max_column
+
+    @staticmethod
+    def _xlsx_snapshot_header_is_period_source(value: Any) -> bool:
+        text = _clean(value).casefold()
+        return bool(text and any(marker in text for marker in ("일자", "년월", "기간", "date", "period")))
+
+    @staticmethod
+    def _xlsx_snapshot_truthy(value: Any) -> bool:
+        if value is True:
+            return True
+        return _clean(value).casefold() in {"1", "true", "yes", "y"}
+
+    @classmethod
+    def _xlsx_snapshot_header_by_column(cls, sheet: Mapping[str, Any]) -> dict[int, str]:
+        headers: dict[int, str] = {}
+        for table in _as_list(sheet.get("tables")):
+            if not isinstance(table, Mapping):
+                continue
+            try:
+                column_start = int(table.get("columnStart") or table.get("column_start") or 1)
+            except (TypeError, ValueError):
+                column_start = 1
+            for offset, header in enumerate(_as_list(table.get("headers"))):
+                clean_header = _clean(header)
+                if clean_header:
+                    headers.setdefault(column_start + offset, clean_header)
+        return headers
+
+    @staticmethod
+    def _xlsx_snapshot_formula_cells(sheet: Mapping[str, Any]) -> set[str]:
+        formula_cells: set[str] = set()
+        for formula in _as_list(sheet.get("formulas")):
+            if not isinstance(formula, Mapping):
+                continue
+            cell = _clean(formula.get("cell") or formula.get("cellRef")).upper()
+            if cell:
+                formula_cells.add(cell)
+        return formula_cells
+
+    def _xlsx_workbook_snapshot_period_cells_by_row_key(
+        self,
+        units: Sequence[Mapping[str, Any]],
+    ) -> dict[tuple[str, ...], list[dict[str, Any]]]:
+        if not self.xlsx_workbook_snapshot_paths:
+            return {}
+
+        targets: dict[tuple[str, str], list[tuple[tuple[str, ...], Mapping[str, Any]]]] = {}
+        for unit in units:
+            if _clean(unit.get("source_family")).upper() != "XLSX":
+                continue
+            metadata = unit.get("metadata") if isinstance(unit.get("metadata"), Mapping) else {}
+            doc_id = _clean(unit.get("doc_id"))
+            sheet = _clean(metadata.get("sheet"))
+            row_index = _clean(metadata.get("row_index_1based"))
+            cell_range = _clean(metadata.get("cell_range"))
+            row_label = _clean(metadata.get("row_label"))
+            if not (doc_id and sheet and row_index and cell_range and (row_label or row_index)):
+                continue
+            row_key = (doc_id, sheet, cell_range, row_index, row_label)
+            targets.setdefault((doc_id, sheet), []).append((row_key, metadata))
+
+        packets_by_row_key: dict[tuple[str, ...], list[dict[str, Any]]] = {}
+        for path in self.xlsx_workbook_snapshot_paths:
+            if not path.exists():
+                continue
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if not isinstance(payload, Mapping):
+                continue
+            if _clean(payload.get("pipelineVersion") or payload.get("pipeline_version")) != "xlsx-extract-v2-hidden-safe":
+                continue
+            if _clean(payload.get("snapshotApprovalPolicy") or payload.get("snapshot_approval_policy")) != (
+                "source_owned_index_time_exact_hash_row_cells_v1"
+            ):
+                continue
+            raw_xlsx_sha256 = self._xlsx_snapshot_raw_sha256(payload)
+            if not raw_xlsx_sha256:
+                continue
+            doc_id = self._xlsx_snapshot_document_version_id(payload)
+            if not doc_id:
+                continue
+            workbook = payload.get("workbook") if isinstance(payload.get("workbook"), Mapping) else {}
+            for sheet in _as_list(workbook.get("sheets")):
+                if not isinstance(sheet, Mapping) or self._xlsx_snapshot_truthy(sheet.get("hidden")):
+                    continue
+                sheet_name = _clean(sheet.get("name") or sheet.get("sheetName"))
+                target_rows = targets.get((doc_id, sheet_name)) or []
+                if not target_rows:
+                    continue
+                if self._xlsx_snapshot_unsafe_warnings(payload, sheet):
+                    continue
+                header_by_column = self._xlsx_snapshot_header_by_column(sheet)
+                formula_cells = self._xlsx_snapshot_formula_cells(sheet)
+                for cell in _as_list(sheet.get("cells")):
+                    if not isinstance(cell, Mapping):
+                        continue
+                    if self._xlsx_snapshot_truthy(cell.get("hiddenRow")) or self._xlsx_snapshot_truthy(
+                        cell.get("hiddenColumn")
+                    ):
+                        continue
+                    if (
+                        self._xlsx_snapshot_truthy(cell.get("formulaPresent"))
+                        or self._xlsx_snapshot_truthy(cell.get("formula_present"))
+                        or self._xlsx_snapshot_truthy(cell.get("hasFormula"))
+                        or self._xlsx_snapshot_truthy(cell.get("has_formula"))
+                    ):
+                        continue
+                    cell_ref = _clean(cell.get("cell") or cell.get("cellRef")).upper()
+                    if not cell_ref or cell_ref in formula_cells or _clean(cell.get("formula")):
+                        continue
+                    row_number, column_number = self._xlsx_cell_ref_parts(cell_ref)
+                    if not row_number or not column_number:
+                        continue
+                    header = header_by_column.get(column_number)
+                    if not self._xlsx_snapshot_header_is_period_source(header):
+                        continue
+                    cell_value = _clean(cell.get("formattedValue") or cell.get("value"))
+                    if not cell_value:
+                        continue
+                    cell_source_atom_id = _clean(
+                        cell.get("sourceAtomId")
+                        or cell.get("source_atom_id")
+                        or cell.get("evidenceSourceAtomId")
+                        or cell.get("evidence_source_atom_id")
+                    )
+                    if not cell_source_atom_id:
+                        continue
+                    for row_key, metadata in target_rows:
+                        expected_sha256 = _clean(
+                            metadata.get("source_content_sha256")
+                            or metadata.get("sourceContentSha256")
+                            or metadata.get("raw_xlsx_sha256")
+                            or metadata.get("rawXlsxSha256")
+                        )
+                        expected_sha256 = self._xlsx_snapshot_canonical_sha256(expected_sha256)
+                        if not expected_sha256 or expected_sha256 != raw_xlsx_sha256:
+                            continue
+                        if _clean(row_key[3]) != str(row_number):
+                            continue
+                        if not self._xlsx_cell_in_range(cell_ref, _clean(metadata.get("cell_range"))):
+                            continue
+                        packet = _xlsx_same_row_period_cell_packet(
+                            source_atom_id=cell_source_atom_id,
+                            doc_id=row_key[0],
+                            sheet=row_key[1],
+                            cell_range=row_key[2],
+                            cell=cell_ref,
+                            row_index_1based=str(row_number),
+                            row_label=row_key[4],
+                            column_label=_clean(header),
+                            raw_value=cell_value,
+                        )
+                        if packet is None:
+                            continue
+                        packets = packets_by_row_key.setdefault(row_key, [])
+                        packet_key = (
+                            packet["source_atom_id"],
+                            packet["cell"],
+                            packet["raw_value"],
+                        )
+                        if packet_key not in {
+                            (
+                                existing.get("source_atom_id"),
+                                existing.get("cell"),
+                                existing.get("raw_value"),
+                            )
+                            for existing in packets
+                        }:
+                            packets.append(packet)
+        return packets_by_row_key
+
+    def _xlsx_workbook_snapshot_date_aliases_by_row_key(
+        self,
+        units: Sequence[Mapping[str, Any]],
+    ) -> dict[tuple[str, ...], list[tuple[str, str]]]:
+        if not self.xlsx_workbook_snapshot_paths:
+            return {}
+
+        targets: dict[tuple[str, str], list[tuple[tuple[str, ...], Mapping[str, Any]]]] = {}
+        for unit in units:
+            if _clean(unit.get("source_family")).upper() != "XLSX":
+                continue
+            metadata = unit.get("metadata") if isinstance(unit.get("metadata"), Mapping) else {}
+            doc_id = _clean(unit.get("doc_id"))
+            sheet = _clean(metadata.get("sheet"))
+            row_index = _clean(metadata.get("row_index_1based"))
+            cell_range = _clean(metadata.get("cell_range"))
+            row_label = _clean(metadata.get("row_label"))
+            if not (doc_id and sheet and row_index and cell_range and (row_label or row_index)):
+                continue
+            row_key = (doc_id, sheet, cell_range, row_index, row_label)
+            targets.setdefault((doc_id, sheet), []).append((row_key, metadata))
+
+        aliases_by_row_key: dict[tuple[str, ...], list[tuple[str, str]]] = {}
+        for path in self.xlsx_workbook_snapshot_paths:
+            if not path.exists():
+                continue
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                continue
+            if not isinstance(payload, Mapping):
+                continue
+            if _clean(payload.get("pipelineVersion") or payload.get("pipeline_version")) != "xlsx-extract-v2-hidden-safe":
+                continue
+            if _clean(payload.get("snapshotApprovalPolicy") or payload.get("snapshot_approval_policy")) != (
+                "source_owned_index_time_exact_hash_row_cells_v1"
+            ):
+                continue
+            raw_xlsx_sha256 = self._xlsx_snapshot_raw_sha256(payload)
+            if not raw_xlsx_sha256:
+                continue
+            doc_id = self._xlsx_snapshot_document_version_id(payload)
+            if not doc_id:
+                continue
+            workbook = payload.get("workbook") if isinstance(payload.get("workbook"), Mapping) else {}
+            for sheet in _as_list(workbook.get("sheets")):
+                if not isinstance(sheet, Mapping) or self._xlsx_snapshot_truthy(sheet.get("hidden")):
+                    continue
+                sheet_name = _clean(sheet.get("name") or sheet.get("sheetName"))
+                target_rows = targets.get((doc_id, sheet_name)) or []
+                if not target_rows:
+                    continue
+                if self._xlsx_snapshot_unsafe_warnings(payload, sheet):
+                    continue
+                header_by_column = self._xlsx_snapshot_header_by_column(sheet)
+                formula_cells = self._xlsx_snapshot_formula_cells(sheet)
+                for cell in _as_list(sheet.get("cells")):
+                    if not isinstance(cell, Mapping):
+                        continue
+                    if self._xlsx_snapshot_truthy(cell.get("hiddenRow")) or self._xlsx_snapshot_truthy(
+                        cell.get("hiddenColumn")
+                    ):
+                        continue
+                    if (
+                        self._xlsx_snapshot_truthy(cell.get("formulaPresent"))
+                        or self._xlsx_snapshot_truthy(cell.get("formula_present"))
+                        or self._xlsx_snapshot_truthy(cell.get("hasFormula"))
+                        or self._xlsx_snapshot_truthy(cell.get("has_formula"))
+                    ):
+                        continue
+                    cell_ref = _clean(cell.get("cell") or cell.get("cellRef")).upper()
+                    if not cell_ref or cell_ref in formula_cells or _clean(cell.get("formula")):
+                        continue
+                    row_number, column_number = self._xlsx_cell_ref_parts(cell_ref)
+                    if not row_number or not column_number:
+                        continue
+                    header = header_by_column.get(column_number)
+                    if not self._xlsx_snapshot_header_is_period_source(header):
+                        continue
+                    cell_value = _clean(cell.get("formattedValue") or cell.get("value"))
+                    if not cell_value:
+                        continue
+                    cell_source_atom_id = _clean(
+                        cell.get("sourceAtomId")
+                        or cell.get("source_atom_id")
+                        or cell.get("evidenceSourceAtomId")
+                        or cell.get("evidence_source_atom_id")
+                    )
+                    if not cell_source_atom_id:
+                        continue
+                    for row_key, metadata in target_rows:
+                        expected_sha256 = _clean(
+                            metadata.get("source_content_sha256")
+                            or metadata.get("sourceContentSha256")
+                            or metadata.get("raw_xlsx_sha256")
+                            or metadata.get("rawXlsxSha256")
+                        )
+                        expected_sha256 = self._xlsx_snapshot_canonical_sha256(expected_sha256)
+                        if not expected_sha256 or expected_sha256 != raw_xlsx_sha256:
+                            continue
+                        if _clean(row_key[3]) != str(row_number):
+                            continue
+                        if not self._xlsx_cell_in_range(cell_ref, _clean(metadata.get("cell_range"))):
+                            continue
+                        aliases = aliases_by_row_key.setdefault(row_key, [])
+                        for alias in _xlsx_locator_date_aliases(f"{header}={cell_value}"):
+                            item = (alias, cell_source_atom_id)
+                            if item not in aliases:
+                                aliases.append(item)
+        return aliases_by_row_key
 
 
 def _unit_to_payload(unit: Mapping[str, Any]) -> dict[str, Any]:

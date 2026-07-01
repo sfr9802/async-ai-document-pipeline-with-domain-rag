@@ -218,6 +218,97 @@ def _source_native_runtime_forbidden_scalar(value: Any) -> bool:
     return _source_native_runtime_forbidden_text_segment(clean_value) or _looks_like_local_path(clean_value)
 
 
+SAME_ROW_PERIOD_CELL_PACKET_FIELDS = frozenset(
+    {
+        "schema_version",
+        "provenance_policy",
+        "source_atom_id",
+        "doc_id",
+        "sheet",
+        "cell_range",
+        "cell",
+        "row_index_1based",
+        "row_label",
+        "column_label",
+        "raw_value",
+        "parsed_date",
+        "year",
+        "month",
+        "day",
+    }
+)
+
+
+def _safe_same_row_period_cells_json(value: Any) -> str:
+    parsed = _parse_jsonish(value)
+    if not isinstance(parsed, list):
+        return ""
+    cells: list[dict[str, Any]] = []
+    for cell in parsed:
+        if not isinstance(cell, Mapping):
+            return ""
+        keys = {str(key) for key in cell if _clean(key)}
+        if keys != SAME_ROW_PERIOD_CELL_PACKET_FIELDS:
+            return ""
+        if _clean(cell.get("schema_version")) != "actual_rag_eval.xlsx.same_row_period_cell.v1":
+            return ""
+        if _clean(cell.get("provenance_policy")) != "source_owned_same_row_period_cell_v1":
+            return ""
+        required = (
+            "source_atom_id",
+            "doc_id",
+            "sheet",
+            "cell_range",
+            "cell",
+            "row_index_1based",
+            "column_label",
+            "raw_value",
+            "parsed_date",
+            "year",
+            "month",
+            "day",
+        )
+        if any(not _clean(cell.get(field)) for field in required):
+            return ""
+        raw_value = _clean(cell.get("raw_value"))
+        parsed_date = _clean(cell.get("parsed_date"))
+        string_fields = {
+            "source_atom_id": _clean(cell.get("source_atom_id")),
+            "doc_id": _clean(cell.get("doc_id")),
+            "sheet": _clean(cell.get("sheet")),
+            "cell_range": _clean(cell.get("cell_range")),
+            "cell": _clean(cell.get("cell")),
+            "row_index_1based": _clean(cell.get("row_index_1based")),
+            "row_label": _clean(cell.get("row_label")),
+            "column_label": _clean(cell.get("column_label")),
+            "raw_value": raw_value,
+            "parsed_date": parsed_date,
+        }
+        if any(_source_native_runtime_forbidden_scalar(field_value) for field_value in string_fields.values()):
+            return ""
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", parsed_date):
+            return ""
+        try:
+            year = int(cell.get("year"))
+            month = int(cell.get("month"))
+            day = int(cell.get("day"))
+        except (TypeError, ValueError):
+            return ""
+        if parsed_date != f"{year:04d}-{month:02d}-{day:02d}":
+            return ""
+        cells.append(
+            {
+                "schema_version": "actual_rag_eval.xlsx.same_row_period_cell.v1",
+                "provenance_policy": "source_owned_same_row_period_cell_v1",
+                **string_fields,
+                "year": year,
+                "month": month,
+                "day": day,
+            }
+        )
+    return json.dumps(cells, ensure_ascii=False, sort_keys=True) if cells else ""
+
+
 def _sanitize_source_native_runtime_value(value: Any, *, source_native_context: bool) -> Any:
     if isinstance(value, Mapping):
         active_source_native_context = source_native_context or _source_native_context_requires_runtime_text_sanitization(value)
@@ -228,6 +319,11 @@ def _sanitize_source_native_runtime_value(value: Any, *, source_native_context: 
             canonical_key = _canonical_xlsx_locator_field_name(key)
             if active_source_native_context and canonical_key in SOURCE_NATIVE_RUNTIME_TEXT_FIELDS:
                 sanitized[str(key)] = _strip_source_native_runtime_forbidden_text_segments(_clean(nested_value))
+                continue
+            if active_source_native_context and canonical_key == "same_row_period_cells_json":
+                period_cells_json = _safe_same_row_period_cells_json(nested_value)
+                if period_cells_json:
+                    sanitized[str(key)] = period_cells_json
                 continue
             if active_source_native_context and _source_native_runtime_forbidden_scalar(nested_value):
                 continue
@@ -810,9 +906,11 @@ def _validate_query_evidence_payload(
     validated_required_axes = [
         axis
         for axis in contract_axes
-        if axis == "display_value"
-        or axis in QUERY_EVIDENCE_LOCATOR_PRESENCE_AXES
-        or _as_list(validated_axis_values.get(axis))
+        if axis != "display_value"
+        and (
+            axis in QUERY_EVIDENCE_LOCATOR_PRESENCE_AXES
+            or _as_list(validated_axis_values.get(axis))
+        )
     ]
     if "display_value" in contract_axes and "target_column" in validated_required_axes and "display_value" not in validated_required_axes:
         validated_required_axes.append("display_value")
@@ -1644,6 +1742,47 @@ def _query_evidence_metadata_values_by_axis(rows: Sequence[Mapping[str, Any]]) -
     return metadata_values
 
 
+def _query_evidence_same_row_period_cell_aliases(
+    *,
+    planner: Mapping[str, Any],
+    selected_evidence: Sequence[Mapping[str, Any]],
+) -> list[str]:
+    query_periods = _xlsx_materializer_query_periods(planner)
+    if not query_periods:
+        return []
+    aliases: list[str] = []
+    seen: set[str] = set()
+
+    def add(value: Any) -> None:
+        clean_value = _clean(value)
+        if clean_value and clean_value not in seen:
+            aliases.append(clean_value)
+            seen.add(clean_value)
+
+    for evidence in selected_evidence:
+        if not isinstance(evidence, Mapping):
+            continue
+        for packet in _xlsx_same_row_period_cell_packets(evidence):
+            if not _xlsx_period_cell_scope_matches_candidate(evidence, packet):
+                continue
+            if not any(_source_period_cell_matches_query_period(packet, query_period) for query_period in query_periods):
+                continue
+            try:
+                year = int(packet.get("year"))
+                month = int(packet.get("month"))
+            except (TypeError, ValueError):
+                year = 0
+                month = 0
+            if year and month:
+                for alias in _query_evidence_period_aliases(str(year), str(month)):
+                    add(alias)
+            for value in (packet.get("parsed_date"), packet.get("raw_value")):
+                add(value)
+                for alias in _xlsx_locator_date_aliases(_clean(value)):
+                    add(alias)
+    return aliases
+
+
 def _query_evidence_axis_hit(
     *,
     axis: str,
@@ -1750,6 +1889,10 @@ def _query_evidence_gate_validated_required_axis_hits(
     }
     field_texts["period"] = [
         *field_texts.get("period", []),
+        *_query_evidence_same_row_period_cell_aliases(
+            planner=planner,
+            selected_evidence=selected_evidence,
+        ),
         *[alias for text in support_texts for alias in _xlsx_locator_date_aliases(text)],
     ]
     matched: list[str] = []
@@ -1825,6 +1968,35 @@ def _query_anchor_matches_planner_axis(anchor: str, planner: Mapping[str, Any]) 
             ):
                 return True
     return False
+
+
+def _query_focus_hits_from_validated_planner_axes(
+    *,
+    query_focus_anchors: Iterable[str],
+    planner: Mapping[str, Any],
+    matched_axes: Sequence[str],
+) -> set[str]:
+    matched_axis_set = {_clean(axis) for axis in matched_axes if _clean(axis)}
+    if not matched_axis_set:
+        return set()
+    hits: set[str] = set()
+    for anchor in query_focus_anchors:
+        normalized_anchor = normalize_answer_text(anchor).replace(" ", "")
+        if not normalized_anchor:
+            continue
+        for axis in QUERY_EVIDENCE_AXIS_ORDER:
+            if axis == "display_value" or axis not in matched_axis_set:
+                continue
+            for value in _query_evidence_axis_values(planner, axis):
+                normalized_value = normalize_answer_text(value).replace(" ", "")
+                if normalized_value and (
+                    normalized_anchor in normalized_value or normalized_value in normalized_anchor
+                ):
+                    hits.add(_clean(anchor))
+                    break
+            if _clean(anchor) in hits:
+                break
+    return hits
 
 
 def _query_anchor_classifier_from_planner(query: str, planner: Mapping[str, Any]) -> dict[str, Any]:
@@ -2316,6 +2488,89 @@ def _selected_evidence_sentence(query: str, selected_evidence: Sequence[Mapping[
     if answer and not answer.endswith((".", "!", "?", "。", "！", "？")):
         answer += "."
     return answer
+
+
+def _normalized_axis_text(value: Any) -> str:
+    return normalize_answer_text(_clean(value)).replace(" ", "")
+
+
+def _axis_value_matches(left: Any, right: Any) -> bool:
+    left_norm = _normalized_axis_text(left)
+    right_norm = _normalized_axis_text(right)
+    return bool(left_norm and right_norm and (left_norm in right_norm or right_norm in left_norm))
+
+
+def _query_requests_person_count_answer(query: str, target_column: str) -> bool:
+    text = f"{query} {target_column}"
+    normalized = normalize_answer_text(text).replace(" ", "")
+    return any(marker in normalized for marker in ("몇명", "명입니까", "승객수", "수송인원", "인원수"))
+
+
+def _format_xlsx_display_value_answer(*, query: str, target_column: str, display_value: str) -> str:
+    value = _clean(display_value)
+    if not value:
+        return ""
+    rendered = value
+    if re.fullmatch(r"\d+", value) and _query_requests_person_count_answer(query, target_column):
+        rendered = f"{int(value):,}명"
+    if re.search(r"[가-힣]", query) and not re.search(r"(입니다|다)$", rendered):
+        rendered = f"{rendered}입니다."
+    return rendered
+
+
+def _source_owned_xlsx_display_answer_candidate(
+    *,
+    query: str,
+    selected_evidence: Sequence[Mapping[str, Any]],
+    query_evidence_planner: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    if not query_evidence_planner:
+        return {}
+    target_axis_values = _query_evidence_axis_values(query_evidence_planner, "target_column")
+    if not target_axis_values:
+        return {}
+    candidates: list[dict[str, Any]] = []
+    for evidence in selected_evidence:
+        if _clean(evidence.get("source_family")).upper() != "XLSX":
+            continue
+        target_column = _clean(evidence.get("target_column") or evidence.get("column_label") or evidence.get("header"))
+        display_value = _clean(evidence.get("display_value"))
+        if not target_column or not display_value:
+            continue
+        if not any(_axis_value_matches(target_column, target_value) for target_value in target_axis_values):
+            continue
+        axis_complete, matched_axes, _missing_axes = _query_evidence_context_has_complete_validated_axes(
+            query=query,
+            query_evidence_planner=query_evidence_planner,
+            context=evidence,
+        )
+        if not axis_complete:
+            continue
+        answer = _format_xlsx_display_value_answer(
+            query=query,
+            target_column=target_column,
+            display_value=display_value,
+        )
+        if answer:
+            candidates.append(
+                {
+                    "answer": answer,
+                    "target_column": target_column,
+                    "display_value": display_value,
+                    "matched_validated_required_axes": matched_axes,
+                    "source_fields": ["target_column", "display_value"],
+                }
+            )
+    if not candidates:
+        return {}
+    unique_display_values = {_normalized_axis_text(candidate.get("display_value")) for candidate in candidates}
+    unique_display_values.discard("")
+    if len(unique_display_values) > 1:
+        return {
+            "skip_reason": "ambiguous_xlsx_display_value_candidates",
+            "candidate_count": len(candidates),
+        }
+    return candidates[0]
 
 
 def _selected_evidence_abstention_reason(query: str, selected_evidence: Sequence[Mapping[str, Any]]) -> str:
@@ -3350,6 +3605,8 @@ def apply_selected_evidence_composer_to_outputs(
             "provider": SELECTED_EVIDENCE_COMPOSER_PROVIDER,
             "input_policy": SELECTED_EVIDENCE_COMPOSER_INPUT_POLICY,
             "citation_format": normalized_citation_format,
+            "rendering_mode": "abstention" if abstained else "selected_evidence_markdown",
+            "rendered_answer_source_fields": [],
             "formatted_citations": formatted_citations,
             "retrieved_context_only_citations_diagnostic_only": True,
             "query_selected_evidence_count": len(query_selected),
@@ -3771,11 +4028,31 @@ def validate_evidence_package_for_gate(row: Mapping[str, Any]) -> dict[str, Any]
     numeric_hits = _gate_anchor_hits(numeric_anchors, selected_texts)
     entity_hits = _gate_anchor_hits(entity_anchors, selected_texts)
     query_focus_hits = _gate_anchor_hits(query_focus_anchors, query_focus_texts)
-    matched_validated_required_axes, missing_validated_required_axes = _query_evidence_gate_validated_required_axis_hits(
-        row=row,
-        selected_evidence=selected_for_gate,
-        answer=answer,
+    selected_source_families = {
+        _clean(context.get("source_family")).upper()
+        for context in selected_for_gate
+        if _clean(context.get("source_family"))
+    }
+    ignore_unknown_text_planner_axes = bool(
+        planner
+        and not source_family_hint
+        and selected_source_families
+        and selected_source_families <= {"TEXT"}
     )
+    if ignore_unknown_text_planner_axes:
+        matched_validated_required_axes: list[str] = []
+        missing_validated_required_axes: list[str] = []
+    else:
+        matched_validated_required_axes, missing_validated_required_axes = _query_evidence_gate_validated_required_axis_hits(
+            row=row,
+            selected_evidence=selected_for_gate,
+            answer=answer,
+        )
+        query_focus_hits |= _query_focus_hits_from_validated_planner_axes(
+            query_focus_anchors=query_focus_anchors,
+            planner=planner,
+            matched_axes=matched_validated_required_axes,
+        )
     validated_required_axes = matched_validated_required_axes + missing_validated_required_axes
     validated_required_axes_available = bool(validated_required_axes)
     validated_required_axes_coverage = _gate_coverage(
@@ -3889,6 +4166,9 @@ def validate_evidence_package_for_gate(row: Mapping[str, Any]) -> dict[str, Any]
         "unsupported_answer_anchors": unsupported_answer_anchors,
         "conflicting_evidence_reasons": conflicting_reasons,
         "validation_reasons": sorted(set(validation_reasons)),
+        "validated_required_axes_ignored_reason": (
+            "unknown_source_family_text_evidence" if ignore_unknown_text_planner_axes else ""
+        ),
         "validator_version": EVIDENCE_GATE_VALIDATOR_VERSION,
         "retrieved_evidence_candidates": [_runtime_safe_evidence_context(context) for context in contexts],
         "selected_evidence": selected_for_gate,
@@ -3928,6 +4208,70 @@ def _evidence_gate_decision(validation: Mapping[str, Any], *, answer: str) -> tu
     if status == "unresolved":
         return "block_unsupported_answer", "unresolved_evidence_package"
     return "block_unsupported_answer", "insufficient_evidence"
+
+
+def _apply_post_gate_xlsx_answer_shape(
+    *,
+    output: dict[str, Any],
+    validation: Mapping[str, Any],
+    decision: str,
+    gate_modified_answer: bool,
+) -> dict[str, Any]:
+    if decision != "allow_answer" or gate_modified_answer:
+        return {}
+    if _clean(validation.get("evidence_package_status")) != "sufficient":
+        return {}
+    planner = output.get("query_evidence_planner") if isinstance(output.get("query_evidence_planner"), Mapping) else None
+    selected = [
+        evidence
+        for evidence in _as_list(validation.get("selected_evidence"))
+        if isinstance(evidence, Mapping)
+    ]
+    candidate = _source_owned_xlsx_display_answer_candidate(
+        query=_clean(output.get("query")),
+        selected_evidence=selected,
+        query_evidence_planner=planner,
+    )
+    skip_reason = _clean(candidate.get("skip_reason"))
+    if skip_reason:
+        return {
+            "applied": False,
+            "skip_reason": skip_reason,
+            "candidate_count": int(candidate.get("candidate_count") or 0),
+        }
+    rendered_answer = _clean(candidate.get("answer"))
+    if not rendered_answer:
+        return {}
+    previous_answer = _clean(output.get("generated_answer"))
+    if rendered_answer == previous_answer:
+        return {}
+    output["generated_answer"] = rendered_answer
+    composer = dict(output.get("answer_composer") or {})
+    composer.update(
+        {
+            "rendering_mode": "source_owned_xlsx_display_value",
+            "rendered_answer_source_fields": list(candidate.get("source_fields") or []),
+            "post_gate_answer_shape_applied": True,
+        }
+    )
+    output["answer_composer"] = composer
+    return {
+        "applied": True,
+        "mode": "source_owned_xlsx_display_value",
+        "input_policy": "post_gate_query_text_and_gate_selected_source_owned_xlsx_evidence_only",
+        "source_fields": list(candidate.get("source_fields") or []),
+        "matched_validated_required_axes": list(candidate.get("matched_validated_required_axes") or []),
+        "pre_render_answer_hash": _sha256_text(previous_answer),
+        "rendered_answer_hash": _sha256_text(rendered_answer),
+        "uses_expected_answer": False,
+        "uses_expected_evidence": False,
+        "uses_gold_fields": False,
+        "uses_qrels": False,
+        "uses_labels": False,
+        "uses_answerability": False,
+        "uses_query_or_row_or_target_ids": False,
+        "uses_baseline_topk_or_legacy_outputs": False,
+    }
 
 
 def _apply_evidence_gate_to_row(row: Mapping[str, Any], *, mode: str) -> dict[str, Any]:
@@ -3985,6 +4329,14 @@ def _apply_evidence_gate_to_row(row: Mapping[str, Any], *, mode: str) -> dict[st
         "gate_uses_gold_fields": False,
         "gate_uses_legacy_fields": False,
     }
+    answer_shape_rendering = _apply_post_gate_xlsx_answer_shape(
+        output=output,
+        validation=validation,
+        decision=decision,
+        gate_modified_answer=modified,
+    )
+    if answer_shape_rendering.get("applied") is True:
+        failure_labels.add("post_gate_answer_shape_rendered")
     output.update(
         {
             "evidence_gate_mode": normalized_mode,
@@ -4000,6 +4352,7 @@ def _apply_evidence_gate_to_row(row: Mapping[str, Any], *, mode: str) -> dict[st
             "gate_uses_gold_fields": False,
             "gate_uses_legacy_fields": False,
             "evidence_gate": gate,
+            "answer_shape_rendering": answer_shape_rendering or {"applied": False},
             "failure_labels": sorted(failure_labels),
         }
     )

@@ -12,6 +12,7 @@ import types
 from pathlib import Path
 
 import pytest
+from openpyxl import Workbook
 
 from ai.eval import actual_rag_eval
 from ai.eval.actual_rag_eval import (
@@ -70,6 +71,7 @@ from ai.eval.weaviate_source_atom import (
     source_atom_record_from_mapping,
 )
 import ai.scripts.rag_weaviate_source_atom_index as weaviate_index_script
+import ai.scripts.rag_xlsx_hidden_safe_snapshot as xlsx_hidden_safe_snapshot_script
 from ai.scripts.rag_weaviate_source_atom_index import build_parser as build_weaviate_index_parser
 
 from ai.tests.actual_rag_eval_helpers import (
@@ -982,6 +984,7 @@ def test_weaviate_indexer_reports_vectorization_policy_by_granularity() -> None:
     assert manifest["metadata_only_recommended_granularity_counts"] == {"cell": 1}
     assert "cell" in manifest["vectorization_policy"]["metadata_only_by_default"]
     assert manifest["schema_index_v2_rebuild_required_for_metadata_only_policy"] is True
+    assert "candidate_surface_materialization" not in manifest["route_taxonomy_filterable_fields"]
 
 
 def test_weaviate_v2_config_uses_explicit_nonprod_schema_and_collection() -> None:
@@ -1718,10 +1721,15 @@ def test_weaviate_index_parser_exposes_candidate_surface_xlsx_row_bundle_flag() 
             "--weaviate-collection-name",
             "SourceAtomNonprodRouteSelectedCandidateSurfaceV1",
             "--synthesize-xlsx-row-value-bundles",
+            "--xlsx-workbook-snapshot-path",
+            "snap-a.json",
+            "--xlsx-workbook-snapshot-path",
+            "snap-b.json",
         ]
     )
 
     assert args.synthesize_xlsx_row_value_bundles is True
+    assert args.xlsx_workbook_snapshot_paths == ["snap-a.json", "snap-b.json"]
 
 
 def test_weaviate_candidate_surface_v2_index_success_writes_complete_manifest(
@@ -1754,26 +1762,29 @@ def test_weaviate_candidate_surface_v2_index_success_writes_complete_manifest(
                 "faiss_used_for_active_retrieval": False,
             }
 
-    class FakeLoader:
-        def __init__(self, **kwargs: object) -> None:
-            self.synthesize_xlsx_row_value_bundles = bool(kwargs["synthesize_xlsx_row_value_bundles"])
-
-        def iter_units(self) -> list[dict]:
-            return [
-                {
-                    "source_atom_id": "srcatom-v2-candidate-1",
-                    "source_family": "XLSX",
-                    "text": "source-owned row/value bundle",
-                }
-            ]
-
-        def describe(self) -> dict:
-            return {"synthesize_xlsx_row_value_bundles": self.synthesize_xlsx_row_value_bundles}
-
     monkeypatch.setattr(weaviate_index_script, "WeaviateSourceAtomIndexer", FakeStreamingIndexer)
-    monkeypatch.setattr(weaviate_index_script, "SourceNativeCorpusLoader", FakeLoader)
     manifest_path = tmp_path / "index_manifest.json"
     checkpoint_path = tmp_path / "index_checkpoint.json"
+    write_jsonl(
+        tmp_path / "search_view_manifest.jsonl",
+        [
+            {
+                "source_atom_id": "srcatom-v2-candidate-1",
+                "source_family": "XLSX",
+                "bm25_text": "source-owned row/value bundle",
+                "embedding_text": "source-owned row/value bundle",
+                "source_identity": "source-owned-row-value-bundle",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+                "document_version_id": "docv-v2-candidate",
+            },
+        ],
+    )
+    snapshot_a = tmp_path / "snap-a.json"
+    snapshot_b = tmp_path / "snap-b.json"
+    snapshot_a.write_text("{}", encoding="utf-8")
+    snapshot_b.write_text("{}", encoding="utf-8")
 
     rc = weaviate_index_script.main(
         [
@@ -1791,6 +1802,10 @@ def test_weaviate_candidate_surface_v2_index_success_writes_complete_manifest(
             str(checkpoint_path),
             "--reset-checkpoint",
             "--synthesize-xlsx-row-value-bundles",
+            "--xlsx-workbook-snapshot-path",
+            str(snapshot_a),
+            "--xlsx-workbook-snapshot-path",
+            str(snapshot_b),
         ]
     )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -1808,6 +1823,16 @@ def test_weaviate_candidate_surface_v2_index_success_writes_complete_manifest(
     assert manifest["candidate_surface_restart_policy"] == "recreate_collection_with_fresh_manifest_v2"
     assert manifest["synthesize_xlsx_row_value_bundles"] is True
     assert manifest["source_native_loader"]["synthesize_xlsx_row_value_bundles"] is True
+    assert manifest["source_native_loader"]["xlsx_workbook_snapshot_path_count"] == 2
+    assert manifest["source_native_loader"]["xlsx_workbook_snapshot_available_count"] == 2
+    assert manifest["source_native_loader"]["xlsx_workbook_snapshot_path_hashes"] == [
+        f"sha256:{hashlib.sha256(snapshot_a.as_posix().encode('utf-8')).hexdigest()}",
+        f"sha256:{hashlib.sha256(snapshot_b.as_posix().encode('utf-8')).hexdigest()}",
+    ]
+    assert (
+        manifest["source_native_loader"]["xlsx_workbook_snapshot_policy"]
+        == "explicit_index_time_hidden_safe_workbook_json_no_query_time_raw_xlsx_v1"
+    )
     assert manifest["official_metric_input_rows"] == 0
     assert manifest["production_namespace"] is False
     assert manifest["source_registry_mutated"] is False
@@ -2680,6 +2705,7 @@ def test_weaviate_v2_indexer_keeps_cells_metadata_only_without_embedding() -> No
     assert manifest["vectorized_by_granularity"] == {"paragraph": 1}
     assert manifest["metadata_only_by_granularity"] == {"cell": 1}
     assert manifest["schema_index_v2_rebuild_required_for_metadata_only_policy"] is False
+    assert "candidate_surface_materialization" in manifest["route_taxonomy_filterable_fields"]
     assert manifest["vectorization_policy"]["current_index_vectorizes_all_source_atoms"] is False
     assert len(client.upsert_log) == 1
     assert client.upsert_log[0]["objects"][0]["source_atom_id"] == paragraph["source_atom_id"]
@@ -4169,6 +4195,221 @@ def test_source_native_corpus_loader_synthesizes_candidate_surface_xlsx_row_valu
     assert "D:/private/Budget.xlsx" not in serialized_record
 
 
+def test_source_native_corpus_loader_synthesizes_same_row_period_cell_packets(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-postal-c702",
+                "evidence_bundle_id": "bundle-xlsx-postal-c702",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-postal-c702",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A702:J751 | "
+                    "row_label=장기요양기관이름=하얀민들레노인요양원 | "
+                    "target_column=우편번호 | display_value=41786"
+                ),
+                "embedding_text": "하얀민들레노인요양원 우편번호 41786",
+                "source_identity": "row702-postal",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-date-h702",
+                "evidence_bundle_id": "bundle-xlsx-date-h702",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-date-h702",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A702:J751 | "
+                    "row_label=장기요양기관이름=하얀민들레노인요양원 | "
+                    "target_column=지정일자 | 지정일자=2020-11-26"
+                ),
+                "embedding_text": "하얀민들레노인요양원 지정일자 2020-11-26",
+                "source_identity": "row702-date",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-postal-c702",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "doc-row702",
+                    "sheet": "일반현황",
+                    "range": "A702:J751",
+                    "cell": "C702",
+                    "row_index_1based": 702,
+                    "row_label": "장기요양기관이름=하얀민들레노인요양원",
+                    "column_label": "우편번호",
+                    "target_column": "우편번호",
+                },
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-date-h702",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "doc-row702",
+                    "sheet": "일반현황",
+                    "range": "A702:J751",
+                    "cell": "H702",
+                    "row_index_1based": 702,
+                    "row_label": "장기요양기관이름=하얀민들레노인요양원",
+                    "column_label": "지정일자",
+                    "target_column": "지정일자",
+                },
+            },
+        ],
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+    )
+    bundle = next(
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+        and unit["metadata"].get("target_column") == "우편번호"
+    )
+
+    period_cells = json.loads(bundle["metadata"]["same_row_period_cells_json"])
+    assert period_cells == [
+        {
+            "schema_version": "actual_rag_eval.xlsx.same_row_period_cell.v1",
+            "provenance_policy": "source_owned_same_row_period_cell_v1",
+            "source_atom_id": "srcatom-xlsx-date-h702",
+            "doc_id": "doc-row702",
+            "sheet": "일반현황",
+            "cell_range": "A702:J751",
+            "cell": "H702",
+            "row_index_1based": "702",
+            "row_label": "장기요양기관이름=하얀민들레노인요양원",
+            "column_label": "지정일자",
+            "raw_value": "2020-11-26",
+            "parsed_date": "2020-11-26",
+            "year": 2020,
+            "month": 11,
+            "day": 26,
+        }
+    ]
+
+
+def test_source_native_corpus_loader_synthesizes_period_cell_packets_by_row_index_without_row_label(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-postal-c702",
+                "evidence_bundle_id": "bundle-xlsx-postal-c702",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-postal-c702",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A702:J751 | "
+                    "row_label=장기요양기관이름=하얀민들레노인요양원 | "
+                    "target_column=우편번호 | display_value=41786"
+                ),
+                "embedding_text": "하얀민들레노인요양원 우편번호 41786",
+                "source_identity": "row702-postal",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-date-h702",
+                "evidence_bundle_id": "bundle-xlsx-date-h702",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-date-h702",
+                "bm25_text": "sheet=일반현황 | range=A702:J751 | target_column=지정일자 | 지정일자=2020-11-26",
+                "embedding_text": "지정일자 2020-11-26",
+                "source_identity": "row702-date",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-postal-c702",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "doc-row702",
+                    "sheet": "일반현황",
+                    "range": "A702:J751",
+                    "cell": "C702",
+                    "row_index_1based": 702,
+                    "row_label": "장기요양기관이름=하얀민들레노인요양원",
+                    "column_label": "우편번호",
+                    "target_column": "우편번호",
+                },
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-date-h702",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "doc-row702",
+                    "sheet": "일반현황",
+                    "range": "A702:J751",
+                    "cell": "H702",
+                    "row_index_1based": 702,
+                    "column_label": "지정일자",
+                    "target_column": "지정일자",
+                },
+            },
+        ],
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+    )
+    bundle = next(
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+        and unit["metadata"].get("target_column") == "우편번호"
+    )
+
+    period_cells = json.loads(bundle["metadata"]["same_row_period_cells_json"])
+    assert period_cells == [
+        {
+            "schema_version": "actual_rag_eval.xlsx.same_row_period_cell.v1",
+            "provenance_policy": "source_owned_same_row_period_cell_v1",
+            "source_atom_id": "srcatom-xlsx-date-h702",
+            "doc_id": "doc-row702",
+            "sheet": "일반현황",
+            "cell_range": "A702:J751",
+            "cell": "H702",
+            "row_index_1based": "702",
+            "row_label": "",
+            "column_label": "지정일자",
+            "raw_value": "2020-11-26",
+            "parsed_date": "2020-11-26",
+            "year": 2020,
+            "month": 11,
+            "day": 26,
+        }
+    ]
+
+
 def test_xlsx_row_value_bundle_preserves_same_candidate_axis_contract(
     tmp_path: Path,
 ) -> None:
@@ -4192,7 +4433,7 @@ def test_xlsx_row_value_bundle_preserves_same_candidate_axis_contract(
                 "source_registry_version": "source_registry_v1",
                 "materialization_bucket": "source_atom_value",
                 "canonical_payload_source": "source_atom",
-            }
+            },
         ],
     )
     write_jsonl(
@@ -4379,7 +4620,22 @@ def test_xlsx_locator_accepts_only_same_candidate_complete_axis_package(
                 "source_registry_version": "source_registry_v1",
                 "materialization_bucket": "source_atom_value",
                 "canonical_payload_source": "source_atom",
-            }
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-locator-contract-period",
+                "evidence_bundle_id": "bundle-xlsx-locator-contract-period",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-locator-contract-period",
+                "bm25_text": (
+                    "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | "
+                    "target_column=년월 | 년월=2019-02-01"
+                ),
+                "embedding_text": "안산선 2019-02-01 년월",
+                "source_identity": "safe-source-period-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
         ],
     )
     write_jsonl(
@@ -4398,7 +4654,21 @@ def test_xlsx_locator_accepts_only_same_candidate_complete_axis_package(
                     "column_label": "수송인원",
                     "target_column": "수송인원",
                 },
-            }
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-locator-contract-period",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-locator-contract",
+                    "sheet": "철도",
+                    "range": "A302:D351",
+                    "cell": "A302",
+                    "row_index_1based": 302,
+                    "row_label": "노선명=안산선",
+                    "column_label": "년월",
+                    "target_column": "년월",
+                },
+            },
         ],
     )
     loader = SourceNativeCorpusLoader(
@@ -4601,6 +4871,832 @@ def test_source_native_corpus_loader_adds_same_row_date_aliases_to_xlsx_value_bu
     assert "formula" not in serialized_record
     assert "source_path" not in serialized_bundle
     assert "source_path" not in serialized_record
+
+
+def test_source_native_corpus_loader_synthesizes_xlsx_value_bundle_from_display_value_tags(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address-display-value",
+                "evidence_bundle_id": "bundle-xlsx-care-address-display-value",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-care-address-display-value",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | "
+                    "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | "
+                    "target_column=기관별 상세주소 | display_value=충청남도 부여군 석성면 왕릉로 773"
+                ),
+                "embedding_text": "부여효요양원 기관별 상세주소",
+                "source_identity": "care-address-display-value-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-care-date-display-value",
+                "evidence_bundle_id": "bundle-xlsx-care-date-display-value",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-care-date-display-value",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | "
+                    "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | "
+                    "target_column=지정일자 | display_value=2015-06-01"
+                ),
+                "embedding_text": "부여효요양원 지정일자 2015-06-01",
+                "source_identity": "care-date-display-value-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address-display-value",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "source_content_sha256": "sha-care-source-content",
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "J5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원",
+                    "column_label": "기관별 상세주소",
+                    "target_column": "기관별 상세주소",
+                },
+            },
+            {
+                "source_atom_id": "srcatom-xlsx-care-date-display-value",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "source_content_sha256": "sha-care-source-content",
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "H5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원",
+                    "column_label": "지정일자",
+                    "target_column": "지정일자",
+                },
+            },
+        ],
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+    )
+    bundles = [
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+        and unit["metadata"].get("target_column") == "기관별 상세주소"
+    ]
+
+    assert len(bundles) == 1
+    bundle = bundles[0]
+    assert bundle["metadata"]["display_value"] == "충청남도 부여군 석성면 왕릉로 773"
+    assert bundle["metadata"]["source_atom_ids"] == [
+        "srcatom-xlsx-care-address-display-value",
+        "srcatom-xlsx-care-date-display-value",
+    ]
+    assert bundle["metadata"]["source_date_aliases"] == ["2015년 6월", "2015년", "6월", "1일"]
+    assert "display_value=충청남도 부여군 석성면 왕릉로 773" in bundle["text"]
+    assert "source_date_alias=2015년 6월" in bundle["text"]
+
+
+def test_source_native_corpus_loader_adds_same_row_date_aliases_from_hidden_safe_workbook_snapshot(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    snapshot = tmp_path / "xlsx-workbook.json"
+    source_sha256 = "a" * 64
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address-snapshot",
+                "evidence_bundle_id": "bundle-xlsx-care-address-snapshot",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-care-address-snapshot",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | "
+                    "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | "
+                    "target_column=기관별 상세주소 | display_value=충청남도 부여군 석성면 왕릉로 773"
+                ),
+                "embedding_text": "부여효요양원 기관별 상세주소",
+                "source_identity": "care-address-snapshot-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            },
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address-snapshot",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "source_content_sha256": source_sha256,
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "J5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원",
+                    "column_label": "기관별 상세주소",
+                    "target_column": "기관별 상세주소",
+                },
+            }
+        ],
+    )
+    snapshot.write_text(
+        json.dumps(
+            {
+                "pipelineVersion": "xlsx-extract-v2-hidden-safe",
+                "snapshotApprovalPolicy": "source_owned_index_time_exact_hash_row_cells_v1",
+                "rawXlsxSha256": source_sha256,
+                "documentVersionId": "docv-care",
+                "workbook": {
+                    "sheets": [
+                        {
+                            "name": "일반현황",
+                            "hidden": False,
+                            "tables": [
+                                {
+                                    "range": "A1:J5051",
+                                    "columnStart": 1,
+                                    "headers": [
+                                        "장기요양기관코드",
+                                        "장기요양기관이름",
+                                        "우편번호",
+                                        "시도코드",
+                                        "시군구코드",
+                                        "법정동코드",
+                                        "시도 시군구 법정동명",
+                                        "지정일자",
+                                        "설치신고일자",
+                                        "기관별 상세주소",
+                                    ],
+                                }
+                            ],
+                            "cells": [
+                                {
+                                    "cell": "H5002",
+                                    "row": 5002,
+                                    "column": 8,
+                                    "columnLetter": "H",
+                                    "value": "2015-06-02",
+                                    "formattedValue": "2015-06-02",
+                                    "hiddenRow": False,
+                                    "hiddenColumn": False,
+                                    "sourceAtomId": "srcatom-xlsx-care-snapshot-H5002",
+                                },
+                                {
+                                    "cell": "I5002",
+                                    "row": 5002,
+                                    "column": 9,
+                                    "columnLetter": "I",
+                                    "value": "2020-11-03",
+                                    "formattedValue": "2020-11-03",
+                                    "hiddenRow": False,
+                                    "hiddenColumn": True,
+                                },
+                                {
+                                    "cell": "I5002",
+                                    "row": 5002,
+                                    "column": 9,
+                                    "columnLetter": "I",
+                                    "value": "2022-01-05",
+                                    "formattedValue": "2022-01-05",
+                                    "hiddenRow": True,
+                                    "hiddenColumn": False,
+                                },
+                                {
+                                    "cell": "H5003",
+                                    "row": 5003,
+                                    "column": 8,
+                                    "columnLetter": "H",
+                                    "value": "2021-12-04",
+                                    "formattedValue": "2021-12-04",
+                                    "hiddenRow": False,
+                                    "hiddenColumn": False,
+                                },
+                                {
+                                    "cell": "I5002",
+                                    "row": 5002,
+                                    "column": 9,
+                                    "columnLetter": "I",
+                                    "value": "2015-06-02",
+                                    "formattedValue": "2015-06-02",
+                                    "formula": "=TODAY()",
+                                    "hiddenRow": False,
+                                    "hiddenColumn": False,
+                                },
+                            ],
+                        }
+                    ]
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+        xlsx_workbook_snapshot_paths=[snapshot],
+    )
+    bundles = [
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+        and unit["metadata"].get("target_column") == "기관별 상세주소"
+    ]
+
+    assert len(bundles) == 1
+    bundle = bundles[0]
+    serialized_bundle = json.dumps(bundle, ensure_ascii=False)
+    assert loader.describe()["xlsx_workbook_snapshot_path_count"] == 1
+    assert loader.describe()["xlsx_workbook_snapshot_available_count"] == 1
+    assert bundle["metadata"]["source_date_aliases"] == ["2015년 6월", "2015년", "6월", "2일"]
+    assert bundle["metadata"]["source_atom_ids"] == [
+        "srcatom-xlsx-care-address-snapshot",
+        "srcatom-xlsx-care-snapshot-H5002",
+    ]
+    assert "source_date_alias=2015년 6월" in bundle["text"]
+    assert "2020년 11월" not in serialized_bundle
+    assert "2022년 1월" not in serialized_bundle
+    assert "2021년 12월" not in serialized_bundle
+    assert "formula" not in serialized_bundle
+    assert "normalized_value" not in serialized_bundle
+    assert "source_path" not in serialized_bundle
+
+
+def test_hidden_safe_snapshot_builder_generates_approved_same_row_period_snapshot(
+    tmp_path: Path,
+) -> None:
+    workbook_path = tmp_path / "source.xlsx"
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "일반현황"
+    headers = [
+        "장기요양기관코드",
+        "장기요양기관이름",
+        "우편번호",
+        "시도코드",
+        "시군구코드",
+        "법정동코드",
+        "시도 시군구 법정동명",
+        "지정일자",
+        "설치신고일자",
+        "기관별 상세주소",
+    ]
+    for column, header in enumerate(headers, start=1):
+        sheet.cell(row=1, column=column, value=header)
+    sheet.cell(row=5002, column=1, value=14476000092)
+    sheet.cell(row=5002, column=2, value="부여효요양원")
+    sheet.cell(row=5002, column=8, value="2015-06-02")
+    sheet.cell(row=5002, column=9, value="2020-11-03")
+    sheet.cell(row=5002, column=10, value="충청남도 부여군 석성면 왕릉로 773 (석성면)")
+    sheet.column_dimensions["I"].hidden = True
+    workbook.save(workbook_path)
+    workbook.close()
+    source_sha256 = hashlib.sha256(workbook_path.read_bytes()).hexdigest()
+
+    snapshot = xlsx_hidden_safe_snapshot_script.build_approved_xlsx_workbook_snapshot(
+        workbook_path,
+        expected_sha256=source_sha256,
+        document_version_id="docv-care",
+        sheet_name="일반현황",
+        cell_range="A5002:J5051",
+        row_index_1based=5002,
+    )
+
+    serialized_snapshot = json.dumps(snapshot, ensure_ascii=False)
+    sheet_snapshot = snapshot["workbook"]["sheets"][0]
+    cells_by_ref = {cell["cell"]: cell for cell in sheet_snapshot["cells"]}
+    assert snapshot["pipelineVersion"] == "xlsx-extract-v2-hidden-safe"
+    assert snapshot["snapshotApprovalPolicy"] == "source_owned_index_time_exact_hash_row_cells_v1"
+    assert snapshot["rawXlsxSha256"] == source_sha256
+    assert snapshot["documentVersionId"] == "docv-care"
+    assert sheet_snapshot["hidden"] is False
+    assert sheet_snapshot["tables"][0]["headers"][7] == "지정일자"
+    assert cells_by_ref["H5002"]["formattedValue"] == "2015-06-02"
+    assert cells_by_ref["J5002"]["formattedValue"] == "충청남도 부여군 석성면 왕릉로 773 (석성면)"
+    assert "I5002" not in cells_by_ref
+    assert "2020-11-03" not in serialized_snapshot
+    assert "source.xlsx" not in serialized_snapshot
+    assert "source_path" not in serialized_snapshot
+    assert "normalized_value" not in serialized_snapshot
+    assert "rawValue" not in serialized_snapshot
+
+
+def test_hidden_safe_snapshot_builder_rejects_raw_xlsx_sha_mismatch(tmp_path: Path) -> None:
+    workbook_path = tmp_path / "source.xlsx"
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "일반현황"
+    sheet.cell(row=1, column=1, value="지정일자")
+    sheet.cell(row=5002, column=1, value="2015-06-02")
+    workbook.save(workbook_path)
+    workbook.close()
+
+    with pytest.raises(ValueError, match="raw XLSX SHA-256 mismatch"):
+        xlsx_hidden_safe_snapshot_script.build_approved_xlsx_workbook_snapshot(
+            workbook_path,
+            expected_sha256="0" * 64,
+            document_version_id="docv-care",
+            sheet_name="일반현황",
+            cell_range="A5002:A5002",
+            row_index_1based=5002,
+        )
+
+
+def test_hidden_safe_snapshot_builder_rejects_formula_headers(tmp_path: Path) -> None:
+    workbook_path = tmp_path / "source.xlsx"
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "일반현황"
+    sheet.cell(row=1, column=1, value="=CONCAT(\"지정\", \"일자\")")
+    sheet.cell(row=5002, column=1, value="2015-06-02")
+    workbook.save(workbook_path)
+    workbook.close()
+    source_sha256 = hashlib.sha256(workbook_path.read_bytes()).hexdigest()
+
+    with pytest.raises(ValueError, match="header cell contains a formula"):
+        xlsx_hidden_safe_snapshot_script.build_approved_xlsx_workbook_snapshot(
+            workbook_path,
+            expected_sha256=source_sha256,
+            document_version_id="docv-care",
+            sheet_name="일반현황",
+            cell_range="A5002:A5002",
+            row_index_1based=5002,
+        )
+
+
+def test_hidden_safe_snapshot_builder_excludes_grouped_hidden_columns(tmp_path: Path) -> None:
+    workbook_path = tmp_path / "source.xlsx"
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "일반현황"
+    sheet.cell(row=1, column=1, value="지정일자")
+    sheet.cell(row=1, column=2, value="숨김1")
+    sheet.cell(row=1, column=3, value="숨김2")
+    sheet.cell(row=5002, column=1, value="2015-06-02")
+    sheet.cell(row=5002, column=2, value="SECRET-B")
+    sheet.cell(row=5002, column=3, value="SECRET-C")
+    sheet.column_dimensions.group("B", "C", hidden=True)
+    workbook.save(workbook_path)
+    workbook.close()
+    source_sha256 = hashlib.sha256(workbook_path.read_bytes()).hexdigest()
+
+    snapshot = xlsx_hidden_safe_snapshot_script.build_approved_xlsx_workbook_snapshot(
+        workbook_path,
+        expected_sha256=source_sha256,
+        document_version_id="docv-care",
+        sheet_name="일반현황",
+        cell_range="A5002:C5002",
+        row_index_1based=5002,
+    )
+
+    serialized_snapshot = json.dumps(snapshot, ensure_ascii=False)
+    sheet_snapshot = snapshot["workbook"]["sheets"][0]
+    assert sheet_snapshot["hiddenColumns"] == ["B", "C"]
+    assert [cell["cell"] for cell in sheet_snapshot["cells"]] == ["A5002"]
+    assert "SECRET-B" not in serialized_snapshot
+    assert "SECRET-C" not in serialized_snapshot
+
+
+def test_source_native_corpus_loader_uses_approved_snapshot_with_date_provenance(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    workbook_path = tmp_path / "source.xlsx"
+    snapshot_path = tmp_path / "approved-xlsx-workbook.json"
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "일반현황"
+    headers = [
+        "장기요양기관코드",
+        "장기요양기관이름",
+        "우편번호",
+        "시도코드",
+        "시군구코드",
+        "법정동코드",
+        "시도 시군구 법정동명",
+        "지정일자",
+        "설치신고일자",
+        "기관별 상세주소",
+    ]
+    for column, header in enumerate(headers, start=1):
+        sheet.cell(row=1, column=column, value=header)
+    sheet.cell(row=5002, column=1, value=14476000092)
+    sheet.cell(row=5002, column=2, value="부여효요양원")
+    sheet.cell(row=5002, column=8, value="2015-06-02")
+    sheet.cell(row=5002, column=9, value="2020-11-03")
+    sheet.cell(row=5002, column=10, value="충청남도 부여군 석성면 왕릉로 773 (석성면)")
+    sheet.column_dimensions["I"].hidden = True
+    workbook.save(workbook_path)
+    workbook.close()
+    source_sha256 = hashlib.sha256(workbook_path.read_bytes()).hexdigest()
+
+    snapshot = xlsx_hidden_safe_snapshot_script.build_approved_xlsx_workbook_snapshot(
+        workbook_path,
+        expected_sha256=source_sha256,
+        document_version_id="docv-care",
+        sheet_name="일반현황",
+        cell_range="A5002:J5051",
+        row_index_1based=5002,
+    )
+    snapshot_path.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address-approved-snapshot",
+                "evidence_bundle_id": "bundle-xlsx-care-address-approved-snapshot",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-care-address-approved-snapshot",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | "
+                    "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | "
+                    "target_column=기관별 상세주소 | display_value=충청남도 부여군 석성면 왕릉로 773 (석성면)"
+                ),
+                "embedding_text": "부여효요양원 기관별 상세주소",
+                "source_identity": "care-address-approved-snapshot-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            }
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address-approved-snapshot",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "source_content_sha256": source_sha256,
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "J5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원",
+                    "column_label": "기관별 상세주소",
+                    "target_column": "기관별 상세주소",
+                },
+            }
+        ],
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+        xlsx_workbook_snapshot_paths=[snapshot_path],
+    )
+    bundles = [
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+        and unit["metadata"].get("target_column") == "기관별 상세주소"
+    ]
+
+    assert len(bundles) == 1
+    bundle = bundles[0]
+    serialized_bundle = json.dumps(bundle, ensure_ascii=False)
+    source_atom_ids = bundle["metadata"]["source_atom_ids"]
+    assert bundle["metadata"]["source_date_aliases"] == ["2015년 6월", "2015년", "6월", "2일"]
+    assert source_atom_ids[0] == "srcatom-xlsx-care-address-approved-snapshot"
+    assert any(item.startswith("srcatom_xlsx_snapshot_cell_") for item in source_atom_ids[1:])
+    assert "source_date_alias=2015년 6월" in bundle["text"]
+    assert "2020년 11월" not in serialized_bundle
+    assert "formula" not in serialized_bundle
+    assert "normalized_value" not in serialized_bundle
+    assert "source_path" not in serialized_bundle
+    assert "source.xlsx" not in serialized_bundle
+
+
+def test_source_native_corpus_loader_rejects_unapproved_workbook_snapshot_aliases(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    snapshot = tmp_path / "unapproved-xlsx-workbook.json"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address-unapproved-snapshot",
+                "evidence_bundle_id": "bundle-xlsx-care-address-unapproved-snapshot",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-care-address-unapproved-snapshot",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | "
+                    "row_label=장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | "
+                    "target_column=기관별 상세주소 | display_value=충청남도 부여군 석성면 왕릉로 773"
+                ),
+                "embedding_text": "부여효요양원 기관별 상세주소",
+                "source_identity": "care-address-unapproved-snapshot-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            }
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address-unapproved-snapshot",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "source_content_sha256": "sha-care-source-content",
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "J5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원",
+                    "column_label": "기관별 상세주소",
+                    "target_column": "기관별 상세주소",
+                },
+            }
+        ],
+    )
+    snapshot.write_text(
+        json.dumps(
+            {
+                "pipelineVersion": "xlsx-extract-v2-hidden-safe",
+                "documentVersionId": "docv-care",
+                "workbook": {
+                    "sheets": [
+                        {
+                            "name": "일반현황",
+                            "hidden": False,
+                            "tables": [{"range": "A1:J5051", "columnStart": 1, "headers": ["지정일자"]}],
+                            "cells": [
+                                {
+                                    "cell": "A5002",
+                                    "row": 5002,
+                                    "column": 1,
+                                    "value": "2015-06-02",
+                                    "formattedValue": "2015-06-02",
+                                    "sourceAtomId": "srcatom-xlsx-unapproved-date",
+                                }
+                            ],
+                        }
+                    ]
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+        xlsx_workbook_snapshot_paths=[snapshot],
+    )
+    bundles = [
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+        and unit["metadata"].get("target_column") == "기관별 상세주소"
+    ]
+
+    assert len(bundles) == 1
+    assert "source_date_aliases" not in bundles[0]["metadata"]
+    assert bundles[0]["metadata"]["source_atom_ids"] == [
+        "srcatom-xlsx-care-address-unapproved-snapshot"
+    ]
+
+
+def test_source_native_corpus_loader_rejects_formula_present_snapshot_aliases(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    snapshot = tmp_path / "formula-present-xlsx-workbook.json"
+    source_sha256 = "b" * 64
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address-formula-present",
+                "evidence_bundle_id": "bundle-xlsx-care-address-formula-present",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-care-address-formula-present",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | "
+                    "row_label=장기요양기관코드=14476000092 | "
+                    "target_column=기관별 상세주소 | display_value=충청남도 부여군 석성면 왕릉로 773"
+                ),
+                "embedding_text": "부여효요양원 기관별 상세주소",
+                "source_identity": "care-address-formula-present-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            }
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address-formula-present",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "source_content_sha256": source_sha256,
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "J5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관코드=14476000092",
+                    "column_label": "기관별 상세주소",
+                    "target_column": "기관별 상세주소",
+                },
+            }
+        ],
+    )
+    snapshot.write_text(
+        json.dumps(
+            {
+                "pipelineVersion": "xlsx-extract-v2-hidden-safe",
+                "snapshotApprovalPolicy": "source_owned_index_time_exact_hash_row_cells_v1",
+                "rawXlsxSha256": source_sha256,
+                "documentVersionId": "docv-care",
+                "workbook": {
+                    "sheets": [
+                        {
+                            "name": "일반현황",
+                            "hidden": False,
+                            "tables": [{"range": "A1:J5051", "columnStart": 1, "headers": ["지정일자"]}],
+                            "cells": [
+                                {
+                                    "cell": "A5002",
+                                    "row": 5002,
+                                    "column": 1,
+                                    "value": "2015-06-02",
+                                    "formattedValue": "2015-06-02",
+                                    "formulaPresent": True,
+                                    "sourceAtomId": "srcatom-xlsx-formula-present-date",
+                                }
+                            ],
+                        }
+                    ]
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+        xlsx_workbook_snapshot_paths=[snapshot],
+    )
+    bundles = [
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+        and unit["metadata"].get("target_column") == "기관별 상세주소"
+    ]
+
+    assert len(bundles) == 1
+    assert "source_date_aliases" not in bundles[0]["metadata"]
+    assert bundles[0]["metadata"]["source_atom_ids"] == [
+        "srcatom-xlsx-care-address-formula-present"
+    ]
+
+
+def test_source_native_corpus_loader_requires_canonical_snapshot_sha256(
+    tmp_path: Path,
+) -> None:
+    manifest = tmp_path / "search_view_manifest.jsonl"
+    registry = tmp_path / "source_atom_registry_v1.jsonl"
+    snapshot = tmp_path / "non-canonical-sha-xlsx-workbook.json"
+    write_jsonl(
+        manifest,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address-non-canonical-sha",
+                "evidence_bundle_id": "bundle-xlsx-care-address-non-canonical-sha",
+                "source_family": "XLSX",
+                "search_view_id": "sv-xlsx-care-address-non-canonical-sha",
+                "bm25_text": (
+                    "sheet=일반현황 | range=A5002:J5051 | "
+                    "row_label=장기요양기관코드=14476000092 | "
+                    "target_column=기관별 상세주소 | display_value=충청남도 부여군 석성면 왕릉로 773"
+                ),
+                "embedding_text": "부여효요양원 기관별 상세주소",
+                "source_identity": "care-address-non-canonical-sha-source-row-identity",
+                "source_registry_version": "source_registry_v1",
+                "materialization_bucket": "source_atom_value",
+                "canonical_payload_source": "source_atom",
+            }
+        ],
+    )
+    write_jsonl(
+        registry,
+        [
+            {
+                "source_atom_id": "srcatom-xlsx-care-address-non-canonical-sha",
+                "source_family": "XLSX",
+                "raw_locator": {
+                    "document_version_id": "docv-care",
+                    "source_content_sha256": "not-a-sha256",
+                    "sheet": "일반현황",
+                    "range": "A5002:J5051",
+                    "cell": "J5002",
+                    "row_index_1based": 5002,
+                    "row_label": "장기요양기관코드=14476000092",
+                    "column_label": "기관별 상세주소",
+                    "target_column": "기관별 상세주소",
+                },
+            }
+        ],
+    )
+    snapshot.write_text(
+        json.dumps(
+            {
+                "pipelineVersion": "xlsx-extract-v2-hidden-safe",
+                "snapshotApprovalPolicy": "source_owned_index_time_exact_hash_row_cells_v1",
+                "rawXlsxSha256": "not-a-sha256",
+                "documentVersionId": "docv-care",
+                "workbook": {
+                    "sheets": [
+                        {
+                            "name": "일반현황",
+                            "hidden": False,
+                            "tables": [{"range": "A1:J5051", "columnStart": 1, "headers": ["지정일자"]}],
+                            "cells": [
+                                {
+                                    "cell": "A5002",
+                                    "row": 5002,
+                                    "column": 1,
+                                    "value": "2015-06-02",
+                                    "formattedValue": "2015-06-02",
+                                    "sourceAtomId": "srcatom-xlsx-non-canonical-sha-date",
+                                }
+                            ],
+                        }
+                    ]
+                },
+            },
+            ensure_ascii=False,
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    loader = SourceNativeCorpusLoader(
+        search_view_manifest_path=manifest,
+        source_atom_registry_path=registry,
+        synthesize_xlsx_row_value_bundles=True,
+        xlsx_workbook_snapshot_paths=[snapshot],
+    )
+    bundles = [
+        unit
+        for unit in loader.load_units()
+        if unit["metadata"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+        and unit["metadata"].get("target_column") == "기관별 상세주소"
+    ]
+
+    assert len(bundles) == 1
+    assert "source_date_aliases" not in bundles[0]["metadata"]
+    assert bundles[0]["metadata"]["source_atom_ids"] == [
+        "srcatom-xlsx-care-address-non-canonical-sha"
+    ]
 
 
 def test_source_native_corpus_loader_does_not_bleed_same_row_date_aliases_across_rows_or_docs(
@@ -4913,7 +6009,7 @@ def test_source_native_corpus_loader_ignores_metadata_only_date_aliases_for_row_
     assert "2015년 6월" not in serialized_bundle
 
 
-def test_preserve_xlsx_locator_source_contexts_keeps_verified_bundle_source_date_aliases_for_period_axis() -> None:
+def test_preserve_xlsx_locator_source_contexts_keeps_verified_bundle_period_cells_for_period_axis() -> None:
     query = "2015년 6월 부여효요양원의 상세주소는 무엇입니까?"
     planner = actual_rag_eval._query_evidence_planner_summary(
         query=query,
@@ -4956,6 +6052,28 @@ def test_preserve_xlsx_locator_source_contexts_keeps_verified_bundle_source_date
             "candidate_surface_materialization": "xlsx_row_value_bundle_v1",
             "source_date_aliases": ["2015년 6월", "2015년", "6월"],
         },
+        "same_row_period_cells_json": json.dumps(
+            [
+                {
+                    "schema_version": "actual_rag_eval.xlsx.same_row_period_cell.v1",
+                    "provenance_policy": "source_owned_same_row_period_cell_v1",
+                    "source_atom_id": "srcatom-xlsx-care-period-cell",
+                    "doc_id": "docv-care",
+                    "sheet": "일반현황",
+                    "cell_range": "A5002:J5051",
+                    "cell": "H5002",
+                    "row_index_1based": "5002",
+                    "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원",
+                    "column_label": "지정일자",
+                    "raw_value": "2015-06-12",
+                    "parsed_date": "2015-06-12",
+                    "year": 2015,
+                    "month": 6,
+                    "day": 12,
+                }
+            ],
+            ensure_ascii=False,
+        ),
     }
     row = {
         "id": "xlsx-preserved-source-date-aliases",
@@ -4973,8 +6091,10 @@ def test_preserve_xlsx_locator_source_contexts_keeps_verified_bundle_source_date
     candidate = candidates[0]
     assert candidate["accepted_for_regating"] is True
     assert candidate["source_owned_same_candidate_package"] is True
+    assert candidate["source_owned_same_candidate_package_policy"] == "source_owned_same_row_period_cell_v1"
     assert candidate["source_date_aliases"] == ["2015년 6월", "2015년", "6월"]
     assert "source_date_aliases" in candidate["input_fields_used"]
+    assert "same_row_period_cells_json" in candidate["input_fields_used"]
     assert candidate["matched_validated_required_axes"] == [
         "period",
         "row_entity",

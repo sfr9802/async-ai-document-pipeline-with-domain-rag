@@ -17,6 +17,7 @@ XLSX_LOCATOR_RUN_STORE_TABLES = (
     "selected_evidence",
     "tool_invocations",
     "tool_candidates",
+    "tool_candidate_period_cells",
     "gate_results",
     "residuals",
     "guardrails",
@@ -32,17 +33,20 @@ def _canonical_materializer_key(key: Any) -> str:
     return "".join(ch for ch in str(key).strip().lower() if ch.isalnum())
 
 
-def _collect_materializer_forbidden_keys(value: Any) -> set[str]:
+def _collect_materializer_forbidden_keys(value: Any, *, _path: tuple[str, ...] = ()) -> set[str]:
     seen: set[str] = set()
     if isinstance(value, Mapping):
         for key, nested in value.items():
             canonical = _canonical_materializer_key(key)
-            if canonical in XLSX_REQUIRED_AXIS_MATERIALIZER_FORBIDDEN_KEY_CANONICALS:
+            source_atom_id_allowed = canonical == "sourceatomid" and (
+                "periodcells" in _path or "samerowperiodcells" in _path
+            )
+            if canonical in XLSX_REQUIRED_AXIS_MATERIALIZER_FORBIDDEN_KEY_CANONICALS and not source_atom_id_allowed:
                 seen.add(str(key))
-            seen.update(_collect_materializer_forbidden_keys(nested))
+            seen.update(_collect_materializer_forbidden_keys(nested, _path=(*_path, canonical)))
     elif isinstance(value, Sequence) and not isinstance(value, (str, bytes, bytearray)):
         for nested in value:
-            seen.update(_collect_materializer_forbidden_keys(nested))
+            seen.update(_collect_materializer_forbidden_keys(nested, _path=_path))
     return seen
 
 @dataclass(frozen=True)
@@ -98,6 +102,7 @@ class XlsxLocatorEvidenceCandidateRecord:
     source_row_context_source_atom_id: str = ""
     source_row_context_doc_id: str = ""
     source_date_aliases: tuple[str, ...] = ()
+    same_row_period_cells: tuple[Mapping[str, Any], ...] = ()
     locator_text_source: str = ""
     matched_query_anchors: tuple[str, ...] = ()
     missing_query_anchors_after_tool: tuple[str, ...] = ()
@@ -400,6 +405,8 @@ class XlsxLocatorRunStore:
                 source_row_context_source_atom_id TEXT NOT NULL,
                 source_row_context_doc_id TEXT NOT NULL,
                 source_date_aliases_json TEXT NOT NULL,
+                source_owned_same_candidate_package INTEGER NOT NULL,
+                source_owned_same_candidate_package_policy TEXT NOT NULL,
                 locator_text_source TEXT NOT NULL,
                 matched_query_anchors_json TEXT NOT NULL,
                 missing_query_anchors_after_tool_json TEXT NOT NULL,
@@ -410,6 +417,26 @@ class XlsxLocatorRunStore:
                 rejection_reason TEXT NOT NULL,
                 input_fields_used_json TEXT NOT NULL,
                 PRIMARY KEY (item_index, candidate_index)
+            );
+            CREATE TABLE tool_candidate_period_cells (
+                item_index INTEGER NOT NULL,
+                candidate_index INTEGER NOT NULL,
+                period_cell_index INTEGER NOT NULL,
+                source_atom_id TEXT NOT NULL,
+                doc_id TEXT NOT NULL,
+                sheet TEXT NOT NULL,
+                cell_range TEXT NOT NULL,
+                cell TEXT NOT NULL,
+                row_index_1based TEXT NOT NULL,
+                row_label TEXT NOT NULL,
+                column_label TEXT NOT NULL,
+                raw_value TEXT NOT NULL,
+                parsed_date TEXT NOT NULL,
+                year INTEGER NOT NULL,
+                month INTEGER NOT NULL,
+                day INTEGER NOT NULL,
+                provenance_policy TEXT NOT NULL,
+                PRIMARY KEY (item_index, candidate_index, period_cell_index)
             );
             CREATE TABLE gate_results (
                 item_index INTEGER NOT NULL,
@@ -747,6 +774,8 @@ class XlsxLocatorRunStore:
                         source_row_context_source_atom_id,
                         source_row_context_doc_id,
                         source_date_aliases_json,
+                        source_owned_same_candidate_package,
+                        source_owned_same_candidate_package_policy,
                         locator_text_source,
                     matched_query_anchors_json,
                     missing_query_anchors_after_tool_json,
@@ -756,7 +785,7 @@ class XlsxLocatorRunStore:
                     accepted_for_regating,
                     rejection_reason,
                     input_fields_used_json
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     candidate.item_index,
@@ -782,6 +811,8 @@ class XlsxLocatorRunStore:
                     candidate.source_row_context_source_atom_id,
                     candidate.source_row_context_doc_id,
                     self._sqlite_json(candidate.source_date_aliases),
+                    _sqlite_bool(candidate.source_owned_same_candidate_package),
+                    candidate.source_owned_same_candidate_package_policy,
                     candidate.locator_text_source,
                     self._sqlite_json(candidate.matched_query_anchors),
                     self._sqlite_json(candidate.missing_query_anchors_after_tool),
@@ -793,6 +824,49 @@ class XlsxLocatorRunStore:
                     self._sqlite_json(candidate.input_fields_used),
                 ),
             )
+            for period_cell_index, period_cell in enumerate(candidate.same_row_period_cells):
+                conn.execute(
+                    """
+                    INSERT INTO tool_candidate_period_cells (
+                        item_index,
+                        candidate_index,
+                        period_cell_index,
+                        source_atom_id,
+                        doc_id,
+                        sheet,
+                        cell_range,
+                        cell,
+                        row_index_1based,
+                        row_label,
+                        column_label,
+                        raw_value,
+                        parsed_date,
+                        year,
+                        month,
+                        day,
+                        provenance_policy
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        candidate.item_index,
+                        candidate.candidate_index,
+                        period_cell_index,
+                        self._dependencies.clean(period_cell.get("source_atom_id")),
+                        self._dependencies.clean(period_cell.get("doc_id")),
+                        self._dependencies.clean(period_cell.get("sheet")),
+                        self._dependencies.clean(period_cell.get("cell_range")),
+                        self._dependencies.clean(period_cell.get("cell")),
+                        self._dependencies.clean(period_cell.get("row_index_1based")),
+                        self._dependencies.clean(period_cell.get("row_label")),
+                        self._dependencies.clean(period_cell.get("column_label")),
+                        self._dependencies.clean(period_cell.get("raw_value")),
+                        self._dependencies.clean(period_cell.get("parsed_date")),
+                        int(period_cell.get("year") or 0),
+                        int(period_cell.get("month") or 0),
+                        int(period_cell.get("day") or 0),
+                        self._dependencies.clean(period_cell.get("provenance_policy")),
+                    ),
+                )
 
     def _insert_gate_results(
         self,

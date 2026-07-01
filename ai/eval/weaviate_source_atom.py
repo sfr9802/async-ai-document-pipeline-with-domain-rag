@@ -79,6 +79,7 @@ WEAVIATE_SOURCE_ATOM_V2_EXTRA_PROPERTIES = (
     "candidate_surface_materialization",
     "candidate_surface_materialization_policy",
     "source_date_aliases_json",
+    "same_row_period_cells_json",
     "source_atom_ids_json",
     "page_number",
     "physical_page_index",
@@ -282,6 +283,8 @@ WEAVIATE_SAME_DOC_RESIDUAL_RETRIEVAL_POLICY = "bounded_query_variant_same_doc_we
 WEAVIATE_SAME_DOC_RESIDUAL_MAX_DOCS = 2
 WEAVIATE_SAME_DOC_RESIDUAL_TOP_K_PER_DOC = 3
 WEAVIATE_XLSX_SCOPED_EXPANSION_POLICY = "bounded_source_owned_xlsx_scope_weaviate_v1"
+WEAVIATE_XLSX_ROW_VALUE_BUNDLE_MATERIALIZATION = "xlsx_row_value_bundle_v1"
+WEAVIATE_XLSX_ROW_VALUE_BUNDLE_RECALL_POLICY = "source_owned_same_row_bundle_recall_v1"
 WEAVIATE_XLSX_SCOPED_EXPANSION_MAX_SCOPES = 2
 WEAVIATE_XLSX_SCOPED_EXPANSION_TOP_K_PER_SCOPE = 3
 WEAVIATE_XLSX_SCOPED_QUERY_AXIS_FIELDS = (
@@ -422,6 +425,143 @@ def _clean_text_list_json(value: Any) -> str:
     if not cleaned:
         return ""
     return json.dumps(cleaned, ensure_ascii=False)
+
+
+def _clean_mapping_list_json(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        text = _clean(value)
+        if not text:
+            return ""
+        try:
+            parsed = json.loads(text)
+        except (TypeError, ValueError):
+            return ""
+    else:
+        parsed = value
+    if not isinstance(parsed, Sequence) or isinstance(parsed, (str, bytes, bytearray)):
+        return ""
+    cleaned: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for item in parsed:
+        if not isinstance(item, Mapping):
+            continue
+        row = {str(key): value for key, value in item.items() if _clean(key)}
+        if not row:
+            continue
+        key = json.dumps(row, ensure_ascii=False, sort_keys=True)
+        if key in seen:
+            continue
+        cleaned.append(row)
+        seen.add(key)
+    if not cleaned:
+        return ""
+    return json.dumps(cleaned, ensure_ascii=False, sort_keys=True)
+
+
+WEAVIATE_SAME_ROW_PERIOD_CELL_PACKET_FIELDS = frozenset(
+    {
+        "schema_version",
+        "provenance_policy",
+        "source_atom_id",
+        "doc_id",
+        "sheet",
+        "cell_range",
+        "cell",
+        "row_index_1based",
+        "row_label",
+        "column_label",
+        "raw_value",
+        "parsed_date",
+        "year",
+        "month",
+        "day",
+    }
+)
+
+
+def _clean_same_row_period_cells_json(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        text = _clean(value)
+        if not text:
+            return ""
+        try:
+            parsed = json.loads(text)
+        except (TypeError, ValueError):
+            return ""
+    else:
+        parsed = value
+    if not isinstance(parsed, Sequence) or isinstance(parsed, (str, bytes, bytearray)):
+        return ""
+    cleaned: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for item in parsed:
+        if not isinstance(item, Mapping):
+            return ""
+        keys = {str(key) for key in item if _clean(key)}
+        if keys != WEAVIATE_SAME_ROW_PERIOD_CELL_PACKET_FIELDS:
+            return ""
+        if _forbidden_candidate_field_paths(item):
+            return ""
+        if _clean(item.get("schema_version")) != "actual_rag_eval.xlsx.same_row_period_cell.v1":
+            return ""
+        if _clean(item.get("provenance_policy")) != "source_owned_same_row_period_cell_v1":
+            return ""
+        raw_value = _clean(item.get("raw_value"))
+        parsed_date = _clean(item.get("parsed_date"))
+        if raw_value != parsed_date or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", parsed_date):
+            return ""
+        try:
+            year = int(item.get("year"))
+            month = int(item.get("month"))
+            day = int(item.get("day"))
+        except (TypeError, ValueError):
+            return ""
+        if not (1 <= month <= 12 and 1 <= day <= 31 and parsed_date == f"{year:04d}-{month:02d}-{day:02d}"):
+            return ""
+        row = {
+            "schema_version": "actual_rag_eval.xlsx.same_row_period_cell.v1",
+            "provenance_policy": "source_owned_same_row_period_cell_v1",
+            "source_atom_id": _clean(item.get("source_atom_id")),
+            "doc_id": _clean(item.get("doc_id")),
+            "sheet": _clean(item.get("sheet")),
+            "cell_range": _clean(item.get("cell_range")),
+            "cell": _clean(item.get("cell")),
+            "row_index_1based": _clean(item.get("row_index_1based")),
+            "row_label": _clean(item.get("row_label")),
+            "column_label": _clean(item.get("column_label")),
+            "raw_value": raw_value,
+            "parsed_date": parsed_date,
+            "year": year,
+            "month": month,
+            "day": day,
+        }
+        if any(
+            not row[field]
+            for field in (
+                "source_atom_id",
+                "doc_id",
+                "sheet",
+                "cell_range",
+                "cell",
+                "row_index_1based",
+                "column_label",
+                "raw_value",
+                "parsed_date",
+            )
+        ):
+            return ""
+        key = json.dumps(row, ensure_ascii=False, sort_keys=True)
+        if key in seen:
+            continue
+        cleaned.append(row)
+        seen.add(key)
+    if not cleaned:
+        return ""
+    return json.dumps(cleaned, ensure_ascii=False, sort_keys=True)
 
 
 def _source_owned_axis_term_parts(value: Any) -> list[str]:
@@ -1552,6 +1692,14 @@ def source_atom_record_from_mapping(row: Mapping[str, Any], config: WeaviateSour
         )
         if source_date_aliases_json:
             record["source_date_aliases_json"] = source_date_aliases_json
+        same_row_period_cells_json = _clean_same_row_period_cells_json(
+            row.get("same_row_period_cells_json")
+            or metadata.get("same_row_period_cells_json")
+            or row.get("same_row_period_cells")
+            or metadata.get("same_row_period_cells")
+        )
+        if same_row_period_cells_json:
+            record["same_row_period_cells_json"] = same_row_period_cells_json
         source_atom_ids_json = _clean_text_list_json(
             row.get("source_atom_ids_json")
             or metadata.get("source_atom_ids_json")
@@ -1650,15 +1798,18 @@ def _vectorization_policy_report_from_counts(
         if key in WEAVIATE_METADATA_ONLY_GRANULARITIES:
             metadata_only_recommended_counts[key] = metadata_only_recommended_counts.get(key, 0) + int(value)
     rebuild_required = bool(current_index_vectorizes_all_source_atoms and metadata_only_recommended_counts)
+    route_taxonomy_filterable_fields = [
+        "source_family",
+        "granularity",
+        "retrieval_route",
+        "vectorized_semantic_content",
+    ]
+    if not current_index_vectorizes_all_source_atoms:
+        route_taxonomy_filterable_fields.append("candidate_surface_materialization")
     return {
         "route_taxonomy_available": True,
         "route_taxonomy_version": WEAVIATE_ROUTE_TAXONOMY_VERSION,
-        "route_taxonomy_filterable_fields": [
-            "source_family",
-            "granularity",
-            "retrieval_route",
-            "vectorized_semantic_content",
-        ],
+        "route_taxonomy_filterable_fields": route_taxonomy_filterable_fields,
         "source_family_filterable": True,
         "granularity_filterable": True,
         "retrieval_route_filterable": True,
@@ -1732,6 +1883,11 @@ def _context_from_record(record: Mapping[str, Any], *, rank: int, score: float, 
         "header_path": _clean(record.get("header_path")),
         "table_id": _clean(record.get("table_id")),
         "display_value": _clean(record.get("display_value")),
+        "candidate_surface_materialization": _clean(record.get("candidate_surface_materialization")),
+        "candidate_surface_materialization_policy": _clean(record.get("candidate_surface_materialization_policy")),
+        "source_date_aliases_json": _clean(record.get("source_date_aliases_json")),
+        "same_row_period_cells_json": _clean(record.get("same_row_period_cells_json")),
+        "source_atom_ids_json": _clean(record.get("source_atom_ids_json")),
         "page_number": _clean(record.get("page_number")),
         "physical_page_index": _clean(record.get("physical_page_index")),
         "block_index": _clean(record.get("block_index")),
@@ -4104,6 +4260,7 @@ class WeaviateSourceAtomAdapter:
             table_id = _clean(context.get("table_id"))
             cell_range = _clean(context.get("cell_range"))
             row_index = _clean(context.get("row_index_1based"))
+            row_label = _clean(context.get("row_label"))
             if table_id:
                 scope_type = "same_table_row" if row_index else "same_table"
                 scope_filters = {"source_family": "XLSX", "doc_id": doc_id, "sheet": sheet, "table_id": table_id}
@@ -4130,6 +4287,7 @@ class WeaviateSourceAtomAdapter:
                 {
                     "scope_type": scope_type,
                     "filters": scope_filters,
+                    "row_label": row_label,
                     "source_atom_id": _clean(context.get("source_atom_id")),
                     "chunk_id": _clean(context.get("chunk_id")),
                     "axis_terms": _source_owned_scope_axis_terms(
@@ -4170,6 +4328,82 @@ class WeaviateSourceAtomAdapter:
                 return False
         return _clean(context.get("source_family")) == "XLSX"
 
+    def _query_xlsx_row_value_bundle_contexts_for_scope(
+        self,
+        mode: str,
+        query: str,
+        scope: Mapping[str, Any],
+        *,
+        filters: Mapping[str, Any],
+        existing_ids: set[str],
+    ) -> list[dict[str, Any]]:
+        if not self._route_filter_field_available("candidate_surface_materialization"):
+            return []
+        scope_filters = scope.get("filters") if isinstance(scope.get("filters"), Mapping) else {}
+        bundle_filters = dict(filters)
+        bundle_filters.update(scope_filters)
+        bundle_filters["candidate_surface_materialization"] = WEAVIATE_XLSX_ROW_VALUE_BUNDLE_MATERIALIZATION
+        if not _clean(bundle_filters.get("row_index_1based")):
+            row_label = _clean(scope.get("row_label"))
+            if not row_label:
+                return []
+            bundle_filters["row_label"] = row_label
+        bundle_query = " ".join(
+            part
+            for part in (
+                self._xlsx_scoped_query_text(query, scope),
+                WEAVIATE_XLSX_ROW_VALUE_BUNDLE_MATERIALIZATION,
+            )
+            if _clean(part)
+        )
+        query_vector = self._query_vector(bundle_query) if mode in {"vector", "hybrid"} else []
+        started = time.perf_counter()
+        candidates, _latency = self._query_mode(
+            mode,
+            bundle_query,
+            query_vector,
+            top_k=WEAVIATE_XLSX_SCOPED_EXPANSION_TOP_K_PER_SCOPE,
+            filters=bundle_filters,
+        )
+        self._xlsx_scoped_expansion_latency_ms.append(round((time.perf_counter() - started) * 1000, 6))
+        candidates, removed = self._safety_filter_contexts(candidates, filters=filters)
+        self._post_filter_removed_count += removed
+        scope_type = _clean(scope.get("scope_type"))
+        added: list[dict[str, Any]] = []
+        for candidate in candidates:
+            source_atom_id = _clean(candidate.get("source_atom_id"))
+            if source_atom_id and source_atom_id in existing_ids:
+                continue
+            if _clean(candidate.get("candidate_surface_materialization")) != WEAVIATE_XLSX_ROW_VALUE_BUNDLE_MATERIALIZATION:
+                continue
+            if not self._context_matches_xlsx_scope(candidate, scope):
+                continue
+            if not _clean(scope_filters.get("row_index_1based")):
+                row_label = _clean(scope.get("row_label"))
+                if row_label and _clean(candidate.get("row_label")) != row_label:
+                    continue
+            row = dict(candidate)
+            row["xlsx_scoped_expansion_policy"] = WEAVIATE_XLSX_SCOPED_EXPANSION_POLICY
+            row["xlsx_scoped_expansion_scope_type"] = scope_type
+            row["xlsx_scoped_expansion_source_atom_id"] = _clean(scope.get("source_atom_id"))
+            row["xlsx_scoped_expansion_source_chunk_id"] = _clean(scope.get("chunk_id"))
+            row["xlsx_scoped_expansion_candidate_generation"] = (
+                "weaviate_source_owned_same_row_bundle_filter_plus_query_text_no_gold_qrels_labels_ids_or_baseline"
+            )
+            row["xlsx_row_value_bundle_recall_policy"] = WEAVIATE_XLSX_ROW_VALUE_BUNDLE_RECALL_POLICY
+            row["xlsx_row_value_bundle_recall_candidate_generation"] = (
+                "weaviate_source_owned_same_row_bundle_filter_plus_query_text_no_gold_qrels_labels_ids_or_baseline"
+            )
+            added.append(row)
+            if source_atom_id:
+                existing_ids.add(source_atom_id)
+            self._xlsx_scoped_expansion_scope_counts[scope_type] = (
+                self._xlsx_scoped_expansion_scope_counts.get(scope_type, 0) + 1
+            )
+            if len(added) >= WEAVIATE_XLSX_SCOPED_EXPANSION_TOP_K_PER_SCOPE:
+                break
+        return added
+
     def _query_xlsx_scoped_expansion_contexts(
         self,
         mode: str,
@@ -4190,6 +4424,18 @@ class WeaviateSourceAtomAdapter:
             scope_filters = scope.get("filters") if isinstance(scope.get("filters"), Mapping) else {}
             residual_filters = dict(filters)
             residual_filters.update(scope_filters)
+            for row in self._query_xlsx_row_value_bundle_contexts_for_scope(
+                mode,
+                query,
+                scope,
+                filters=filters,
+                existing_ids=existing_ids,
+            ):
+                added.append(row)
+                if len(added) >= WEAVIATE_XLSX_SCOPED_EXPANSION_TOP_K_PER_SCOPE:
+                    break
+            if len(added) >= WEAVIATE_XLSX_SCOPED_EXPANSION_TOP_K_PER_SCOPE:
+                break
             scoped_query = self._xlsx_scoped_query_text(query, scope)
             query_vector = self._query_vector(scoped_query) if mode in {"vector", "hybrid"} else []
             started = time.perf_counter()
@@ -4389,7 +4635,11 @@ class WeaviateSourceAtomAdapter:
     def _structural_key(self, context: Mapping[str, Any]) -> str:
         source_family = _clean(context.get("source_family"))
         if source_family == "XLSX":
+            materialization = _clean(context.get("candidate_surface_materialization"))
             locator = [
+                materialization
+                if materialization == WEAVIATE_XLSX_ROW_VALUE_BUNDLE_MATERIALIZATION
+                else "",
                 _clean(context.get("sheet")),
                 _clean(context.get("cell_range")),
                 _clean(context.get("row_index_1based")),
@@ -4430,7 +4680,13 @@ class WeaviateSourceAtomAdapter:
             doc_key = _clean(row.get("doc_id"))
             source_family = _clean(row.get("source_family"))
             granularity = _clean(row.get("granularity"))
-            if source_family == "XLSX" and granularity == "cell":
+            if (
+                source_family == "XLSX"
+                and _clean(row.get("candidate_surface_materialization"))
+                == WEAVIATE_XLSX_ROW_VALUE_BUNDLE_MATERIALIZATION
+            ):
+                doc_limit = 4
+            elif source_family == "XLSX" and granularity == "cell":
                 doc_limit = 4
             elif source_family == "PDF" and _clean(row.get("pdf_scoped_expansion_policy")):
                 doc_limit = 2

@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import json
+from datetime import datetime
+
 from ai.eval.actual_rag_core_base import *
 
 def _agentic_planner_tool_locator_text(context: Mapping[str, Any], *, action: str) -> str:
@@ -973,6 +976,23 @@ def _axis_value_hits_text(values: Sequence[str], texts: Sequence[str]) -> bool:
     return any(_anchor_in_text([value], text) for value in clean_values for text in clean_texts)
 
 
+def _xlsx_locator_period_axis_hit_from_period_cells(
+    *,
+    planner: Mapping[str, Any],
+    candidate: Mapping[str, Any],
+) -> bool:
+    query_periods = _xlsx_materializer_query_periods(planner)
+    if not query_periods:
+        return False
+    for packet in _xlsx_same_row_period_cell_packets(candidate):
+        if not _xlsx_period_cell_scope_matches_candidate(candidate, packet):
+            continue
+        for query_period in query_periods:
+            if _source_period_cell_matches_query_period(packet, query_period):
+                return True
+    return False
+
+
 def _xlsx_locator_validated_required_axis_hits(
     *,
     row: Mapping[str, Any],
@@ -992,15 +1012,16 @@ def _xlsx_locator_validated_required_axis_hits(
         axis: [support_text, *metadata_values.get(axis, [])]
         for axis in QUERY_EVIDENCE_AXIS_ORDER
     }
-    field_texts["period"] = [
-        *field_texts.get("period", []),
-        *_xlsx_locator_date_aliases(support_text),
-    ]
     matched: list[str] = []
     missing: list[str] = []
     for axis in required_axes:
         if axis == "display_value":
             axis_ok = bool(_clean(candidate.get("display_value")))
+        elif axis == "period":
+            axis_ok = _xlsx_locator_period_axis_hit_from_period_cells(
+                planner=planner,
+                candidate=candidate,
+            )
         else:
             axis_ok = _query_evidence_axis_hit(
                 axis=axis,
@@ -1061,6 +1082,14 @@ def _xlsx_locator_candidate_from_context(
             candidate["display_value"] = materialized_display_value
             candidate["display_value_source"] = "source_owned_target_column_segment"
             locator_text_fields_used = tuple(dict.fromkeys([*locator_text_fields_used, "display_value"]))
+    period_cells = [
+        packet
+        for packet in _xlsx_same_row_period_cell_packets(context)
+        if _xlsx_period_cell_scope_matches_candidate(candidate, packet)
+    ]
+    if period_cells:
+        candidate["same_row_period_cells"] = period_cells
+        candidate["same_row_period_cells_json"] = json.dumps(period_cells, ensure_ascii=False, sort_keys=True)
     locator_text, locator_text_source, locator_text_fields_used = (
         _xlsx_locator_apply_same_candidate_source_date_alias_package(
             context=context,
@@ -1083,6 +1112,12 @@ def _xlsx_locator_candidate_from_context(
         row=row,
         candidate=candidate,
     )
+    if "period" in matched_required_axes and _as_list(candidate.get("same_row_period_cells")):
+        candidate["source_owned_same_candidate_package"] = True
+        candidate["source_owned_same_candidate_package_policy"] = "source_owned_same_row_period_cell_v1"
+        locator_text_fields_used = tuple(
+            dict.fromkeys([*locator_text_fields_used, "same_row_period_cells_json"])
+        )
     required_axes_available = bool(matched_required_axes or missing_required_axes)
     planner = _query_evidence_planner_for_row(row)
     source_family_hint = _clean(planner.get("source_family_hint")).lower() if planner else ""
@@ -1682,6 +1717,24 @@ def _xlsx_locator_source_context_snapshot(context: Mapping[str, Any]) -> dict[st
         snapshot["candidate_surface_materialization"] = materialization
         if aliases:
             snapshot["source_date_aliases"] = aliases
+        period_cells = _parse_jsonish(
+            context.get("same_row_period_cells_json") or metadata.get("same_row_period_cells_json")
+        )
+        if isinstance(period_cells, list) and period_cells:
+            snapshot["same_row_period_cells_json"] = json.dumps(
+                [cell for cell in period_cells if isinstance(cell, Mapping)],
+                ensure_ascii=False,
+                sort_keys=True,
+            )
+    period_cells = _parse_jsonish(
+        context.get("same_row_period_cells_json") or metadata.get("same_row_period_cells_json")
+    )
+    if isinstance(period_cells, list) and period_cells:
+        snapshot["same_row_period_cells_json"] = json.dumps(
+            [cell for cell in period_cells if isinstance(cell, Mapping)],
+            ensure_ascii=False,
+            sort_keys=True,
+        )
     forbidden_seen = sorted(_collect_xlsx_locator_forbidden_input_fields(context))
     if forbidden_seen:
         snapshot["forbidden_input_fields_seen"] = forbidden_seen
@@ -1976,6 +2029,11 @@ def _xlsx_locator_candidate_record(
             _clean(alias)
             for alias in _as_list(candidate.get("source_date_aliases"))
             if _clean(alias)
+        ),
+        same_row_period_cells=tuple(
+            dict(packet)
+            for packet in _as_list(candidate.get("same_row_period_cells"))
+            if isinstance(packet, Mapping)
         ),
         locator_text_source=_clean(candidate.get("locator_text_source")),
         matched_query_anchors=tuple(
@@ -2553,6 +2611,270 @@ def _xlsx_required_axis_materializer_period_aliases(context: Mapping[str, Any]) 
     return list(dict.fromkeys(aliases))
 
 
+def _parse_source_owned_xlsx_date_value(value: Any) -> datetime | None:
+    text = _clean(value)
+    if not text:
+        return None
+    match = re.match(
+        r"^\s*(\d{4})[-./](0?[1-9]|1[0-2])[-./](0?[1-9]|[12]\d|3[01])(?:[T\s].*)?\s*$",
+        text,
+    )
+    if not match:
+        return None
+    try:
+        return datetime(int(match.group(1)), int(match.group(2)), int(match.group(3)))
+    except ValueError:
+        return None
+
+
+def _xlsx_materializer_query_periods(query_focus_contract: Mapping[str, Any]) -> list[dict[str, int | str]]:
+    axis_values = query_focus_contract.get("validated_axis_values")
+    raw_values = []
+    if isinstance(axis_values, Mapping):
+        raw_values.extend(_as_list(axis_values.get("period")))
+    raw_values.extend(_as_list(query_focus_contract.get("period")))
+    periods: list[dict[str, int | str]] = []
+    seen: set[tuple[int, int, int, str]] = set()
+
+    def add(year: int, month: int = 0, day: int = 0, granularity: str = "year") -> None:
+        if year < 1900 or year > 2099:
+            return
+        if granularity in {"month", "day"} and not (1 <= month <= 12):
+            return
+        if granularity == "day" and not (1 <= day <= 31):
+            return
+        key = (year, month, day, granularity)
+        if key in seen:
+            return
+        seen.add(key)
+        period: dict[str, int | str] = {"year": year, "granularity": granularity}
+        if granularity in {"month", "day"}:
+            period["month"] = month
+        if granularity == "day":
+            period["day"] = day
+        periods.append(period)
+
+    for raw in raw_values:
+        text = _clean(raw)
+        if not text:
+            continue
+        for match in re.finditer(r"\b(\d{4})[-./](0?[1-9]|1[0-2])[-./](0?[1-9]|[12]\d|3[01])\b", text):
+            add(int(match.group(1)), int(match.group(2)), int(match.group(3)), "day")
+        for match in re.finditer(r"\b(\d{4})[-./](0?[1-9]|1[0-2])\b", text):
+            add(int(match.group(1)), int(match.group(2)), 0, "month")
+        for match in re.finditer(r"(\d{4})\s*년\s*(0?[1-9]|1[0-2])\s*월(?:\s*(0?[1-9]|[12]\d|3[01])\s*일)?", text):
+            if match.group(3):
+                add(int(match.group(1)), int(match.group(2)), int(match.group(3)), "day")
+            else:
+                add(int(match.group(1)), int(match.group(2)), 0, "month")
+        compact = re.fullmatch(r"(\d{4})(0[1-9]|1[0-2])", text)
+        if compact:
+            add(int(compact.group(1)), int(compact.group(2)), 0, "month")
+        year_only = re.fullmatch(r"(\d{4})\s*년?", text)
+        if year_only:
+            add(int(year_only.group(1)), 0, 0, "year")
+    return periods
+
+
+def _source_period_cell_matches_query_period(
+    cell: Mapping[str, Any],
+    query_period: Mapping[str, Any],
+) -> bool:
+    if _clean(cell.get("provenance_policy")) != "source_owned_same_row_period_cell_v1":
+        return False
+    try:
+        year = int(cell.get("year"))
+        month = int(cell.get("month"))
+        day = int(cell.get("day") or 0)
+        query_year = int(query_period.get("year"))
+    except (TypeError, ValueError):
+        return False
+    granularity = _clean(query_period.get("granularity"))
+    if granularity == "year":
+        return year == query_year
+    try:
+        query_month = int(query_period.get("month"))
+    except (TypeError, ValueError):
+        return False
+    if granularity == "month":
+        return year == query_year and month == query_month
+    if granularity == "day":
+        try:
+            query_day = int(query_period.get("day"))
+        except (TypeError, ValueError):
+            return False
+        return year == query_year and month == query_month and day == query_day
+    return False
+
+
+def _xlsx_materializer_json_list(value: Any) -> list[Any]:
+    parsed = _parse_jsonish(value)
+    return parsed if isinstance(parsed, list) else []
+
+
+SAME_ROW_PERIOD_CELL_PACKET_FIELDS = frozenset(
+    {
+        "schema_version",
+        "provenance_policy",
+        "source_atom_id",
+        "doc_id",
+        "sheet",
+        "cell_range",
+        "cell",
+        "row_index_1based",
+        "row_label",
+        "column_label",
+        "raw_value",
+        "parsed_date",
+        "year",
+        "month",
+        "day",
+    }
+)
+
+
+def _xlsx_same_row_period_cell_forbidden_scalar(value: Any) -> bool:
+    text = _clean(value)
+    if not text:
+        return False
+    return bool(
+        _xlsx_locator_forbidden_text_fields(text)
+        or re.search(r"(?:[A-Za-z]:[\\/]|\\\\|/home/|/Users/)", text)
+    )
+
+
+def _sanitize_same_row_period_cell_packet(cell: Mapping[str, Any]) -> dict[str, Any] | None:
+    if not isinstance(cell, Mapping):
+        return None
+    keys = {str(key) for key in cell if _clean(key)}
+    if keys != SAME_ROW_PERIOD_CELL_PACKET_FIELDS:
+        return None
+    if _clean(cell.get("schema_version")) != "actual_rag_eval.xlsx.same_row_period_cell.v1":
+        return None
+    if _clean(cell.get("provenance_policy")) != "source_owned_same_row_period_cell_v1":
+        return None
+    parsed = _parse_source_owned_xlsx_date_value(cell.get("parsed_date") or cell.get("raw_value"))
+    if parsed is None:
+        return None
+    try:
+        year = int(cell.get("year"))
+        month = int(cell.get("month"))
+        day = int(cell.get("day"))
+    except (TypeError, ValueError):
+        return None
+    if (year, month, day) != (parsed.year, parsed.month, parsed.day):
+        return None
+    sanitized = {
+        "schema_version": "actual_rag_eval.xlsx.same_row_period_cell.v1",
+        "provenance_policy": "source_owned_same_row_period_cell_v1",
+        "source_atom_id": _clean(cell.get("source_atom_id")),
+        "doc_id": _clean(cell.get("doc_id")),
+        "sheet": _clean(cell.get("sheet")),
+        "cell_range": _clean(cell.get("cell_range")),
+        "cell": _clean(cell.get("cell")).upper(),
+        "row_index_1based": _clean(cell.get("row_index_1based")),
+        "row_label": _clean(cell.get("row_label")),
+        "column_label": _clean(cell.get("column_label")),
+        "raw_value": _clean(cell.get("raw_value")),
+        "parsed_date": parsed.date().isoformat(),
+        "year": year,
+        "month": month,
+        "day": day,
+    }
+    required = (
+        "source_atom_id",
+        "doc_id",
+        "sheet",
+        "cell_range",
+        "cell",
+        "row_index_1based",
+        "column_label",
+        "raw_value",
+    )
+    if any(not sanitized[field] for field in required):
+        return None
+    for value in sanitized.values():
+        if isinstance(value, str) and _xlsx_same_row_period_cell_forbidden_scalar(value):
+            return None
+    return sanitized
+
+
+def _xlsx_period_cell_scope_matches_candidate(
+    candidate: Mapping[str, Any],
+    packet: Mapping[str, Any],
+) -> bool:
+    for field in ("doc_id", "sheet", "cell_range"):
+        candidate_value = _clean(candidate.get(field))
+        packet_value = _clean(packet.get(field))
+        if not candidate_value or not packet_value or candidate_value != packet_value:
+            return False
+    candidate_row = _clean(candidate.get("row_index_1based"))
+    packet_row = _clean(packet.get("row_index_1based"))
+    if candidate_row and packet_row and candidate_row == packet_row:
+        return True
+    candidate_label = _clean(candidate.get("row_label"))
+    packet_label = _clean(packet.get("row_label"))
+    return bool(candidate_label and packet_label and candidate_label == packet_label)
+
+
+def _xlsx_same_row_period_cell_packets(context: Mapping[str, Any]) -> list[dict[str, Any]]:
+    packets: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, str]] = set()
+    metadata = context.get("metadata") if isinstance(context.get("metadata"), Mapping) else {}
+    for source in (context, metadata):
+        for field in ("same_row_period_cells_json", "same_row_period_cells"):
+            for item in _xlsx_materializer_json_list(source.get(field)):
+                if not isinstance(item, Mapping):
+                    continue
+                packet = _sanitize_same_row_period_cell_packet(item)
+                if packet is None:
+                    continue
+                key = (packet["source_atom_id"], packet["cell"], packet["raw_value"])
+                if key in seen:
+                    continue
+                packets.append(packet)
+                seen.add(key)
+    return packets
+
+
+def _xlsx_required_axis_materializer_period_cell_same_row(
+    answer_candidate: Mapping[str, Any],
+    context: Mapping[str, Any],
+    cell: Mapping[str, Any],
+) -> bool:
+    for field in ("doc_id", "sheet", "cell_range"):
+        answer_value = _clean(answer_candidate.get(field))
+        context_value = _clean(context.get(field) or cell.get(field))
+        if answer_value != context_value:
+            return False
+    answer_row = _clean(answer_candidate.get("row_index_1based"))
+    cell_row = _clean(context.get("row_index_1based") or cell.get("row_index_1based"))
+    if answer_row and cell_row and answer_row == cell_row:
+        return True
+    answer_label = _clean(answer_candidate.get("row_label"))
+    cell_label = _clean(context.get("row_label") or cell.get("row_label"))
+    return bool(answer_label and cell_label and answer_label == cell_label)
+
+
+def _xlsx_period_cells_match_query(
+    *,
+    answer_candidate: Mapping[str, Any],
+    context: Mapping[str, Any],
+    query_periods: Sequence[Mapping[str, Any]],
+) -> tuple[list[dict[str, Any]], Mapping[str, Any] | None]:
+    matched_cells: list[dict[str, Any]] = []
+    matched_query_period: Mapping[str, Any] | None = None
+    for packet in _xlsx_same_row_period_cell_packets(context):
+        if not _xlsx_required_axis_materializer_period_cell_same_row(answer_candidate, context, packet):
+            continue
+        for query_period in query_periods:
+            if _source_period_cell_matches_query_period(packet, query_period):
+                matched_cells.append(packet)
+                matched_query_period = query_period
+                break
+    return matched_cells, matched_query_period
+
+
 def validate_agentic_xlsx_required_axis_materializer_output(
     run_id: str,
     materializer: AgenticXlsxRequiredAxisMaterializerRecord | Mapping[str, Any],
@@ -2585,10 +2907,18 @@ def validate_agentic_xlsx_required_axis_materializer_output(
         raise DatasetSchemaError(f"{run_id}: {tool_name}.axis_packages contains forbidden field {forbidden[0]}")
     for axis in axes:
         package = axis_packages.get(axis)
-        if not isinstance(package, Mapping) or not _as_list(package.get("aliases")):
-            raise DatasetSchemaError(f"{run_id}: {tool_name}.axis_packages.{axis} missing aliases")
-        if _clean(package.get("provenance_policy")) != "source_owned_same_row_period_alias_v1":
-            raise DatasetSchemaError(f"{run_id}: {tool_name}.axis_packages.{axis}.provenance_policy unsupported")
+        if not isinstance(package, Mapping):
+            raise DatasetSchemaError(f"{run_id}: {tool_name}.axis_packages.{axis} missing package")
+        provenance_policy = _clean(package.get("provenance_policy"))
+        period_cells = _as_list(package.get("period_cells"))
+        if period_cells:
+            if provenance_policy != "source_owned_same_row_period_cell_v1":
+                raise DatasetSchemaError(f"{run_id}: {tool_name}.axis_packages.{axis}.provenance_policy unsupported")
+            for cell in period_cells:
+                if not isinstance(cell, Mapping) or _sanitize_same_row_period_cell_packet(cell) is None:
+                    raise DatasetSchemaError(f"{run_id}: {tool_name}.axis_packages.{axis}.period_cells invalid")
+            continue
+        raise DatasetSchemaError(f"{run_id}: {tool_name}.axis_packages.{axis} missing period_cells")
     if axes:
         for field in ("doc_id", "sheet", "cell_range"):
             if not _clean(scope_proof.get(field)):
@@ -2608,7 +2938,9 @@ def xlsx_required_axis_materializer_tool(
         validate_agentic_xlsx_required_axis_materializer_output("agentic_xlsx", materializer)
         return materializer
     rejected_count = 0
-    materialized_aliases: list[str] | None = None
+    query_periods = _xlsx_materializer_query_periods(query_focus_contract)
+    materialized_period_cells: list[dict[str, Any]] | None = None
+    materialized_query_period: Mapping[str, Any] | None = None
     for context in source_owned_contexts:
         if not isinstance(context, Mapping):
             rejected_count += 1
@@ -2616,19 +2948,25 @@ def xlsx_required_axis_materializer_tool(
         if _collect_xlsx_locator_forbidden_input_fields(context):
             rejected_count += 1
             continue
-        aliases = _xlsx_required_axis_materializer_period_aliases(context)
-        if not aliases or not _xlsx_required_axis_materializer_same_row(answer_candidate, context):
+        period_cells, query_period = _xlsx_period_cells_match_query(
+            answer_candidate=answer_candidate,
+            context=context,
+            query_periods=query_periods,
+        )
+        if not period_cells:
             rejected_count += 1
             continue
-        if materialized_aliases is None:
-            materialized_aliases = aliases
-    if materialized_aliases is not None:
+        if materialized_period_cells is None:
+            materialized_period_cells = period_cells
+            materialized_query_period = query_period
+    if materialized_period_cells is not None:
         materializer = AgenticXlsxRequiredAxisMaterializerRecord(
             materialized_axes=("period",),
             axis_packages={
                 "period": {
-                    "aliases": materialized_aliases,
-                    "provenance_policy": "source_owned_same_row_period_alias_v1",
+                    "period_cells": materialized_period_cells,
+                    "query_period": dict(materialized_query_period or {}),
+                    "provenance_policy": "source_owned_same_row_period_cell_v1",
                 }
             },
             scope_proof=_xlsx_required_axis_materializer_scope(answer_candidate),
@@ -2679,50 +3017,38 @@ def _xlsx_locator_apply_required_axis_materializer_actions(
         )
         if "period" not in materializer.materialized_axes:
             candidate["xlsx_required_axis_materializer_execution_status"] = (
-                "rejected_no_source_owned_same_row_period_alias"
+                "rejected_no_source_owned_same_row_period_cell"
             )
             continue
         period_package = materializer.axis_packages.get("period")
-        aliases = _as_list(period_package.get("aliases")) if isinstance(period_package, Mapping) else []
-        aliases = list(dict.fromkeys(_clean(alias) for alias in aliases if _clean(alias)))
-        if not aliases:
-            candidate["xlsx_required_axis_materializer_execution_status"] = "rejected_empty_materialized_aliases"
-            continue
-        text = _clean(candidate.get("text"))
-        normalized_text = normalize_answer_text(text)
-        alias_parts = [
-            f"source_date_alias={alias}"
-            for alias in aliases
-            if normalize_answer_text(alias) not in normalized_text
+        period_cells = _as_list(period_package.get("period_cells")) if isinstance(period_package, Mapping) else []
+        period_cells = [
+            packet
+            for packet in (_sanitize_same_row_period_cell_packet(cell) for cell in period_cells if isinstance(cell, Mapping))
+            if packet is not None
         ]
-        if alias_parts:
-            text = " | ".join(part for part in (text, *alias_parts) if part)
-            candidate["text"] = text
+        if not period_cells:
+            candidate["xlsx_required_axis_materializer_execution_status"] = (
+                "rejected_invalid_source_owned_period_cell_packet"
+            )
+            continue
         candidate.update(
             {
-                "source_date_aliases": aliases,
+                "same_row_period_cells": period_cells,
+                "same_row_period_cells_json": json.dumps(period_cells, ensure_ascii=False, sort_keys=True),
                 "source_owned_same_candidate_package": True,
-                "source_owned_same_candidate_package_policy": "source_owned_same_row_period_alias_v1",
+                "source_owned_same_candidate_package_policy": "source_owned_same_row_period_cell_v1",
                 "xlsx_required_axis_materializer_execution_status": "materialized_axis_package",
             }
         )
-        locator_text_fields_used = tuple(
+        candidate["input_fields_used"] = tuple(
             dict.fromkeys(
                 [
                     *_as_list(candidate.get("input_fields_used")),
-                    "source_date_aliases",
+                    "same_row_period_cells_json",
                     "xlsx_required_axis_materializer_tool",
                 ]
             )
-        )
-        _xlsx_locator_refresh_candidate_decision(
-            row=row,
-            context=candidate,
-            candidate=candidate,
-            locator_text=text,
-            locator_text_source=_clean(candidate.get("locator_text_source")) or "source_owned_support_text",
-            locator_text_fields_used=locator_text_fields_used,
-            extra_input_fields_used=("xlsx_required_axis_materializer_tool",),
         )
     return list(candidates)
 
@@ -3078,6 +3404,11 @@ def _xlsx_required_axis_materializer_runtime_diagnostic(record: XlsxLocatorRunRe
         for c in candidates
         if c.source_owned_same_candidate_package and c.xlsx_required_axis_materializer_materialized_axes
     )
+    period_cell_policy_counts = Counter(
+        _clean(cell.get("provenance_policy")) or "unknown"
+        for candidate in candidates
+        for cell in candidate.same_row_period_cells
+    )
     return {
         "schema_version": "actual_rag_eval.xlsx_required_axis_materializer_runtime.v1",
         "tool_name": "xlsx_required_axis_materializer_tool",
@@ -3093,6 +3424,8 @@ def _xlsx_required_axis_materializer_runtime_diagnostic(record: XlsxLocatorRunRe
         "execution_status_counts": dict(sorted(status_counts.items())),
         "materialized_axes_counts": dict(sorted(axes_counts.items())),
         "source_owned_same_candidate_package_policy_counts": dict(sorted(policy_counts.items())),
+        "period_cell_packet_count": sum(len(c.same_row_period_cells) for c in candidates),
+        "period_cell_packet_policy_counts": dict(sorted(period_cell_policy_counts.items())),
     }
 
 
@@ -4678,7 +5011,8 @@ def validate_xlsx_locator_tool_execute_once(run_id: str, locator: Mapping[str, A
         raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.run_store.backend unsupported")
     if not _clean(run_store.get("path")).endswith(XLSX_LOCATOR_RUN_STORE_FILENAME):
         raise DatasetSchemaError(f"{run_id}: xlsx_locator_tool_execute_once.run_store.path must end with run.sqlite")
-    missing_tables = sorted(set(XLSX_LOCATOR_RUN_STORE_TABLES) - set(_as_list(run_store.get("tables"))))
+    required_report_tables = set(XLSX_LOCATOR_RUN_STORE_TABLES) - {"tool_candidate_period_cells"}
+    missing_tables = sorted(required_report_tables - set(_as_list(run_store.get("tables"))))
     if missing_tables:
         raise DatasetSchemaError(
             f"{run_id}: xlsx_locator_tool_execute_once.run_store missing table {missing_tables[0]}"
@@ -4827,23 +5161,46 @@ def validate_xlsx_locator_run_store(
             "source_row_context_source_atom_id",
             "source_row_context_doc_id",
         },
+        "tool_candidate_period_cells": {
+            "item_index",
+            "candidate_index",
+            "period_cell_index",
+            "source_atom_id",
+            "doc_id",
+            "sheet",
+            "cell_range",
+            "cell",
+            "row_index_1based",
+            "row_label",
+            "column_label",
+            "raw_value",
+            "parsed_date",
+            "year",
+            "month",
+            "day",
+            "provenance_policy",
+        },
     }
     uri = f"file:{path.as_posix()}?mode=ro"
     conn = sqlite3.connect(uri, uri=True)
     try:
         conn.row_factory = sqlite3.Row
         tables = {row["name"] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
-        missing_tables = sorted(set(XLSX_LOCATOR_RUN_STORE_TABLES) - tables)
+        optional_tables = {"tool_candidate_period_cells"}
+        missing_tables = sorted((set(XLSX_LOCATOR_RUN_STORE_TABLES) - optional_tables) - tables)
         if missing_tables:
             raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore missing table {missing_tables[0]}")
         for table, columns in required_columns.items():
+            if table not in tables:
+                continue
             present = {row["name"] for row in conn.execute(f"PRAGMA table_info({table})")}
             missing_columns = sorted(columns - present)
             if missing_columns:
                 raise DatasetSchemaError(
                     f"{run_id}: xlsx locator RunStore {table} missing column {missing_columns[0]}"
                 )
-        counts = {table: conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] for table in XLSX_LOCATOR_RUN_STORE_TABLES}
+        count_tables = [table for table in XLSX_LOCATOR_RUN_STORE_TABLES if table in tables]
+        counts = {table: conn.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0] for table in count_tables}
         if counts["runs"] != 1:
             raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore must contain one runs row")
         item_count = counts["items"]
@@ -4859,6 +5216,36 @@ def validate_xlsx_locator_run_store(
         )
         if counts["tool_candidates"] != candidate_count:
             raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore tool_candidates count mismatch")
+        if "tool_candidate_period_cells" in tables:
+            for period_cell in conn.execute(
+                "SELECT source_atom_id, doc_id, sheet, cell_range, cell, row_index_1based, column_label, "
+                "raw_value, parsed_date, year, month, day, provenance_policy FROM tool_candidate_period_cells"
+            ):
+                for field in (
+                    "source_atom_id",
+                    "doc_id",
+                    "sheet",
+                    "cell_range",
+                    "cell",
+                    "row_index_1based",
+                    "column_label",
+                    "raw_value",
+                    "parsed_date",
+                ):
+                    if not _clean(period_cell[field]):
+                        raise DatasetSchemaError(
+                            f"{run_id}: xlsx locator RunStore tool_candidate_period_cells.{field} missing"
+                        )
+                if _clean(period_cell["provenance_policy"]) != "source_owned_same_row_period_cell_v1":
+                    raise DatasetSchemaError(
+                        f"{run_id}: xlsx locator RunStore tool_candidate_period_cells.provenance_policy invalid"
+                    )
+                if (
+                    int(period_cell["year"] or 0) <= 0
+                    or int(period_cell["month"] or 0) <= 0
+                    or int(period_cell["day"] or 0) <= 0
+                ):
+                    raise DatasetSchemaError(f"{run_id}: xlsx locator RunStore tool_candidate_period_cells date invalid")
         allowed_planner_statuses = {
             "",
             "skipped_no_query",

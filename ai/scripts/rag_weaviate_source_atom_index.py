@@ -117,6 +117,17 @@ def build_parser() -> argparse.ArgumentParser:
             "Does not read raw XLSX files, mutate source registry, or change default indexing."
         ),
     )
+    parser.add_argument(
+        "--xlsx-workbook-snapshot-path",
+        dest="xlsx_workbook_snapshot_paths",
+        action="append",
+        default=[],
+        help=(
+            "Optional explicit xlsx-extract-v2-hidden-safe workbook JSON snapshot path used only at index time "
+            "to co-materialize same-row date aliases into synthesized XLSX row/value bundles. May be repeated. "
+            "Does not parse raw XLSX files or run at query time."
+        ),
+    )
     return parser
 
 
@@ -154,6 +165,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         search_view_manifest_path=Path(args.source_native_index_dir) / "search_view_manifest.jsonl",
         source_atom_registry_path=Path(args.source_atom_registry_path),
         synthesize_xlsx_row_value_bundles=bool(args.synthesize_xlsx_row_value_bundles),
+        xlsx_workbook_snapshot_paths=[Path(path) for path in args.xlsx_workbook_snapshot_paths],
     )
     try:
         def progress(event: dict) -> None:

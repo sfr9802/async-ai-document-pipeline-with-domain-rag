@@ -472,6 +472,175 @@ def test_selected_evidence_composer_uses_only_query_selected_sourceatom_evidence
     assert summary["citation_retrieved_context_only_diagnostic_count"] == 0
 
 
+def test_selected_evidence_answer_shape_renders_xlsx_display_value_after_gate_without_gate_mutation() -> None:
+    query = "2019년 2월 5호선의 승차총승객수는 몇 명입니까?"
+    planner = {
+        "source_family_hint": "xlsx",
+        "planner_status": "planned_validated",
+        "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+        "validated_axis_values": {
+            "period": ["2019-02", "2019년 2월", "201902"],
+            "row_entity": ["5호선"],
+            "target_column": ["승차총승객수"],
+            "display_value": [],
+        },
+    }
+    raw_outputs = [
+        {
+            "id": "q-xlsx-answer-shape",
+            "query": query,
+            "query_evidence_planner": planner,
+            "generated_answer": "legacy broad answer",
+            "retrieved_contexts": [
+                {
+                    "doc_id": "doc-xlsx",
+                    "chunk_id": "chunk-xlsx-correct",
+                    "source_atom_id": "src-xlsx-correct",
+                    "evidence_bundle_id": "bundle-xlsx-correct",
+                    "source_family": "XLSX",
+                    "text": (
+                        "sheet=철도 | range=A352:D401 | cell=D352 | row_label=대중교통구분=지하철 | "
+                        "노선명=5호선 | 년월=201902 | target_column=승차총승객수 | display_value=15446522 | "
+                        "source_date_alias=2019년 2월"
+                    ),
+                    "sheet": "철도",
+                    "cell": "D352",
+                    "cell_range": "A352:D401",
+                    "row_index_1based": 352,
+                    "row_label": "대중교통구분=지하철 | 노선명=5호선 | 년월=201902",
+                    "column_label": "승차총승객수",
+                    "target_column": "승차총승객수",
+                    "display_value": "15446522",
+                    "source_date_aliases": ["2019년 2월", "201902", "2019-02"],
+                },
+                {
+                    "doc_id": "doc-xlsx",
+                    "chunk_id": "chunk-xlsx-wrong-line",
+                    "source_atom_id": "src-xlsx-wrong-line",
+                    "evidence_bundle_id": "bundle-xlsx-wrong-line",
+                    "source_family": "XLSX",
+                    "text": (
+                        "sheet=철도 | range=A302:D351 | cell=D302 | row_label=대중교통구분=지하철 | "
+                        "노선명=수인선 | 년월=201902 | target_column=승차총승객수 | display_value=1124736 | "
+                        "source_date_alias=2019년 2월"
+                    ),
+                    "sheet": "철도",
+                    "cell": "D302",
+                    "cell_range": "A302:D351",
+                    "row_index_1based": 302,
+                    "row_label": "대중교통구분=지하철 | 노선명=수인선 | 년월=201902",
+                    "column_label": "승차총승객수",
+                    "target_column": "승차총승객수",
+                    "display_value": "1124736",
+                    "source_date_aliases": ["2019년 2월", "201902", "2019-02"],
+                },
+            ],
+            "citations": [],
+        }
+    ]
+
+    composed = apply_selected_evidence_composer_to_outputs(raw_outputs, citation_format="markdown-portfolio")[0]
+    gated_outputs, summary = apply_evidence_gate_to_outputs([composed], mode="enforce")
+    rendered = gated_outputs[0]
+
+    assert composed["generated_answer"].startswith("**Query:**")
+    assert rendered["generated_answer"] == "15,446,522명입니다."
+    assert rendered["answer_gate_decision"] == "allow_answer"
+    assert rendered["evidence_gate"]["evidence_package_status"] == "sufficient"
+    assert rendered["evidence_gate"]["gated_answer_hash"] == rendered["gated_answer_hash"]
+    assert rendered["answer_shape_rendering"]["pre_render_answer_hash"] == rendered["gated_answer_hash"]
+    assert rendered["answer_shape_rendering"]["rendered_answer_hash"] != rendered["gated_answer_hash"]
+    assert rendered["answer_composer"]["rendering_mode"] == "source_owned_xlsx_display_value"
+    assert rendered["answer_composer"]["rendered_answer_source_fields"] == ["target_column", "display_value"]
+    assert rendered["answer_composer"]["uses_expected_answer"] is False
+    assert rendered["answer_composer"]["uses_gold_fields"] is False
+    assert rendered["answer_composer"]["uses_qrels"] is False
+    assert rendered["answer_composer"]["uses_labels"] is False
+    assert rendered["answer_composer"]["uses_query_or_row_or_target_ids"] is False
+    assert summary["allowed_answer_count"] == 1
+
+
+def test_selected_evidence_answer_shape_skips_conflicting_xlsx_display_values() -> None:
+    query = "2019년 2월 5호선의 승차총승객수는 몇 명입니까?"
+    planner = {
+        "source_family_hint": "xlsx",
+        "planner_status": "planned_validated",
+        "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+        "validated_axis_values": {
+            "period": ["2019-02", "2019년 2월", "201902"],
+            "row_entity": ["5호선"],
+            "target_column": ["승차총승객수"],
+            "display_value": [],
+        },
+    }
+    selected_evidence = [
+        {
+            "doc_id": "doc-xlsx",
+            "chunk_id": "chunk-xlsx-first",
+            "source_atom_id": "src-xlsx-first",
+            "evidence_bundle_id": "bundle-xlsx-first",
+            "source_family": "XLSX",
+            "text": "노선명=5호선 | 년월=201902 | target_column=승차총승객수 | display_value=15446522",
+            "sheet": "철도",
+            "cell": "D352",
+            "cell_range": "A352:D401",
+            "row_label": "대중교통구분=지하철 | 노선명=5호선 | 년월=201902",
+            "column_label": "승차총승객수",
+            "target_column": "승차총승객수",
+            "display_value": "15446522",
+            "source_date_aliases": ["2019년 2월", "201902", "2019-02"],
+        },
+        {
+            "doc_id": "doc-xlsx",
+            "chunk_id": "chunk-xlsx-second",
+            "source_atom_id": "src-xlsx-second",
+            "evidence_bundle_id": "bundle-xlsx-second",
+            "source_family": "XLSX",
+            "text": "노선명=5호선 | 년월=201902 | target_column=승차총승객수 | display_value=999999",
+            "sheet": "철도",
+            "cell": "D353",
+            "cell_range": "A352:D401",
+            "row_label": "대중교통구분=지하철 | 노선명=5호선 | 년월=201902",
+            "column_label": "승차총승객수",
+            "target_column": "승차총승객수",
+            "display_value": "999999",
+            "source_date_aliases": ["2019년 2월", "201902", "2019-02"],
+        },
+    ]
+    row = {
+        "id": "q-xlsx-conflicting-answer-shape",
+        "query": query,
+        "query_evidence_planner": planner,
+        "generated_answer": (
+            "**Query:** 2019년 2월 5호선의 승차총승객수는 몇 명입니까?\n\n"
+            "**Short answer:** 노선명=5호선 | 년월=201902 | target_column=승차총승객수 | "
+            "display_value=15446522 | display_value=999999\n\n"
+            "**Supporting passages:**"
+        ),
+        "retrieved_contexts": selected_evidence,
+        "citations": [
+            {
+                "doc_id": evidence["doc_id"],
+                "chunk_id": evidence["chunk_id"],
+                "source_atom_id": evidence["source_atom_id"],
+                "evidence_bundle_id": evidence["evidence_bundle_id"],
+                "text": evidence["text"],
+            }
+            for evidence in selected_evidence
+        ],
+    }
+
+    rendered = apply_evidence_gate_to_outputs([row], mode="enforce")[0][0]
+
+    assert rendered["answer_gate_decision"] == "allow_answer"
+    assert rendered["generated_answer"].startswith("**Query:**")
+    assert rendered["answer_shape_rendering"] == {
+        "applied": False,
+        "skip_reason": "ambiguous_xlsx_display_value_candidates",
+        "candidate_count": 2,
+    }
+
+
 def test_selected_evidence_composer_abstains_without_selected_sourceatom_evidence() -> None:
     raw_outputs = [
         {

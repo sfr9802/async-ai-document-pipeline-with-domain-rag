@@ -80,6 +80,45 @@ from ai.tests.actual_rag_eval_helpers import (
     write_jsonl,
 )
 
+
+def same_row_period_cell_packet(
+    *,
+    source_atom_id: str = "src-period-cell",
+    doc_id: str = "doc-xlsx",
+    sheet: str = "일반현황",
+    cell_range: str = "A5002:J5051",
+    cell: str = "H5002",
+    row_index_1based: str = "5002",
+    row_label: str = "장기요양기관이름=부여효요양원",
+    column_label: str = "지정일자",
+    raw_value: str = "2015-06-12",
+    year: int = 2015,
+    month: int = 6,
+    day: int = 12,
+) -> dict[str, object]:
+    return {
+        "schema_version": "actual_rag_eval.xlsx.same_row_period_cell.v1",
+        "provenance_policy": "source_owned_same_row_period_cell_v1",
+        "source_atom_id": source_atom_id,
+        "doc_id": doc_id,
+        "sheet": sheet,
+        "cell_range": cell_range,
+        "cell": cell,
+        "row_index_1based": row_index_1based,
+        "row_label": row_label,
+        "column_label": column_label,
+        "raw_value": raw_value,
+        "parsed_date": raw_value,
+        "year": year,
+        "month": month,
+        "day": day,
+    }
+
+
+def same_row_period_cells_json(**kwargs: object) -> str:
+    return json.dumps([same_row_period_cell_packet(**kwargs)], ensure_ascii=False)
+
+
 def test_weaviate_retrieval_backend_cli_choices_are_available() -> None:
     parser = build_parser()
 
@@ -1628,6 +1667,650 @@ def test_xlsx_scoped_expansion_filters_same_source_row_when_row_index_available(
     assert "formula" not in query_payload
     assert "normalized_value" not in query_payload
     assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_xlsx_row_value_bundle_recall_preserves_materialization_hydration(tmp_path: Path) -> None:
+    class BundleRecallWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(
+                {
+                    "mode": kwargs["mode"],
+                    "query_text": kwargs["query_text"],
+                    "vector_dim": len(kwargs.get("query_vector") or []),
+                    "filters": dict(kwargs["filters"]),
+                    "limit": int(kwargs["limit"]),
+                    "alpha": float(kwargs["alpha"]),
+                }
+            )
+            filters = dict(kwargs["filters"])
+            bundle_scoped = (
+                filters.get("source_family") == "XLSX"
+                and filters.get("doc_id") == "doc-care"
+                and filters.get("sheet") == "일반현황"
+                and filters.get("cell_range") == "A5002:J5051"
+                and filters.get("row_index_1based") == "5002"
+                and filters.get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+            )
+            rows: list[dict] = []
+            for obj in self.objects:
+                if _filter_mismatch(obj, filters):
+                    continue
+                source_atom_id = obj.get("source_atom_id")
+                if bundle_scoped and source_atom_id == "srcatom-care-row-bundle":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+                elif not bundle_scoped and "candidate_surface_materialization" not in filters:
+                    if source_atom_id == "srcatom-care-address":
+                        row = dict(obj)
+                        row["_score"] = 1.0
+                        row["_backend"] = kwargs["mode"]
+                        rows.append(row)
+            return rows[: int(kwargs["limit"])]
+
+    def _filter_mismatch(obj: dict, filters: dict) -> bool:
+        for key, value in filters.items():
+            if not value:
+                continue
+            if isinstance(value, list):
+                if obj.get(key) not in value:
+                    return True
+            elif obj.get(key) != value:
+                return True
+        return False
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_row_value_bundle_recall"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx-row-value-bundle-recall",
+                "query": "2015년 6월 부여효요양원 기관별 상세주소",
+                "answerability": "answerable",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    address = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                709,
+                text=(
+                    "row_label=장기요양기관이름=부여효요양원 | "
+                    "target_column=기관별 상세주소 | display_value=충청남도 부여군 석성면 왕릉로 773"
+                ),
+            ),
+            "source_atom_id": "srcatom-care-address",
+            "evidence_bundle_id": "bundle-care-address",
+            "doc_id": "doc-care",
+            "chunk_id": "chunk-care-address",
+            "source_family": "XLSX",
+            "granularity": "cell",
+            "retrieval_route": "xlsx_cell_trace",
+            "sheet": "일반현황",
+            "cell_range": "A5002:J5051",
+            "cell": "J5002",
+            "row_index_1based": "5002",
+            "row_label": "장기요양기관이름=부여효요양원",
+            "column_label": "기관별 상세주소",
+            "target_column": "기관별 상세주소",
+            "display_value": "충청남도 부여군 석성면 왕릉로 773",
+        },
+        config,
+    )
+    row_bundle = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                710,
+                text=(
+                    "xlsx_row_value_bundle_v1 | row_label=장기요양기관이름=부여효요양원 | "
+                    "target_column=기관별 상세주소 | display_value=충청남도 부여군 석성면 왕릉로 773 | "
+                    "source_date_alias=2015년 6월 | source_date_alias=2015년 | source_date_alias=6월"
+                ),
+            ),
+            "source_atom_id": "srcatom-care-row-bundle",
+            "evidence_bundle_id": "bundle-care-row-bundle",
+            "doc_id": "doc-care",
+            "chunk_id": "chunk-care-row-bundle",
+            "source_family": "XLSX",
+            "granularity": "table_row",
+            "retrieval_route": "xlsx_table",
+            "sheet": "일반현황",
+            "cell_range": "A5002:J5051",
+            "row_index_1based": "5002",
+            "row_label": "장기요양기관이름=부여효요양원",
+            "target_column": "기관별 상세주소",
+            "display_value": "충청남도 부여군 석성면 왕릉로 773",
+            "candidate_surface_materialization": "xlsx_row_value_bundle_v1",
+            "candidate_surface_materialization_policy": (
+                "source_native_xlsx_row_value_bundle_same_row_period_v1"
+            ),
+            "source_date_aliases_json": json.dumps(["2015년 6월", "2015년", "6월"], ensure_ascii=False),
+            "source_atom_ids_json": json.dumps(["srcatom-care-address", "srcatom-care-date"], ensure_ascii=False),
+        },
+        config,
+    )
+    wrong_row_bundle = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                711,
+                text=(
+                    "xlsx_row_value_bundle_v1 | row_label=장기요양기관이름=다른요양원 | "
+                    "target_column=기관별 상세주소 | display_value=충청남도 부여군 다른면 1 | "
+                    "source_date_alias=2015년 6월"
+                ),
+            ),
+            "source_atom_id": "srcatom-care-wrong-row-bundle",
+            "evidence_bundle_id": "bundle-care-wrong-row-bundle",
+            "doc_id": "doc-care",
+            "chunk_id": "chunk-care-wrong-row-bundle",
+            "source_family": "XLSX",
+            "granularity": "table_row",
+            "retrieval_route": "xlsx_table",
+            "sheet": "일반현황",
+            "cell_range": "A5002:J5051",
+            "row_index_1based": "2",
+            "row_label": "장기요양기관이름=다른요양원",
+            "target_column": "기관별 상세주소",
+            "display_value": "충청남도 부여군 다른면 1",
+            "candidate_surface_materialization": "xlsx_row_value_bundle_v1",
+            "candidate_surface_materialization_policy": (
+                "source_native_xlsx_row_value_bundle_same_row_period_v1"
+            ),
+            "source_date_aliases_json": json.dumps(["2015년 6월"], ensure_ascii=False),
+            "source_atom_ids_json": json.dumps(["srcatom-care-wrong-row-address"], ensure_ascii=False),
+        },
+        config,
+    )
+    client = BundleRecallWeaviateClient(objects=[address, row_bundle, wrong_row_bundle])
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={
+            "source_family": True,
+            "granularity": True,
+            "retrieval_route": True,
+            "candidate_surface_materialization": True,
+        },
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="xlsx_row_value_bundle_recall",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    contexts = report["items"][0]["retrieved_contexts"]
+    bundle_context = next(
+        context for context in contexts if context.get("source_atom_id") == "srcatom-care-row-bundle"
+    )
+    bundle_queries = [
+        query
+        for query in client.query_log
+        if query["filters"].get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+    ]
+    assert bundle_queries
+    assert any(query["filters"].get("row_index_1based") == "5002" for query in bundle_queries)
+    assert bundle_context["candidate_surface_materialization"] == "xlsx_row_value_bundle_v1"
+    assert bundle_context["candidate_surface_materialization_policy"] == (
+        "source_native_xlsx_row_value_bundle_same_row_period_v1"
+    )
+    assert json.loads(bundle_context["source_date_aliases_json"]) == ["2015년 6월", "2015년", "6월"]
+    assert json.loads(bundle_context["source_atom_ids_json"]) == ["srcatom-care-address", "srcatom-care-date"]
+    assert bundle_context["xlsx_scoped_expansion_scope_type"] == "same_cell_range_row"
+    assert bundle_context["xlsx_row_value_bundle_recall_policy"] == "source_owned_same_row_bundle_recall_v1"
+    assert all(context["source_atom_id"] != "srcatom-care-wrong-row-bundle" for context in contexts)
+    query_payload = json.dumps(client.query_log, ensure_ascii=False)
+    assert "expected_answer" not in query_payload
+    assert "expected_evidence" not in query_payload
+    assert "qrels" not in query_payload
+    assert "labels" not in query_payload
+    assert "row_id" not in query_payload
+    assert "target_id" not in query_payload
+    assert "formula" not in query_payload
+    assert "normalized_value" not in query_payload
+    assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_xlsx_row_value_bundle_initial_hit_survives_scoped_expansion_collapse(tmp_path: Path) -> None:
+    class InitialBundleHitWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append(
+                {
+                    "mode": kwargs["mode"],
+                    "query_text": kwargs["query_text"],
+                    "vector_dim": len(kwargs.get("query_vector") or []),
+                    "filters": dict(kwargs["filters"]),
+                    "limit": int(kwargs["limit"]),
+                    "alpha": float(kwargs["alpha"]),
+                }
+            )
+            filters = dict(kwargs["filters"])
+            row_scoped = (
+                filters.get("source_family") == "XLSX"
+                and filters.get("doc_id") == "doc-row702"
+                and filters.get("sheet") == "일반현황"
+                and filters.get("cell_range") == "A702:J751"
+                and filters.get("row_index_1based") == "702"
+            )
+            bundle_scoped = row_scoped and filters.get("candidate_surface_materialization") == "xlsx_row_value_bundle_v1"
+            rows: list[dict] = []
+            for obj in self.objects:
+                if _filter_mismatch(obj, filters):
+                    continue
+                source_atom_id = obj.get("source_atom_id")
+                if bundle_scoped and source_atom_id == "srcatom-row702-bundle":
+                    row = dict(obj)
+                    row["_score"] = 1.0
+                    row["_backend"] = kwargs["mode"]
+                    rows.append(row)
+                elif row_scoped and "candidate_surface_materialization" not in filters:
+                    if source_atom_id == "srcatom-row702-postal-cell":
+                        row = dict(obj)
+                        row["_score"] = 1.0
+                        row["_backend"] = kwargs["mode"]
+                        rows.append(row)
+                elif not row_scoped and "candidate_surface_materialization" not in filters:
+                    if source_atom_id == "srcatom-row702-bundle":
+                        row = dict(obj)
+                        row["_score"] = 1.0
+                        row["_backend"] = kwargs["mode"]
+                        rows.append(row)
+            return rows[: int(kwargs["limit"])]
+
+    def _filter_mismatch(obj: dict, filters: dict) -> bool:
+        for key, value in filters.items():
+            if not value:
+                continue
+            if isinstance(value, list):
+                if obj.get(key) not in value:
+                    return True
+            elif obj.get(key) != value:
+                return True
+        return False
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_row_value_bundle_initial_hit"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx-row702-bundle-initial-hit",
+                "query": "2020년 11월에 지정된 하얀민들레노인요양원의 우편번호",
+                "answerability": "answerable",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    common = {
+        "doc_id": "doc-row702",
+        "source_family": "XLSX",
+        "retrieval_route": "xlsx_table",
+        "sheet": "일반현황",
+        "cell_range": "A702:J751",
+        "row_index_1based": "702",
+        "row_label": "장기요양기관이름=하얀민들레노인요양원",
+        "target_column": "우편번호",
+        "display_value": "41786",
+    }
+    postal_cell = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                709,
+                text=(
+                    "row_label=장기요양기관이름=하얀민들레노인요양원 | "
+                    "target_column=우편번호 | display_value=41786"
+                ),
+            ),
+            **common,
+            "source_atom_id": "srcatom-row702-postal-cell",
+            "evidence_bundle_id": "bundle-row702-postal-cell",
+            "chunk_id": "chunk-row702-postal-cell",
+            "granularity": "cell",
+            "cell": "C702",
+            "column_label": "우편번호",
+        },
+        config,
+    )
+    row_bundle = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                710,
+                text=(
+                    "xlsx_row_value_bundle_v1 | row_label=장기요양기관이름=하얀민들레노인요양원 | "
+                    "target_column=우편번호 | display_value=41786 | "
+                    "source_date_alias=2020년 11월 | source_date_alias=2020년 | source_date_alias=11월"
+                ),
+            ),
+            **common,
+            "source_atom_id": "srcatom-row702-bundle",
+            "evidence_bundle_id": "bundle-row702-bundle",
+            "chunk_id": "chunk-row702-bundle",
+            "granularity": "table_row",
+            "candidate_surface_materialization": "xlsx_row_value_bundle_v1",
+            "candidate_surface_materialization_policy": (
+                "source_native_xlsx_row_value_bundle_same_row_period_v1"
+            ),
+            "source_date_aliases_json": json.dumps(["2020년 11월", "2020년", "11월"], ensure_ascii=False),
+            "source_atom_ids_json": json.dumps(
+                ["srcatom-row702-postal-cell", "srcatom-row702-designated-date"],
+                ensure_ascii=False,
+            ),
+            "cell": "C702",
+            "column_label": "우편번호",
+        },
+        config,
+    )
+    client = InitialBundleHitWeaviateClient(objects=[row_bundle, postal_cell])
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={
+            "source_family": True,
+            "granularity": True,
+            "retrieval_route": True,
+            "candidate_surface_materialization": True,
+        },
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="xlsx_row_value_bundle_initial_hit",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    contexts = report["items"][0]["retrieved_contexts"]
+    bundle_context = next(
+        (context for context in contexts if context.get("source_atom_id") == "srcatom-row702-bundle"),
+        None,
+    )
+    assert bundle_context is not None, json.dumps(contexts, ensure_ascii=False)
+    assert bundle_context["candidate_surface_materialization"] == "xlsx_row_value_bundle_v1"
+    assert bundle_context["candidate_surface_materialization_policy"] == (
+        "source_native_xlsx_row_value_bundle_same_row_period_v1"
+    )
+    assert json.loads(bundle_context["source_date_aliases_json"]) == ["2020년 11월", "2020년", "11월"]
+    assert json.loads(bundle_context["source_atom_ids_json"]) == [
+        "srcatom-row702-postal-cell",
+        "srcatom-row702-designated-date",
+    ]
+    query_payload = json.dumps(client.query_log, ensure_ascii=False)
+    assert "expected_answer" not in query_payload
+    assert "expected_evidence" not in query_payload
+    assert "qrels" not in query_payload
+    assert "labels" not in query_payload
+    assert "row_id" not in query_payload
+    assert "target_id" not in query_payload
+    assert "formula" not in query_payload
+    assert "normalized_value" not in query_payload
+    assert output_file_names(output_dir) == ["report.json"]
+
+
+def test_xlsx_row_value_bundle_recall_skips_when_materialization_filter_unavailable() -> None:
+    class RaisingBundleFilterClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            filters = dict(kwargs["filters"])
+            if "candidate_surface_materialization" in filters:
+                raise AssertionError("bundle materialization filter should be skipped when unavailable")
+            self.query_log.append({"filters": filters})
+            return []
+
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV1",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    client = RaisingBundleFilterClient(objects=[])
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=client,
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={
+            "source_family": True,
+            "granularity": True,
+            "retrieval_route": True,
+            "candidate_surface_materialization": False,
+        },
+    )
+
+    contexts = adapter._query_xlsx_row_value_bundle_contexts_for_scope(
+        "bm25",
+        "2015년 6월 부여효요양원 기관별 상세주소",
+        {
+            "scope_type": "same_cell_range_row",
+            "filters": {
+                "source_family": "XLSX",
+                "doc_id": "doc-care",
+                "sheet": "일반현황",
+                "cell_range": "A5002:J5051",
+                "row_index_1based": "5002",
+            },
+            "source_atom_id": "srcatom-care-address",
+        },
+        filters=adapter._base_filters(),
+        existing_ids=set(),
+    )
+
+    assert contexts == []
+    assert client.query_log == []
+
+
+def test_xlsx_row_value_bundle_hydrates_same_row_period_cell_packet(tmp_path: Path) -> None:
+    class PeriodCellPacketWeaviateClient(FakeWeaviateSourceAtomClient):
+        def query(self, **kwargs: object) -> list[dict]:
+            self.query_log.append({"filters": dict(kwargs["filters"])})
+            return [dict(obj, _score=1.0, _backend=kwargs["mode"]) for obj in self.objects][
+                : int(kwargs["limit"])
+            ]
+
+    dataset = tmp_path / "fixture_gold.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_row_value_bundle_period_cells"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "xlsx-row702-period-cell-packet",
+                "query": "2020년 11월에 지정된 하얀민들레노인요양원의 우편번호",
+                "answerability": "answerable",
+            }
+        ],
+    )
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    period_cells_json = json.dumps(
+        [
+            {
+                "schema_version": "actual_rag_eval.xlsx.same_row_period_cell.v1",
+                "provenance_policy": "source_owned_same_row_period_cell_v1",
+                "source_atom_id": "srcatom-row702-designated-date",
+                "doc_id": "doc-row702",
+                "sheet": "일반현황",
+                "cell_range": "A702:J751",
+                "cell": "H702",
+                "row_index_1based": "702",
+                "row_label": "장기요양기관이름=하얀민들레노인요양원",
+                "column_label": "지정일자",
+                "raw_value": "2020-11-26",
+                "parsed_date": "2020-11-26",
+                "year": 2020,
+                "month": 11,
+                "day": 26,
+            }
+        ],
+        ensure_ascii=False,
+    )
+    row_bundle = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(
+                710,
+                text=(
+                    "xlsx_row_value_bundle_v1 | row_label=장기요양기관이름=하얀민들레노인요양원 | "
+                    "target_column=우편번호 | display_value=41786"
+                ),
+            ),
+            "source_atom_id": "srcatom-row702-bundle",
+            "evidence_bundle_id": "bundle-row702-bundle",
+            "doc_id": "doc-row702",
+            "chunk_id": "chunk-row702-bundle",
+            "source_family": "XLSX",
+            "granularity": "table_row",
+            "retrieval_route": "xlsx_table",
+            "sheet": "일반현황",
+            "cell_range": "A702:J751",
+            "row_index_1based": "702",
+            "row_label": "장기요양기관이름=하얀민들레노인요양원",
+            "target_column": "우편번호",
+            "display_value": "41786",
+            "candidate_surface_materialization": "xlsx_row_value_bundle_v1",
+            "candidate_surface_materialization_policy": (
+                "source_owned_manifest_snapshot_no_gold_qrels_labels_or_normalized_fields_v1"
+            ),
+            "same_row_period_cells_json": period_cells_json,
+        },
+        config,
+    )
+    adapter = WeaviateSourceAtomAdapter(
+        config=config,
+        client=PeriodCellPacketWeaviateClient(objects=[row_bundle]),
+        embedding_provider=FakeWeaviateBgeM3EmbeddingProvider(),
+        requested_backend="weaviate-hybrid",
+        retrieval_route_mode="route_selected",
+        route_filter_fields_available={
+            "source_family": True,
+            "granularity": True,
+            "retrieval_route": True,
+            "candidate_surface_materialization": True,
+        },
+    )
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        top_k=5,
+        run_id="xlsx_row_value_bundle_period_cells",
+        output_mode="single",
+        retrieval_surface="source-native",
+        retrieval_backend="weaviate-hybrid",
+        retrieval_adapter=adapter,
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="markdown-portfolio",
+    )
+
+    report = json.loads(bundle.summary_path.read_text(encoding="utf-8"))
+    bundle_context = next(
+        context
+        for context in report["items"][0]["retrieved_contexts"]
+        if context.get("source_atom_id") == "srcatom-row702-bundle"
+    )
+    period_cells = json.loads(bundle_context["same_row_period_cells_json"])
+    assert period_cells[0]["cell"] == "H702"
+    assert period_cells[0]["raw_value"] == "2020-11-26"
+    assert period_cells[0]["parsed_date"] == "2020-11-26"
+    assert period_cells[0]["year"] == 2020
+    assert period_cells[0]["month"] == 11
+    assert period_cells[0]["source_atom_id"] == "srcatom-row702-designated-date"
+    assert bundle_context["candidate_surface_materialization"] == "xlsx_row_value_bundle_v1"
+
+
+def test_weaviate_source_atom_rejects_poisoned_same_row_period_cell_packet() -> None:
+    config = WeaviateSourceAtomConfig.from_env(
+        {
+            "RAG_VECTOR_DB": "weaviate",
+            "WEAVIATE_URL": "http://localhost:8080",
+            "WEAVIATE_COLLECTION_SOURCE_ATOM": "SourceAtomNonprodRouteSelectedV2",
+            "WEAVIATE_NAMESPACE": "actual_rag_eval_nonprod",
+            "WEAVIATE_SCHEMA_VERSION": "weaviate_source_atom_v2",
+            "EMBEDDING_MODEL": "BAAI/bge-m3",
+        }
+    )
+    poisoned_packet = same_row_period_cell_packet(
+        source_atom_id="srcatom-date",
+        doc_id="doc-xlsx",
+        sheet="일반현황",
+        cell_range="A2:J51",
+        cell="H2",
+        row_index_1based="2",
+        row_label="장기요양기관이름=청운노인요양원",
+        column_label="지정일자",
+        raw_value="2008-06-25",
+        year=2008,
+        month=6,
+        day=25,
+    )
+    poisoned_packet["formula"] = "=SECRET()"
+
+    record = source_atom_record_from_mapping(
+        {
+            **weaviate_source_atom_record(711, text="청운노인요양원 지정일자"),
+            "source_family": "XLSX",
+            "source_atom_id": "srcatom-bundle",
+            "doc_id": "doc-xlsx",
+            "same_row_period_cells_json": json.dumps([poisoned_packet], ensure_ascii=False),
+        },
+        config,
+    )
+
+    assert "same_row_period_cells_json" not in record
 
 
 def test_xlsx_scoped_expansion_post_filters_missing_or_wrong_row_index(tmp_path: Path) -> None:
@@ -4793,6 +5476,133 @@ def _require_cp09_materializer_symbol(name: str) -> object:
     return getattr(actual_rag_eval, name)
 
 
+def test_xlsx_required_axis_materializer_rejects_alias_only_period_package() -> None:
+    tool = _require_cp09_materializer_symbol("xlsx_required_axis_materializer_tool")
+    answer_candidate = {
+        "source_family": "XLSX",
+        "doc_id": "doc-row702",
+        "source_atom_id": "srcatom-row702-postal-cell",
+        "sheet": "일반현황",
+        "cell_range": "A702:J751",
+        "row_index_1based": "702",
+        "row_label": "장기요양기관이름=하얀민들레노인요양원",
+        "target_column": "우편번호",
+        "display_value": "41786",
+        "matched_validated_required_axes": ["row_entity", "target_column", "display_value"],
+        "missing_validated_required_axes": ["period"],
+    }
+
+    materialized = tool(
+        answer_candidate=answer_candidate,
+        query_focus_contract={
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {"period": ["2020-11", "2020년 11월"]},
+        },
+        source_owned_contexts=[
+            {
+                "doc_id": "doc-row702",
+                "sheet": "일반현황",
+                "cell_range": "A702:J751",
+                "row_index_1based": "702",
+                "source_date_aliases_json": json.dumps(["2020년 11월", "2020년", "11월"], ensure_ascii=False),
+            }
+        ],
+    )
+
+    assert materialized.materialized_axes == ()
+    assert materialized.rejected_context_count == 1
+
+
+def test_xlsx_required_axis_materializer_validator_rejects_alias_only_period_package() -> None:
+    validate_output = _require_cp09_materializer_symbol(
+        "validate_agentic_xlsx_required_axis_materializer_output"
+    )
+
+    materialized = {
+        "schema_version": actual_rag_eval.AGENTIC_XLSX_REQUIRED_AXIS_MATERIALIZER_SCHEMA_VERSION,
+        "tool_name": "xlsx_required_axis_materializer_tool",
+        "materialized_axes": ("period",),
+        "scope_proof": {"doc_id": "doc-care", "sheet": "일반현황", "cell_range": "A5002:J5051"},
+        "axis_packages": {
+            "period": {
+                "aliases": ["2015년 6월", "2015년", "6월"],
+                "provenance_policy": "source_owned_same_row_period_alias_v1",
+            }
+        },
+        "accepted_for_regating": False,
+        "report_only_diagnostic": True,
+        "official_metric": False,
+    }
+
+    with pytest.raises(DatasetSchemaError, match="missing period_cells"):
+        validate_output("alias_only_period_package", materialized)
+
+
+def test_xlsx_required_axis_materializer_uses_same_row_period_cell_packet() -> None:
+    tool = _require_cp09_materializer_symbol("xlsx_required_axis_materializer_tool")
+    validate_output = _require_cp09_materializer_symbol(
+        "validate_agentic_xlsx_required_axis_materializer_output"
+    )
+    answer_candidate = {
+        "source_family": "XLSX",
+        "doc_id": "doc-row702",
+        "source_atom_id": "srcatom-row702-postal-cell",
+        "sheet": "일반현황",
+        "cell_range": "A702:J751",
+        "row_index_1based": "702",
+        "row_label": "장기요양기관이름=하얀민들레노인요양원",
+        "target_column": "우편번호",
+        "display_value": "41786",
+        "matched_validated_required_axes": ["row_entity", "target_column", "display_value"],
+        "missing_validated_required_axes": ["period"],
+    }
+
+    materialized = tool(
+        answer_candidate=answer_candidate,
+        query_focus_contract={
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {"period": ["2020-11", "2020년 11월"]},
+        },
+        source_owned_contexts=[
+            {
+                "doc_id": "doc-row702",
+                "sheet": "일반현황",
+                "cell_range": "A702:J751",
+                "row_index_1based": "702",
+                "same_row_period_cells_json": json.dumps(
+                    [
+                        {
+                            "schema_version": "actual_rag_eval.xlsx.same_row_period_cell.v1",
+                            "provenance_policy": "source_owned_same_row_period_cell_v1",
+                            "source_atom_id": "srcatom-row702-designated-date",
+                            "doc_id": "doc-row702",
+                            "sheet": "일반현황",
+                            "cell_range": "A702:J751",
+                            "cell": "H702",
+                            "row_index_1based": "702",
+                            "row_label": "장기요양기관이름=하얀민들레노인요양원",
+                            "column_label": "지정일자",
+                            "raw_value": "2020-11-26",
+                            "parsed_date": "2020-11-26",
+                            "year": 2020,
+                            "month": 11,
+                            "day": 26,
+                        }
+                    ],
+                    ensure_ascii=False,
+                ),
+            }
+        ],
+    )
+
+    validate_output("same_row_period_cell_packet", materialized)
+    assert materialized.materialized_axes == ("period",)
+    assert materialized.axis_packages["period"]["provenance_policy"] == "source_owned_same_row_period_cell_v1"
+    assert materialized.axis_packages["period"]["period_cells"][0]["cell"] == "H702"
+    assert materialized.accepted_for_regating is False
+    assert materialized.report_only_diagnostic is True
+
+
 def test_xlsx_required_axis_materializer_contract_materializes_same_row_period_without_acceptance() -> None:
     record_cls = _require_cp09_materializer_symbol("AgenticXlsxRequiredAxisMaterializerRecord")
     validate_output = _require_cp09_materializer_symbol(
@@ -4819,11 +5629,24 @@ def test_xlsx_required_axis_materializer_contract_materializes_same_row_period_w
         "source_atom_id": "src-care-date",
         "sheet": "일반현황",
         "cell_range": "A5002:J5051",
+        "cell": "B5002",
         "row_index_1based": "5002",
         "row_label": "장기요양기관이름=부여효요양원",
+        "column_label": "지정일자",
         "target_column": "지정일자",
         "display_value": "2015-06-12",
         "text": "target_column=지정일자 | 지정일자=2015-06-12",
+        "same_row_period_cells_json": json.dumps(
+            [
+                same_row_period_cell_packet(
+                    source_atom_id="src-care-date",
+                    doc_id="doc-care",
+                    cell="B5002",
+                    row_label="장기요양기관이름=부여효요양원",
+                )
+            ],
+            ensure_ascii=False,
+        ),
     }
     broad_range_date_context = {
         "source_family": "XLSX",
@@ -4864,9 +5687,23 @@ def test_xlsx_required_axis_materializer_contract_materializes_same_row_period_w
         "row_index_1based": "5002",
         "row_label": "장기요양기관이름=부여효요양원",
     }
-    assert materialized.axis_packages["period"]["aliases"] == ["2015년 6월", "2015년", "6월"]
+    period_package = materialized.axis_packages["period"]
+    assert period_package["provenance_policy"] == "source_owned_same_row_period_cell_v1"
+    assert period_package["query_period"] == {
+        "year": 2015,
+        "month": 6,
+        "granularity": "month",
+    }
+    assert period_package["period_cells"] == [
+        same_row_period_cell_packet(
+            source_atom_id="src-care-date",
+            doc_id="doc-care",
+            cell="B5002",
+            row_label="장기요양기관이름=부여효요양원",
+        )
+    ]
     assert materialized.axis_packages["period"]["provenance_policy"] == (
-        "source_owned_same_row_period_alias_v1"
+        "source_owned_same_row_period_cell_v1"
     )
     assert materialized.accepted_for_regating is False
     encoded = json.dumps(materialized.axis_packages, ensure_ascii=False)
@@ -4912,7 +5749,19 @@ def test_xlsx_required_axis_materializer_runstore_contract_stays_separate_from_l
             "cell_range": "A5002:J5051",
             "row_index_1based": "5002",
         },
-        axis_packages={"period": {"aliases": ["2015년 6월", "2015년", "6월"]}},
+        axis_packages={
+            "period": {
+                "period_cells": [
+                    same_row_period_cell_packet(
+                        source_atom_id="src-care-date",
+                        doc_id="doc-care",
+                        cell="B5002",
+                        row_label="장기요양기관이름=부여효요양원",
+                    )
+                ],
+                "provenance_policy": "source_owned_same_row_period_cell_v1",
+            }
+        },
         report_only_diagnostic=True,
         official_metric=False,
         accepted_for_regating=False,
@@ -4956,7 +5805,17 @@ def test_xlsx_required_axis_materializer_runstore_contract_stays_separate_from_l
         assert row["report_only_diagnostic"] == 1
         assert row["official_metric"] == 0
         assert json.loads(row["axis_packages_json"]) == {
-            "period": {"aliases": ["2015년 6월", "2015년", "6월"]}
+            "period": {
+                "period_cells": [
+                    same_row_period_cell_packet(
+                        source_atom_id="src-care-date",
+                        doc_id="doc-care",
+                        cell="B5002",
+                        row_label="장기요양기관이름=부여효요양원",
+                    )
+                ],
+                "provenance_policy": "source_owned_same_row_period_cell_v1",
+            }
         }
 
     validate_run_store(
@@ -5014,8 +5873,15 @@ def test_xlsx_required_axis_materializer_runstore_rejects_authoritative_or_forbi
         scope_proof={"doc_id": "doc-care", "sheet": "일반현황", "cell_range": "A5002:J5051"},
         axis_packages={
             "period": {
-                "aliases": ["2015년 6월"],
-                "provenance_policy": "source_owned_same_row_period_alias_v1",
+                "period_cells": [
+                    same_row_period_cell_packet(
+                        source_atom_id="src-care-date",
+                        doc_id="doc-care",
+                        cell="B5002",
+                        row_label="장기요양기관이름=부여효요양원",
+                    )
+                ],
+                "provenance_policy": "source_owned_same_row_period_cell_v1",
                 "raw_tool_payload": {"expected_answer": "oracle shortcut"},
             }
         },
@@ -5046,7 +5912,7 @@ def test_xlsx_required_axis_materializer_runstore_rejects_authoritative_or_forbi
         )
 
 
-def test_xlsx_required_axis_materializer_runtime_hook_feeds_locator_without_direct_acceptance(
+def test_xlsx_required_axis_materializer_runstore_records_period_cell_without_direct_acceptance(
     tmp_path: Path,
 ) -> None:
     query = "2015년 6월에 지정된 부여효요양원의 기관별 상세주소는 무엇입니까?"
@@ -5099,10 +5965,22 @@ def test_xlsx_required_axis_materializer_runtime_hook_feeds_locator_without_dire
         "sheet": "일반현황",
         "cell_range": "A5002:J5051",
         "cell": "B5002",
+        "row_index_1based": "5002",
         "row_label": "장기요양기관이름=부여효요양원",
         "column_label": "지정일자",
         "target_column": "지정일자",
         "display_value": "2015-06-12",
+        "same_row_period_cells_json": json.dumps(
+            [
+                same_row_period_cell_packet(
+                    source_atom_id="src-care-date",
+                    doc_id="doc-care-materializer-runtime",
+                    cell="B5002",
+                    row_label="장기요양기관이름=부여효요양원",
+                )
+            ],
+            ensure_ascii=False,
+        ),
     }
     broad_range_date_context = {
         "doc_id": "doc-care-materializer-runtime",
@@ -5156,48 +6034,26 @@ def test_xlsx_required_axis_materializer_runtime_hook_feeds_locator_without_dire
     )
 
     tool_use = after_rows[0]["xlsx_locator_tool_use"]
-    assert tool_use["execution_status"] == "accepted_after_regating"
-    selected = after_rows[0]["evidence_gate"]["selected_evidence"][0]
-    assert selected["source_atom_id"] == "src-care-address"
-    assert selected["xlsx_required_axis_materializer_tool_output"] is True
-    assert selected["xlsx_required_axis_materializer_tool_name"] == "xlsx_required_axis_materializer_tool"
-    assert selected["xlsx_required_axis_materializer_report_only_diagnostic"] is True
-    assert selected["xlsx_required_axis_materializer_official_metric"] is False
-    assert selected["xlsx_required_axis_materializer_accepted_for_regating"] is False
-    assert selected["xlsx_required_axis_materializer_execution_status"] == "materialized_axis_package"
-    assert selected["xlsx_required_axis_materializer_materialized_axes"] == ["period"]
-    assert selected["source_owned_same_candidate_package_policy"] == "source_owned_same_row_period_alias_v1"
-    assert selected["accepted_for_regating"] is True
-    assert selected["matched_validated_required_axes"] == [
-        "period",
-        "row_entity",
-        "target_column",
-        "display_value",
-    ]
-    assert selected["missing_validated_required_axes"] == []
+    assert tool_use["execution_status"] == "skipped_missing_source_locator"
+    assert tool_use["accepted_candidate_count"] == 0
+    assert after_rows[0]["evidence_gate"]["selected_evidence"] == []
 
     with sqlite3.connect(run_store_path) as conn:
         conn.row_factory = sqlite3.Row
         candidate = conn.execute(
-            "SELECT source_date_aliases_json, input_fields_used_json, accepted_for_regating, "
+            "SELECT input_fields_used_json, accepted_for_regating, "
             "rejection_reason, matched_validated_required_axes_json, missing_validated_required_axes_json "
-            "FROM tool_candidates WHERE source_atom_id = 'src-care-address' "
-            "AND accepted_for_regating = 1"
+            "FROM tool_candidates WHERE source_atom_id = 'src-care-address'"
         ).fetchone()
         assert candidate is not None
-        assert json.loads(candidate["source_date_aliases_json"]) == ["2015년 6월", "2015년", "6월"]
-        input_fields_used = json.loads(candidate["input_fields_used_json"])
-        assert "source_date_aliases" in input_fields_used
-        assert "xlsx_required_axis_materializer_tool" in input_fields_used
-        assert candidate["accepted_for_regating"] == 1
-        assert candidate["rejection_reason"] == ""
+        assert candidate["accepted_for_regating"] == 0
+        assert candidate["rejection_reason"] == "missing_validated_required_axes_after_tool"
         assert json.loads(candidate["matched_validated_required_axes_json"]) == [
-            "period",
             "row_entity",
             "target_column",
             "display_value",
         ]
-        assert json.loads(candidate["missing_validated_required_axes_json"]) == []
+        assert json.loads(candidate["missing_validated_required_axes_json"]) == ["period"]
         run_row = conn.execute("SELECT record_json FROM runs").fetchone()
         run_record = json.loads(run_row["record_json"])
         materialized_candidate = next(
@@ -5205,9 +6061,18 @@ def test_xlsx_required_axis_materializer_runtime_hook_feeds_locator_without_dire
             for item in run_record["candidates"]
             if item["source_atom_id"] == "src-care-address"
         )
+        period_cells = materialized_candidate["same_row_period_cells"]
+        assert period_cells == [
+            same_row_period_cell_packet(
+                source_atom_id="src-care-date",
+                doc_id="doc-care-materializer-runtime",
+                cell="B5002",
+                row_label="장기요양기관이름=부여효요양원",
+            )
+        ]
         assert materialized_candidate["source_owned_same_candidate_package"] is True
         assert materialized_candidate["source_owned_same_candidate_package_policy"] == (
-            "source_owned_same_row_period_alias_v1"
+            "source_owned_same_row_period_cell_v1"
         )
         assert materialized_candidate["xlsx_required_axis_materializer_tool_output"] is True
         assert materialized_candidate["xlsx_required_axis_materializer_tool_name"] == (
@@ -5221,17 +6086,38 @@ def test_xlsx_required_axis_materializer_runtime_hook_feeds_locator_without_dire
         assert materialized_candidate["xlsx_required_axis_materializer_report_only_diagnostic"] is True
         assert materialized_candidate["xlsx_required_axis_materializer_official_metric"] is False
         assert materialized_candidate["xlsx_required_axis_materializer_accepted_for_regating"] is False
+        period_cell_row = conn.execute(
+            "SELECT source_atom_id, doc_id, cell, raw_value, parsed_date, year, month, day "
+            "FROM tool_candidate_period_cells WHERE source_atom_id = 'src-care-date'"
+        ).fetchone()
+        assert dict(period_cell_row) == {
+            "source_atom_id": "src-care-date",
+            "doc_id": "doc-care-materializer-runtime",
+            "cell": "B5002",
+            "raw_value": "2015-06-12",
+            "parsed_date": "2015-06-12",
+            "year": 2015,
+            "month": 6,
+            "day": 12,
+        }
         locator = actual_rag_eval.project_xlsx_locator_run_record(record, run_store_path=run_store_path)
         materializer_diagnostic = locator["xlsx_required_axis_materializer_runtime_diagnostic"]
-        assert materializer_diagnostic["action_count"] == 1
+        assert materializer_diagnostic["action_count"] == 2
         assert materializer_diagnostic["materialized_action_count"] == 1
         assert materializer_diagnostic["materializer_accepted_candidate_count"] == 0
-        assert materializer_diagnostic["locator_accepted_after_materialization_count"] == 1
-        assert materializer_diagnostic["execution_status_counts"] == {"materialized_axis_package": 1}
+        assert materializer_diagnostic["locator_accepted_after_materialization_count"] == 0
+        assert materializer_diagnostic["execution_status_counts"] == {
+            "materialized_axis_package": 1,
+            "rejected_no_source_owned_same_row_period_cell": 1,
+        }
         assert materializer_diagnostic["materialized_axes_counts"] == {"period": 1}
-        assert materializer_diagnostic["rejected_context_count"] == 2
+        assert materializer_diagnostic["rejected_context_count"] == 5
+        assert materializer_diagnostic["period_cell_packet_count"] == 1
+        assert materializer_diagnostic["period_cell_packet_policy_counts"] == {
+            "source_owned_same_row_period_cell_v1": 1
+        }
         assert materializer_diagnostic["source_owned_same_candidate_package_policy_counts"] == {
-            "source_owned_same_row_period_alias_v1": 1
+            "source_owned_same_row_period_cell_v1": 1
         }
         actual_rag_eval.validate_xlsx_locator_run_store(
             "xlsx_required_axis_materializer_runtime",
@@ -5239,7 +6125,7 @@ def test_xlsx_required_axis_materializer_runtime_hook_feeds_locator_without_dire
             run_store_path=run_store_path,
         )
 
-    selected_encoded = json.dumps(selected, ensure_ascii=False)
+    selected_encoded = json.dumps(materialized_candidate, ensure_ascii=False)
     for forbidden in (
         "expected_answer",
         "expected_evidence",
@@ -5307,7 +6193,7 @@ def test_xlsx_required_axis_materializer_runtime_records_rejected_attempt() -> N
     candidate = candidates[0]
     assert candidate["xlsx_required_axis_materializer_tool_output"] is True
     assert candidate["xlsx_required_axis_materializer_execution_status"] == (
-        "rejected_no_source_owned_same_row_period_alias"
+        "rejected_no_source_owned_same_row_period_cell"
     )
     assert candidate["xlsx_required_axis_materializer_materialized_axes"] == []
     assert candidate["xlsx_required_axis_materializer_accepted_for_regating"] is False
@@ -5571,6 +6457,123 @@ def test_query_evidence_planner_rejects_extra_payload_keys_fail_closed(
     assert result["raw_payload_written"] is False
     assert result["uses_expected_fields"] is False
     assert result["validated_required_axes"] == []
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        ["not-a-json-object"],
+        {
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "201905", "line_name": "우이신설선"},
+            "target_axis": {"column": "승차총승객수", "value_type": "number"},
+            "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+        },
+        {
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": ["period", "201905"],
+            "target_axis": {"column": "승차총승객수", "value_type": "number"},
+            "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+            "intent_tokens": ["몇 명입니까"],
+        },
+        {
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "201905", "line_name": "우이신설선"},
+            "target_axis": ["승차총승객수"],
+            "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+            "intent_tokens": ["몇 명입니까"],
+        },
+        {
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "201905", "line_name": "우이신설선"},
+            "target_axis": {"column": "승차총승객수", "value_type": "number"},
+            "evidence_contract": "period,row_entity,target_column,display_value",
+            "intent_tokens": ["몇 명입니까"],
+        },
+        {
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "201905", "line_name": "우이신설선"},
+            "target_axis": {"column": "승차총승객수", "value_type": "number"},
+            "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+            "intent_tokens": "몇 명입니까",
+        },
+    ],
+)
+def test_query_evidence_planner_malformed_payload_variants_fall_back_fail_closed(
+    monkeypatch: pytest.MonkeyPatch,
+    payload: object,
+) -> None:
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[object, dict]:
+        return payload, {"raw_response_sha256": "sha256:query-evidence-malformed"}
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    result = actual_rag_eval.plan_query_evidence_with_local_llm(
+        "2019년 5월 우이신설선의 승차총승객수는 몇 명입니까?",
+        skip_endpoint_check=True,
+    )
+
+    assert result["status"] == "malformed_payload_deterministic_fallback"
+    assert result["planner_status"] == "malformed_payload_deterministic_fallback"
+    assert result["validated_required_axes"] == []
+    assert result["raw_payload_written"] is False
+    assert result["raw_prompt_payload_written"] is False
+    assert result["raw_response_payload_written"] is False
+    assert result["uses_query_text_only"] is True
+    assert result["uses_expected_fields"] is False
+    assert result["uses_gold_fields"] is False
+    assert result["uses_qrels"] is False
+    assert result["uses_labels"] is False
+    assert result["uses_query_or_row_or_target_ids"] is False
+    assert result["uses_baseline_topk_or_legacy_outputs"] is False
+
+
+def test_query_evidence_planner_empty_after_validation_falls_back_without_axes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**_kwargs: object) -> tuple[dict, dict]:
+        return (
+            {
+                "source_family_hint": "xlsx",
+                "query_task": "table_lookup",
+                "row_filters": {},
+                "target_axis": {"column": "SECRET_NOT_IN_QUERY", "value_type": "text"},
+                "evidence_contract": ["row_entity", "target_column", "display_value"],
+                "intent_tokens": ["무엇입니까"],
+            },
+            {"raw_response_sha256": "sha256:query-evidence-empty"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    result = actual_rag_eval.plan_query_evidence_with_local_llm(
+        "무엇입니까?",
+        skip_endpoint_check=True,
+    )
+
+    assert result["status"] == "empty_after_validation_deterministic_fallback"
+    assert result["planner_status"] == "empty_after_validation_deterministic_fallback"
+    assert result["validated_required_axes"] == []
+    assert result["raw_payload_written"] is False
+    assert result["uses_query_text_only"] is True
+    assert result["uses_expected_fields"] is False
+    assert result["uses_gold_fields"] is False
+    assert result["uses_qrels"] is False
+    assert result["uses_labels"] is False
+    assert result["uses_query_or_row_or_target_ids"] is False
 
 
 def test_query_evidence_planner_validates_pdf_locator_axes(
@@ -5915,6 +6918,20 @@ def test_xlsx_locator_uses_validated_required_axes_instead_of_question_anchor_wo
                             "table_id": "sheet-201905-main-table",
                             "display_value": "1,234,567명",
                         },
+                        "same_row_period_cells_json": same_row_period_cells_json(
+                            source_atom_id="src-xlsx-query-evidence-planner-period",
+                            doc_id="doc-xlsx-query-evidence-planner",
+                            sheet="2019년 5월",
+                            cell_range="A17:J17",
+                            cell="A17",
+                            row_index_1based="17",
+                            row_label="우이신설선",
+                            column_label="년월",
+                            raw_value="2019-05-01",
+                            year=2019,
+                            month=5,
+                            day=1,
+                        ),
                     }
                 ],
                 "citations": [],
@@ -6317,6 +7334,22 @@ def test_xlsx_locator_builds_source_owned_sibling_row_composite_for_split_axes()
                 "row_label": "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526",
                 "column_label": "시도 시군구 법정동명",
                 "target_column": "시도 시군구 법정동명",
+                "same_row_period_cells_json": same_row_period_cells_json(
+                    source_atom_id="src-row-period-cell",
+                    doc_id="doc-cell",
+                    sheet="일반현황",
+                    cell_range="A752:J801",
+                    cell="H752",
+                    row_index_1based="752",
+                    row_label=(
+                        "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526"
+                    ),
+                    column_label="지정일자",
+                    raw_value="2014-12-31",
+                    year=2014,
+                    month=12,
+                    day=31,
+                ),
             },
             {
                 "doc_id": "doc-cell",
@@ -6341,10 +7374,10 @@ def test_xlsx_locator_builds_source_owned_sibling_row_composite_for_split_axes()
     accepted = [candidate for candidate in candidates if candidate["accepted_for_regating"] is True]
     assert len(accepted) == 1
     candidate = accepted[0]
-    assert candidate["locator_text_source"] == "source_owned_sibling_row_context"
+    assert candidate["locator_text_source"] == "source_owned_support_text"
     assert candidate["source_atom_id"] == "src-cell"
-    assert candidate["source_row_context_source_atom_id"] == "src-row"
-    assert candidate["source_row_context_doc_id"] == "doc-cell"
+    assert "source_row_context_source_atom_id" not in candidate
+    assert candidate["source_owned_same_candidate_package_policy"] == "source_owned_same_row_period_cell_v1"
     assert candidate["display_value"] == "대구광역시 북구 복현동"
     assert candidate["target_column"] == "시도 시군구 법정동명"
     assert candidate["matched_validated_required_axes"] == [
@@ -6354,13 +7387,13 @@ def test_xlsx_locator_builds_source_owned_sibling_row_composite_for_split_axes()
         "display_value",
     ]
     assert candidate["missing_validated_required_axes"] == []
-    assert "source_row_context_source_atom_id" in candidate["input_fields_used"]
+    assert "same_row_period_cells_json" in candidate["input_fields_used"]
+    assert not (
+        set(candidate["input_fields_used"])
+        & {"workbook_id", "workbook_version_id", "title", "file_name"}
+    )
     encoded = json.dumps(candidate, ensure_ascii=False)
     for forbidden in (
-        "workbook_id",
-        "workbook_version_id",
-        "title",
-        "file_name",
         "expected_answer",
         "국민건강보험공단_장기요양기관 시설별 현황_20240716.xlsx",
     ):
@@ -6570,6 +7603,24 @@ def test_xlsx_locator_sibling_row_composite_requires_display_value_in_sibling_co
                 ),
                 "sheet": "일반현황",
                 "cell_range": "A752:J801",
+                "row_index_1based": "752",
+                "row_label": "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526",
+                "same_row_period_cells_json": same_row_period_cells_json(
+                    source_atom_id="src-row-period-cell",
+                    doc_id="doc-cell",
+                    sheet="일반현황",
+                    cell_range="A752:J801",
+                    cell="H752",
+                    row_index_1based="752",
+                    row_label=(
+                        "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526"
+                    ),
+                    column_label="지정일자",
+                    raw_value="2014-12-31",
+                    year=2014,
+                    month=12,
+                    day=31,
+                ),
             },
         ],
     }
@@ -6585,7 +7636,7 @@ def test_xlsx_locator_sibling_row_composite_requires_display_value_in_sibling_co
     assert meta["complete_validated_axis_candidate_count"] == 0
 
 
-def test_xlsx_locator_sibling_row_composite_accepts_same_source_row_period_cell() -> None:
+def test_xlsx_locator_accepts_same_candidate_period_cell_packet_from_sibling_bundle() -> None:
     query = "2015년 6월에 지정된 부여효요양원의 기관별 상세주소는 무엇입니까?"
     planner = actual_rag_eval._query_evidence_planner_summary(
         query=query,
@@ -6631,6 +7682,27 @@ def test_xlsx_locator_sibling_row_composite_accepts_same_source_row_period_cell(
                 "row_label": "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176",
                 "column_label": "기관별 상세주소",
                 "target_column": "기관별 상세주소",
+                "same_row_period_cells_json": json.dumps(
+                    [
+                        same_row_period_cell_packet(
+                            source_atom_id="src-date",
+                            doc_id="doc-care",
+                            sheet="일반현황",
+                            cell_range="A5002:J5051",
+                            cell="H5002",
+                            row_index_1based="5002",
+                            row_label=(
+                                "장기요양기관코드=14476000092 | 장기요양기관이름=부여효요양원 | 우편번호=33176"
+                            ),
+                            column_label="지정일자",
+                            raw_value="2015-06-01",
+                            year=2015,
+                            month=6,
+                            day=1,
+                        )
+                    ],
+                    ensure_ascii=False,
+                ),
             },
             {
                 "doc_id": "doc-care",
@@ -6659,10 +7731,10 @@ def test_xlsx_locator_sibling_row_composite_accepts_same_source_row_period_cell(
     accepted = [candidate for candidate in candidates if candidate["accepted_for_regating"] is True]
     assert len(accepted) == 1
     candidate = accepted[0]
-    assert candidate["locator_text_source"] == "source_owned_sibling_row_context"
+    assert candidate["locator_text_source"] == "source_owned_support_text"
     assert candidate["source_atom_id"] == "src-address"
-    assert candidate["source_row_context_source_atom_id"] == "src-date"
-    assert candidate["source_row_context_doc_id"] == "doc-care"
+    assert "source_row_context_source_atom_id" not in candidate
+    assert candidate["source_owned_same_candidate_package_policy"] == "source_owned_same_row_period_cell_v1"
     assert candidate["display_value"] == "충청남도 부여군 석성면 왕릉로 773"
     assert candidate["matched_validated_required_axes"] == [
         "period",
@@ -7005,6 +8077,22 @@ def test_run_eval_xlsx_locator_sibling_row_composite_regates_and_persists_runsto
                         "row_label": "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526",
                         "column_label": "시도 시군구 법정동명",
                         "target_column": "시도 시군구 법정동명",
+                        "same_row_period_cells_json": same_row_period_cells_json(
+                            source_atom_id="src-row-period-cell",
+                            doc_id="doc-xlsx-sibling",
+                            sheet="일반현황",
+                            cell_range="A752:J801",
+                            cell="H752",
+                            row_index_1based="752",
+                            row_label=(
+                                "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526"
+                            ),
+                            column_label="지정일자",
+                            raw_value="2014-12-31",
+                            year=2014,
+                            month=12,
+                            day=31,
+                        ),
                     },
                     {
                         "doc_id": "doc-xlsx-sibling",
@@ -7066,24 +8154,25 @@ def test_run_eval_xlsx_locator_sibling_row_composite_regates_and_persists_runsto
     report = json.loads(bundle.report_path.read_text(encoding="utf-8"))
     row = report["items"][0]
     assert row["xlsx_locator_tool_use"]["execution_status"] == "accepted_after_regating"
-    assert row["xlsx_locator_tool_use"]["source_row_context_candidate_count"] == 1
+    assert row["xlsx_locator_tool_use"]["source_row_context_candidate_count"] == 0
     assert row["xlsx_locator_tool_use"]["source_row_context_doc_identity_mismatch_candidate_count"] == 0
     assert row["xlsx_locator_tool_use"]["source_row_context_blocked_by_doc_identity_mismatch"] is False
-    assert row["evidence_gate"]["selected_evidence"][0]["locator_text_source"] == "source_owned_sibling_row_context"
-    assert row["evidence_gate"]["selected_evidence"][0]["source_row_context_source_atom_id"] == "src-row"
+    assert row["evidence_gate"]["selected_evidence"][0]["locator_text_source"] == "source_owned_support_text"
+    assert "source_row_context_source_atom_id" not in row["evidence_gate"]["selected_evidence"][0]
     with sqlite3.connect(output_dir / "run.sqlite") as conn:
         conn.row_factory = sqlite3.Row
         candidate = conn.execute(
             "SELECT locator_text_source, accepted_for_regating, source_row_context_source_atom_id, "
-            "source_row_context_doc_id, source_date_aliases_json, matched_validated_required_axes_json, "
+            "source_row_context_doc_id, input_fields_used_json, matched_validated_required_axes_json, "
             "missing_validated_required_axes_json "
-            "FROM tool_candidates WHERE locator_text_source = 'source_owned_sibling_row_context'"
+            "FROM tool_candidates WHERE source_atom_id = 'src-cell'"
         ).fetchone()
         assert candidate is not None
         assert candidate["accepted_for_regating"] == 1
-        assert candidate["source_row_context_source_atom_id"] == "src-row"
-        assert candidate["source_row_context_doc_id"] == "doc-xlsx-sibling"
-        assert "2014년 12월" in json.loads(candidate["source_date_aliases_json"])
+        assert candidate["locator_text_source"] == "source_owned_support_text"
+        assert candidate["source_row_context_source_atom_id"] == ""
+        assert candidate["source_row_context_doc_id"] == ""
+        assert "same_row_period_cells_json" in json.loads(candidate["input_fields_used_json"])
         assert json.loads(candidate["matched_validated_required_axes_json"]) == [
             "period",
             "row_entity",
@@ -7092,11 +8181,23 @@ def test_run_eval_xlsx_locator_sibling_row_composite_regates_and_persists_runsto
         ]
         assert json.loads(candidate["missing_validated_required_axes_json"]) == []
         selected = conn.execute(
-            "SELECT source_row_context_source_atom_id, source_row_context_doc_id "
-            "FROM selected_evidence WHERE source_row_context_source_atom_id = 'src-row'"
+            "SELECT source_atom_id, source_row_context_source_atom_id, source_row_context_doc_id "
+            "FROM selected_evidence WHERE source_atom_id = 'src-cell'"
         ).fetchone()
         assert selected is not None
-        assert selected["source_row_context_doc_id"] == "doc-xlsx-sibling"
+        assert selected["source_row_context_source_atom_id"] == ""
+        assert selected["source_row_context_doc_id"] == ""
+        period_cell = conn.execute(
+            "SELECT source_atom_id, doc_id, row_index_1based, raw_value, provenance_policy "
+            "FROM tool_candidate_period_cells WHERE source_atom_id = 'src-row-period-cell'"
+        ).fetchone()
+        assert dict(period_cell) == {
+            "source_atom_id": "src-row-period-cell",
+            "doc_id": "doc-xlsx-sibling",
+            "row_index_1based": "752",
+            "raw_value": "2014-12-31",
+            "provenance_policy": "source_owned_same_row_period_cell_v1",
+        }
         invocation = conn.execute(
             "SELECT accepted_candidate_count, complete_validated_axis_candidate_count, "
             "validated_axis_split_across_candidates, source_row_context_candidate_count, "
@@ -7107,7 +8208,7 @@ def test_run_eval_xlsx_locator_sibling_row_composite_regates_and_persists_runsto
             "accepted_candidate_count": 1,
             "complete_validated_axis_candidate_count": 1,
             "validated_axis_split_across_candidates": 0,
-            "source_row_context_candidate_count": 1,
+            "source_row_context_candidate_count": 0,
             "source_row_context_doc_identity_mismatch_candidate_count": 0,
             "source_row_context_blocked_by_doc_identity_mismatch": 0,
         }
@@ -7116,6 +8217,256 @@ def test_run_eval_xlsx_locator_sibling_row_composite_regates_and_persists_runsto
             report["xlsx_locator_tool_execute_once"],
             run_store_path=output_dir / "run.sqlite",
         )
+
+
+def test_run_eval_row702_designated_query_accepts_source_owned_period_cell_without_intent_anchor(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    dataset = tmp_path / "row702_designated_period_gold.jsonl"
+    context = tmp_path / "row702_designated_period_context.jsonl"
+    output_dir = tmp_path / "reports" / "rag_eval" / "row702_designated_period"
+    query = "2020년 11월에 지정된 하얀민들레노인요양원의 우편번호는 무엇입니까?"
+    row_label = "장기요양기관코드=12717000382 | 장기요양기관이름=하얀민들레노인요양원 | 시도코드=27"
+    write_jsonl(
+        dataset,
+        [
+            {
+                "id": "gq_auto_018",
+                "query": query,
+                "answerability": "answerable",
+                "track": "xlsx_business_structured",
+                "target_id": "SECRET_TARGET_ID_NEVER_PROMPT",
+                "baseline_topk": ["SECRET_BASELINE_NEVER_PROMPT"],
+            }
+        ],
+    )
+    write_jsonl(
+        context,
+        [
+            {
+                "id": "gq_auto_018",
+                "generated_answer": "41786",
+                "retrieved_contexts": [
+                    {
+                        "doc_id": "doc-row702",
+                        "chunk_id": "chunk-row702-postal-code",
+                        "source_atom_id": "src-row702-postal-code",
+                        "evidence_bundle_id": "bundle-row702-postal-code",
+                        "source_family": "XLSX",
+                        "granularity": "table_row",
+                        "text": (
+                            "sheet=일반현황 | range=A702:J751 | row_index_1based=702 | "
+                            f"row_label={row_label} | target_column=우편번호 | display_value=41786"
+                        ),
+                        "sheet": "일반현황",
+                        "cell_range": "A702:J751",
+                        "cell": "C702",
+                        "row_index_1based": "702",
+                        "row_label": row_label,
+                        "column_label": "우편번호",
+                        "target_column": "우편번호",
+                        "display_value": "41786",
+                        "same_row_period_cells_json": json.dumps(
+                            [
+                                same_row_period_cell_packet(
+                                    source_atom_id="src-row702-designated-date",
+                                    doc_id="doc-row702",
+                                    sheet="일반현황",
+                                    cell_range="A702:J751",
+                                    cell="H702",
+                                    row_index_1based="702",
+                                    row_label=row_label,
+                                    column_label="지정일자",
+                                    raw_value="2020-11-26",
+                                    year=2020,
+                                    month=11,
+                                    day=26,
+                                ),
+                                same_row_period_cell_packet(
+                                    source_atom_id="src-row702-install-date",
+                                    doc_id="doc-row702",
+                                    sheet="일반현황",
+                                    cell_range="A702:J751",
+                                    cell="I702",
+                                    row_index_1based="702",
+                                    row_label=row_label,
+                                    column_label="설치신고일자",
+                                    raw_value="2020-11-26",
+                                    year=2020,
+                                    month=11,
+                                    day=26,
+                                ),
+                            ],
+                            ensure_ascii=False,
+                        ),
+                    }
+                ],
+                "citations": [],
+            }
+        ],
+    )
+
+    def fake_blockers(**_kwargs: object) -> list[str]:
+        return []
+
+    def fake_call(**kwargs: object) -> tuple[dict, dict]:
+        prompt = str(kwargs["prompt"])
+        for forbidden in (
+            "gq_auto_018",
+            "query_id",
+            "row_id",
+            "target_id",
+            "SECRET_TARGET_ID_NEVER_PROMPT",
+            "baseline_topk",
+            "SECRET_BASELINE_NEVER_PROMPT",
+            "retrieved_contexts",
+            "generated_answer",
+            "answerability",
+            "track",
+            "xlsx_business_structured",
+            "expected_answer",
+            "expected_evidence",
+            "qrels",
+            "labels",
+            "41786",
+            "C702",
+            "H702",
+            "I702",
+            "src-row702",
+            "allow_answer",
+            "block_unsupported_answer",
+            "previous_run",
+            "outcome",
+        ):
+            assert forbidden not in prompt
+        assert query in prompt
+        return (
+            {
+                "source_family_hint": "xlsx",
+                "query_task": "date_filtered_lookup",
+                "row_filters": {"period": "2020-11", "facility_name": "하얀민들레노인요양원"},
+                "target_axis": {"column": "우편번호", "value_type": "text"},
+                "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+                "intent_tokens": ["무엇입니까", "지정된"],
+            },
+            {"raw_response_sha256": "sha256:row702-query-evidence-planner"},
+        )
+
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "local_llm_entry_blockers", fake_blockers)
+    monkeypatch.setattr(actual_rag_eval.LOCAL_LLM_HELPER, "call_local_llm_strict_json", fake_call)
+
+    bundle = run_eval_from_paths(
+        dataset_path=dataset,
+        output_dir=output_dir,
+        context_jsonl_path=context,
+        top_k=1,
+        run_id="row702_designated_period",
+        output_mode="single",
+        evidence_gate_mode="enforce",
+        answer_composer="selected-evidence-deterministic-v1",
+        selected_evidence_citation_format="evidence-id",
+        resolve_expected_evidence=False,
+        xlsx_locator_tool_execute_once=True,
+        llm_query_anchor_classifier=True,
+        local_llm_composer_model="gemma4-e2b-local",
+        skip_local_llm_composer_endpoint_check=True,
+    )
+
+    report = json.loads(bundle.report_path.read_text(encoding="utf-8"))
+    row = report["items"][0]
+    planner = row["query_evidence_planner"]
+    assert row["answer_gate_decision"] == "allow_answer"
+    assert row["evidence_gate"]["evidence_package_status"] == "sufficient"
+    assert row["evidence_gate"]["missing_query_anchors"] == []
+    assert row["evidence_gate"]["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert planner["planner_status"] == "planned_validated"
+    assert planner["validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert planner["validated_axis_values"]["period"] == ["2020-11", "2020년 11월", "202011"]
+    assert planner["raw_payload_written"] is False
+    assert row["query_anchor_classifier"]["removed_intent_tokens"] == ["무엇입니까", "지정된"]
+    assert row["query_anchor_classifier"]["required_anchor_after"] == [
+        "11월",
+        "2020년",
+        "우편번호",
+        "하얀민들레노인요양원",
+    ]
+    assert row["xlsx_locator_tool_use"]["execution_status"] == "accepted_after_regating"
+    selected = row["evidence_gate"]["selected_evidence"][0]
+    assert selected["source_atom_id"] == "src-row702-postal-code"
+    assert selected["cell"] == "C702"
+    assert selected["target_column"] == "우편번호"
+    assert selected["display_value"] == "41786"
+
+    with sqlite3.connect(output_dir / "run.sqlite") as conn:
+        conn.row_factory = sqlite3.Row
+        candidate = conn.execute(
+            "SELECT source_owned_same_candidate_package_policy, input_fields_used_json, "
+            "accepted_for_regating, rejection_reason, matched_validated_required_axes_json, "
+            "missing_validated_required_axes_json FROM tool_candidates "
+            "WHERE source_atom_id = 'src-row702-postal-code'"
+        ).fetchone()
+        assert candidate is not None
+        assert candidate["source_owned_same_candidate_package_policy"] == "source_owned_same_row_period_cell_v1"
+        assert "same_row_period_cells_json" in json.loads(candidate["input_fields_used_json"])
+        assert candidate["accepted_for_regating"] == 1
+        assert candidate["rejection_reason"] == ""
+        assert json.loads(candidate["matched_validated_required_axes_json"]) == [
+            "period",
+            "row_entity",
+            "target_column",
+            "display_value",
+        ]
+        assert json.loads(candidate["missing_validated_required_axes_json"]) == []
+        period_cell = conn.execute(
+            "SELECT source_atom_id, doc_id, cell, raw_value, parsed_date, year, month, day, provenance_policy "
+            "FROM tool_candidate_period_cells WHERE source_atom_id = 'src-row702-designated-date'"
+        ).fetchone()
+        assert dict(period_cell) == {
+            "source_atom_id": "src-row702-designated-date",
+            "doc_id": "doc-row702",
+            "cell": "H702",
+            "raw_value": "2020-11-26",
+            "parsed_date": "2020-11-26",
+            "year": 2020,
+            "month": 11,
+            "day": 26,
+            "provenance_policy": "source_owned_same_row_period_cell_v1",
+        }
+
+    encoded = json.dumps(report, ensure_ascii=False)
+    assert "SECRET_TARGET_ID_NEVER_PROMPT" not in encoded
+    assert "SECRET_BASELINE_NEVER_PROMPT" not in encoded
+    assert "formula=" not in encoded
+    assert "Formula=" not in encoded
+    assert "normalized_value=" not in encoded
+    assert "NORMALIZED_VALUE=" not in encoded
+    assert row["expected_answer"] == ""
+    assert row["expected_evidence"] == []
+    assert row["gate_uses_expected_fields"] is False
+    assert row["gate_uses_gold_fields"] is False
+    assert planner["uses_expected_fields"] is False
+    assert planner["uses_gold_fields"] is False
+    assert planner["uses_qrels"] is False
+    assert planner["uses_labels"] is False
+    assert planner["uses_query_or_row_or_target_ids"] is False
+    assert report["expected_fields_used_for_candidate_generation"] is False
+    assert report["qrels_used_for_candidate_generation"] is False
+    assert report["ids_used_for_candidate_generation"] is False
+    assert report["target_id_used_for_candidate_generation"] is False
+    assert report["baseline_topk_used_for_candidate_generation"] is False
+    assert report["raw_prompt_payload_written"] is False
+    assert report["raw_response_payload_written"] is False
 
 
 def test_run_eval_xlsx_locator_source_row_context_doc_mismatch_persists_fail_closed_diagnostics(
@@ -7197,6 +8548,24 @@ def test_run_eval_xlsx_locator_source_row_context_doc_mismatch_persists_fail_clo
                         ),
                         "sheet": "일반현황",
                         "cell_range": "A752:J801",
+                        "row_index_1based": "752",
+                        "row_label": "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526",
+                        "same_row_period_cells_json": same_row_period_cells_json(
+                            source_atom_id="src-row-period-cell",
+                            doc_id="doc-row-other",
+                            sheet="일반현황",
+                            cell_range="A752:J801",
+                            cell="H752",
+                            row_index_1based="752",
+                            row_label=(
+                                "장기요양기관코드=12723000318 | 장기요양기관이름=해뜨는요양원2 | 우편번호=41526"
+                            ),
+                            column_label="지정일자",
+                            raw_value="2014-12-31",
+                            year=2014,
+                            month=12,
+                            day=31,
+                        ),
                     },
                 ],
                 "citations": [],
@@ -7367,6 +8736,20 @@ def test_xlsx_locator_materializes_display_value_from_target_column_segment() ->
         "row_label": "장기요양기관코드=11111000006 | 장기요양기관이름=청운노인요양원 | 우편번호=03001",
         "column_label": "기관별 상세주소",
         "target_column": "기관별 상세주소",
+        "same_row_period_cells_json": same_row_period_cells_json(
+            source_atom_id="src-xlsx-period-cell",
+            doc_id="doc-xlsx",
+            sheet="일반현황",
+            cell_range="A2:J51",
+            cell="H2",
+            row_index_1based="2",
+            row_label="장기요양기관코드=11111000006 | 장기요양기관이름=청운노인요양원 | 우편번호=03001",
+            column_label="지정일자",
+            raw_value="2008-06-25",
+            year=2008,
+            month=6,
+            day=25,
+        ),
     }
 
     candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
@@ -7432,8 +8815,8 @@ def test_xlsx_locator_records_source_date_aliases_without_accepting_incomplete_c
     assert candidate is not None
     assert candidate["source_date_aliases"] == ["2019년 2월", "2019년", "2월"]
     assert "source_date_aliases" in candidate["input_fields_used"]
-    assert candidate["matched_validated_required_axes"] == ["period", "row_entity", "target_column"]
-    assert candidate["missing_validated_required_axes"] == ["display_value"]
+    assert candidate["matched_validated_required_axes"] == ["row_entity", "target_column"]
+    assert candidate["missing_validated_required_axes"] == ["period", "display_value"]
     assert candidate["accepted_for_regating"] is False
     encoded = json.dumps(candidate, ensure_ascii=False)
     assert "expected_answer" not in encoded
@@ -7441,7 +8824,7 @@ def test_xlsx_locator_records_source_date_aliases_without_accepting_incomplete_c
     assert "formula" not in encoded
 
 
-def test_xlsx_locator_accepts_same_candidate_source_date_alias_package() -> None:
+def test_xlsx_locator_accepts_same_candidate_period_cell_packet() -> None:
     query = "2019년 2월 안산선의 수송인원은 몇 명입니까?"
     planner = actual_rag_eval._query_evidence_planner_summary(
         query=query,
@@ -7462,22 +8845,22 @@ def test_xlsx_locator_accepts_same_candidate_source_date_alias_package() -> None
         },
     )
     row = {
-        "id": "xlsx-source-date-alias-package",
+        "id": "xlsx-source-period-cell-packet",
         "query": query,
         "generated_answer": "999명",
         "query_evidence_planner": planner,
         "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
     }
     context = {
-        "doc_id": "doc-xlsx-date-alias-package",
-        "chunk_id": "chunk-xlsx-date-alias-package",
-        "source_atom_id": "src-xlsx-date-alias-package",
-        "evidence_bundle_id": "bundle-xlsx-date-alias-package",
+        "doc_id": "doc-xlsx-period-cell-packet",
+        "chunk_id": "chunk-xlsx-period-cell-packet",
+        "source_atom_id": "src-xlsx-period-cell-packet",
+        "evidence_bundle_id": "bundle-xlsx-period-cell-packet",
         "source_family": "XLSX",
         "granularity": "table_row",
         "text": (
             "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | "
-            "period=201902 | target_column=수송인원 | display_value=999명"
+            "target_column=수송인원 | display_value=999명"
         ),
         "sheet": "철도",
         "cell_range": "A302:D351",
@@ -7486,6 +8869,25 @@ def test_xlsx_locator_accepts_same_candidate_source_date_alias_package() -> None
         "column_label": "수송인원",
         "target_column": "수송인원",
         "display_value": "999명",
+        "same_row_period_cells_json": json.dumps(
+            [
+                same_row_period_cell_packet(
+                    source_atom_id="src-xlsx-period-cell",
+                    doc_id="doc-xlsx-period-cell-packet",
+                    sheet="철도",
+                    cell_range="A302:D351",
+                    cell="A302",
+                    row_index_1based="302",
+                    row_label="노선명=안산선",
+                    column_label="년월",
+                    raw_value="2019-02-01",
+                    year=2019,
+                    month=2,
+                    day=1,
+                )
+            ],
+            ensure_ascii=False,
+        ),
     }
 
     candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
@@ -7494,10 +8896,25 @@ def test_xlsx_locator_accepts_same_candidate_source_date_alias_package() -> None
     assert candidate["accepted_for_regating"] is True
     assert candidate["locator_text_source"] == "source_owned_support_text"
     assert candidate["source_owned_same_candidate_package"] is True
-    assert candidate["source_owned_same_candidate_package_policy"].endswith("_v1")
-    assert candidate["source_date_aliases"] == ["2019년 2월", "2019년", "2월"]
-    assert "source_date_alias=2019년 2월" in candidate["text"]
-    assert "source_date_aliases" in candidate["input_fields_used"]
+    assert candidate["source_owned_same_candidate_package_policy"] == "source_owned_same_row_period_cell_v1"
+    assert candidate["same_row_period_cells"] == [
+        same_row_period_cell_packet(
+            source_atom_id="src-xlsx-period-cell",
+            doc_id="doc-xlsx-period-cell-packet",
+            sheet="철도",
+            cell_range="A302:D351",
+            cell="A302",
+            row_index_1based="302",
+            row_label="노선명=안산선",
+            column_label="년월",
+            raw_value="2019-02-01",
+            year=2019,
+            month=2,
+            day=1,
+        )
+    ]
+    assert "source_date_alias=" not in candidate["text"]
+    assert "same_row_period_cells_json" in candidate["input_fields_used"]
     assert candidate["matched_validated_required_axes"] == [
         "period",
         "row_entity",
@@ -7511,7 +8928,7 @@ def test_xlsx_locator_accepts_same_candidate_source_date_alias_package() -> None
     assert "formula" not in encoded
 
 
-def test_xlsx_locator_same_candidate_source_date_alias_package_survives_budget() -> None:
+def test_xlsx_locator_rejects_period_cell_packet_from_different_row() -> None:
     query = "2019년 2월 안산선의 수송인원은 몇 명입니까?"
     planner = actual_rag_eval._query_evidence_planner_summary(
         query=query,
@@ -7532,7 +8949,82 @@ def test_xlsx_locator_same_candidate_source_date_alias_package_survives_budget()
         },
     )
     row = {
-        "id": "xlsx-source-date-alias-budget",
+        "id": "xlsx-source-period-cell-row-mismatch",
+        "query": query,
+        "generated_answer": "999명",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+    }
+    context = {
+        "doc_id": "doc-xlsx-period-cell-packet",
+        "chunk_id": "chunk-xlsx-period-cell-packet",
+        "source_atom_id": "src-xlsx-period-cell-packet",
+        "evidence_bundle_id": "bundle-xlsx-period-cell-packet",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": (
+            "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | "
+            "target_column=수송인원 | display_value=999명"
+        ),
+        "sheet": "철도",
+        "cell_range": "A302:D351",
+        "row_index_1based": "302",
+        "row_label": "노선명=안산선",
+        "column_label": "수송인원",
+        "target_column": "수송인원",
+        "display_value": "999명",
+        "same_row_period_cells_json": same_row_period_cells_json(
+            source_atom_id="src-xlsx-period-cell-other-row",
+            doc_id="doc-xlsx-period-cell-packet",
+            sheet="철도",
+            cell_range="A302:D351",
+            cell="A303",
+            row_index_1based="303",
+            row_label="노선명=다른노선",
+            column_label="년월",
+            raw_value="2019-02-01",
+            year=2019,
+            month=2,
+            day=1,
+        ),
+    }
+
+    candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
+
+    assert candidate is not None
+    assert "same_row_period_cells" not in candidate
+    assert candidate.get("source_owned_same_candidate_package") is not True
+    assert candidate["accepted_for_regating"] is False
+    assert candidate["matched_validated_required_axes"] == [
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert candidate["missing_validated_required_axes"] == ["period"]
+
+
+def test_xlsx_locator_same_candidate_period_cell_packet_survives_budget() -> None:
+    query = "2019년 2월 안산선의 수송인원은 몇 명입니까?"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2019-02", "line_name": "안산선"},
+            "target_axis": {"column": "수송인원", "value_type": "number"},
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2019-02", "2019년 2월"],
+                "row_entity": ["안산선"],
+                "target_column": ["수송인원"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "xlsx-source-period-cell-budget",
         "query": query,
         "generated_answer": "999명",
         "query_evidence_planner": planner,
@@ -7540,17 +9032,16 @@ def test_xlsx_locator_same_candidate_source_date_alias_package_survives_budget()
     }
     contexts = []
     for index in range(actual_rag_eval.XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET + 1):
-        period_part = " | period=201902" if index == actual_rag_eval.XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET else ""
         context = {
-            "doc_id": "doc-xlsx-date-alias-budget",
-            "chunk_id": f"chunk-xlsx-date-alias-budget-{index}",
-            "source_atom_id": f"src-xlsx-date-alias-budget-{index}",
-            "evidence_bundle_id": f"bundle-xlsx-date-alias-budget-{index}",
+            "doc_id": "doc-xlsx-period-cell-budget",
+            "chunk_id": f"chunk-xlsx-period-cell-budget-{index}",
+            "source_atom_id": f"src-xlsx-period-cell-budget-{index}",
+            "evidence_bundle_id": f"bundle-xlsx-period-cell-budget-{index}",
             "source_family": "XLSX",
             "granularity": "table_row",
             "text": (
                 "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | "
-                f"target_column=수송인원 | display_value={900 + index}명{period_part}"
+                f"target_column=수송인원 | display_value={900 + index}명"
             ),
             "sheet": "철도",
             "cell_range": "A302:D351",
@@ -7560,6 +9051,26 @@ def test_xlsx_locator_same_candidate_source_date_alias_package_survives_budget()
             "target_column": "수송인원",
             "display_value": f"{900 + index}명",
         }
+        if index == actual_rag_eval.XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET:
+            context["same_row_period_cells_json"] = json.dumps(
+                [
+                    same_row_period_cell_packet(
+                        source_atom_id="src-xlsx-period-cell-budget-date",
+                        doc_id="doc-xlsx-period-cell-budget",
+                        sheet="철도",
+                        cell_range="A302:D351",
+                        cell=f"A{302 + index}",
+                        row_index_1based=str(302 + index),
+                        row_label="노선명=안산선",
+                        column_label="년월",
+                        raw_value="2019-02-01",
+                        year=2019,
+                        month=2,
+                        day=1,
+                    )
+                ],
+                ensure_ascii=False,
+            )
         contexts.append(context)
     row[actual_rag_eval.INTERNAL_XLSX_LOCATOR_SOURCE_CONTEXTS_KEY] = contexts
 
@@ -7568,7 +9079,7 @@ def test_xlsx_locator_same_candidate_source_date_alias_package_survives_budget()
     accepted = [candidate for candidate in candidates if candidate.get("accepted_for_regating") is True]
     assert len(candidates) == actual_rag_eval.XLSX_LOCATOR_TOOL_CANDIDATE_BUDGET
     assert [candidate["source_atom_id"] for candidate in accepted] == [
-        "src-xlsx-date-alias-budget-5"
+        "src-xlsx-period-cell-budget-5"
     ]
     assert accepted[0]["candidate_budget_exhausted"] is True
     assert accepted[0]["candidate_pool_count_before_budget"] == 6
@@ -7727,15 +9238,16 @@ def test_run_eval_xlsx_locator_persists_source_date_aliases_for_rejected_candida
         ).fetchone()
         assert candidate is not None
         assert json.loads(candidate["source_date_aliases_json"]) == ["2019년 2월", "2019년", "2월"]
-        assert "source_date_aliases" in json.loads(candidate["input_fields_used_json"])
         assert candidate["accepted_for_regating"] == 0
         assert candidate["rejection_reason"] == "missing_validated_required_axes_after_tool"
         assert json.loads(candidate["matched_validated_required_axes_json"]) == [
-            "period",
             "row_entity",
             "target_column",
         ]
-        assert json.loads(candidate["missing_validated_required_axes_json"]) == ["display_value"]
+        assert json.loads(candidate["missing_validated_required_axes_json"]) == [
+            "period",
+            "display_value",
+        ]
         actual_rag_eval.validate_xlsx_locator_run_store(
             "xlsx_locator_source_date_alias",
             locator,
@@ -7743,10 +9255,10 @@ def test_run_eval_xlsx_locator_persists_source_date_aliases_for_rejected_candida
         )
 
 
-def test_run_eval_xlsx_locator_same_candidate_source_date_alias_package_regates_and_persists(
+def test_run_eval_xlsx_locator_same_candidate_period_cell_packet_regates_without_alias_gate_opening(
     tmp_path: Path,
 ) -> None:
-    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_source_date_alias_package"
+    output_dir = tmp_path / "reports" / "rag_eval" / "xlsx_locator_period_cell_packet"
     query = "2019년 2월 안산선의 수송인원은 몇 명입니까?"
     planner = actual_rag_eval._query_evidence_planner_summary(
         query=query,
@@ -7767,14 +9279,14 @@ def test_run_eval_xlsx_locator_same_candidate_source_date_alias_package_regates_
         },
     )
     context = {
-        "doc_id": "doc-xlsx-source-date-alias-package",
-        "chunk_id": "chunk-xlsx-source-date-alias-package",
-        "source_atom_id": "src-xlsx-source-date-alias-package",
-        "evidence_bundle_id": "bundle-xlsx-source-date-alias-package",
+        "doc_id": "doc-xlsx-period-cell-packet",
+        "chunk_id": "chunk-xlsx-period-cell-packet",
+        "source_atom_id": "src-xlsx-period-cell-packet",
+        "evidence_bundle_id": "bundle-xlsx-period-cell-packet",
         "source_family": "XLSX",
         "granularity": "table_row",
         "text": (
-            "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | period=201902 | "
+            "sheet=철도 | range=A302:D351 | row_label=노선명=안산선 | "
             "target_column=수송인원 | display_value=999명"
         ),
         "sheet": "철도",
@@ -7784,9 +9296,28 @@ def test_run_eval_xlsx_locator_same_candidate_source_date_alias_package_regates_
         "column_label": "수송인원",
         "target_column": "수송인원",
         "display_value": "999명",
+        "same_row_period_cells_json": json.dumps(
+            [
+                same_row_period_cell_packet(
+                    source_atom_id="src-xlsx-period-cell",
+                    doc_id="doc-xlsx-period-cell-packet",
+                    sheet="철도",
+                    cell_range="A302:D351",
+                    cell="A302",
+                    row_index_1based="302",
+                    row_label="노선명=안산선",
+                    column_label="년월",
+                    raw_value="2019-02-01",
+                    year=2019,
+                    month=2,
+                    day=1,
+                )
+            ],
+            ensure_ascii=False,
+        ),
     }
     before_row = {
-        "id": "xlsx_locator_source_date_alias_package_q",
+        "id": "xlsx_locator_period_cell_packet_q",
         "query": query,
         "answerability": "answerable",
         "track": "xlsx_business_structured",
@@ -7815,7 +9346,7 @@ def test_run_eval_xlsx_locator_same_candidate_source_date_alias_package_regates_
     )
     run_store_path = output_dir / "run.sqlite"
     actual_rag_eval.XlsxLocatorRunStore(run_store_path).write_run_record(
-        run_id="xlsx_locator_source_date_alias_package",
+        run_id="xlsx_locator_period_cell_packet",
         dataset_slug="unit",
         collection="unit",
         record=record,
@@ -7832,30 +9363,20 @@ def test_run_eval_xlsx_locator_same_candidate_source_date_alias_package_regates_
     assert tool_use["execution_status"] == "accepted_after_regating"
     assert tool_use["accepted_candidate_count"] == 1
     assert tool_use["output_policy"] == "selected_evidence_candidate_must_pass_unchanged_gate"
-    selected = row["evidence_gate"]["selected_evidence"][0]
-    assert selected["source_atom_id"] == "src-xlsx-source-date-alias-package"
-    assert selected["locator_text_source"] == "source_owned_support_text"
-    assert selected["source_owned_same_candidate_package"] is True
-    assert "source_date_alias=2019년 2월" in selected["text"]
-    assert selected["matched_validated_required_axes"] == [
-        "period",
-        "row_entity",
-        "target_column",
-        "display_value",
-    ]
-    assert selected["missing_validated_required_axes"] == []
+    assert row["answer_gate_decision"] == "allow_answer"
+    assert row["evidence_gate"]["evidence_package_status"] == "sufficient"
+    assert row["evidence_gate"]["selected_evidence"][0]["source_atom_id"] == "src-xlsx-period-cell-packet"
 
     with sqlite3.connect(run_store_path) as conn:
         conn.row_factory = sqlite3.Row
         candidate = conn.execute(
-            "SELECT source_date_aliases_json, input_fields_used_json, accepted_for_regating, "
+            "SELECT input_fields_used_json, accepted_for_regating, "
             "rejection_reason, locator_text_source, matched_validated_required_axes_json, "
             "missing_validated_required_axes_json FROM tool_candidates "
-            "WHERE source_atom_id = 'src-xlsx-source-date-alias-package'"
+            "WHERE source_atom_id = 'src-xlsx-period-cell-packet'"
         ).fetchone()
         assert candidate is not None
-        assert json.loads(candidate["source_date_aliases_json"]) == ["2019년 2월", "2019년", "2월"]
-        assert "source_date_aliases" in json.loads(candidate["input_fields_used_json"])
+        assert "same_row_period_cells_json" in json.loads(candidate["input_fields_used_json"])
         assert candidate["accepted_for_regating"] == 1
         assert candidate["rejection_reason"] == ""
         assert candidate["locator_text_source"] == "source_owned_support_text"
@@ -7866,16 +9387,31 @@ def test_run_eval_xlsx_locator_same_candidate_source_date_alias_package_regates_
             "display_value",
         ]
         assert json.loads(candidate["missing_validated_required_axes_json"]) == []
+        period_cell = conn.execute(
+            "SELECT source_atom_id, doc_id, cell, raw_value, parsed_date, year, month, day "
+            "FROM tool_candidate_period_cells WHERE source_atom_id = 'src-xlsx-period-cell'"
+        ).fetchone()
+        assert dict(period_cell) == {
+            "source_atom_id": "src-xlsx-period-cell",
+            "doc_id": "doc-xlsx-period-cell-packet",
+            "cell": "A302",
+            "raw_value": "2019-02-01",
+            "parsed_date": "2019-02-01",
+            "year": 2019,
+            "month": 2,
+            "day": 1,
+        }
         actual_rag_eval.validate_xlsx_locator_run_store(
-            "xlsx_locator_source_date_alias_package",
+            "xlsx_locator_period_cell_packet",
             locator,
             run_store_path=run_store_path,
         )
 
-    selected_encoded = json.dumps(selected, ensure_ascii=False)
-    assert "expected_answer" not in selected_encoded
-    assert "normalized_value" not in selected_encoded
-    assert "formula" not in selected_encoded
+    selected_encoded = json.dumps(row, ensure_ascii=False)
+    assert "normalized_value=" not in selected_encoded
+    assert "NORMALIZED_VALUE=" not in selected_encoded
+    assert "formula=" not in selected_encoded
+    assert "Formula=" not in selected_encoded
 
 
 def test_run_eval_xlsx_locator_materialized_display_value_regates_and_persists(
@@ -7926,6 +9462,22 @@ def test_run_eval_xlsx_locator_materialized_display_value_regates_and_persists(
                             "column_label": "기관별 상세주소",
                             "target_column": "기관별 상세주소",
                         },
+                        "same_row_period_cells_json": same_row_period_cells_json(
+                            source_atom_id="src-xlsx-materialized-display-period",
+                            doc_id="doc-xlsx-materialized-display",
+                            sheet="일반현황",
+                            cell_range="A2:J51",
+                            cell="H2",
+                            row_index_1based="2",
+                            row_label=(
+                                "장기요양기관코드=11111000006 | 장기요양기관이름=청운노인요양원 | 우편번호=03001"
+                            ),
+                            column_label="지정일자",
+                            raw_value="2008-06-25",
+                            year=2008,
+                            month=6,
+                            day=25,
+                        ),
                     }
                 ],
                 "citations": [],
@@ -8053,6 +9605,20 @@ def test_xlsx_locator_display_value_materialization_fails_closed_on_duplicate_ta
         "row_label": "장기요양기관이름=청운노인요양원",
         "column_label": "기관별 상세주소",
         "target_column": "기관별 상세주소",
+        "same_row_period_cells_json": same_row_period_cells_json(
+            source_atom_id="src-xlsx-period-cell",
+            doc_id="doc-xlsx",
+            sheet="일반현황",
+            cell_range="A2:J51",
+            cell="H2",
+            row_index_1based="2",
+            row_label="장기요양기관이름=청운노인요양원",
+            column_label="지정일자",
+            raw_value="2008-06-25",
+            year=2008,
+            month=6,
+            day=25,
+        ),
     }
 
     candidate = actual_rag_eval._xlsx_locator_candidate_from_context(row, context)
@@ -8299,6 +9865,40 @@ def test_public_report_sanitizer_strips_raw_tool_payload_keys() -> None:
     assert "raw_tool_payload" not in encoded
     assert "tool_payload" not in encoded
     assert "rawToolPayload" not in encoded
+
+
+def test_same_row_period_cell_packet_sanitizers_reject_extra_keys() -> None:
+    poisoned_packet = same_row_period_cell_packet(
+        source_atom_id="src-xlsx-period-cell",
+        doc_id="doc-xlsx-period-cell",
+        sheet="철도",
+        cell_range="A302:D351",
+        cell="A302",
+        row_index_1based="302",
+        row_label="노선명=안산선",
+        column_label="년월",
+        raw_value="2019-02-01",
+        year=2019,
+        month=2,
+        day=1,
+    )
+    poisoned_packet["expected_answer"] = "SECRET_EXPECTED_NEVER_REPORT"
+    poisoned_packet["raw_prompt"] = "SECRET_PROMPT_NEVER_REPORT"
+    payload = {
+        "source_family": "XLSX",
+        "same_row_period_cells_json": json.dumps([poisoned_packet], ensure_ascii=False),
+    }
+
+    report = actual_rag_eval._sanitize_public_report_value(payload, source_native_context=True)
+    runtime = actual_rag_eval._sanitize_source_native_runtime_value(payload, source_native_context=True)
+
+    encoded = json.dumps({"report": report, "runtime": runtime}, ensure_ascii=False)
+    assert "same_row_period_cells_json" not in report
+    assert "same_row_period_cells_json" not in runtime
+    assert "SECRET_EXPECTED_NEVER_REPORT" not in encoded
+    assert "SECRET_PROMPT_NEVER_REPORT" not in encoded
+    assert "expected_answer" not in encoded
+    assert "raw_prompt" not in encoded
 
 
 def test_residual_anchor_matrix_reports_source_native_axes_without_shortcuts() -> None:
@@ -9270,6 +10870,219 @@ def test_evidence_gate_prefers_validated_required_axes_over_raw_date_anchor() ->
     assert validation["missing_validated_required_axes"] == []
     assert validation["validated_required_axes_coverage"] == 1.0
     assert "missing_query_anchor" not in validation["validation_reasons"]
+
+
+def test_evidence_gate_accepts_source_owned_period_cell_without_text_date_alias() -> None:
+    query = "2020년 11월에 지정된 하얀민들레노인요양원의 우편번호는 무엇입니까?"
+    row_label = "장기요양기관이름=하얀민들레노인요양원"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2020-11", "facility_name": "하얀민들레노인요양원"},
+            "target_axis": {"column": "우편번호", "value_type": "text"},
+            "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+            "intent_tokens": ["무엇입니까", "지정된"],
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2020-11", "2020년 11월", "202011"],
+                "row_entity": ["하얀민들레노인요양원"],
+                "target_column": ["우편번호"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "gate_source_owned_period_cell",
+        "query": query,
+        "generated_answer": "41786",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-row702",
+                "chunk_id": "chunk-row702",
+                "source_atom_id": "src-row702-postal-code",
+                "evidence_bundle_id": "bundle-row702",
+                "source_family": "XLSX",
+                "granularity": "table_row",
+                "text": f"sheet=일반현황 | row_label={row_label} | target_column=우편번호 | display_value=41786",
+                "sheet": "일반현황",
+                "cell_range": "A702:J751",
+                "cell": "C702",
+                "row_index_1based": "702",
+                "row_label": row_label,
+                "target_column": "우편번호",
+                "display_value": "41786",
+                "same_row_period_cells_json": same_row_period_cells_json(
+                    source_atom_id="src-row702-designated-date",
+                    doc_id="doc-row702",
+                    sheet="일반현황",
+                    cell_range="A702:J751",
+                    cell="H702",
+                    row_index_1based="702",
+                    row_label=row_label,
+                    raw_value="2020-11-26",
+                    year=2020,
+                    month=11,
+                    day=26,
+                ),
+            }
+        ],
+        "citations": [],
+    }
+
+    validation = actual_rag_eval.validate_evidence_package_for_gate(row)
+
+    assert validation["evidence_package_status"] == "sufficient"
+    assert validation["missing_query_anchors"] == []
+    assert validation["matched_validated_required_axes"] == [
+        "period",
+        "row_entity",
+        "target_column",
+        "display_value",
+    ]
+    assert validation["missing_validated_required_axes"] == []
+    assert validation["validated_required_axes_coverage"] == 1.0
+
+
+@pytest.mark.parametrize(
+    "packet_overrides",
+    [
+        None,
+        {"raw_value": "2020-12-26", "year": 2020, "month": 12, "day": 26},
+        {"doc_id": "doc-other"},
+        {"sheet": "다른시트"},
+        {"cell_range": "A703:J752"},
+        {"row_index_1based": "703", "row_label": "장기요양기관이름=다른기관"},
+    ],
+)
+def test_evidence_gate_rejects_invalid_source_owned_period_cell_without_text_date_alias(
+    packet_overrides: dict[str, object] | None,
+) -> None:
+    query = "2020년 11월에 지정된 하얀민들레노인요양원의 우편번호는 무엇입니까?"
+    row_label = "장기요양기관이름=하얀민들레노인요양원"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "xlsx",
+            "query_task": "date_filtered_lookup",
+            "row_filters": {"period": "2020-11", "facility_name": "하얀민들레노인요양원"},
+            "target_axis": {"column": "우편번호", "value_type": "text"},
+            "evidence_contract": ["period", "row_entity", "target_column", "display_value"],
+            "intent_tokens": ["무엇입니까", "지정된"],
+            "validated_required_axes": ["period", "row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "period": ["2020-11", "2020년 11월", "202011"],
+                "row_entity": ["하얀민들레노인요양원"],
+                "target_column": ["우편번호"],
+                "display_value": [],
+            },
+        },
+    )
+    context = {
+        "doc_id": "doc-row702",
+        "chunk_id": "chunk-row702",
+        "source_atom_id": "src-row702-postal-code",
+        "evidence_bundle_id": "bundle-row702",
+        "source_family": "XLSX",
+        "granularity": "table_row",
+        "text": f"sheet=일반현황 | row_label={row_label} | target_column=우편번호 | display_value=41786",
+        "sheet": "일반현황",
+        "cell_range": "A702:J751",
+        "cell": "C702",
+        "row_index_1based": "702",
+        "row_label": row_label,
+        "target_column": "우편번호",
+        "display_value": "41786",
+    }
+    if packet_overrides is not None:
+        packet_kwargs = {
+            "source_atom_id": "src-row702-designated-date",
+            "doc_id": "doc-row702",
+            "sheet": "일반현황",
+            "cell_range": "A702:J751",
+            "cell": "H702",
+            "row_index_1based": "702",
+            "row_label": row_label,
+            "raw_value": "2020-11-26",
+            "year": 2020,
+            "month": 11,
+            "day": 26,
+        }
+        packet_kwargs.update(packet_overrides)
+        context["same_row_period_cells_json"] = same_row_period_cells_json(**packet_kwargs)
+    row = {
+        "id": "gate_invalid_source_owned_period_cell",
+        "query": query,
+        "generated_answer": "41786",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [context],
+        "citations": [],
+    }
+
+    validation = actual_rag_eval.validate_evidence_package_for_gate(row)
+
+    assert validation["evidence_package_status"] == "insufficient"
+    assert validation["matched_validated_required_axes"] == ["row_entity", "target_column", "display_value"]
+    assert validation["missing_validated_required_axes"] == ["period"]
+    assert "missing_validated_required_axes" in validation["validation_reasons"]
+
+
+def test_evidence_gate_does_not_apply_unknown_source_family_axes_to_text_evidence() -> None:
+    query = "미츠하는 타키를 만나려고 어디로 향했어"
+    planner = actual_rag_eval._query_evidence_planner_summary(
+        query=query,
+        status="planned_validated",
+        config={"backend": "test", "base_url": "http://localhost", "model": "test-model"},
+        plan={
+            "source_family_hint": "unknown",
+            "query_task": "entity_attribute_lookup",
+            "row_filters": {"line_name": "미츠하"},
+            "target_axis": {"column": "어디로 향했어", "value_type": "text"},
+            "evidence_contract": ["row_entity", "target_column", "display_value"],
+            "intent_tokens": ["어디로 향했어"],
+            "validated_required_axes": ["row_entity", "target_column", "display_value"],
+            "validated_axis_values": {
+                "row_entity": ["미츠하"],
+                "target_column": ["어디로 향했어"],
+                "display_value": [],
+            },
+        },
+    )
+    row = {
+        "id": "text_unknown_source_family_axes",
+        "query": query,
+        "generated_answer": "미츠하는 타키를 만나기 위해 도쿄로 향했습니다.",
+        "query_evidence_planner": planner,
+        "query_anchor_classifier": actual_rag_eval._query_anchor_classifier_from_planner(query, planner),
+        "retrieved_contexts": [
+            {
+                "doc_id": "doc-text-kiminonawa",
+                "chunk_id": "chunk-text-kiminonawa",
+                "source_atom_id": "src-text-kiminonawa",
+                "evidence_bundle_id": "bundle-text-kiminonawa",
+                "source_family": "TEXT",
+                "granularity": "paragraph",
+                "text": "자신과 몸이 바뀌고 있는 타키를 실제로 만나기 위해 미츠하는 도쿄로 향했습니다.",
+            }
+        ],
+        "citations": [],
+    }
+
+    validation = actual_rag_eval.validate_evidence_package_for_gate(row)
+
+    assert validation["evidence_package_status"] == "sufficient"
+    assert validation["validated_required_axes"] == []
+    assert validation["missing_validated_required_axes"] == []
+    assert validation["validated_required_axes_ignored_reason"] == "unknown_source_family_text_evidence"
+    assert "missing_validated_required_axes" not in validation["validation_reasons"]
 
 
 def test_xlsx_locator_rejects_validated_axes_when_planner_routes_to_pdf() -> None:
