@@ -1,307 +1,102 @@
-# Evidence-Grounded RAG Backend - Execution Trace / Guard Sidecar
+# RAG 실행 추적/가드 요약
 
-## Project Goal
+이 문서는 포트폴리오 README를 보조하는 한국어 요약입니다. 이 저장소의
+핵심 구현은 문서 RAG이고, 여기서는 그 위에 얇게 얹은 추적/가드 계층이
+무엇을 검증하는지만 정리합니다.
 
-Document the thin execution Trace/Guard layer behind the current Evidence-Grounded
-RAG Backend portfolio. The primary portfolio narrative stays centered
-on source-derived retrieval candidates, evidence truth, citation verification,
-and fail-closed response policy; this sidecar explains the auditable tool/policy
-trace layer over the existing RAG/evaluation pipeline, not a large autonomous
-agent framework or AgentOps platform.
+이 문서는 공식 성능 지표, 운영 배포 준비, 제품 성과를 주장하지
+않습니다. gold, qrels, label, expected answer, supporting evidence도 이
+문서 작업에서 생성하거나 변경하지 않습니다.
 
-This report is portfolio-facing. It does not open official metrics, mutate
-gold/qrels/labels, approve expected answers, approve supporting evidence, move
-`current`, claim product success, or claim live production readiness.
+## 요약
 
-## Architecture
+| 항목 | 현재 상태 |
+|---|---|
+| 기본 포지션 | 근거 검증형 문서 RAG 백엔드 |
+| 추적/가드 역할 | RAG 실행 전에 정책을 확인하고, 도구 선택과 최종 결정을 비식별 trace로 남김 |
+| 현재 검증 라인 | `current_resolves_to=v6_9_answer_quality_gate_packet_nonprod` |
+| 검색 후보 검수 | `v6_9_1_retrieval_smoke_pre_review_packet_nonprod`, 135개 후보 row |
+| 응답 정책 확인 | 29개 승인 질의 중 PDF/TEXT 10개는 citation verified 답변, XLSX 19개는 fail-closed |
+| 공식 지표 | 닫힘 |
+| 운영 준비 상태 | 주장하지 않음 |
+
+## 실행 흐름
 
 ```text
-Request context
-  -> policy check
-  -> AgentOps tool registry
-  -> scoped retrieval adapter
-  -> SourceAtom hydration
-  -> EvidenceBundle validation
-  -> answerability/relevance gates
-  -> diagnostic answer, handoff, or fail-closed decision
-  -> trace/report artifact
+요청 컨텍스트
+  -> 정책 확인
+  -> 허용된 RAG tool 선택
+  -> 제한된 후보 범위 확인
+  -> SourceAtom / EvidenceBundle 검증
+  -> 답변 가능성 판단
+  -> 진단 답변 또는 fail-closed
+  -> 비식별 trace 기록
 ```
 
-Existing repo foundations:
+## 구현된 구성
 
-| Foundation | Concrete artifact |
+| 구성 | 코드/자료 |
 |---|---|
-| SearchUnit/SearchView retrieval surfaces | `ai/app/capabilities/rag/search_unit_indexing.py`, `ai/eval/indexes/*/search_*_manifest.jsonl` |
-| Evidence truth | `ai/app/capabilities/rag/source_registry.py`, `ai/app/capabilities/rag_orchestrator/evidence.py` |
-| Deterministic runtime loop | `ai/app/capabilities/rag_orchestrator/agent_runtime.py` |
-| L0-L8 tool specs | `ai/app/capabilities/rag_orchestrator/tool_registry.py` |
-| Portfolio AgentOps adapter | `ai/app/capabilities/rag_orchestrator/agentops_runtime.py` |
-| Evaluation/report governance | `ai/eval/rag_eval_registry.py`, `ai/scripts/rag_eval.py`; worker-authored local handoff notes stay outside the public code contract |
+| RAG 실행부 | `ai/app/capabilities/rag_orchestrator/agent_runtime.py` |
+| 추적/가드 adapter | `ai/app/capabilities/rag_orchestrator/agentops_runtime.py` |
+| 도구 registry | `ai/app/capabilities/rag_orchestrator/tool_registry.py` |
+| Evidence 구조 | `ai/app/capabilities/rag/source_registry.py`, `ai/app/capabilities/rag_orchestrator/evidence.py` |
+| 샘플 trace | `reports/agentops_sample_trace.json` |
+| Eval runner | `ai/scripts/rag_eval.py` |
 
-## Portfolio Snapshot
+## 정책 경계
 
-Current hiring-portfolio copy is anchored to diagnostic evidence only:
-
-| Surface | Portfolio wording |
+| 경계 | 처리 방식 |
 |---|---|
-| Source-derived materialization | 300 SearchUnit/SearchView rows: PDF 100, TEXT 100, XLSX 100 |
-| Dense search | BAAI/bge-m3 + FAISS IndexFlatIP; vector candidates available for 299/300 rows |
-| Sparse search | SQLite/BM25 candidates available for 300/300 rows |
-| Hybrid search | fixed-weight vector + BM25 merge candidates available for 300/300 rows |
-| Retrieval quality metrics | Hit@K/MRR/nDCG are not computed until current qrels/denominator review is approved |
-| Retrieval review packet | `v6_9_1_retrieval_smoke_pre_review_packet_nonprod`; 135 current candidate rows, user-owned fields blank |
-| Actual Response Smoke | 29 approved queries; 10 answered + citation verified, 19 stopped/fail_closed |
-| Family response split | PDF 4 answered, TEXT 6 answered, XLSX 19 fail_closed |
-| README query examples | pages 2-4 show XLSX, PDF, and TEXT examples sourced from `ai/eval/README.md` |
-| Example boundary | examples are README samples, not benchmark scores or official quality metrics |
+| 허용되지 않은 tool | fail-closed |
+| production namespace 또는 writable indexing scope | fail-closed |
+| evidence가 필요한 요청에 evidence id가 없음 | fail-closed |
+| 후보 SourceAtom 범위가 비어 있거나 source family가 맞지 않음 | runtime 호출 전 fail-closed |
+| 공식 지표 요청 | 사용자 승인 없이 열지 않음 |
+| 답변 근거가 부족하거나 애매함 | diagnostic-only handoff 또는 fail-closed |
+| raw prompt/source/local path | sample trace에 저장하지 않음 |
 
-## Agentic Runtime Loop
+## 샘플 Trace
 
-Implemented as a deterministic state-machine adapter:
+`reports/agentops_sample_trace.json`은 공개 가능한 비식별 trace 예시입니다.
 
-1. Create request context: run id, query, source family, namespace, indexing scope.
-2. Apply policy: allowed tools, namespace, indexing scope, evidence requirement, official-vs-diagnostic decision.
-3. Select tools: retrieval tool by source family plus evidence validation and answerability classification.
-4. Verify that explicit bounded `candidate_source_atom_ids` exist in the provided source registry and declare a source family matching the request.
-5. Invoke the existing bounded runtime only after candidate scope is valid.
-6. Validate evidence: SourceAtom and EvidenceBundle are the evidence truth; SearchView/vector payload is candidate-only.
-7. Gate answerability: machine diagnostic label only, not human gold.
-8. Decide final outcome: diagnostic answer, diagnostic-only handoff, or fail-closed.
-9. Emit a run-level trace.
-
-## Tool Registry
-
-The AgentOps adapter exposes a minimal registry:
-
-| Tool | Purpose | Scope |
-|---|---|---|
-| `retrieve_txt_corpus` | TEXT candidate retrieval | non-production RAG namespaces |
-| `retrieve_xlsx_table` | XLSX table/range/cell retrieval | non-production RAG namespaces |
-| `retrieve_pdf_ocr` | PDF page/OCR retrieval | non-production RAG namespaces |
-| `validate_evidence` | SourceAtom/EvidenceBundle validation | evidence required |
-| `classify_answerability` | machine diagnostic bounded-context gate | evidence required, not human gold |
-| `generate_eval_report` | summarize trace/report decisions | report/status surfaces |
-
-Every AgentOps tool is `diagnostic_only=true` and `official=false` by default.
-
-## Policy / Guardrail Layer
-
-Implemented in `AgentOpsPolicy`:
-
-| Guardrail | Behavior |
+| 필드 | 값 |
 |---|---|
-| allowed tools | unknown tool names fail closed and clear trace selected tools |
-| allowed namespaces | production or unregistered namespaces fail closed |
-| indexing scope | production indexing scope fails closed |
-| evidence requirement | evidence-only tools fail closed without evidence ids |
-| candidate scope | missing ids, malformed candidate records, missing source-family metadata, or source-family mismatches fail closed before runtime tool calls |
-| answer format | answer with citations or abstain |
-| official request | fail closed unless user-owned gold/qrels/denominator approval exists |
-| runtime query id | optional `query_id` must use the same safe-id pattern as `run_id` |
-| ambiguous answerability | diagnostic-only or fail-closed, never official |
-| retry/fallback | max one retry, no unbounded loop |
+| `run_id` | `agentops-portfolio-smoke` |
+| `source_family` | `XLSX` |
+| 선택 tool | `retrieve_xlsx_table`, `validate_evidence`, `classify_answerability` |
+| evidence ref | `evidence_ref:01` |
+| policy decision | `allow_diagnostic` |
+| final decision | `diagnostic_only_answer` |
+| report path | `reports/portfolio_agentops_report.md` |
 
-## Evidence Contract
+## 검증
 
-The platform separates retrieval candidates from answer evidence:
-
-| Concept | Role |
+| 명령 | 결과 |
 |---|---|
-| SearchUnit | indexable unit |
-| SearchView | candidate-only retrieval view |
-| SourceAtom | canonical source evidence atom |
-| EvidenceBundle | answer-evidence truth used for citation and answer readiness |
-
-Tool outputs do not become Hit@k/MRR/nDCG improvements. Expected answers,
-supporting evidence, qrels, relevance labels, and answerability labels are not
-used for candidate generation.
-
-## Evaluation Governance
-
-The current diagnostic line keeps official quality claims closed:
-
-| Gate | State |
-|---|---|
-| official metric | closed unless user-owned approval opens it |
-| gold/qrels mutation | closed |
-| relevance/answerability labels | human-owned, blank by default |
-| answer-quality metric | not computed as an official/product claim |
-| denominator policy | not mutated |
-| production/live readiness | closed |
-
-Existing v6 packets provide the governance ladder: structured tool taxonomy,
-agentic retry/fail-closed policy, metric-gated retrieval quality engineering,
-and answer-quality gate packet. The portfolio avoids exposing these internal
-version names as the main reader-facing message.
-
-## Trace Schema
-
-Schema: `ai/app/capabilities/rag_orchestrator/agentops_runtime.py` via
-`agentops_trace_schema()`; its JSON Schema `$id` points to the code-owned
-contract instead of a local handoff document.
-
-Sample trace: `reports/agentops_sample_trace.json`
-
-Trace fields include run id, query, request context, selected tools, called
-runtime tools, retrieval namespace, indexing scope, evidence ids, machine
-diagnostic answerability, relevance left blank, policy decision, diagnostic-only
-flag, retry/repair/fallback decision, failure category, final decision, and
-report artifact path.
-
-The JSON schema rejects policy-boundary drift such as production retrieval
-namespaces, writable indexing scopes, unsafe answer formats, unsupported source
-families, or official-request flags. Blocked fail-closed traces use safe
-placeholder values for unsupported source family, namespace, indexing scope, and
-answer-format fields instead of persisting raw caller strings.
-Report artifact paths are deliberately not caller-controlled in persistent
-traces: local absolute paths, parent traversal, and ad-hoc report paths fail
-closed and are replaced by the canonical portfolio report artifact path.
-
-Persistent trace fields use opaque query/evidence references and safe run ids.
-Raw prompts, source identities, workbook names, raw locators, source titles,
-expected answers, supporting evidence, hidden reasoning, local-path-like run ids,
-unsafe query ids, raw policy-context values, and content-derived prompt/evidence
-hashes are not persisted in the sample trace.
-Trace evidence references are capped at 99 entries because the persistent schema
-uses fixed two-digit `evidence_ref:NN` handles; larger runtime evidence sets fail
-closed rather than emitting schema-invalid refs.
-Unsupported-tool requests fail closed and emit empty trace `selected_tools`, even
-when the request mixes known and unknown tool names. Runtime `tools_called`
-entries are limited to unique schema-known L0-L8 runtime call names, so unknown,
-repeated, or overlong runtime tool-name traces are not valid persistent traces.
-Runtime fail-closed categories are also constrained to schema-known buckets;
-raw path-like failure reasons collapse to `runtime_fail_closed` before
-persistence.
-If runtime instrumentation emits an unknown or repeated `tools_called` name, the adapter
-fails closed with `runtime_tool_call_drift` and persists only schema-known call
-names.
-If the underlying runtime reports `runtime_contract_violation=true`, the
-adapter fails closed even when the runtime also reports answer-allowed evidence,
-and it does not persist raw contract guard names or raw failure paths.
-If a runtime answer result returns source atoms or evidence bundles outside the
-explicit candidate scope, the adapter treats the result as a runtime contract
-violation and emits empty evidence refs.
-If runtime invocation raises before returning a bounded result, the adapter
-still emits a schema-valid `runtime_fail_closed` trace without persisting the
-raw exception message or source identity.
-If the caller supplies a malformed top-level source registry instead of a
-bounded mapping, candidate-scope preflight fails closed before runtime tool
-calls and without persisting raw registry text.
-Malformed request-context payloads also fail closed before runtime invocation,
-so caller-controlled raw context strings are not coerced into runtime context.
-
-## Failure Categories
-
-The portfolio layer uses conservative categories:
-
-| Category | Decision |
-|---|---|
-| unsupported source family | fail closed |
-| unsupported tool | fail closed |
-| namespace mismatch | fail closed |
-| production indexing scope | fail closed |
-| malformed request context | fail closed |
-| missing evidence for evidence-only tool | fail closed |
-| candidate scope missing from registry | fail closed |
-| candidate scope source-family mismatch | fail closed |
-| malformed source registry | fail closed |
-| runtime contract violation | fail closed |
-| runtime invocation exception | fail closed |
-| repeated or overlong runtime tool-call trace | fail closed |
-| post-runtime candidate/evidence scope drift | fail closed |
-| evidence reference count over trace schema bound | fail closed |
-| insufficient evidence | fail closed |
-| official request without user approval | fail closed |
-| ambiguous answerability | diagnostic-only or fail closed |
-
-## Tests / Checks
-
-Current verification run:
-
-| Command | Result |
-|---|---|
-| `python -X utf8 -m pytest ai/tests/test_agentops_portfolio_runtime_contract.py -q` | 28 passed, 1 warning |
+| `python -X utf8 -m pytest ai/tests/test_agentops_portfolio_runtime_contract.py -q` | 28 passed |
 | `python -X utf8 -m py_compile ai/app/capabilities/rag_orchestrator/agentops_runtime.py` | passed |
-| `python -X utf8 -m json.tool reports/agentops_sample_trace.json` and `agentops_trace_schema()` validator checks | passed |
-| success and fail-closed trace drift guards against `agentops_trace_schema()` and `run_agentops_diagnostic(...)` | covered by `test_agentops_trace_schema_and_sample_match_runtime_contract` |
-| allowed/fail-closed trace policy-boundary drift guard | covered by `test_agentops_trace_schema_rejects_policy_boundary_drift` |
-| unknown runtime tool-name schema guard | covered by `test_agentops_trace_schema_rejects_unknown_runtime_tool_names` |
-| safe run-id and query-id schema/runtime guard | covered by `test_agentops_context_rejects_unsafe_run_id_before_trace_emit` |
-| malformed request-context guard | covered by `test_agentops_runtime_blocks_malformed_request_context_before_tool_calls` |
-| runtime failure-category sanitization guard | covered by `test_agentops_trace_sanitizes_runtime_failure_category_before_persistence` |
-| runtime contract-violation flag fail-closed guard | covered by `test_agentops_runtime_contract_violation_forces_fail_closed_trace` |
-| runtime exception fail-closed trace guard | covered by `test_agentops_runtime_exception_fails_closed_without_raw_exception_leak` |
-| evidence reference count schema-bound guard | covered by `test_agentops_trace_fails_closed_when_evidence_reference_count_exceeds_schema_bound` |
-| runtime tool-call drift fail-closed guard | covered by `test_agentops_trace_fails_closed_for_unknown_runtime_tool_call_names` and `test_agentops_trace_fails_closed_for_repeated_runtime_tool_call_names` |
-| post-runtime candidate/evidence scope drift guard | covered by `test_agentops_trace_fails_closed_for_post_runtime_candidate_scope_drift` |
-| unsafe report artifact path leakage guard | covered by `test_agentops_trace_blocks_unsafe_report_artifact_paths` |
-| invalid candidate scope pre-runtime guard, including malformed candidate records and missing candidate `source_family` metadata | covered by `test_agentops_runtime_blocks_invalid_candidate_scope_before_tool_calls` |
-| malformed top-level source registry pre-runtime guard | covered by `test_agentops_runtime_blocks_malformed_source_registry_before_tool_calls` |
-| portfolio/resume rendered PDF text contract | covered by `test_portfolio_and_resume_pdf_builders_render_artifact_text_contract` |
-| `python -X utf8 ai/scripts/rag_eval.py current --check` | passed; `current_resolves_to=v6_9_answer_quality_gate_packet_nonprod`, official input counters remain `0`, answer/retrieval quality metrics remain false |
-| `python -X utf8 ai/scripts/rag_eval.py v6_9_1_retrieval_smoke_pre_review_packet_nonprod --check` | passed; review packet exists, metric gate remains closed |
+| `python -X utf8 -m json.tool reports/agentops_sample_trace.json` | passed |
+| `python -X utf8 ai/scripts/rag_eval.py current --check` | `current_resolves_to=v6_9_answer_quality_gate_packet_nonprod` |
+| `python -X utf8 ai/scripts/rag_eval.py v6_9_1_retrieval_smoke_pre_review_packet_nonprod --check` | 135개 review row 확인 |
 | `python -X utf8 -m pytest ai/tests/test_rag_v691_retrieval_smoke_pre_review_packet_nonprod_contract.py -q -p no:cacheprovider` | 14 passed |
-| `python -X utf8 -m pytest ai/tests/test_agentops_portfolio_runtime_contract.py ai/tests/test_rag_v66_structured_tool_operation_taxonomy_nonprod_contract.py ai/tests/test_rag_v67_agentic_retry_fail_closed_policy_nonprod_contract.py -q` | 53 passed, 8 warnings |
-| `git status --short -- ai/eval/eval_queries ai/eval/source_registry ai/eval/indexes ai/eval/silver reports/rag_eval/rag-ingestion/status.jsonl` | no protected-surface changes |
 
-Warnings were FAISS/Numpy, pydantic, requests, and pytest-asyncio environment
-deprecation/configuration warnings; they did not fail the test runs.
+## 한계
 
-## Role-Fit Mapping
-
-| AI Agents Platform Engineer area | Repo artifact |
+| 항목 | 현재 입장 |
 |---|---|
-| Agent Runtime | `agent_runtime.py`, `agentops_runtime.py` |
-| LLMOps | diagnostic report/status artifacts, answer-quality gate packet |
-| Agent Control Plane | `AgentOpsPolicy`, L0-L8 `ToolRegistry`, current/rollback registry |
-| Agent data connection | SearchUnit/SearchView indexes, SourceAtom registry, runtime adapters |
-| quality evaluation | v6 metric-gated packets, `rag_eval.py --check`, contract tests |
-| observability | run trace schema/sample, `report.json`, `status.jsonl`, progress ledgers |
-| AI Coding Assistant workflow | Codex-generated tests, docs updates, progress log, verification commands |
+| Answer quality metric | 공식 지표로 열지 않음 |
+| Retrieval Hit@K/MRR/nDCG | qrels/denominator 검토 전에는 공식 지표로 열지 않음 |
+| Gold/qrels/label | 자동 생성 또는 변경하지 않음 |
+| 운영 배포 준비 | 주장하지 않음 |
+| AgentOps 표현 | 독립 플랫폼이 아니라 RAG 실행의 추적/가드 보조 계층 |
+| 외부 API/local LLM | 이 trace/guard 검증에는 필요하지 않음 |
 
-## Implemented vs Documented
+## 면접에서 설명하기 좋은 포인트
 
-Implemented:
-
-| Item | Artifact |
+| 질문 포인트 | 짧은 답변 |
 |---|---|
-| AgentOps tool registry | `agentops_runtime.py` |
-| policy/guardrail decisions | `AgentOpsPolicy` |
-| redacted run trace creation | `AgentOpsRunTrace` |
-| diagnostic runtime wrapper | `run_agentops_diagnostic` |
-| tests | `ai/tests/test_agentops_portfolio_runtime_contract.py` |
-
-Documented architecture:
-
-| Item | Artifact |
-|---|---|
-| portfolio positioning | `README.md` |
-| schema contract | `ai/app/capabilities/rag_orchestrator/agentops_runtime.py::agentops_trace_schema` |
-| sample trace | `reports/agentops_sample_trace.json` |
-| role-fit report | this file |
-
-## Known Limitations
-
-- No official answer-quality metric is opened in this task.
-- No retrieval Hit@K/MRR/nDCG metric is opened before current qrels/denominator review.
-- No gold, qrels, expected answer, supporting evidence, relevance, or
-  answerability labels were created or changed.
-- The runtime remains non-production and diagnostic-only.
-- The adapter does not add autonomous planning or unsafe code execution.
-- The adapter requires explicit bounded candidate evidence scope with declared
-  source-family metadata, and does not
-  fall back to broad source-registry scans.
-- Persistent sample traces use redacted opaque references rather than raw
-  evidence, prompt logs, or content-derived hashes.
-- External APIs/local LLM calls are not required for the AgentOps tests.
-- Portfolio PDF builder changes are limited to the generated portfolio source
-  and regenerated local PDF artifacts needed to keep trace proof text current.
-
-## Recommended Next Steps
-
-1. Add a default-off non-production latency/cost smoke only under explicit scope;
-   this would not be live-readiness or an official metric lane.
-2. Add human-review workflow only if the user explicitly opens gold/evidence or
-   answerability/relevance judgments.
-3. Keep portfolio language anchored to trace/report evidence rather than product
-   success claims.
+| 왜 trace/guard가 필요한가? | RAG가 답변을 만들기 전에 근거 범위와 정책을 확인하고, 왜 답변했거나 멈췄는지 남기기 위해서입니다. |
+| 왜 fail-closed인가? | 근거가 약한 자연어 답변을 성공처럼 보이지 않게 하기 위해서입니다. |
+| AgentOps라고 부를 수 있나? | 대형 AgentOps 플랫폼은 아니고, RAG runtime 위의 tool/policy/trace 경계를 구현한 작은 진단 계층입니다. |
+| 최신 상태는? | `current`는 `v6_9_answer_quality_gate_packet_nonprod` 기준이며, 검색 후보 검수 패킷은 135개 row로 분리되어 있습니다. |

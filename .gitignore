@@ -172,7 +172,6 @@ ai/eval/datasets/samples/
 # until explicitly removed from the index.
 /docs/
 !README.md
-!AGENTS.md
 !**/README.md
 !frontend/app/package.json
 !frontend/app/components.json
